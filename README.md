@@ -5,6 +5,10 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB.svg)](https://reactjs.org/)
+[![Status](https://img.shields.io/badge/Status-Experimental-red.svg)]()
+
+> ⚠️ **AVISO IMPORTANTE:** Este projeto encontra-se em fase de **Desenvolvimento e Experimental**.
+> Não deve ser utilizado em ambientes de produção crítica. Use por sua conta e risco.
 
 ## 📖 Sobre
 

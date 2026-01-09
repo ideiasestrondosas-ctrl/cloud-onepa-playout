@@ -1,8 +1,10 @@
 # Release Notes - Cloud Onepa Playout v1.0.0
 
 **Data de Release:** 2026-01-09  
-**Tipo:** Major Release  
-**Status:** Stable
+**Tipo:** Initial Release  
+**Status:** ⚠️ Experimental / Development
+
+> **NOTA:** Esta versão é para testes e desenvolvimento. Não recomendada para produção.
 
 ---
 
