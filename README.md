@@ -56,8 +56,8 @@ Ver [docs/INSTALL.md](docs/INSTALL.md) para instruções detalhadas.
 ## 📚 Documentação
 
 - [Guia de Instalação](docs/INSTALL.md)
-- [Tutorial de Uso](docs/TUTORIAL.md)
-- [API Documentation](docs/API.md)
+- [Manual do Utilizador (Tutorial)](docs/USER_MANUAL.md)
+- [Guia de Desenvolvimento (API)](docs/DEVELOPMENT.md)
 - [FAQ](docs/FAQ.md)
 
 ## 🏗️ Arquitetura
