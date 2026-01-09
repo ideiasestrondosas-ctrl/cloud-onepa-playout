@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: onepa-postgres
+    environment:
+      POSTGRES_DB: onepa_playout
+      POSTGRES_USER: onepa
+      POSTGRES_PASSWORD: onepa_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - onepa-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U onepa"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Rust Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../docker/Dockerfile.backend
+    container_name: onepa-backend
+    environment:
+      DATABASE_URL: postgresql://onepa:onepa_password@postgres:5432/onepa_playout
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: 8080
+      RUST_LOG: info
+    volumes:
+      - media_storage:/var/lib/onepa-playout/media
+      - thumbnails_storage:/var/lib/onepa-playout/thumbnails
+      - playlists_storage:/var/lib/onepa-playout/playlists
+    ports:
+      - "8080:8080"
+    networks:
+      - onepa-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../docker/Dockerfile.frontend
+    container_name: onepa-frontend
+    environment:
+      VITE_API_URL: http://localhost:8080/api
+    ports:
+      - "3000:80"
+    networks:
+      - onepa-network
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+networks:
+  onepa-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  media_storage:
+  thumbnails_storage:
+  playlists_storage:

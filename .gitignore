@@ -1,0 +1,16 @@
+# Cloud Onepa Playout (Back & Front)
+/target
+/node_modules
+/.env
+/dist
+/build
+*.log
+.DS_Store
+/coverage
+/.idea
+/.vscode
+*.swp
+/media
+/thumbnails
+/playlists
+/fillers
