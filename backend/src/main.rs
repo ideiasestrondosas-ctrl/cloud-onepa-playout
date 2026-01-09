@@ -1,14 +1,14 @@
-use actix_web::{web, App, HttpServer, middleware};
 use actix_cors::Cors;
+use actix_web::{middleware, web, App, HttpServer};
 use dotenv::dotenv;
 use sqlx::postgres::PgPoolOptions;
 use std::env;
 
 mod api;
+mod config;
 mod models;
 mod services;
 mod utils;
-mod config;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -17,9 +17,8 @@ async fn main() -> std::io::Result<()> {
     env_logger::init();
 
     // Database connection
-    let database_url = env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set");
-    
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+
     let pool = PgPoolOptions::new()
         .max_connections(5)
         .connect(&database_url)
@@ -42,6 +41,10 @@ async fn main() -> std::io::Result<()> {
     let bind_address = format!("{}:{}", host, port);
 
     log::info!("Starting server at {}", bind_address);
+
+    // Initial configuration for services
+    services::auth::configure();
+    services::database::configure();
 
     // Start HTTP server
     HttpServer::new(move || {

@@ -1,1 +1,4 @@
-# Placeholder for auth service
+// Placeholder for auth service
+pub fn configure() {
+    // Auth configuration
+}

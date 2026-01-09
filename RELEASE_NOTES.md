@@ -12,7 +12,7 @@
 
 Estamos orgulhosos de apresentar a **versão 1.0.0** do Cloud Onepa Playout - um sistema completo de automação de playout 24/7, simplificado e moderno, construído com Rust e React.
 
-Esta é a primeira release estável, pronta para produção, com todas as funcionalidades core implementadas e testadas.
+Esta é a primeira release experimental funcional, com todas as funcionalidades core implementadas e validadas em ambiente Docker após resolução de conflitos de edição Rust e portas.
 
 ---
 
@@ -165,6 +165,11 @@ open http://localhost:3000
 
 **Credenciais padrão:** `admin` / `admin`
 
+**Portas:**
+
+- Frontend: 3000
+- Backend: 8081 (Proxy via 3000/api)
+
 Ver [INSTALL.md](docs/INSTALL.md) para detalhes.
 
 ---
@@ -227,9 +232,9 @@ Ver [INSTALL.md](docs/INSTALL.md) para detalhes.
 
 ### Alta Prioridade
 
-- FFmpeg playout real ainda não implementado (placeholder)
 - WebSocket para status real-time pendente
 - Validação de media em uso antes de deletar
+- Configuração de FFmpeg Engine em progresso
 
 ### Média Prioridade
 

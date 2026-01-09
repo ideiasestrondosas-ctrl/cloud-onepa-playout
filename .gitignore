@@ -1,6 +1,8 @@
 # Cloud Onepa Playout (Back & Front)
 /target
+/backend/target
 /node_modules
+/frontend/node_modules
 /.env
 /dist
 /build

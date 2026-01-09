@@ -1,11 +1,6 @@
 use actix_web::web;
 
-mod auth;
-mod health;
-mod media;
-mod playlists;
-mod playout;
-mod schedule;
+use super::{auth, health, media, playlists, playout, schedule};
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg

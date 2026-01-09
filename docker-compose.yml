@@ -30,14 +30,16 @@ services:
     environment:
       DATABASE_URL: postgresql://onepa:onepa_password@postgres:5432/onepa_playout
       SERVER_HOST: 0.0.0.0
-      SERVER_PORT: 8080
+      SERVER_PORT: 8081
       RUST_LOG: info
+      JWT_SECRET: onepa-secret-key-change-in-production
+      JWT_EXPIRATION: "86400"
     volumes:
       - media_storage:/var/lib/onepa-playout/media
       - thumbnails_storage:/var/lib/onepa-playout/thumbnails
       - playlists_storage:/var/lib/onepa-playout/playlists
     ports:
-      - "8080:8080"
+      - "8081:8081"
     networks:
       - onepa-network
     depends_on:

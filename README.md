@@ -43,11 +43,20 @@ git clone https://github.com/onepa/cloud-onepa-playout.git
 cd cloud-onepa-playout
 
 # Inicie os serviços
-docker-compose up -d
+docker-compose up -d --build
 
 # Aceda à interface web
 open http://localhost:3000
+
+# Verifique o backend
+curl http://localhost:8081/api/health
 ```
+
+### Portas Padrão
+
+- **Frontend**: 3000
+- **Backend API**: 8081 (ajustado para evitar conflitos com Restreamer)
+- **Database**: 5432
 
 ### Instalação Manual
 
