@@ -25,6 +25,8 @@ pub struct UserInfo {
 }
 
 async fn login(credentials: web::Json<LoginRequest>, pool: web::Data<PgPool>) -> impl Responder {
+    log::info!("Login attempt for username: {}", credentials.username);
+
     // Query user from database
     let user_result = sqlx::query_as::<_, User>("SELECT * FROM users WHERE username = $1")
         .bind(&credentials.username)
@@ -33,9 +35,14 @@ async fn login(credentials: web::Json<LoginRequest>, pool: web::Data<PgPool>) ->
 
     match user_result {
         Ok(Some(user)) => {
+            log::info!("User found: {}", user.username);
+            log::debug!("Password hash from DB: {}", user.password_hash);
+            log::debug!("Password provided: {}", credentials.password);
+
             // Verify password
             match verify(&credentials.password, &user.password_hash) {
                 Ok(true) => {
+                    log::info!("Password verified successfully for user: {}", user.username);
                     // Generate JWT token
                     let claims = Claims::new(
                         user.id.to_string(),
@@ -56,14 +63,31 @@ async fn login(credentials: web::Json<LoginRequest>, pool: web::Data<PgPool>) ->
                             .json(serde_json::json!({"error": "Failed to generate token"})),
                     }
                 }
-                _ => HttpResponse::Unauthorized()
-                    .json(serde_json::json!({"error": "Invalid credentials"})),
+                Ok(false) => {
+                    log::warn!(
+                        "Password verification failed (returned false) for user: {}",
+                        user.username
+                    );
+                    HttpResponse::Unauthorized()
+                        .json(serde_json::json!({"error": "Invalid credentials"}))
+                }
+                Err(e) => {
+                    log::error!(
+                        "Bcrypt verification error for user {}: {:?}",
+                        user.username,
+                        e
+                    );
+                    HttpResponse::Unauthorized()
+                        .json(serde_json::json!({"error": "Invalid credentials"}))
+                }
             }
         }
         Ok(None) => {
+            log::warn!("User not found: {}", credentials.username);
             HttpResponse::Unauthorized().json(serde_json::json!({"error": "Invalid credentials"}))
         }
-        Err(_) => {
+        Err(e) => {
+            log::error!("Database error during login: {:?}", e);
             HttpResponse::InternalServerError().json(serde_json::json!({"error": "Database error"}))
         }
     }
