@@ -17,3 +17,5 @@
 /playlists
 /fillers
 frontend/build_log*.txt
+*.zip
+/backups/
