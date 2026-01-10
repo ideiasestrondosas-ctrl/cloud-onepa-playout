@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # Configuration
-PROJECT_NAME="onepa_playout_pro"
+PROJECT_NAME="cloud-onepa-playout"
 BACKUP_DIR="./backups"
-DATE=$(date +%Y%m%d_%H%M%S)
-VERSION=$(grep 'version:' frontend/package.json | awk -F '"' '{print $4}')
-ZIP_NAME="${PROJECT_NAME}_v${VERSION}_${DATE}.zip"
+DATE=$(date +%Y%m%d)
+VERSION=$(grep '"version":' frontend/package.json | awk -F '"' '{print $4}')
+ZIP_NAME="${PROJECT_NAME}-v${VERSION}-PRO.zip"
 
 # Create backups directory if it doesn't exist
 mkdir -p $BACKUP_DIR
@@ -23,6 +23,8 @@ zip -r "$BACKUP_DIR/$ZIP_NAME" . \
     -x "backend/assets/thumbnails/*" \
     -x "backups/*" \
     -x "tmp/*"
+
+cp "$BACKUP_DIR/$ZIP_NAME" .
 
 echo "✅ Backup created successfully!"
 echo "💾 Size: $(du -h "$BACKUP_DIR/$ZIP_NAME" | cut -f1)"
