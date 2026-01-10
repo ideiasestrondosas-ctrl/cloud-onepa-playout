@@ -43,15 +43,23 @@ export const authAPI = {
   
   register: (username, password, role) =>
     api.post('/auth/register', { username, password, role }),
+
+  changePassword: (id, password) =>
+    api.put(`/auth/users/${id}/password`, { password }),
+
+  listUsers: () => api.get('/auth/users'),
+  
+  deleteUser: (id) => api.delete(`/auth/users/${id}`),
 };
 
 // Media endpoints
 export const mediaAPI = {
-  list: () => api.get('/media'),
+  list: (params) => api.get('/media', { params }),
   upload: (formData) => api.post('/media/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
   delete: (id) => api.delete(`/media/${id}`),
+  setFiller: (id, isFiller) => api.put(`/media/${id}/filler`, { is_filler: isFiller }),
 };
 
 // Playlist endpoints
@@ -76,6 +84,23 @@ export const playoutAPI = {
   start: () => api.post('/playout/start'),
   stop: () => api.post('/playout/stop'),
   skip: () => api.post('/playout/skip'),
+  diagnose: () => api.get('/playout/debug'),
+};
+
+// Settings endpoints
+export const settingsAPI = {
+  get: () => api.get('/settings'),
+  update: (data) => api.put('/settings', data),
+  uploadLogo: (formData) => api.post('/settings/upload-logo', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+};
+
+// Template endpoints
+export const templateAPI = {
+  list: () => api.get('/templates'),
+  create: (data) => api.post('/templates', data),
+  delete: (id) => api.delete(`/templates/${id}`),
 };
 
 export default api;

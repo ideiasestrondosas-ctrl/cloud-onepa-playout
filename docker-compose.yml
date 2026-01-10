@@ -12,7 +12,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5433:5432"
     networks:
       - onepa-network
     healthcheck:
@@ -52,9 +52,11 @@ services:
     build:
       context: ./frontend
       dockerfile: ../docker/Dockerfile.frontend
+      args:
+        - VITE_API_URL=/api
     container_name: onepa-frontend
     environment:
-      VITE_API_URL: http://localhost:8080/api
+      VITE_API_URL: /api
     ports:
       - "3000:80"
     networks:

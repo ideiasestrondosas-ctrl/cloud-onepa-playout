@@ -1,4 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useNotification } from '../contexts/NotificationContext';
+import { playlistAPI, templateAPI } from '../services/api';
 import {
   Box,
   Card,
@@ -60,20 +63,93 @@ const PRESET_TEMPLATES = [
 ];
 
 export default function Templates() {
-  const [templates, setTemplates] = useState(PRESET_TEMPLATES);
+  const navigate = useNavigate();
+  const { showSuccess, showError } = useNotification();
+  const [templates, setTemplates] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [newTemplate, setNewTemplate] = useState({ name: '', description: '', duration: 3600, structure: [] });
+
+  useEffect(() => {
+    fetchTemplates();
+  }, []);
+
+  const fetchTemplates = async () => {
+    try {
+      const response = await templateAPI.list();
+      // Combine preset templates with user templates if desired, or just show database templates
+      // For now, let's include both
+      setTemplates([...PRESET_TEMPLATES, ...response.data]);
+    } catch (error) {
+      console.error('Failed to fetch templates:', error);
+      setTemplates(PRESET_TEMPLATES); // Fallback to presets
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveNewTemplate = async () => {
+    if (!newTemplate.name) {
+      showError('Nome é obrigatório');
+      return;
+    }
+    
+    try {
+        const templateToAdd = {
+          name: newTemplate.name,
+          description: newTemplate.description,
+          duration: newTemplate.duration,
+          structure: [
+            { type: 'content', duration: newTemplate.duration }
+          ]
+        };
+        
+        await templateAPI.create(templateToAdd);
+        showSuccess('Template guardado com sucesso!');
+        setCreateDialogOpen(false);
+        setNewTemplate({ name: '', description: '', duration: 3600, structure: [] });
+        fetchTemplates();
+    } catch (error) {
+        console.error('Failed to save template:', error);
+        showError('Erro ao guardar template na base de dados');
+    }
+  };
 
   const handleUseTemplate = (template) => {
     setSelectedTemplate(template);
     setDialogOpen(true);
   };
 
-  const handleCreatePlaylist = () => {
-    // TODO: Create playlist from template
-    console.log('Creating playlist from template:', selectedTemplate);
-    setDialogOpen(false);
-    alert('Playlist criada a partir do template!');
+  const handleCreatePlaylist = async () => {
+    try {
+      // Create playlist structure based on template
+      const content = {
+        channel: 'Cloud Onepa',
+        date: new Date().toISOString().split('T')[0],
+        program: selectedTemplate.structure.map(item => ({
+          in: 0,
+          out: item.duration,
+          duration: item.duration,
+          source: `placeholder://${item.type}`, // Placeholder source
+          type: item.type
+        }))
+      };
+
+      await playlistAPI.create({
+        name: `Playlist ${selectedTemplate.name} - ${new Date().toLocaleDateString()}`,
+        date: new Date().toISOString().split('T')[0],
+        content
+      });
+
+      showSuccess(`Playlist criada a partir do template "${selectedTemplate.name}"!`);
+      setDialogOpen(false);
+      navigate('/playlists');
+    } catch (error) {
+      console.error('Failed to create playlist:', error);
+      showError('Erro ao criar playlist a partir do template');
+    }
   };
 
   return (
@@ -82,10 +158,46 @@ export default function Templates() {
         <Typography variant="h4" component="h1">
           Templates de Playlists
         </Typography>
-        <Button variant="contained" startIcon={<AddIcon />}>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateDialogOpen(true)}>
           Criar Template
         </Button>
       </Box>
+
+      {/* Create New Template Dialog */}
+      <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Criar Novo Template</DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            label="Nome do Template"
+            sx={{ mt: 2 }}
+            value={newTemplate.name}
+            onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
+          />
+          <TextField
+            fullWidth
+            label="Descrição"
+            sx={{ mt: 2 }}
+            multiline
+            rows={3}
+            value={newTemplate.description}
+            onChange={(e) => setNewTemplate({ ...newTemplate, description: e.target.value })}
+          />
+          <TextField
+            fullWidth
+            label="Duração Total (segundos)"
+            type="number"
+            sx={{ mt: 2 }}
+            value={newTemplate.duration}
+            onChange={(e) => setNewTemplate({ ...newTemplate, duration: parseInt(e.target.value) })}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCreateDialogOpen(false)}>Cancelar</Button>
+          <Button variant="contained" onClick={handleSaveNewTemplate}>Salvar Template</Button>
+        </DialogActions>
+      </Dialog>
+
 
       <Grid container spacing={3}>
         {templates.map((template) => (

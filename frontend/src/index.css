@@ -1,3 +1,24 @@
+@keyframes logo-float {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(2deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+@keyframes logo-pulse {
+  0% { filter: drop-shadow(0 0 5px rgba(25, 118, 210, 0.4)); }
+  50% { filter: drop-shadow(0 0 15px rgba(25, 118, 210, 0.8)); }
+  100% { filter: drop-shadow(0 0 5px rgba(25, 118, 210, 0.4)); }
+}
+
+.logo-animated {
+  animation: logo-float 5s ease-in-out infinite, logo-pulse 3s ease-in-out infinite;
+  transition: all 0.3s ease;
+}
+
+.logo-animated:hover {
+  transform: scale(1.05);
+}
+
 * {
   margin: 0;
   padding: 0;

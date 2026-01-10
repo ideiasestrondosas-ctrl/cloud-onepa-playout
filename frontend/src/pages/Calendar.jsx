@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography, Card, CardContent, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+import { Box, Typography, Card, CardContent, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Select, MenuItem, FormControl, InputLabel, IconButton } from '@mui/material';
+import { PlayArrow as PlayIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -53,11 +54,6 @@ export default function Calendar() {
     setDialogOpen(true);
   };
 
-  const handleEventClick = (info) => {
-    if (window.confirm(`Remover agendamento de "${info.event.title}"?`)) {
-      handleDeleteSchedule(info.event.id);
-    }
-  };
 
   const handleCreateSchedule = async () => {
     if (!selectedPlaylist) {
@@ -96,6 +92,44 @@ export default function Calendar() {
     setRepeatPattern('');
   };
 
+  const handleEditSchedule = (event) => {
+    // For now, simpler to delete and recreate, or open dialog with pre-filled values
+    setSelectedPlaylist(event.extendedProps.playlistId);
+    setStartTime(event.extendedProps.startTime);
+    setRepeatPattern(event.extendedProps.repeatPattern || '');
+    setSelectedDate(event.startStr.split('T')[0]);
+    // Store ID for update
+    setDialogOpen(true);
+  };
+
+  const handleEventClick = (info) => {
+    setSelectedEvent(info.event);
+    setActionDialogOpen(true);
+  };
+  
+  // New state for Action Dialog
+  const [actionDialogOpen, setActionDialogOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+
+  const renderEventContent = (eventInfo) => {
+    return (
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        width: '100%', 
+        overflow: 'hidden',
+        fontSize: '0.75rem',
+        p: 0.5,
+        color: 'white'
+      }}>
+        <Typography variant="caption" noWrap sx={{ flexGrow: 1 }}>
+          {eventInfo.timeText} {eventInfo.event.title}
+        </Typography>
+      </Box>
+    );
+  };
+
   return (
     <Box>
       <Typography variant="h4" component="h1" gutterBottom>
@@ -118,6 +152,7 @@ export default function Calendar() {
             events={events}
             dateClick={handleDateClick}
             eventClick={handleEventClick}
+            eventContent={renderEventContent}
             height="auto"
             headerToolbar={{
               left: 'prev,next today',
@@ -127,6 +162,50 @@ export default function Calendar() {
           />
         </CardContent>
       </Card>
+
+      {/* Action Choice Dialog */}
+      <Dialog open={actionDialogOpen} onClose={() => setActionDialogOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Gerir Agendamento</DialogTitle>
+        <DialogContent>
+            <Typography variant="body1" gutterBottom>
+                {selectedEvent?.title}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+                {selectedEvent?.startStr}
+            </Typography>
+        </DialogContent>
+        <DialogActions sx={{ flexDirection: 'column', gap: 1, p: 2 }}>
+            <Button 
+                variant="contained" 
+                color="primary" 
+                fullWidth 
+                startIcon={<PlayIcon />}
+                onClick={() => {
+                    handleEditSchedule(selectedEvent);
+                    setActionDialogOpen(false);
+                }}
+            >
+                Editar Agendamento
+            </Button>
+            <Button 
+                variant="outlined" 
+                color="error" 
+                fullWidth 
+                startIcon={<DeleteIcon />}
+                onClick={() => {
+                    if (window.confirm(`Remover "${selectedEvent?.title}"?`)) {
+                        handleDeleteSchedule(selectedEvent.id);
+                    }
+                    setActionDialogOpen(false);
+                }}
+            >
+                Eliminar Agendamento
+            </Button>
+            <Button onClick={() => setActionDialogOpen(false)} fullWidth sx={{ mt: 1 }}>
+                Cancelar
+            </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Schedule Dialog */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>

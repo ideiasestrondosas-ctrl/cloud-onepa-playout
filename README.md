@@ -5,10 +5,11 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB.svg)](https://reactjs.org/)
-[![Status](https://img.shields.io/badge/Status-Experimental-red.svg)]()
+[![Version](https://img.shields.io/badge/Version-1.7.0--PRO-green.svg)]()
+[![Status](https://img.shields.io/badge/Status-Beta-yellow.svg)]()
 
-> ⚠️ **AVISO IMPORTANTE:** Este projeto encontra-se em fase de **Desenvolvimento e Experimental**.
-> Não deve ser utilizado em ambientes de produção crítica. Use por sua conta e risco.
+> ℹ️ **STATUS:** Este projeto encontra-se em fase **Beta**.
+> Funcionalidades principais estão estáveis, mas podem existir bugs. Recomendado para testes e ambientes não-críticos.
 
 ## 📖 Sobre
 
@@ -16,15 +17,20 @@ Cloud Onepa Playout é uma versão simplificada e modernizada do [ffplayout](htt
 
 ### ✨ Principais Características
 
-- 🎬 **Broadcasting 24/7** com FFmpeg
-- 🖱️ **Interface Visual Moderna** com React
+- 🎬 **Broadcasting 24/7** com FFmpeg 7.2+
+- 🖱️ **Interface Visual Moderna** com React + Material-UI
 - 📅 **Calendário de Agendamento** visual e intuitivo
 - 🎨 **Drag & Drop** para criação de playlists
 - 👁️ **Preview em Tempo Real** do conteúdo
-- 🧙 **Wizard de Configuração** simplificado
-- 📊 **Dashboard** com estatísticas e monitorização
+- 🧙 **Setup Wizard** para configuração inicial guiada
+- 📊 **Dashboard** com diagnósticos e ações rápidas
+- 🔧 **Templates** de programação reutilizáveis
+- 📝 **Release Notes** integradas com histórico de versões
+- 🔗 **Links Públicos** para HLS e logos
+- 🚫 **Protected Assets** - diretório protegido para ficheiros originais
 - 🐳 **Docker** para deployment fácil
 - 🔒 **Autenticação JWT** segura
+- 🎯 **Zero-Cache** - atualizações sempre visíveis no browser
 
 ## 🚀 Quick Start
 
@@ -112,7 +118,24 @@ Ver [docs/INSTALL.md](docs/INSTALL.md) para instruções detalhadas.
 - [x] Fase 6: Testes e Validação
 - [x] Fase 7: Deploy e Documentação Final
 
-Ver [RELEASE_NOTES.md](RELEASE_NOTES.md) para detalhes da versão 1.0.0.
+Ver [RELEASE_NOTES.md](RELEASE_NOTES.md) para detalhes completos.
+
+### Versão Atual: 1.7.0-PRO (2026-01-10)
+
+**Novidades:**
+
+- ✨ Setup Wizard para configuração inicial
+- 📋 Release Notes tab com histórico de versões
+- 🔗 Links públicos para HLS e Logo
+- 🎯 Diagnósticos melhorados com ações rápidas
+- 🛡️ Protected assets directory
+- 🚀 Solução permanente para cache do browser
+
+**Correções:**
+
+- ✅ Templates agora persistem corretamente
+- ✅ Thumbnails de vídeo funcionam
+- ✅ Sistema de ajuda visível e funcional
 
 ## 📄 Licença
 

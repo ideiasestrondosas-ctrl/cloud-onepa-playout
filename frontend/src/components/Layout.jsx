@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import useAuthStore from '../stores/authStore';
 import {
   Box,
   Drawer,
@@ -23,7 +24,37 @@ import {
   Settings as SettingsIcon,
   Logout as LogoutIcon,
   ViewModule as TemplatesIcon,
+  Help as HelpIcon,
 } from '@mui/icons-material';
+import { useHelp } from '../context/HelpContext';
+import ConnectivityStatus from './ConnectivityStatus';
+
+const AppLogo = () => (
+  <Box sx={{ display: 'flex', flexDirection: 'column', px: 2, py: 1 }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Box sx={{ 
+        width: 32, 
+        height: 32, 
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <img 
+          src="/api/media/30172608-5714-4aa7-a5d6-a862d8a1d5aa/stream" 
+          alt="Logo" 
+          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+          onError={(e) => { e.target.src = 'https://via.placeholder.com/32?text=C'; }}
+        />
+      </Box>
+      <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main', fontSize: '1.1rem' }}>
+        Cloud Onepa
+      </Typography>
+    </Box>
+    <Typography variant="caption" sx={{ color: 'text.secondary', ml: 5, mt: -0.5, fontSize: '0.7rem' }}>
+      v1.7.0-PRO
+    </Typography>
+  </Box>
+);
 
 const drawerWidth = 240;
 
@@ -40,22 +71,22 @@ export default function Layout({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const logout = useAuthStore((state) => state.logout);
+  const { showHelp } = useHelp();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    logout();
     navigate('/login');
   };
 
   const drawer = (
     <div>
-      <Toolbar>
-        <Typography variant="h6" noWrap component="div">
-          Onepa Playout
-        </Typography>
+      <Toolbar sx={{ display: 'flex', justifyContent: 'center', py: 1, cursor: 'pointer' }} onClick={() => navigate('/')}>
+        <AppLogo />
       </Toolbar>
       <Divider />
       <List>
@@ -87,6 +118,7 @@ export default function Layout({ children }) {
 
   return (
     <Box sx={{ display: 'flex' }}>
+      <ConnectivityStatus />
       <AppBar
         position="fixed"
         sx={{
@@ -103,9 +135,18 @@ export default function Layout({ children }) {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div">
-            Cloud Onepa Playout
-          </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexGrow: 1 }}>
+              <Typography variant="h6" noWrap component="div">
+                ONEPA PRO PLAYOUT
+              </Typography>
+            </Box>
+            <IconButton 
+              color="inherit"
+              onClick={() => showHelp()}
+              title="Ajuda"
+            >
+              <HelpIcon />
+            </IconButton>
         </Toolbar>
       </AppBar>
       <Box

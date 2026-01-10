@@ -135,8 +135,96 @@ async fn register(req: web::Json<RegisterRequest>, pool: web::Data<PgPool>) -> i
     }
 }
 
+#[derive(Deserialize)]
+pub struct ChangePasswordRequest {
+    pub password: String,
+}
+
+async fn change_password(
+    path: web::Path<uuid::Uuid>,
+    req: web::Json<ChangePasswordRequest>,
+    pool: web::Data<PgPool>,
+) -> impl Responder {
+    let user_id = path.into_inner();
+
+    // Hash new password
+    let password_hash = match hash(&req.password, DEFAULT_COST) {
+        Ok(hash) => hash,
+        Err(_) => {
+            return HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": "Failed to hash password"}))
+        }
+    };
+
+    let result = sqlx::query("UPDATE users SET password_hash = $1 WHERE id = $2")
+        .bind(&password_hash)
+        .bind(user_id)
+        .execute(pool.get_ref())
+        .await;
+
+    match result {
+        Ok(result) => {
+            if result.rows_affected() > 0 {
+                HttpResponse::Ok()
+                    .json(serde_json::json!({"message": "Password updated successfully"}))
+            } else {
+                HttpResponse::NotFound().json(serde_json::json!({"error": "User not found"}))
+            }
+        }
+        Err(_) => {
+            HttpResponse::InternalServerError().json(serde_json::json!({"error": "Database error"}))
+        }
+    }
+}
+
+async fn list_users(pool: web::Data<PgPool>) -> impl Responder {
+    let users = sqlx::query_as::<_, User>("SELECT * FROM users ORDER BY id")
+        .fetch_all(pool.get_ref())
+        .await;
+
+    match users {
+        Ok(users) => {
+            let user_infos: Vec<UserInfo> = users
+                .into_iter()
+                .map(|u| UserInfo {
+                    id: u.id.to_string(),
+                    username: u.username,
+                    role: u.role,
+                })
+                .collect();
+            HttpResponse::Ok().json(user_infos)
+        }
+        Err(_) => HttpResponse::InternalServerError()
+            .json(serde_json::json!({"error": "Failed to fetch users"})),
+    }
+}
+
+async fn delete_user(path: web::Path<uuid::Uuid>, pool: web::Data<PgPool>) -> impl Responder {
+    let user_id = path.into_inner();
+    let result = sqlx::query("DELETE FROM users WHERE id = $1")
+        .bind(user_id)
+        .execute(pool.get_ref())
+        .await;
+
+    match result {
+        Ok(result) => {
+            if result.rows_affected() > 0 {
+                HttpResponse::Ok().json(serde_json::json!({"message": "User deleted successfully"}))
+            } else {
+                HttpResponse::NotFound().json(serde_json::json!({"error": "User not found"}))
+            }
+        }
+        Err(_) => {
+            HttpResponse::InternalServerError().json(serde_json::json!({"error": "Database error"}))
+        }
+    }
+}
+
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.route("/login", web::post().to(login))
         .route("/logout", web::post().to(logout))
-        .route("/register", web::post().to(register));
+        .route("/register", web::post().to(register))
+        .route("/users", web::get().to(list_users))
+        .route("/users/{id}/password", web::put().to(change_password))
+        .route("/users/{id}", web::delete().to(delete_user));
 }

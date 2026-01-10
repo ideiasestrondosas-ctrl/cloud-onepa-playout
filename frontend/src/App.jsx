@@ -11,7 +11,11 @@ import Settings from './pages/Settings';
 import Templates from './pages/Templates';
 import Login from './pages/Login';
 import useAuthStore from './stores/authStore';
+import SetupWizard from './pages/Setup/Wizard';
 import { NotificationProvider } from './contexts/NotificationContext';
+import { HelpProvider } from './context/HelpContext';
+import HelpSystem from './components/HelpSystem';
+import ConnectivityStatus from './components/ConnectivityStatus';
 
 const theme = createTheme({
   palette: {
@@ -26,18 +30,25 @@ const theme = createTheme({
 });
 
 function App() {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { isAuthenticated } = useAuthStore();
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <NotificationProvider>
+      <HelpProvider>
+        <HelpSystem />
+        <ConnectivityStatus />
         <Router>
         <Routes>
           <Route 
             path="/login" 
             element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} 
           />
+          {/* Default redirect for unauthenticated root access */}
+          {!isAuthenticated && (
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          )}
           <Route
             path="/"
             element={
@@ -89,6 +100,16 @@ function App() {
             }
           />
           <Route
+            path="/setup"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <SetupWizard />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/templates"
             element={
               <ProtectedRoute>
@@ -98,8 +119,11 @@ function App() {
               </ProtectedRoute>
             }
           />
+          {/* Fallback for any unknown route */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
+      </HelpProvider>
       </NotificationProvider>
     </ThemeProvider>
   );

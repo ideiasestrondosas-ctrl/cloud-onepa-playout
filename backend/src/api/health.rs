@@ -1,5 +1,5 @@
 use actix_web::{web, HttpResponse, Responder};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 #[derive(Serialize)]
 struct HealthResponse {

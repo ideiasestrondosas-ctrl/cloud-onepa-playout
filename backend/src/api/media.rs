@@ -1,3 +1,4 @@
+use actix_files::NamedFile;
 use actix_multipart::Multipart;
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
 use futures_util::StreamExt;
@@ -7,7 +8,7 @@ use std::io::Write;
 use std::path::Path;
 use uuid::Uuid;
 
-use crate::models::media::{CreateMedia, Media};
+use crate::models::media::Media;
 use crate::services::ffmpeg::FFmpegService;
 
 #[derive(serde::Deserialize)]
@@ -16,6 +17,7 @@ pub struct MediaQuery {
     pub search: Option<String>,
     pub page: Option<i64>,
     pub limit: Option<i64>,
+    pub is_filler: Option<bool>,
 }
 
 async fn list_media(query: web::Query<MediaQuery>, pool: web::Data<PgPool>) -> impl Responder {
@@ -28,8 +30,16 @@ async fn list_media(query: web::Query<MediaQuery>, pool: web::Data<PgPool>) -> i
 
     // Filter by media type
     if let Some(ref media_type) = query.media_type {
-        sql.push_str(&format!(" AND media_type = '{}'", media_type));
-        count_sql.push_str(&format!(" AND media_type = '{}'", media_type));
+        if !media_type.is_empty() {
+            sql.push_str(&format!(" AND media_type = '{}'", media_type));
+            count_sql.push_str(&format!(" AND media_type = '{}'", media_type));
+        }
+    }
+
+    // Filter by is_filler
+    if let Some(is_filler) = query.is_filler {
+        sql.push_str(&format!(" AND is_filler = {}", is_filler));
+        count_sql.push_str(&format!(" AND is_filler = {}", is_filler));
     }
 
     // Search by filename
@@ -58,6 +68,33 @@ async fn list_media(query: web::Query<MediaQuery>, pool: web::Data<PgPool>) -> i
         })),
         _ => HttpResponse::InternalServerError()
             .json(serde_json::json!({"error": "Failed to fetch media"})),
+    }
+}
+
+#[derive(serde::Deserialize)]
+pub struct UpdateFillerRequest {
+    pub is_filler: bool,
+}
+
+async fn update_filler(
+    media_id: web::Path<Uuid>,
+    req: web::Json<UpdateFillerRequest>,
+    pool: web::Data<PgPool>,
+) -> impl Responder {
+    let result = sqlx::query("UPDATE media SET is_filler = $1 WHERE id = $2")
+        .bind(req.is_filler)
+        .bind(media_id.into_inner())
+        .execute(pool.get_ref())
+        .await;
+
+    match result {
+        Ok(result) if result.rows_affected() > 0 => HttpResponse::Ok().json(serde_json::json!({
+            "message": "Filler status updated"
+        })),
+        Ok(_) => HttpResponse::NotFound().json(serde_json::json!({"error": "Media not found"})),
+        Err(_) => {
+            HttpResponse::InternalServerError().json(serde_json::json!({"error": "Database error"}))
+        }
     }
 }
 
@@ -140,7 +177,13 @@ async fn upload_media(mut payload: Multipart, pool: web::Data<PgPool>) -> impl R
 
         // Determine media type
         let media_type = if media_info.has_video {
-            "video"
+            // Check if it's strictly video or image (some images have 1 video stream in ffprobe)
+            let ext_lower = file_extension.to_lowercase();
+            if ["jpg", "jpeg", "png", "gif", "webp"].contains(&ext_lower.as_str()) {
+                "image"
+            } else {
+                "video"
+            }
         } else if media_info.has_audio {
             "audio"
         } else {
@@ -246,9 +289,77 @@ async fn delete_media(media_id: web::Path<Uuid>, pool: web::Data<PgPool>) -> imp
     }))
 }
 
+async fn stream_media(
+    media_id: web::Path<Uuid>,
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+) -> impl Responder {
+    let result = sqlx::query_as::<_, Media>("SELECT * FROM media WHERE id = $1")
+        .bind(media_id.into_inner())
+        .fetch_optional(pool.get_ref())
+        .await;
+
+    match result {
+        Ok(Some(media)) => {
+            let path = std::path::Path::new(&media.path);
+            if !path.exists() {
+                return HttpResponse::NotFound()
+                    .json(serde_json::json!({"error": "File not found on disk"}));
+            }
+            match NamedFile::open_async(path).await {
+                Ok(named_file) => named_file.into_response(&req),
+                Err(_) => HttpResponse::InternalServerError()
+                    .json(serde_json::json!({"error": "Failed to open file"})),
+            }
+        }
+        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({"error": "Media not found"})),
+        Err(_) => {
+            HttpResponse::InternalServerError().json(serde_json::json!({"error": "Database error"}))
+        }
+    }
+}
+
+async fn get_thumbnail(
+    media_id: web::Path<Uuid>,
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+) -> impl Responder {
+    let result = sqlx::query_as::<_, Media>("SELECT * FROM media WHERE id = $1")
+        .bind(media_id.into_inner())
+        .fetch_optional(pool.get_ref())
+        .await;
+
+    match result {
+        Ok(Some(media)) => {
+            if let Some(thumb_path) = media.thumbnail_path {
+                let path = std::path::Path::new(&thumb_path);
+                if !path.exists() {
+                    return HttpResponse::NotFound()
+                        .json(serde_json::json!({"error": "Thumbnail not found on disk"}));
+                }
+                match NamedFile::open_async(path).await {
+                    Ok(named_file) => named_file.into_response(&req),
+                    Err(_) => HttpResponse::InternalServerError()
+                        .json(serde_json::json!({"error": "Failed to open thumbnail"})),
+                }
+            } else {
+                HttpResponse::NotFound()
+                    .json(serde_json::json!({"error": "No thumbnail for this media"}))
+            }
+        }
+        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({"error": "Media not found"})),
+        Err(_) => {
+            HttpResponse::InternalServerError().json(serde_json::json!({"error": "Database error"}))
+        }
+    }
+}
+
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.route("", web::get().to(list_media))
         .route("/{id}", web::get().to(get_media))
+        .route("/{id}/stream", web::get().to(stream_media))
+        .route("/{id}/thumbnail", web::get().to(get_thumbnail))
+        .route("/{id}/filler", web::put().to(update_filler))
         .route("/upload", web::post().to(upload_media))
         .route("/{id}", web::delete().to(delete_media));
 }

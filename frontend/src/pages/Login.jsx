@@ -48,7 +48,14 @@ export default function Login() {
           alignItems: 'center',
         }}
       >
-        <Typography variant="h3" component="h1" gutterBottom>
+        <img 
+          src="/api/media/30172608-5714-4aa7-a5d6-a862d8a1d5aa/stream" 
+          alt="Cloud Onepa Playout" 
+          className="logo-animated"
+          style={{ height: '120px', marginBottom: '8px', objectFit: 'contain' }}
+          onError={(e) => { e.target.style.display = 'none'; }}
+        />
+        <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }} align="center">
           Cloud Onepa Playout
         </Typography>
         <Typography variant="body1" color="text.secondary" gutterBottom>

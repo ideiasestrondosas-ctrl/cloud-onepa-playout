@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -7,40 +7,78 @@ import {
   StepLabel,
   Button,
   Typography,
-  Container,
-  Paper,
   TextField,
-  Select,
-  MenuItem,
+  Card,
+  CardContent,
   FormControl,
   InputLabel,
+  Select,
+  MenuItem,
   Alert,
+  Divider,
 } from '@mui/material';
+import {
+  CheckCircle as CheckCircleIcon,
+  CloudUpload as UploadIcon,
+  Settings as SettingsIcon,
+  Tv as TvIcon,
+} from '@mui/icons-material';
+import { settingsAPI, mediaAPI } from '../../services/api';
+import { useNotification } from '../../contexts/NotificationContext';
 
-const steps = [
-  'Bem-vindo',
-  'Configuração de Output',
-  'Resolução e Bitrate',
-  'Diretório de Media',
-  'Configurações de Filler',
-  'Finalização',
-];
+const steps = ['Boas-vindas', 'Identidade', 'Média', 'Transmissão', 'Finalizar'];
 
-export default function Wizard() {
+export default function SetupWizard() {
   const [activeStep, setActiveStep] = useState(0);
-  const [config, setConfig] = useState({
-    outputType: 'rtmp',
-    outputUrl: '',
-    resolution: '1920x1080',
-    fps: '25',
-    bitrate: '5000k',
-    audioBitrate: '192k',
-    mediaPath: '/var/lib/onepa-playout/media',
-    fillerPath: '/var/lib/onepa-playout/fillers',
-  });
+  const [loading, setLoading] = useState(false);
+  const { showSuccess, showError } = useNotification();
   const navigate = useNavigate();
 
-  const handleNext = () => {
+  const [setupData, setSetupData] = useState({
+    channelName: 'Meu Canal Onepa',
+    logoFile: null,
+    outputType: 'hls',
+    outputUrl: '/hls/stream.m3u8',
+  });
+
+  const handleNext = async () => {
+    if (activeStep === steps.length - 1) {
+      navigate('/');
+      return;
+    }
+
+    if (activeStep === 1) {
+        // Save identity settings
+        setLoading(true);
+        try {
+            await settingsAPI.update({
+                logo_enabled: true,
+                // In a real app we'd update channel name here too if it existed in settings
+            });
+            showSuccess('Identidade configurada!');
+        } catch (e) {
+            showError('Erro ao salvar identidade');
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    if (activeStep === 3) {
+        // Save output settings
+        setLoading(true);
+        try {
+            await settingsAPI.update({
+                output_type: setupData.outputType,
+                output_url: setupData.outputUrl,
+            });
+            showSuccess('Configuração de saída salva!');
+        } catch (e) {
+            showError('Erro ao salvar saída');
+        } finally {
+            setLoading(false);
+        }
+    }
+
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
 
@@ -48,205 +86,141 @@ export default function Wizard() {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
-  const handleFinish = () => {
-    // TODO: Save configuration to backend
-    console.log('Configuration:', config);
-    navigate('/');
-  };
-
-  const getStepContent = (step) => {
+  const renderStepContent = (step) => {
     switch (step) {
       case 0:
         return (
-          <Box>
-            <Typography variant="h5" gutterBottom>
-              Bem-vindo ao Cloud Onepa Playout
+          <Box sx={{ mt: 2, textAlign: 'center' }}>
+            <TvIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
+            <Typography variant="h5" gutterBottom>Bem-vindo ao Cloud Onepa Playout</Typography>
+            <Typography variant="body1" color="text.secondary">
+              Vamos configurar o seu canal de TV profissional em apenas alguns passos.
             </Typography>
-            <Typography variant="body1" paragraph>
-              Este assistente irá guiá-lo através da configuração inicial do sistema.
-            </Typography>
-            <Alert severity="info">
-              A configuração pode ser alterada posteriormente nas Configurações.
-            </Alert>
           </Box>
         );
-      
       case 1:
         return (
-          <Box>
-            <Typography variant="h6" gutterBottom>
-              Configuração de Output
-            </Typography>
-            <FormControl fullWidth sx={{ mt: 2 }}>
-              <InputLabel>Tipo de Output</InputLabel>
-              <Select
-                value={config.outputType}
-                label="Tipo de Output"
-                onChange={(e) => setConfig({ ...config, outputType: e.target.value })}
-              >
-                <MenuItem value="rtmp">RTMP Stream</MenuItem>
-                <MenuItem value="hls">HLS</MenuItem>
-                <MenuItem value="srt">SRT</MenuItem>
-                <MenuItem value="udp">UDP</MenuItem>
-              </Select>
-            </FormControl>
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="h6" gutterBottom>Identidade do Canal</Typography>
             <TextField
               fullWidth
-              label="URL de Output"
-              value={config.outputUrl}
-              onChange={(e) => setConfig({ ...config, outputUrl: e.target.value })}
-              sx={{ mt: 2 }}
-              placeholder="rtmp://localhost:1935/live/stream"
+              label="Nome do Canal"
+              value={setupData.channelName}
+              onChange={(e) => setSetupData({ ...setupData, channelName: e.target.value })}
+              sx={{ mb: 3 }}
             />
+            <Typography variant="subtitle2" gutterBottom>Logo da Estação</Typography>
+            <Box sx={{ border: '1px dashed #ccc', p: 3, textAlign: 'center', borderRadius: 1 }}>
+              <input
+                type="file"
+                id="wizard-logo"
+                hidden
+                onChange={(e) => setSetupData({ ...setupData, logoFile: e.target.files[0] })}
+              />
+              <label htmlFor="wizard-logo">
+                <Button variant="outlined" component="span" startIcon={<UploadIcon />}>
+                  Selecionar Logo
+                </Button>
+              </label>
+              {setupData.logoFile && (
+                <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+                  Arquivo: {setupData.logoFile.name}
+                </Typography>
+              )}
+            </Box>
           </Box>
         );
-      
       case 2:
         return (
-          <Box>
-            <Typography variant="h6" gutterBottom>
-              Resolução e Bitrate
-            </Typography>
-            <FormControl fullWidth sx={{ mt: 2 }}>
-              <InputLabel>Resolução</InputLabel>
-              <Select
-                value={config.resolution}
-                label="Resolução"
-                onChange={(e) => setConfig({ ...config, resolution: e.target.value })}
-              >
-                <MenuItem value="1280x720">720p (1280x720)</MenuItem>
-                <MenuItem value="1920x1080">1080p (1920x1080)</MenuItem>
-                <MenuItem value="3840x2160">4K (3840x2160)</MenuItem>
-              </Select>
-            </FormControl>
-            <FormControl fullWidth sx={{ mt: 2 }}>
-              <InputLabel>FPS</InputLabel>
-              <Select
-                value={config.fps}
-                label="FPS"
-                onChange={(e) => setConfig({ ...config, fps: e.target.value })}
-              >
-                <MenuItem value="24">24 fps</MenuItem>
-                <MenuItem value="25">25 fps</MenuItem>
-                <MenuItem value="30">30 fps</MenuItem>
-                <MenuItem value="60">60 fps</MenuItem>
-              </Select>
-            </FormControl>
-            <TextField
-              fullWidth
-              label="Bitrate de Vídeo"
-              value={config.bitrate}
-              onChange={(e) => setConfig({ ...config, bitrate: e.target.value })}
-              sx={{ mt: 2 }}
-              placeholder="5000k"
-            />
-            <TextField
-              fullWidth
-              label="Bitrate de Áudio"
-              value={config.audioBitrate}
-              onChange={(e) => setConfig({ ...config, audioBitrate: e.target.value })}
-              sx={{ mt: 2 }}
-              placeholder="192k"
-            />
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="h6" gutterBottom>Conteúdo Inicial</Typography>
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Pode carregar os seus primeiros vídeos agora para começar rapidamente.
+            </Alert>
+            <Box sx={{ p: 4, bgcolor: '#f9f9f9', border: '1px dashed #ddd', textAlign: 'center' }}>
+              <UploadIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
+              <Typography variant="body2">Pode carregar ficheiros na Media Library mais tarde.</Typography>
+              <Button sx={{ mt: 1 }} size="small" onClick={() => window.open('/media', '_blank')}>Abrir Library</Button>
+            </Box>
           </Box>
         );
-      
       case 3:
         return (
-          <Box>
-            <Typography variant="h6" gutterBottom>
-              Diretório de Media
-            </Typography>
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="h6" gutterBottom>Configuração de Transmissão</Typography>
+            <FormControl fullWidth sx={{ mb: 3 }}>
+              <InputLabel>Tipo de Saída</InputLabel>
+              <Select
+                value={setupData.outputType}
+                label="Tipo de Saída"
+                onChange={(e) => setSetupData({ ...setupData, outputType: e.target.value })}
+              >
+                <MenuItem value="hls">HLS (Web/Mobile)</MenuItem>
+                <MenuItem value="rtmp">RTMP (Social Media/Youtube)</MenuItem>
+              </Select>
+            </FormControl>
             <TextField
               fullWidth
-              label="Caminho para Media"
-              value={config.mediaPath}
-              onChange={(e) => setConfig({ ...config, mediaPath: e.target.value })}
-              sx={{ mt: 2 }}
-              helperText="Diretório onde os ficheiros de vídeo/áudio serão armazenados"
+              label="URL / Stream Key"
+              value={setupData.outputUrl}
+              onChange={(e) => setSetupData({ ...setupData, outputUrl: e.target.value })}
             />
           </Box>
         );
-      
       case 4:
         return (
-          <Box>
-            <Typography variant="h6" gutterBottom>
-              Configurações de Filler
+          <Box sx={{ mt: 2, textAlign: 'center' }}>
+            <CheckCircleIcon sx={{ fontSize: 60, color: 'success.main', mb: 2 }} />
+            <Typography variant="h5" gutterBottom>Tudo Pronto!</Typography>
+            <Typography variant="body1">
+              O seu canal está configurado e pronto para emitir.
             </Typography>
-            <TextField
-              fullWidth
-              label="Caminho para Fillers"
-              value={config.fillerPath}
-              onChange={(e) => setConfig({ ...config, fillerPath: e.target.value })}
-              sx={{ mt: 2 }}
-              helperText="Diretório com vídeos para preencher espaços vazios na playlist"
-            />
-            <Alert severity="info" sx={{ mt: 2 }}>
-              Fillers são usados automaticamente quando a playlist não completa 24 horas.
-            </Alert>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              Clique em finalizar para ir ao Dashboard e clicar em <b>START</b>.
+            </Typography>
           </Box>
         );
-      
-      case 5:
-        return (
-          <Box>
-            <Typography variant="h6" gutterBottom>
-              Configuração Concluída!
-            </Typography>
-            <Typography variant="body1" paragraph>
-              Reveja as suas configurações:
-            </Typography>
-            <Paper sx={{ p: 2, bgcolor: 'background.default' }}>
-              <Typography variant="body2">Output: {config.outputType.toUpperCase()}</Typography>
-              <Typography variant="body2">URL: {config.outputUrl || 'Não configurado'}</Typography>
-              <Typography variant="body2">Resolução: {config.resolution}</Typography>
-              <Typography variant="body2">FPS: {config.fps}</Typography>
-              <Typography variant="body2">Bitrate: {config.bitrate}</Typography>
-              <Typography variant="body2">Media Path: {config.mediaPath}</Typography>
-            </Paper>
-          </Box>
-        );
-      
       default:
-        return 'Unknown step';
+        return 'Passo desconhecido';
     }
   };
 
   return (
-    <Container maxWidth="md">
-      <Box sx={{ mt: 4, mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom align="center">
-          Configuração Inicial
-        </Typography>
-        
-        <Stepper activeStep={activeStep} sx={{ mt: 4, mb: 4 }}>
-          {steps.map((label) => (
-            <Step key={label}>
-              <StepLabel>{label}</StepLabel>
-            </Step>
-          ))}
-        </Stepper>
+    <Box sx={{ maxWidth: 800, mx: 'auto', mt: 4 }}>
+      <Card raised>
+        <CardContent sx={{ p: 4 }}>
+          <Stepper activeStep={activeStep} alternativeLabel>
+            {steps.map((label) => (
+              <Step key={label}>
+                <StepLabel>{label}</StepLabel>
+              </Step>
+            ))}
+          </Stepper>
 
-        <Paper sx={{ p: 4, mt: 3 }}>
-          {getStepContent(activeStep)}
+          <Box sx={{ minHeight: '300px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            {renderStepContent(activeStep)}
+          </Box>
 
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
+          <Divider sx={{ my: 3 }} />
+
+          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
             <Button
               disabled={activeStep === 0}
               onClick={handleBack}
             >
-              Voltar
+              Anterior
             </Button>
             <Button
               variant="contained"
-              onClick={activeStep === steps.length - 1 ? handleFinish : handleNext}
+              onClick={handleNext}
+              disabled={loading}
+              endIcon={activeStep === steps.length - 1 ? <CheckCircleIcon /> : null}
             >
               {activeStep === steps.length - 1 ? 'Finalizar' : 'Próximo'}
             </Button>
           </Box>
-        </Paper>
-      </Box>
-    </Container>
+        </CardContent>
+      </Card>
+    </Box>
   );
 }

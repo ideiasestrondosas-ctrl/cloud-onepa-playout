@@ -1,19 +1,15 @@
 use actix_web::web;
 
-use super::{auth, health, media, playlists, playout, schedule};
-
 pub fn configure(cfg: &mut web::ServiceConfig) {
-    cfg
-        // Health check
-        .service(web::scope("/api/health").configure(health::configure))
-        // Authentication
-        .service(web::scope("/api/auth").configure(auth::configure))
-        // Media management
-        .service(web::scope("/api/media").configure(media::configure))
-        // Playlists
-        .service(web::scope("/api/playlists").configure(playlists::configure))
-        // Schedule
-        .service(web::scope("/api/schedule").configure(schedule::configure))
-        // Playout control
-        .service(web::scope("/api/playout").configure(playout::configure));
+    cfg.service(
+        web::scope("/api")
+            .service(web::scope("/auth").configure(crate::api::auth::configure))
+            .service(web::scope("/health").configure(crate::api::health::configure))
+            .service(web::scope("/media").configure(crate::api::media::configure))
+            .service(web::scope("/playlists").configure(crate::api::playlists::configure))
+            .service(web::scope("/playout").configure(crate::api::playout::configure))
+            .service(web::scope("/schedule").configure(crate::api::schedule::configure))
+            .service(web::scope("/settings").configure(crate::api::settings::configure))
+            .service(web::scope("/templates").configure(crate::api::templates::configure)),
+    );
 }

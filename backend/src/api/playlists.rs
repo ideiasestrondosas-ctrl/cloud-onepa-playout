@@ -1,9 +1,9 @@
 use actix_web::{web, HttpResponse, Responder};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::models::playlist::{CreatePlaylist, Playlist};
+use crate::models::playlist::Playlist;
 
 #[derive(Deserialize)]
 pub struct PlaylistQuery {

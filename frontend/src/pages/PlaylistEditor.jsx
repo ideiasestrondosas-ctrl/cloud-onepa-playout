@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNotification } from '../contexts/NotificationContext';
 import {
   Box,
   Grid,
@@ -88,6 +89,7 @@ function formatDuration(seconds) {
 }
 
 export default function PlaylistEditor() {
+  const { showSuccess, showError, showWarning } = useNotification();
   const [playlists, setPlaylists] = useState([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
   const [clips, setClips] = useState([]);
@@ -96,6 +98,8 @@ export default function PlaylistEditor() {
   const [playlistDate, setPlaylistDate] = useState('');
   const [validation, setValidation] = useState(null);
   const [mediaDialogOpen, setMediaDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [newPlaylistName, setNewPlaylistName] = useState('');
   const [saving, setSaving] = useState(false);
 
   const sensors = useSensors(
@@ -176,8 +180,8 @@ export default function PlaylistEditor() {
   };
 
   const handleSave = async () => {
-    if (!playlistName) {
-      alert('Por favor, insira um nome para a playlist');
+    if (!playlistName.trim()) {
+      showWarning('Por favor, insira um nome para a playlist');
       return;
     }
 
@@ -201,18 +205,19 @@ export default function PlaylistEditor() {
           date: playlistDate,
           content,
         });
+        showSuccess('Playlist atualizada com sucesso!');
       } else {
         await playlistAPI.create({
           name: playlistName,
           date: playlistDate,
           content,
         });
+        showSuccess('Playlist criada com sucesso!');
       }
-      fetchPlaylists();
-      alert('Playlist salva com sucesso!');
+      await fetchPlaylists();
     } catch (error) {
       console.error('Failed to save playlist:', error);
-      alert('Erro ao salvar playlist');
+      showError('Erro ao salvar playlist');
     } finally {
       setSaving(false);
     }
@@ -236,15 +241,88 @@ export default function PlaylistEditor() {
   };
 
   const handleNewPlaylist = () => {
+    setCreateDialogOpen(true);
+  };
+
+  const handleAutoFill = async () => {
+    const totalSecs = clips.reduce((sum, clip) => sum + (clip.duration || 0), 0);
+    const gap = 86400 - totalSecs;
+
+    if (gap <= 0) {
+      showWarning('A playlist já atingiu ou excedeu as 24 horas.');
+      return;
+    }
+
+    try {
+      const response = await mediaAPI.list({ is_filler: true, limit: 100 });
+      const fillers = response.data.media;
+
+      if (fillers.length === 0) {
+        showError('Nenhum ficheiro marcado como filler disponível.');
+        return;
+      }
+
+      let currentGap = gap;
+      const addedFillers = [];
+      
+      // Simple greedy fill
+      // We'll try to add fillers until we are close to 24h
+      // To make it more "random", we can shuffle
+      const shuffledFillers = [...fillers].sort(() => Math.random() - 0.5);
+      
+      let index = 0;
+      while (currentGap > 10 && index < shuffledFillers.length * 2) { // Allow some reuse if needed
+        const filler = shuffledFillers[index % shuffledFillers.length];
+        if (filler.duration <= currentGap + 300) { // Allow slightly overshooting
+          addedFillers.push({
+            ...filler,
+            id: `filler-${Date.now()}-${addedFillers.length}` // Unique ID for DnD
+          });
+          currentGap -= filler.duration;
+        }
+        index++;
+        
+        // Safety break to prevent infinite loop if fillers are too long
+        if (index > 200) break;
+      }
+
+      if (addedFillers.length > 0) {
+        setClips([...clips, ...addedFillers]);
+        showSuccess(`${addedFillers.length} fillers adicionados para preencher o tempo.`);
+      } else {
+        showWarning('Não foi possível encontrar fillers adequados para o tempo restante.');
+      }
+    } catch (error) {
+      console.error('Auto-fill failed:', error);
+      showError('Erro ao carregar fillers');
+    }
+  };
+
+  const handleCreateNewPlaylist = () => {
+    if (!newPlaylistName.trim()) {
+      showWarning('Por favor, insira um nome para a nova playlist');
+      return;
+    }
     setSelectedPlaylist(null);
-    setPlaylistName('');
-    setPlaylistDate('');
+    setPlaylistName(newPlaylistName);
+    setPlaylistDate(new Date().toISOString().split('T')[0]);
     setClips([]);
     setValidation(null);
+    setCreateDialogOpen(false);
+    setNewPlaylistName('');
+    showSuccess('Nova playlist criada! Adicione clips e salve.');
   };
 
   const totalDuration = clips.reduce((sum, clip) => sum + (clip.duration || 0), 0);
   const targetDuration = 24 * 3600; // 24 hours
+
+  const formatTotalDuration = (seconds) => {
+    if (!seconds) return '00:00:00';
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   return (
     <Box>
@@ -253,6 +331,9 @@ export default function PlaylistEditor() {
           Playlist Editor
         </Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button variant="outlined" color="warning" onClick={handleAutoFill} disabled={clips.length === 0}>
+            Auto-preencher Fillers
+          </Button>
           <Button variant="outlined" onClick={handleNewPlaylist}>
             Nova Playlist
           </Button>
@@ -322,24 +403,26 @@ export default function PlaylistEditor() {
           </Card>
 
           {/* Validation Status */}
-          {validation && (
-            <Alert
-              severity={validation.valid ? 'success' : 'warning'}
-              icon={validation.valid ? <CheckIcon /> : <WarningIcon />}
-              sx={{ mb: 2 }}
-            >
+          <Alert
+            severity={Math.abs(totalDuration - 86400) <= 86400 * 0.05 ? 'success' : 'warning'}
+            icon={Math.abs(totalDuration - 86400) <= 86400 * 0.05 ? <CheckIcon /> : <WarningIcon />}
+            sx={{ mb: 2 }}
+          >
+            <Typography variant="body2">
+              <strong>Duração Total: {formatTotalDuration(totalDuration)} / 24:00:00</strong>
+            </Typography>
+            {Math.abs(totalDuration - 86400) <= 86400 * 0.05 ? (
               <Typography variant="body2">
-                <strong>Duração Total:</strong> {formatDuration(totalDuration)} / 24:00:00
+                Playlist válida (~24h ±5%) - Pronta para agendar
               </Typography>
-              {!validation.valid && (
-                <Typography variant="body2">
-                  {validation.needs_filler
-                    ? `Faltam ${validation.difference_formatted} - Adicione mais clips ou fillers`
-                    : `Excede em ${validation.difference_formatted} - Remova alguns clips`}
-                </Typography>
-              )}
-            </Alert>
-          )}
+            ) : (
+              <Typography variant="body2">
+                {totalDuration < 86400 
+                  ? `Faltam ${formatTotalDuration(86400 - totalDuration)} - Adicione mais clips. Dica: Use fillers para completar tempo restante.`
+                  : `Excede em ${formatTotalDuration(totalDuration - 86400)} - Remova clips.`}
+              </Typography>
+            )}
+          </Alert>
 
           {/* Clips List */}
           <Card>
@@ -409,6 +492,27 @@ export default function PlaylistEditor() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setMediaDialogOpen(false)}>Cancelar</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Create Playlist Dialog */}
+      <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Nova Playlist</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Nome da Playlist"
+            fullWidth
+            value={newPlaylistName}
+            onChange={(e) => setNewPlaylistName(e.target.value)}
+            placeholder="ex: Playlist Segunda-feira"
+            helperText="Insira um nome descritivo para a playlist"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCreateDialogOpen(false)}>Cancelar</Button>
+          <Button onClick={handleCreateNewPlaylist} variant="contained">Criar</Button>
         </DialogActions>
       </Dialog>
     </Box>

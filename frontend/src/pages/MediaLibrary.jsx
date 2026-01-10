@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNotification } from '../contexts/NotificationContext';
 import {
   Box,
   Grid,
@@ -27,11 +28,13 @@ import {
   PlayArrow as PlayIcon,
   Search as SearchIcon,
   FilterList as FilterIcon,
+  Extension as ExtensionIcon,
 } from '@mui/icons-material';
 import { useDropzone } from 'react-dropzone';
 import { mediaAPI } from '../services/api';
 
 export default function MediaLibrary() {
+  const { showSuccess, showError, showWarning } = useNotification();
   const [media, setMedia] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -55,13 +58,7 @@ export default function MediaLibrary() {
   const fetchMedia = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (filters.media_type) params.append('media_type', filters.media_type);
-      if (filters.search) params.append('search', filters.search);
-      params.append('page', filters.page);
-      params.append('limit', filters.limit);
-
-      const response = await mediaAPI.list();
+      const response = await mediaAPI.list(filters);
       setMedia(response.data.media);
       setPagination({
         total: response.data.total,
@@ -75,6 +72,11 @@ export default function MediaLibrary() {
   };
 
   const onDrop = useCallback(async (acceptedFiles) => {
+    if (acceptedFiles.length === 0) {
+      showWarning('Nenhum ficheiro selecionado');
+      return;
+    }
+
     setUploading(true);
     const formData = new FormData();
     
@@ -84,13 +86,15 @@ export default function MediaLibrary() {
 
     try {
       await mediaAPI.upload(formData);
-      fetchMedia();
+      showSuccess(`${acceptedFiles.length} ficheiro(s) carregado(s) com sucesso!`);
+      await fetchMedia(); // Refresh the list
     } catch (error) {
       console.error('Upload failed:', error);
+      showError(error.response?.data?.error || 'Erro ao fazer upload dos ficheiros');
     } finally {
       setUploading(false);
     }
-  }, []);
+  }, [showSuccess, showError, showWarning]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -106,9 +110,11 @@ export default function MediaLibrary() {
 
     try {
       await mediaAPI.delete(id);
-      fetchMedia();
+      showSuccess('Ficheiro eliminado com sucesso!');
+      await fetchMedia();
     } catch (error) {
       console.error('Delete failed:', error);
+      showError('Erro ao eliminar ficheiro');
     }
   };
 
@@ -180,6 +186,27 @@ export default function MediaLibrary() {
               </Select>
             </FormControl>
           </Grid>
+          <Grid item xs={12} sm={3}>
+            <FormControl fullWidth>
+              <InputLabel>Filler</InputLabel>
+              <Select
+                value={filters.is_filler === undefined ? "" : (filters.is_filler ? "true" : "false")}
+                label="Filler"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFilters({ 
+                    ...filters, 
+                    is_filler: val === "" ? undefined : val === "true", 
+                    page: 1 
+                  });
+                }}
+              >
+                <MenuItem value="">Ambos</MenuItem>
+                <MenuItem value="true">Fillers</MenuItem>
+                <MenuItem value="false">Normais</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
           <Grid item xs={12} sm={2}>
             <Typography variant="body2" color="text.secondary">
               Total: {pagination.total} ficheiros
@@ -195,16 +222,28 @@ export default function MediaLibrary() {
       <Grid container spacing={2}>
         {media.map((item) => (
           <Grid item xs={12} sm={6} md={4} lg={3} key={item.id}>
-            <Card>
+            <Card sx={{ position: 'relative', border: item.is_filler ? '2px solid #ed6c02' : 'none' }}>
+              {item.is_filler && (
+                <Chip 
+                  label="FILLER" 
+                  size="small" 
+                  color="warning" 
+                  sx={{ position: 'absolute', top: 8, right: 8, zIndex: 1 }}
+                />
+              )}
               <CardMedia
                 component="img"
-                height="180"
-                image={item.thumbnail_path || '/placeholder.jpg'}
+                height="120"
+                image={item.thumbnail_path ? `/api/media/${item.id}/thumbnail` : 
+                  (item.media_type === 'video' ? 'https://via.placeholder.com/160x120?text=Video' : 
+                   item.media_type === 'audio' ? 'https://via.placeholder.com/160x120?text=Audio' : 
+                   item.media_type === 'image' ? `/api/media/${item.id}/stream` : 'https://via.placeholder.com/160x120?text=Media')}
                 alt={item.filename}
-                sx={{ bgcolor: 'background.default', objectFit: 'cover' }}
+                sx={{ objectFit: 'cover' }}
               />
               <CardContent>
-                <Typography variant="subtitle2" noWrap title={item.filename}>
+                <Typography variant="subtitle2" noWrap title={item.filename} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  {item.is_filler && <ExtensionIcon sx={{ fontSize: 16, color: 'warning.main' }} />}
                   {item.filename}
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 0.5, mt: 1, mb: 1 }}>
@@ -217,21 +256,39 @@ export default function MediaLibrary() {
                   {item.width && item.height && `${item.width}x${item.height}`}
                   {item.codec && ` • ${item.codec}`}
                 </Typography>
-                <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
-                  <IconButton
+                <Box sx={{ display: 'flex', gap: 1, mt: 2, justifyContent: 'space-between' }}>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      onClick={() => handlePreview(item)}
+                    >
+                      <PlayIcon />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => handleDelete(item.id)}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Box>
+                  <Button
                     size="small"
-                    color="primary"
-                    onClick={() => handlePreview(item)}
+                    variant={item.is_filler ? "contained" : "outlined"}
+                    color="warning"
+                    onClick={async () => {
+                      try {
+                        await mediaAPI.setFiller(item.id, !item.is_filler);
+                        fetchMedia();
+                        showSuccess(item.is_filler ? 'Marcado como normal' : 'Marcado como filler');
+                      } catch (err) {
+                        showError('Erro ao atualizar status de filler');
+                      }
+                    }}
                   >
-                    <PlayIcon />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    color="error"
-                    onClick={() => handleDelete(item.id)}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
+                    {item.is_filler ? "Remover Filler" : "Marcar Filler"}
+                  </Button>
                 </Box>
               </CardContent>
             </Card>
@@ -272,17 +329,23 @@ export default function MediaLibrary() {
         <DialogTitle>{selectedMedia?.filename}</DialogTitle>
         <DialogContent>
           {selectedMedia?.media_type === 'video' && (
-            <video controls style={{ width: '100%' }}>
-              <source src={selectedMedia.path} />
+            <video 
+              controls 
+              style={{ width: '100%', maxHeight: '70vh' }}
+              crossOrigin="anonymous"
+              autoPlay
+              muted={false}
+            >
+              <source src={`/api/media/${selectedMedia.id}/stream`} />
             </video>
           )}
           {selectedMedia?.media_type === 'audio' && (
             <audio controls style={{ width: '100%' }}>
-              <source src={selectedMedia.path} />
+              <source src={`/api/media/${selectedMedia.id}/stream`} />
             </audio>
           )}
           {selectedMedia?.media_type === 'image' && (
-            <img src={selectedMedia.path} alt={selectedMedia.filename} style={{ width: '100%' }} />
+            <img src={`/api/media/${selectedMedia.id}/stream`} alt={selectedMedia.filename} style={{ width: '100%' }} />
           )}
           <Box sx={{ mt: 2 }}>
             <Typography variant="body2">

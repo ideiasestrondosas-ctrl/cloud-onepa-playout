@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 use std::env;
-use std::path::Path;
 use std::process::Command;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -207,6 +206,88 @@ impl FFmpegService {
         }
 
         Ok(())
+    }
+
+    /// Start a live stream from a file with HLS preview
+    pub fn start_stream(
+        &self,
+        input_path: &str,
+        output_url: &str,
+        offset: f64,
+        resolution: &str,
+        video_bitrate: &str,
+        audio_bitrate: &str,
+        hls_preview_path: Option<&str>,
+    ) -> Result<std::process::Child, String> {
+        let mut args = vec![
+            "-re".to_string(), // Read at native frame rate
+        ];
+
+        if offset > 0.0 {
+            args.push("-ss".to_string());
+            args.push(offset.to_string());
+        }
+
+        args.extend(vec![
+            "-i".to_string(),
+            input_path.to_string(),
+            "-c:v".to_string(),
+            "libx264".to_string(),
+            "-preset".to_string(),
+            "veryfast".to_string(),
+        ]);
+
+        // Map to first output (Main Output URL)
+        args.extend(vec![
+            "-maxrate".to_string(),
+            video_bitrate.to_string(),
+            "-bufsize".to_string(),
+            format!(
+                "{}k",
+                video_bitrate
+                    .replace("k", "")
+                    .parse::<i32>()
+                    .unwrap_or(5000)
+                    * 2
+            ),
+            "-pix_fmt".to_string(),
+            "yuv420p".to_string(),
+            "-g".to_string(),
+            "25".to_string(), // Shorter GOP for HLS
+            "-vf".to_string(),
+            format!("scale={}", resolution),
+            "-c:a".to_string(),
+            "aac".to_string(),
+            "-b:a".to_string(),
+            audio_bitrate.to_string(),
+            "-ar".to_string(),
+            "44100".to_string(),
+            "-f".to_string(),
+            "flv".to_string(),
+            output_url.to_string(),
+        ]);
+
+        // Map to second output (HLS Preview)
+        if let Some(hls_path) = hls_preview_path {
+            args.extend(vec![
+                "-f".to_string(),
+                "hls".to_string(),
+                "-hls_time".to_string(),
+                "2".to_string(),
+                "-hls_list_size".to_string(),
+                "5".to_string(),
+                "-hls_flags".to_string(),
+                "delete_segments".to_string(),
+                format!("{}/preview.m3u8", hls_path),
+            ]);
+        }
+
+        let child = Command::new(&self.ffmpeg_path)
+            .args(&args)
+            .spawn()
+            .map_err(|e| format!("Failed to spawn ffmpeg: {}", e))?;
+
+        Ok(child)
     }
 }
 

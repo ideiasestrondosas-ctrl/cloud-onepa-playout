@@ -15,6 +15,7 @@ pub struct Media {
     pub codec: Option<String>,
     pub bitrate: Option<i64>,
     pub thumbnail_path: Option<String>,
+    pub is_filler: bool,
     pub created_at: DateTime<Utc>,
 }
 

@@ -26,7 +26,8 @@
     "@fullcalendar/interaction": "^6.1.10",
     "video.js": "^8.9.0",
     "react-player": "^2.13.0",
-    "react-dropzone": "^14.2.3"
+    "react-dropzone": "^14.2.3",
+    "react-markdown": "^9.0.1"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",

@@ -37,14 +37,25 @@ async fn main() -> std::io::Result<()> {
 
     // Server configuration
     let host = env::var("SERVER_HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
-    let port = env::var("SERVER_PORT").unwrap_or_else(|_| "8080".to_string());
+    let port = env::var("SERVER_PORT").unwrap_or_else(|_| "8081".to_string());
     let bind_address = format!("{}:{}", host, port);
+
+    // Ensure HLS directory exists
+    let hls_path = "/var/lib/onepa-playout/hls";
+    std::fs::create_dir_all(hls_path).expect("Failed to create HLS directory");
 
     log::info!("Starting server at {}", bind_address);
 
     // Initial configuration for services
     services::auth::configure();
     services::database::configure();
+
+    // Start Playout Engine
+    let engine = std::sync::Arc::new(services::engine::PlayoutEngine::new(pool.clone()));
+    let engine_clone = engine.clone();
+    tokio::spawn(async move {
+        engine_clone.start().await;
+    });
 
     // Start HTTP server
     HttpServer::new(move || {
@@ -56,9 +67,13 @@ async fn main() -> std::io::Result<()> {
 
         App::new()
             .app_data(web::Data::new(pool.clone()))
+            .app_data(web::Data::new(engine.clone()))
             .wrap(cors)
             .wrap(middleware::Logger::default())
             .configure(api::routes::configure)
+            .service(
+                actix_files::Files::new("/hls", "/var/lib/onepa-playout/hls").show_files_listing(),
+            )
     })
     .bind(&bind_address)?
     .run()
