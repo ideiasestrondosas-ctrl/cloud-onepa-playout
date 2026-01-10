@@ -42,6 +42,9 @@ async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
                 default_video_path: Some("".to_string()),
                 is_running: false,
                 last_error: None,
+                overlay_enabled: true,
+                app_logo_path: None,
+                channel_name: Some("Cloud Onepa".to_string()),
                 updated_at: chrono::Utc::now(),
             })
         }
@@ -100,6 +103,15 @@ async fn update_settings(
     }
     if let Some(ref default_video_path) = req.default_video_path {
         sql.push_str(&format!(", default_video_path = '{}'", default_video_path));
+    }
+    if let Some(overlay_enabled) = req.overlay_enabled {
+        sql.push_str(&format!(", overlay_enabled = {}", overlay_enabled));
+    }
+    if let Some(ref app_logo_path) = req.app_logo_path {
+        sql.push_str(&format!(", app_logo_path = '{}'", app_logo_path));
+    }
+    if let Some(ref channel_name) = req.channel_name {
+        sql.push_str(&format!(", channel_name = '{}'", channel_name));
     }
 
     sql.push_str(" WHERE id = TRUE");
@@ -164,6 +176,89 @@ async fn upload_logo(mut payload: Multipart, pool: web::Data<PgPool>) -> impl Re
     }
 }
 
+async fn upload_app_logo(mut payload: Multipart, pool: web::Data<PgPool>) -> impl Responder {
+    let mut filepath = String::new();
+
+    while let Ok(Some(mut field)) = payload.try_next().await {
+        let content_disposition = field.content_disposition();
+        let field_name = content_disposition.get_name().unwrap_or("");
+
+        if field_name == "file" {
+            let original_filename = content_disposition.get_filename().unwrap_or("app_logo.png");
+            let filename = format!(
+                "app_{}_{}",
+                chrono::Utc::now().timestamp(),
+                original_filename
+            );
+
+            // We'll save it in the media directory for now or a dedicated logo dir
+            let upload_dir = "/var/lib/onepa-playout/media";
+            filepath = format!("{}/{}", upload_dir, filename);
+
+            let mut f = match std::fs::File::create(&filepath) {
+                Ok(f) => f,
+                Err(e) => {
+                    return HttpResponse::InternalServerError().json(
+                        serde_json::json!({"error": format!("Failed to create file: {}", e)}),
+                    )
+                }
+            };
+
+            while let Ok(Some(chunk)) = field.try_next().await {
+                f.write_all(&chunk).unwrap();
+            }
+        }
+    }
+
+    if filepath.is_empty() {
+        return HttpResponse::BadRequest().json(serde_json::json!({"error": "No file uploaded"}));
+    }
+
+    // Update app_logo_path in settings
+    let result = sqlx::query("UPDATE settings SET app_logo_path = $1 WHERE id = TRUE")
+        .bind(&filepath)
+        .execute(pool.get_ref())
+        .await;
+
+    match result {
+        Ok(_) => HttpResponse::Ok().json(serde_json::json!({
+            "message": "App Logo uploaded successfully",
+            "path": filepath
+        })),
+        Err(_) => HttpResponse::InternalServerError()
+            .json(serde_json::json!({"error": "Failed to update app logo path in settings"})),
+    }
+}
+
+async fn get_app_logo(pool: web::Data<PgPool>, req: HttpRequest) -> impl Responder {
+    let result = sqlx::query("SELECT app_logo_path FROM settings WHERE id = TRUE")
+        .fetch_one(pool.get_ref())
+        .await;
+
+    match result {
+        Ok(row) => {
+            let path_str: String = row.try_get("app_logo_path").unwrap_or_default();
+            if path_str.is_empty() {
+                // If no custom logo, we can redirect or return 404. Let's return 404 so caller uses default.
+                return HttpResponse::NotFound()
+                    .json(serde_json::json!({"error": "App Logo not set"}));
+            }
+            let path = Path::new(&path_str);
+            if !path.exists() {
+                return HttpResponse::NotFound()
+                    .json(serde_json::json!({"error": "App Logo file not found"}));
+            }
+            match NamedFile::open_async(path).await {
+                Ok(named_file) => named_file.into_response(&req),
+                Err(_) => HttpResponse::InternalServerError()
+                    .json(serde_json::json!({"error": "Failed to open app logo"})),
+            }
+        }
+        Err(_) => HttpResponse::InternalServerError()
+            .json(serde_json::json!({"error": "Failed to fetch app logo path"})),
+    }
+}
+
 async fn get_logo(pool: web::Data<PgPool>, req: HttpRequest) -> impl Responder {
     let result = sqlx::query("SELECT logo_path FROM settings WHERE id = TRUE")
         .fetch_one(pool.get_ref())
@@ -195,5 +290,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.route("", web::get().to(get_settings))
         .route("", web::put().to(update_settings))
         .route("/logo", web::get().to(get_logo))
-        .route("/upload-logo", web::post().to(upload_logo));
+        .route("/upload-logo", web::post().to(upload_logo))
+        .route("/app-logo", web::get().to(get_app_logo))
+        .route("/upload-app-logo", web::post().to(upload_app_logo));
 }

@@ -1,26 +1,10 @@
+use crate::services::engine::PlayoutEngine;
 use actix_web::{web, HttpResponse, Responder};
 use chrono::Datelike;
-use lazy_static::lazy_static;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use sqlx::{PgPool, Row};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use uuid::Uuid;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PlayoutStatus {
-    pub status: String, // playing, stopped, paused
-    pub current_clip: Option<ClipInfo>,
-    pub next_clips: Vec<ClipInfo>,
-    pub uptime: i64,
-    pub clips_played_today: i32,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ClipInfo {
-    pub filename: String,
-    pub duration: f64,
-    pub position: f64,
-}
 
 #[derive(Debug, Serialize)]
 pub struct DebugReport {
@@ -34,33 +18,14 @@ pub struct DebugReport {
     pub warnings: Vec<String>,
 }
 
-lazy_static! {
-    static ref PLAYOUT_STATE: Arc<Mutex<PlayoutStatus>> = Arc::new(Mutex::new(PlayoutStatus {
-        status: "stopped".to_string(),
-        current_clip: None,
-        next_clips: Vec::new(),
-        uptime: 0,
-        clips_played_today: 0,
-    }));
-}
-
-async fn get_status() -> impl Responder {
-    let state = PLAYOUT_STATE.lock().unwrap();
+async fn get_status(engine: web::Data<Arc<PlayoutEngine>>) -> impl Responder {
+    let state = engine.status.lock().await;
     HttpResponse::Ok().json(state.clone())
 }
 
-async fn start_playout() -> impl Responder {
-    let mut state = PLAYOUT_STATE.lock().unwrap();
-
-    if state.status == "playing" {
-        return HttpResponse::BadRequest()
-            .json(serde_json::json!({"error": "Playout is already running"}));
-    }
-
-    state.status = "playing".to_string();
-
-    // TODO: Actually start FFmpeg playout process
-    log::info!("Starting playout...");
+async fn start_playout(engine: web::Data<Arc<PlayoutEngine>>) -> impl Responder {
+    engine.set_running(true).await;
+    let state = engine.status.lock().await;
 
     HttpResponse::Ok().json(serde_json::json!({
         "message": "Playout started successfully",
@@ -68,81 +33,32 @@ async fn start_playout() -> impl Responder {
     }))
 }
 
-async fn stop_playout() -> impl Responder {
-    let mut state = PLAYOUT_STATE.lock().unwrap();
-
-    if state.status == "stopped" {
-        return HttpResponse::BadRequest()
-            .json(serde_json::json!({"error": "Playout is not running"}));
-    }
-
-    state.status = "stopped".to_string();
-    state.current_clip = None;
-    state.next_clips.clear();
-
-    // TODO: Actually stop FFmpeg playout process
-    log::info!("Stopping playout...");
+async fn stop_playout(engine: web::Data<Arc<PlayoutEngine>>) -> impl Responder {
+    engine.set_running(false).await;
 
     HttpResponse::Ok().json(serde_json::json!({
         "message": "Playout stopped successfully"
     }))
 }
 
-async fn skip_clip() -> impl Responder {
-    let mut state = PLAYOUT_STATE.lock().unwrap();
-
-    if state.status != "playing" {
-        return HttpResponse::BadRequest()
-            .json(serde_json::json!({"error": "Playout is not running"}));
-    }
-
-    // Move to next clip
-    if !state.next_clips.is_empty() {
-        state.current_clip = Some(state.next_clips.remove(0));
-    }
-
-    // TODO: Actually skip to next clip in FFmpeg
-    log::info!("Skipping to next clip...");
-
+async fn skip_clip(_engine: web::Data<Arc<PlayoutEngine>>) -> impl Responder {
+    // TODO: Implement skip in PlayoutEngine
     HttpResponse::Ok().json(serde_json::json!({
-        "message": "Skipped to next clip",
-        "current_clip": state.current_clip
+        "message": "Skip requested (not implemented yet)"
     }))
 }
 
-async fn pause_playout() -> impl Responder {
-    let mut state = PLAYOUT_STATE.lock().unwrap();
-
-    if state.status != "playing" {
-        return HttpResponse::BadRequest()
-            .json(serde_json::json!({"error": "Playout is not running"}));
-    }
-
-    state.status = "paused".to_string();
-
-    // TODO: Actually pause FFmpeg playout
-    log::info!("Pausing playout...");
-
+async fn pause_playout(_engine: web::Data<Arc<PlayoutEngine>>) -> impl Responder {
+    // TODO: Implement pause in PlayoutEngine
     HttpResponse::Ok().json(serde_json::json!({
-        "message": "Playout paused"
+        "message": "Pause requested (not implemented yet)"
     }))
 }
 
-async fn resume_playout() -> impl Responder {
-    let mut state = PLAYOUT_STATE.lock().unwrap();
-
-    if state.status != "paused" {
-        return HttpResponse::BadRequest()
-            .json(serde_json::json!({"error": "Playout is not paused"}));
-    }
-
-    state.status = "playing".to_string();
-
-    // TODO: Actually resume FFmpeg playout
-    log::info!("Resuming playout...");
-
+async fn resume_playout(_engine: web::Data<Arc<PlayoutEngine>>) -> impl Responder {
+    // TODO: Implement resume in PlayoutEngine
     HttpResponse::Ok().json(serde_json::json!({
-        "message": "Playout resumed"
+        "message": "Resume requested (not implemented yet)"
     }))
 }
 

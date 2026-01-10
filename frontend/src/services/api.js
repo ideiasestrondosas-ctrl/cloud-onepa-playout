@@ -95,6 +95,9 @@ export const settingsAPI = {
   uploadLogo: (formData) => api.post('/settings/upload-logo', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
+  uploadAppLogo: (formData) => api.post('/settings/upload-app-logo', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
 };
 
 // Template endpoints

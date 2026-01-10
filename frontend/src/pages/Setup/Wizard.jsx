@@ -22,8 +22,24 @@ import {
   CloudUpload as UploadIcon,
   Settings as SettingsIcon,
   Tv as TvIcon,
+  Delete as DeleteIcon,
+  Add as AddIcon,
+  Link as LinkIcon,
+  Movie as MovieIcon,
+  Image as ImageIcon,
 } from '@mui/icons-material';
-import { settingsAPI, mediaAPI } from '../../services/api';
+import { 
+  List, 
+  ListItem, 
+  ListItemText, 
+  ListItemSecondaryAction, 
+  IconButton, 
+  Dialog, 
+  DialogTitle, 
+  DialogContent, 
+  Grid 
+} from '@mui/material';
+import { settingsAPI, mediaAPI, playlistAPI, scheduleAPI } from '../../services/api';
 import { useNotification } from '../../contexts/NotificationContext';
 
 const steps = ['Boas-vindas', 'Identidade', 'Média', 'Transmissão', 'Finalizar'];
@@ -39,7 +55,61 @@ export default function SetupWizard() {
     logoFile: null,
     outputType: 'hls',
     outputUrl: '/hls/stream.m3u8',
+    playlistItems: [],
   });
+
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [externalOpen, setExternalOpen] = useState(false);
+  const [libraryItems, setLibraryItems] = useState([]);
+  const [externalUrl, setExternalUrl] = useState('');
+  const [externalDuration, setExternalDuration] = useState(3600); // 1 hour default
+
+  const fetchLibrary = async () => {
+    try {
+      const res = await mediaAPI.list();
+      setLibraryItems(res.data || []);
+      setLibraryOpen(true);
+    } catch (error) {
+      showError('Erro ao carregar Media Library');
+    }
+  };
+
+  const addLibraryItem = (item) => {
+    setSetupData(prev => ({
+        ...prev,
+        playlistItems: [...prev.playlistItems, {
+            type: 'library',
+            id: item.id || item.filename,
+            path: item.path, // Assuming API returns path
+            source: item.path,
+            duration: item.duration || 10,
+            title: item.filename
+        }]
+    }));
+    setLibraryOpen(false);
+  };
+
+  const addExternalItem = () => {
+    if (!externalUrl) return;
+    setSetupData(prev => ({
+        ...prev,
+        playlistItems: [...prev.playlistItems, {
+            type: 'stream',
+            source: externalUrl,
+            duration: parseFloat(externalDuration),
+            title: 'Stream Externo'
+        }]
+    }));
+    setExternalOpen(false);
+    setExternalUrl('');
+  };
+
+  const removePlaylistItem = (index) => {
+    setSetupData(prev => ({
+        ...prev,
+        playlistItems: prev.playlistItems.filter((_, i) => i !== index)
+    }));
+  };
 
   const handleNext = async () => {
     if (activeStep === steps.length - 1) {
@@ -60,6 +130,27 @@ export default function SetupWizard() {
             showError('Erro ao salvar identidade');
         } finally {
             setLoading(false);
+        }
+    }
+
+    if (activeStep === 2) {
+        if (setupData.playlistItems.length > 0) {
+            setLoading(true);
+            try {
+                const playlistRes = await playlistAPI.create({
+                    name: `Setup Playlist - ${new Date().toLocaleDateString()}`,
+                    items: setupData.playlistItems
+                });
+                
+                if (playlistRes.data && playlistRes.data.id) {
+                     showSuccess('Playlist criada com sucesso!');
+                }
+            } catch (e) {
+                console.error(e);
+                showError('Erro ao criar playlist.');
+            } finally {
+                setLoading(false);
+            }
         }
     }
 
@@ -137,11 +228,87 @@ export default function SetupWizard() {
             <Alert severity="info" sx={{ mb: 2 }}>
               Pode carregar os seus primeiros vídeos agora para começar rapidamente.
             </Alert>
-            <Box sx={{ p: 4, bgcolor: '#f9f9f9', border: '1px dashed #ddd', textAlign: 'center' }}>
-              <UploadIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
-              <Typography variant="body2">Pode carregar ficheiros na Media Library mais tarde.</Typography>
-              <Button sx={{ mt: 1 }} size="small" onClick={() => window.open('/media', '_blank')}>Abrir Library</Button>
+            <Typography variant="h6" gutterBottom>Conteúdo Inicial</Typography>
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Adicione vídeos da sua biblioteca ou streams externos (RTMP/HLS) para a sua playlist inicial.
+            </Alert>
+            
+            <Box sx={{ mb: 2, display: 'flex', gap: 2 }}>
+                <Button variant="outlined" startIcon={<MovieIcon />} onClick={fetchLibrary}>
+                    Adicionar da Biblioteca
+                </Button>
+                <Button variant="outlined" startIcon={<LinkIcon />} onClick={() => setExternalOpen(true)}>
+                    Adicionar Stream/URL
+                </Button>
             </Box>
+
+            {setupData.playlistItems.length === 0 ? (
+                <Box sx={{ p: 4, bgcolor: '#f9f9f9', border: '1px dashed #ddd', textAlign: 'center' }}>
+                <UploadIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
+                <Typography variant="body2">A playlist está vazia. Adicione conteúdo acima.</Typography>
+                </Box>
+            ) : (
+                <List dense sx={{ bgcolor: 'background.paper', border: '1px solid #eee', borderRadius: 1, maxHeight: 300, overflow: 'auto' }}>
+                    {setupData.playlistItems.map((item, index) => (
+                        <ListItem key={index} divider>
+                            <ListItemText 
+                                primary={item.title || item.source} 
+                                secondary={`Duração: ${item.duration}s | Tipo: ${item.type === 'stream' ? 'Stream' : 'Arquivo'}`} 
+                            />
+                            <ListItemSecondaryAction>
+                                <IconButton edge="end" onClick={() => removePlaylistItem(index)}>
+                                    <DeleteIcon />
+                                </IconButton>
+                            </ListItemSecondaryAction>
+                        </ListItem>
+                    ))}
+                </List>
+            )}
+
+            {/* Library Dialog */}
+            <Dialog open={libraryOpen} onClose={() => setLibraryOpen(false)} maxWidth="md" fullWidth>
+                <DialogTitle>Selecionar Mídia</DialogTitle>
+                <DialogContent dividers>
+                    <List>
+                        {libraryItems.map((item) => (
+                            <ListItem button key={item.path} onClick={() => addLibraryItem(item)}>
+                                <ListItemText primary={item.filename} secondary={`${(item.size / 1024 / 1024).toFixed(2)} MB`} />
+                            </ListItem>
+                        ))}
+                    </List>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setLibraryOpen(false)}>Cancelar</Button>
+                </DialogActions>
+            </Dialog>
+
+             {/* External Stream Dialog */}
+             <Dialog open={externalOpen} onClose={() => setExternalOpen(false)}>
+                <DialogTitle>Adicionar Stream Externo</DialogTitle>
+                <DialogContent>
+                    <TextField
+                        autoFocus
+                        margin="dense"
+                        label="URL do Stream (RTMP/HLS/HTTP)"
+                        fullWidth
+                        value={externalUrl}
+                        onChange={(e) => setExternalUrl(e.target.value)}
+                    />
+                    <TextField
+                        margin="dense"
+                        label="Duração Estimada (segundos)"
+                        type="number"
+                        fullWidth
+                        value={externalDuration}
+                        onChange={(e) => setExternalDuration(e.target.value)}
+                        helperText="Para streams 24/7, coloque um valor alto (ex: 86400)"
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setExternalOpen(false)}>Cancelar</Button>
+                    <Button onClick={addExternalItem} variant="contained">Adicionar</Button>
+                </DialogActions>
+            </Dialog>
           </Box>
         );
       case 3:

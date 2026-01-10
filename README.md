@@ -22,11 +22,10 @@ Cloud Onepa Playout é uma versão simplificada e modernizada do [ffplayout](htt
 - 📅 **Calendário de Agendamento** visual e intuitivo
 - 🎨 **Drag & Drop** para criação de playlists
 - 👁️ **Preview em Tempo Real** do conteúdo
-- 🧙 **Setup Wizard** para configuração inicial guiada
-- 📊 **Dashboard** com diagnósticos e ações rápidas
-- 🔧 **Templates** de programação reutilizáveis
-- 📝 **Release Notes** integradas com histórico de versões
-- 🔗 **Links Públicos** para HLS e logos
+- 🧙 **Setup Wizard Avançado**: Configuração passo-a-passo do canal, incluindo importação de mídia da biblioteca ou streams externos.
+- **Identidade do Canal**: Personalização do Nome do Canal e Logótipo da Aplicação (separado da marca d'água).
+- **Dashboard Pro**: Monitorização em tempo real com pré-visualização ao vivo, suporte a HLS/RTMP e diagnóstico integrado.
+- **Overlay Dinâmico**: Gestão de marca d'água com posicionamento e ativação condicional.
 - 🚫 **Protected Assets** - diretório protegido para ficheiros originais
 - 🐳 **Docker** para deployment fácil
 - 🔒 **Autenticação JWT** segura

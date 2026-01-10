@@ -10,6 +10,7 @@ import {
   Button,
   Chip,
   LinearProgress,
+  Paper,
 } from '@mui/material';
 import {
   Error as ErrorIcon,
@@ -20,6 +21,8 @@ import {
   Stop as StopIcon,
   SkipNext as SkipIcon,
   CheckCircle as CheckIcon,
+  Dashboard as DashboardIcon,
+  Tv as TvIcon,
 } from '@mui/icons-material';
 import {
   Dialog,
@@ -31,7 +34,7 @@ import {
   ListItemIcon,
   ListItemText,
 } from '@mui/material';
-import { playoutAPI } from '../services/api';
+import { playoutAPI, settingsAPI } from '../services/api';
 import { useNotification } from '../contexts/NotificationContext';
 
 export default function Dashboard() {
@@ -47,6 +50,7 @@ export default function Dashboard() {
     protocol: '',
     last_error: null,
   });
+  const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [diagnosing, setDiagnosing] = useState(false);
   const [debugReport, setDebugReport] = useState(null);
@@ -65,10 +69,20 @@ export default function Dashboard() {
 
   const fetchStatus = async () => {
     try {
+      // Fetch settings first
+      const settingsRes = await settingsAPI.get();
+      setSettings(settingsRes.data);
+      if (settingsRes.data.channel_name) {
+        // We can use this to set document title or local state
+      }
+
+      // Then fetch playout status
       const response = await playoutAPI.status();
       setStatus(response.data);
     } catch (error) {
-      console.error('Failed to fetch status:', error);
+      console.error('Failed to fetch status or settings:', error);
+      // Optionally, show an error notification if critical
+      // showError('Erro ao carregar dados do dashboard.');
     } finally {
       setLoading(false);
     }
@@ -122,10 +136,16 @@ export default function Dashboard() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1">
-          Dashboard
-        </Typography>
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box>
+          <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main', display: 'flex', alignItems: 'center', gap: 2 }}>
+            <DashboardIcon fontSize="large" />
+            {settings?.channel_name || 'Dashboard de Playout'}
+          </Typography>
+          <Typography variant="subtitle1" color="text.secondary">
+            Visão geral do estado do sistema e monitorização em tempo real.
+          </Typography>
+        </Box>
         <Card sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', px: 2, py: 1 }}>
           <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
             {now.toLocaleTimeString()}
@@ -254,7 +274,7 @@ export default function Dashboard() {
           </Card>
         </Grid>
       </Grid>
-      
+
       {/* Diagnostic Logs / Errors */}
       {status.last_error && (
         <Card sx={{ mb: 3, border: '1px solid', borderColor: 'error.light', bgcolor: 'error.main', color: 'error.contrastText' }}>
@@ -280,45 +300,125 @@ export default function Dashboard() {
 
       {/* Live Preview Section */}
       <Grid container spacing={3} sx={{ mt: 0.5, mb: 3 }}>
+        {/* Live Preview - Always visible (either player or placeholder) */}
         <Grid item xs={12}>
-          <Card sx={{ bgcolor: '#000', border: '1px solid rgba(255, 255, 255, 0.1)', overflow: 'hidden' }}>
-            <CardContent sx={{ p: '0 !important', position: 'relative', pt: '50%' }}>
+          <Paper
+            sx={{
+              p: 0,
+              height: 400,
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              position: 'relative',
+              borderRadius: 2,
+              boxShadow: isPlaying ? '0 0 20px rgba(76, 175, 80, 0.3)' : 3,
+              bgcolor: '#000',
+              border: '2px solid',
+              borderColor: isPlaying ? 'success.main' : 'rgba(255, 255, 255, 0.1)',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            <Box sx={{ p: 2, bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="h6" display="flex" alignItems="center" gap={1}>
+                <TvIcon color={status?.status === 'playing' ? 'success' : 'disabled'} />
+                Monitor de Saída
+              </Typography>
+              <Chip
+                label={status?.status === 'playing' ? "NO AR" : "OFFLINE"}
+                color={status?.status === 'playing' ? "success" : "default"}
+                size="small"
+                variant={status?.status === 'playing' ? "filled" : "outlined"}
+              />
+            </Box>
+            <Box sx={{ p: '0 !important', position: 'relative', pt: '56.25%', flexGrow: 1 }}>
               <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
-                <ReactPlayer
-                  url="/hls/preview.m3u8"
-                  playing
-                  muted
-                  controls
-                  width="100%"
-                  height="100%"
-                  config={{
-                    file: {
-                      forceHLS: true,
-                    }
-                  }}
-                  onError={(e) => console.log('Preview error:', e)}
-                />
+                {isPlaying ? (
+                  <ReactPlayer
+                    url="/hls/preview.m3u8"
+                    playing
+                    muted
+                    controls
+                    width="100%"
+                    height="100%"
+                    config={{
+                      file: {
+                        forceHLS: true,
+                        attributes: {
+                          style: { objectFit: 'contain' }
+                        }
+                      }
+                    }}
+                    onError={(e) => console.log('Preview error:', e)}
+                  />
+                ) : (
+                  <Box sx={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    bgcolor: '#1a1a1a',
+                    backgroundImage: 'linear-gradient(45deg, #1a1a1a 25%, #222 25%, #222 50%, #1a1a1a 50%, #1a1a1a 75%, #222 75%, #222 100%)',
+                    backgroundSize: '40px 40px',
+                    color: 'rgba(255,255,255,0.3)'
+                  }}>
+                    <PlayIcon sx={{ fontSize: 80, mb: 2, opacity: 0.2 }} />
+                    <Typography variant="h6" sx={{ opacity: 0.5 }}>AGUARDANDO EMISSÃO</Typography>
+                    <Typography variant="caption" sx={{ opacity: 0.4 }}>O playout está parado ou em standby</Typography>
+                  </Box>
+                )}
               </Box>
-              <Box sx={{ 
-                position: 'absolute', 
-                top: 16, 
-                left: 16, 
-                bgcolor: 'rgba(0,0,0,0.6)', 
-                px: 1.5, 
-                py: 0.5, 
+              <Box sx={{
+                position: 'absolute',
+                top: 16,
+                left: 16,
+                bgcolor: isPlaying ? 'rgba(76, 175, 80, 0.8)' : 'rgba(0,0,0,0.6)',
+                px: 1.5,
+                py: 0.5,
                 borderRadius: 1,
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1,
-                zIndex: 10
+                zIndex: 10,
+                backdropFilter: 'blur(4px)'
               }}>
-                <Box sx={{ width: 8, height: 8, bgcolor: isPlaying ? '#4caf50' : '#f44336', borderRadius: '50%' }} />
+                <Box sx={{
+                  width: 8,
+                  height: 8,
+                  bgcolor: isPlaying ? '#fff' : '#f44336',
+                  borderRadius: '50%',
+                  animation: isPlaying ? 'pulse 1.5s infinite' : 'none'
+                }} />
                 <Typography variant="caption" sx={{ color: '#fff', fontWeight: 'bold' }}>
-                  LIVE PREVIEW
+                  {isPlaying ? 'LIVE PREVIEW' : 'OFFLINE'}
                 </Typography>
               </Box>
-            </CardContent>
-          </Card>
+
+              {isPlaying && status.current_clip && (
+                <Box sx={{ 
+                  position: 'absolute', 
+                  bottom: 0, 
+                  left: 0, 
+                  right: 0, 
+                  bgcolor: 'rgba(0,0,0,0.7)', 
+                  p: 1,
+                  backdropFilter: 'blur(4px)',
+                  borderTop: '1px solid rgba(255,255,255,0.1)'
+                }}>
+                  <Typography variant="caption" sx={{ color: '#fff', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>REC: {status.current_clip.filename}</span>
+                    <span>{Math.floor(status.current_clip.position || 0)}s / {status.current_clip.duration || 0}s</span>
+                  </Typography>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={status.current_clip.duration ? (status.current_clip.position / status.current_clip.duration) * 100 : 0} 
+                    sx={{ mt: 0.5, height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.1)' }}
+                  />
+                </Box>
+              )}
+            </Box>
+          </Paper>
         </Grid>
       </Grid>
 
@@ -377,60 +477,83 @@ export default function Dashboard() {
       {/* Diagnostic Dialog */}
       <Dialog open={debugDialogOpen} onClose={() => setDebugDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <SearchIcon color="primary" /> Relatório de Diagnóstico de Arranque
+          <SearchIcon color="primary" /> Assistente de Diagnóstico e Configuração
         </DialogTitle>
         <DialogContent dividers>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Siga os passos abaixo para garantir que o seu canal está pronto para transmitir:
+          </Typography>
           {debugReport && (
             <List>
+              {/* Passo 0: Estado do Motor */}
+              <ListItem>
+                <ListItemIcon>
+                  {isPlaying ? <CheckIcon color="success" /> : <ErrorIcon color="error" />}
+                </ListItemIcon>
+                <ListItemText 
+                  primary="1. Estado do Sistema" 
+                  secondary={isPlaying ? 'Motor de playout está em execução' : 'O sistema está parado ou em standby'} 
+                />
+                {!isPlaying && (
+                  <Button variant="contained" size="small" color="success" onClick={handleStart}>Ligar</Button>
+                )}
+              </ListItem>
+
               <ListItem>
                 <ListItemIcon>
                   {debugReport.has_active_schedule ? <CheckIcon color="success" /> : <ErrorIcon color="error" />}
                 </ListItemIcon>
                 <ListItemText 
-                  primary="Horário Ativo" 
-                  secondary={debugReport.has_active_schedule ? `Encontrado: ${debugReport.active_schedule_id}` : 'Nenhum horário ativo configurado para este momento'} 
+                  primary="2. Horário Agendado" 
+                  secondary={debugReport.has_active_schedule ? `Ok: Existe um evento agendado para agora` : 'Erro: Não existe nada agendado para este momento'} 
                 />
                 {!debugReport.has_active_schedule && (
                   <Button variant="outlined" size="small" onClick={() => navigate('/calendar')}>Agendar</Button>
                 )}
               </ListItem>
+
               <ListItem>
                 <ListItemIcon>
                   {debugReport.has_playlist ? <CheckIcon color="success" /> : <ErrorIcon color="error" />}
                 </ListItemIcon>
                 <ListItemText 
-                  primary="Playlist Associada" 
-                  secondary={debugReport.has_playlist ? `Encontrada: ${debugReport.playlist_id} (${debugReport.media_files_count} clips)` : 'Não existe playlist válida no horário atual'} 
+                  primary="3. Playlist Válida" 
+                  secondary={debugReport.has_playlist ? `Ok: Playlist carregada com ${debugReport.media_files_count} clips` : 'Erro: A playlist associada está vazia ou não existe'} 
                 />
                 {!debugReport.has_playlist && (
-                  <Button variant="outlined" size="small" onClick={() => navigate('/playlists')}>Criar</Button>
+                  <Button variant="outlined" size="small" onClick={() => navigate('/playlists')}>Ver Playlists</Button>
                 )}
               </ListItem>
+
               <ListItem>
                 <ListItemIcon>
                   {debugReport.missing_media_files.length === 0 ? <CheckIcon color="success" /> : <WarningIcon color="warning" />}
                 </ListItemIcon>
                 <ListItemText 
-                  primary="Ficheiros Media" 
-                  secondary={debugReport.missing_media_files.length === 0 ? 'Todos os ficheiros estão acessíveis' : `Faltam ${debugReport.missing_media_files.length} ficheiros no disco`} 
+                  primary="4. Integridade dos Ficheiros" 
+                  secondary={debugReport.missing_media_files.length === 0 ? 'Ok: Todos os vídeos foram localizados no disco' : `Aviso: Faltam ${debugReport.missing_media_files.length} ficheiros físicos`} 
                 />
+                {debugReport.missing_media_files.length > 0 && (
+                  <Button variant="outlined" size="small" onClick={() => navigate('/media')}>Ver Media</Button>
+                )}
               </ListItem>
+
               <ListItem>
                 <ListItemIcon>
                   {debugReport.overlay_configured ? <CheckIcon color="success" /> : <InfoIcon color="info" />}
                 </ListItemIcon>
                 <ListItemText 
-                  primary="Configuração de Overlay" 
-                  secondary={debugReport.overlay_configured ? 'Logo configurado e ativo' : 'Nenhum logo configurado'} 
+                  primary="5. Marca D'água (Overlay)" 
+                  secondary={debugReport.overlay_configured ? 'Ok: Logotipo configurado corretamente' : 'Info: Nenhum logotipo de canal ativo (opcional)'} 
                 />
                 {!debugReport.overlay_configured && (
-                  <Button variant="outlined" size="small" onClick={() => navigate('/settings?tab=playout&focus=overlay')}>Ativar</Button>
+                  <Button variant="outlined" size="small" onClick={() => navigate('/settings?tab=playout&focus=overlay')}>Configurar</Button>
                 )}
               </ListItem>
 
               {debugReport.warnings.length > 0 && (
-                <Box sx={{ mt: 2, p: 2, bgcolor: 'warning.light', borderRadius: 1 }}>
-                  <Typography variant="subtitle2" gutterBottom><b>Alertas:</b></Typography>
+                <Box sx={{ mt: 2, p: 2, bgcolor: 'warning.light', borderRadius: 1, borderLeft: '4px solid orange' }}>
+                  <Typography variant="subtitle2" gutterBottom><b>Recomendações:</b></Typography>
                   {debugReport.warnings.map((w, i) => (
                     <Typography key={i} variant="caption" display="block">• {w}</Typography>
                   ))}
@@ -439,9 +562,10 @@ export default function Dashboard() {
               
               {debugReport.missing_media_files.length > 0 && (
                 <Box sx={{ mt: 2, p: 2, bgcolor: 'error.light', color: 'error.contrastText', borderRadius: 1 }}>
-                  <Typography variant="subtitle2" gutterBottom><b>Ficheiros Faltantes:</b></Typography>
+                  <Typography variant="subtitle2" gutterBottom><b>Ficheiros em Falta (Ação necessária):</b></Typography>
+                  <Typography variant="caption" sx={{ mb: 1, display: 'block' }}>Os seguintes ficheiros foram removidos ou movidos do servidor:</Typography>
                   {debugReport.missing_media_files.map((f, i) => (
-                    <Typography key={i} variant="caption" display="block">• {f.split('/').pop()}</Typography>
+                    <Typography key={i} variant="caption" display="block" sx={{ fontStyle: 'italic' }}>• {f.split('/').pop()}</Typography>
                   ))}
                 </Box>
               )}
@@ -452,7 +576,7 @@ export default function Dashboard() {
           <Button onClick={() => setDebugDialogOpen(false)}>Fechar</Button>
           {!isPlaying && debugReport?.has_active_schedule && debugReport?.has_playlist && (
             <Button variant="contained" color="success" onClick={() => { setDebugDialogOpen(false); handleStart(); }}>
-              Iniciar Agora
+              FORÇAR INÍCIO DE CANAL
             </Button>
           )}
         </DialogActions>

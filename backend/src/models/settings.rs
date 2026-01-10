@@ -22,6 +22,9 @@ pub struct Settings {
     pub default_video_path: Option<String>,
     pub is_running: bool,
     pub last_error: Option<String>,
+    pub overlay_enabled: bool,
+    pub app_logo_path: Option<String>,
+    pub channel_name: Option<String>,
     pub updated_at: DateTime<Utc>,
 }
 
@@ -42,4 +45,7 @@ pub struct UpdateSettingsRequest {
     pub day_start: Option<String>,
     pub default_image_path: Option<String>,
     pub default_video_path: Option<String>,
+    pub overlay_enabled: Option<bool>,
+    pub app_logo_path: Option<String>,
+    pub channel_name: Option<String>,
 }

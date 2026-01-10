@@ -40,6 +40,7 @@ import {
   Movie as MovieIcon,
   CheckCircle as CheckIcon,
   Visibility as ViewIcon,
+  PlayArrow as PlayIcon,
 } from '@mui/icons-material';
 
 function TabPanel({ children, value, index }) {
@@ -72,7 +73,9 @@ export default function Settings() {
     defaultImagePath: '',
     defaultVideoPath: '',
     version: '1.7.0-PRO',
-    releaseDate: '2026-01-10'
+    releaseDate: '2026-01-10',
+    overlay_enabled: true,
+    channelName: 'Cloud Onepa'
   });
 
   const [loading, setLoading] = useState(true);
@@ -84,6 +87,7 @@ export default function Settings() {
   const [newPassword, setNewPassword] = useState('');
   const [newUser, setNewUser] = useState({ username: '', password: '', role: 'operator' });
   const [saving, setSaving] = useState(false);
+  const [releaseNotesOpen, setReleaseNotesOpen] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -138,7 +142,9 @@ export default function Settings() {
         defaultImagePath: data.default_image_path || '',
         defaultVideoPath: data.default_video_path || '',
         version: '1.7.0-PRO', // Frontend override for consistency
-        releaseDate: '2026-01-10'
+        releaseDate: '2026-01-10',
+        overlay_enabled: data.overlay_enabled ?? true,
+        channelName: data.channel_name || 'Cloud Onepa'
       });
     } catch (error) {
       console.error('Failed to fetch settings:', error);
@@ -226,6 +232,8 @@ export default function Settings() {
         logo_path: settings.logoPath,
         logo_position: settings.logoPosition,
         day_start: settings.dayStart,
+        overlay_enabled: settings.overlay_enabled,
+        channel_name: settings.channelName
       });
       showSuccess('Configurações salvas com sucesso!');
     } catch (error) {
@@ -532,10 +540,40 @@ export default function Settings() {
                 </Grid>
 
                 <Grid item xs={12}>
-                  <Divider sx={{ my: 2 }} />
-                  <Typography variant="h6" gutterBottom id="overlay-section">
-                    Overlay & Logo
+                  <Typography variant="h6" gutterBottom id="channel-identity">
+                    Identidade do Canal
                   </Typography>
+                  <FormControl fullWidth sx={{ mb: 2 }}>
+                    <TextField
+                      label="Nome do Canal"
+                      value={settings.channelName}
+                      onChange={(e) => setSettings({ ...settings, channelName: e.target.value })}
+                      helperText="Este nome aparecerá no Dashboard e nos relatórios."
+                    />
+                  </FormControl>
+
+                  <Divider sx={{ my: 2 }} />
+
+                  <Typography variant="h6" gutterBottom id="overlay-section">
+                    Overlay (Marca d'água)
+                  </Typography>
+                  <FormControl fullWidth sx={{ mb: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Box>
+                        <Typography variant="subtitle1">Ativar Overlay de Canal</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Mostra o logotipo e gráficos sobre o vídeo transmitido
+                        </Typography>
+                      </Box>
+                      <Button 
+                        variant={settings.overlay_enabled ? "contained" : "outlined"}
+                        color={settings.overlay_enabled ? "success" : "inherit"}
+                        onClick={() => setSettings({ ...settings, overlay_enabled: !settings.overlay_enabled })}
+                      >
+                        {settings.overlay_enabled ? "ATIVADO" : "DESATIVADO"}
+                      </Button>
+                    </Box>
+                  </FormControl>
                 </Grid>
 
                 <Grid item xs={12} sm={8}>
@@ -614,6 +652,62 @@ export default function Settings() {
                   </FormControl>
                 </Grid>
               </Grid>
+              <Divider sx={{ my: 3 }} />
+              <Typography variant="h6" gutterBottom>
+                Branding da Aplicação
+              </Typography>
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
+                Personalize o visual do sistema carregando seu próprio logotipo para a barra lateral (Sidebar) e Login.
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                <Box 
+                  sx={{ 
+                    width: 100, 
+                    height: 100, 
+                    border: '1px solid', 
+                    borderColor: 'divider',
+                    borderRadius: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    bgcolor: 'background.default'
+                  }}
+                >
+                  <img 
+                    src={`/api/settings/app-logo?t=${Date.now()}`}
+                    alt="App Logo" 
+                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                    onError={(e) => { e.target.src = 'https://via.placeholder.com/100?text=APP+LOGO'; }}
+                  />
+                </Box>
+                <Box>
+                  <Button variant="outlined" component="label" startIcon={<AddIcon />}>
+                    Carregar Logo da App
+                    <input
+                      type="file"
+                      hidden
+                      accept="image/*"
+                      onChange={async (e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        try {
+                          await settingsAPI.uploadAppLogo(formData);
+                          showSuccess('Logo da aplicação atualizado!');
+                          // Force refresh
+                          fetchSettings();
+                        } catch (error) {
+                          showError('Erro ao carregar logo da aplicação');
+                        }
+                      }}
+                    />
+                  </Button>
+                  <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+                    Recomendado: SVG ou PNG transparente (512x512px)
+                  </Typography>
+                </Box>
+              </Box>
             </TabPanel>
 
             {/* Protected Assets Tab */}
@@ -626,56 +720,78 @@ export default function Settings() {
                 Pode defini-los como mídia padrão para o playout.
               </Alert>
 
-              <Grid container spacing={2}>
+              <Grid container spacing={3}>
                 {protectedAssets.map((asset) => (
-                  <Grid item xs={12} sm={6} md={4} key={asset.name}>
-                    <Card variant="outlined">
-                      <CardContent sx={{ p: 2 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                          {asset.is_video ? <MovieIcon color="primary" /> : <ImageIcon color="secondary" />}
-                          <Typography variant="subtitle1" sx={{ ml: 1, fontWeight: 'bold' }} noWrap title={asset.name}>
-                            {asset.name}
-                          </Typography>
-                        </Box>
-                        <Typography variant="caption" color="text.secondary" display="block">
-                          Tamanho: {(asset.size / 1024 / 1024).toFixed(2)} MB
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1, fontStyle: 'italic' }}>
-                          Caminho: {asset.path}
-                        </Typography>
-                      </CardContent>
-                      <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
-                        <Button 
-                          size="small" 
-                          startIcon={<ViewIcon />}
+                  <Grid item xs={12} sm={6} md={3} key={asset.name}>
+                    <Card 
+                      variant="outlined" 
+                      sx={{ 
+                        height: '100%', 
+                        display: 'flex', 
+                        flexDirection: 'column',
+                        transition: 'transform 0.2s',
+                        '&:hover': { transform: 'translateY(-4px)', boxShadow: 3 }
+                      }}
+                    >
+                      <Box sx={{ position: 'relative', pt: '56.25%', bgcolor: '#000' }}>
+                        {asset.is_video ? (
+                          <MovieIcon sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: 40, opacity: 0.3, color: '#fff' }} />
+                        ) : (
+                          <ImageIcon sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: 40, opacity: 0.3, color: '#fff' }} />
+                        )}
+                        <Box 
+                          sx={{ 
+                            position: 'absolute', 
+                            top: 0, left: 0, width: '100%', height: '100%', 
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            bgcolor: 'rgba(0,0,0,0.4)',
+                            opacity: 0,
+                            '&:hover': { opacity: 1 },
+                            transition: 'opacity 0.2s',
+                            cursor: 'pointer'
+                          }}
                           onClick={() => window.open(protectedAPI.getStreamUrl(asset.name), '_blank')}
                         >
-                          Pré-visualizar
-                        </Button>
-                        <Box>
-                          {!asset.is_video ? (
-                            <Button 
-                              size="small" 
-                              color={settings.defaultImagePath === asset.path ? "success" : "primary"}
-                              variant={settings.defaultImagePath === asset.path ? "contained" : "text"}
-                              onClick={() => setDefaultMedia('image', asset.path)}
-                              startIcon={settings.defaultImagePath === asset.path ? <CheckIcon /> : null}
-                            >
-                              Padrão Image
-                            </Button>
-                          ) : (
-                            <Button 
-                              size="small" 
-                              color={settings.defaultVideoPath === asset.path ? "success" : "primary"}
-                              variant={settings.defaultVideoPath === asset.path ? "contained" : "text"}
-                              onClick={() => setDefaultMedia('video', asset.path)}
-                              startIcon={settings.defaultVideoPath === asset.path ? <CheckIcon /> : null}
-                            >
-                              Padrão Vídeo
-                            </Button>
-                          )}
+                          <PlayIcon sx={{ fontSize: 50, color: '#fff' }} />
                         </Box>
-                      </CardActions>
+                      </Box>
+                      <CardContent sx={{ flexGrow: 1, p: 1.5 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block', mb: 0.5 }} noWrap title={asset.name}>
+                          {asset.name}
+                        </Typography>
+                        <Box sx={{ display: 'flex', gap: 0.5 }}>
+                          <Chip label={asset.is_video ? "VÍDEO" : "IMAGEM"} size="small" variant="outlined" sx={{ height: 16, fontSize: '0.6rem' }} />
+                          <Chip label={`${(asset.size / 1024 / 1024).toFixed(1)} MB`} size="small" variant="outlined" sx={{ height: 16, fontSize: '0.6rem' }} />
+                        </Box>
+                      </CardContent>
+                      <Divider />
+                      <Box sx={{ p: 1, display: 'flex', justifyContent: 'center' }}>
+                        {!asset.is_video ? (
+                          <Button 
+                            fullWidth
+                            size="small" 
+                            color={settings.defaultImagePath === asset.path ? "success" : "primary"}
+                            variant={settings.defaultImagePath === asset.path ? "contained" : "text"}
+                            onClick={() => setDefaultMedia('image', asset.path)}
+                            startIcon={settings.defaultImagePath === asset.path ? <CheckIcon /> : null}
+                            sx={{ fontSize: '0.7rem' }}
+                          >
+                            {settings.defaultImagePath === asset.path ? 'DEFINIDO' : 'USAR COMO PADRÃO'}
+                          </Button>
+                        ) : (
+                          <Button 
+                            fullWidth
+                            size="small" 
+                            color={settings.defaultVideoPath === asset.path ? "success" : "primary"}
+                            variant={settings.defaultVideoPath === asset.path ? "contained" : "text"}
+                            onClick={() => setDefaultMedia('video', asset.path)}
+                            startIcon={settings.defaultVideoPath === asset.path ? <CheckIcon /> : null}
+                            sx={{ fontSize: '0.7rem' }}
+                          >
+                            {settings.defaultVideoPath === asset.path ? 'DEFINIDO' : 'USAR COMO PADRÃO'}
+                          </Button>
+                        )}
+                      </Box>
                     </Card>
                   </Grid>
                 ))}
@@ -957,7 +1073,7 @@ export default function Settings() {
                 <Typography variant="subtitle2" color="text.secondary">Última Atualização</Typography>
                 <Typography variant="body2">{settings.releaseDate}</Typography>
               </Box>
-              <Button size="small" color="inherit">Release Notes</Button>
+              <Button size="small" color="primary" variant="outlined" onClick={() => setReleaseNotesOpen(true)}>Release Notes</Button>
             </Box>
 
             <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end', borderTop: 1, borderColor: 'divider' }}>
@@ -1039,6 +1155,91 @@ export default function Settings() {
           <Button onClick={() => setPasswordDialogOpen(false)}>Cancelar</Button>
           <Button variant="contained" onClick={handleChangePassword}>
             Alterar
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Release Notes Dialog */}
+      <Dialog 
+        open={releaseNotesOpen} 
+        onClose={() => setReleaseNotesOpen(false)} 
+        maxWidth="md" 
+        fullWidth
+        scroll="paper"
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <WizardIcon color="primary" /> Notas de Lançamento - {settings.version}
+          </Box>
+          <Chip label="PRE-RELEASE" color="warning" size="small" />
+        </DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h6" color="primary" gutterBottom>Destaques da Versão 1.7.0-PRO</Typography>
+            <Typography variant="body2" paragraph>
+              Esta versão traz melhorias críticas na estabilidade do motor de playout e novas funcionalidades de branding para o seu canal.
+            </Typography>
+            
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'success.main' }}>
+                  <Typography variant="subtitle2" fontWeight="bold">🚀 Nova UX no Dashboard</Typography>
+                  <Typography variant="caption">• Preview de vídeo em tempo real com moldura premium</Typography><br />
+                  <Typography variant="caption">• Assistente de diagnóstico interativo passo-a-passo</Typography><br />
+                  <Typography variant="caption">• Medidores de tempo real e estado de clips</Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'primary.main' }}>
+                  <Typography variant="subtitle2" fontWeight="bold">🎨 Branding & Logos</Typography>
+                  <Typography variant="caption">• Upload de logotipo da aplicação para a barra lateral</Typography><br />
+                  <Typography variant="caption">• Melhor gestão de logos de overlay no stream</Typography><br />
+                  <Typography variant="caption">• Suporte para SVG e PNG transparente</Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'warning.main' }}>
+                  <Typography variant="subtitle2" fontWeight="bold">⚙️ Estabilidade de Backend</Typography>
+                  <Typography variant="caption">• Motor de playout reconstruído em Rust async</Typography><br />
+                  <Typography variant="caption">• Melhor gestão de processos FFmpeg (zombie cleanup)</Typography><br />
+                  <Typography variant="caption">• Sincronização de horário precisa (Local Timebase)</Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'secondary.main' }}>
+                  <Typography variant="subtitle2" fontWeight="bold">📦 Assets Protegidos</Typography>
+                  <Typography variant="caption">• Nova vista em grelha para ficheiros do sistema</Typography><br />
+                  <Typography variant="caption">• Atribuição rápida de Imagem/Vídeo padrão</Typography><br />
+                  <Typography variant="caption">• Prevenção de eliminação acidental</Typography>
+                </Box>
+              </Grid>
+            </Grid>
+          </Box>
+
+          <Divider sx={{ my: 3 }} />
+
+          <Typography variant="h6" gutterBottom>Próximos Passos (Roadmap)</Typography>
+          <List dense>
+            <ListItem>
+              <ListItemText primary="• Integração com YouTube Live / Facebook Live APIs" />
+            </ListItem>
+            <ListItem>
+              <ListItemText primary="• Editor de templates gráfico com drag-and-drop" />
+            </ListItem>
+            <ListItem>
+              <ListItemText primary="• Suporte para Live Inputs (WebRTC / NDI / SDI)" />
+            </ListItem>
+          </List>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setReleaseNotesOpen(false)}>Fechar</Button>
+          <Button 
+            variant="contained" 
+            onClick={() => {
+              setReleaseNotesOpen(false);
+              showSuccess('Obrigado pelo seu feedback!');
+            }}
+          >
+            Entendido
           </Button>
         </DialogActions>
       </Dialog>

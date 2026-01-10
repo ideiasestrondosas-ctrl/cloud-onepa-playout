@@ -40,7 +40,7 @@ const AppLogo = () => (
         justifyContent: 'center',
       }}>
         <img 
-          src="/api/media/30172608-5714-4aa7-a5d6-a862d8a1d5aa/stream" 
+          src={`/api/settings/app-logo?t=${Date.now()}`} 
           alt="Logo" 
           style={{ width: '100%', height: '100%', objectFit: 'contain' }}
           onError={(e) => { e.target.src = 'https://via.placeholder.com/32?text=C'; }}
