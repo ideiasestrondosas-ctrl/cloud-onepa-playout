@@ -72,7 +72,7 @@ export default function Settings() {
     dayStart: '06:00',
     defaultImagePath: '',
     defaultVideoPath: '',
-    version: '1.7.0-PRO',
+    version: '1.8.0-PRO',
     releaseDate: '2026-01-10',
     overlay_enabled: true,
     channelName: 'Cloud Onepa'
@@ -141,7 +141,7 @@ export default function Settings() {
         dayStart: data.day_start || '06:00',
         defaultImagePath: data.default_image_path || '',
         defaultVideoPath: data.default_video_path || '',
-        version: '1.7.0-PRO', // Frontend override for consistency
+        version: '1.8.0-PRO', // Frontend override for consistency
         releaseDate: '2026-01-10',
         overlay_enabled: data.overlay_enabled ?? true,
         channelName: data.channel_name || 'Cloud Onepa'
@@ -1032,7 +1032,7 @@ export default function Settings() {
                   <List>
                     <ListItem>
                       <ListItemText
-                        primary={<Typography variant="subtitle1"><strong>v1.7.0-PRO</strong> - 2026-01-10</Typography>}
+                        primary={<Typography variant="subtitle1"><strong>v1.8.0-PRO</strong> - 2026-01-10</Typography>}
                         secondary={
                           <Box component="span">
                             • Setup Wizard para configuração inicial<br />
@@ -1174,7 +1174,7 @@ export default function Settings() {
         </DialogTitle>
         <DialogContent dividers>
           <Box sx={{ mb: 4 }}>
-            <Typography variant="h6" color="primary" gutterBottom>Destaques da Versão 1.7.0-PRO</Typography>
+            <Typography variant="h6" color="primary" gutterBottom>Destaques da Versão 1.8.0-PRO</Typography>
             <Typography variant="body2" paragraph>
               Esta versão traz melhorias críticas na estabilidade do motor de playout e novas funcionalidades de branding para o seu canal.
             </Typography>

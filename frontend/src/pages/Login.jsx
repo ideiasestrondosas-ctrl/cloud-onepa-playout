@@ -106,7 +106,7 @@ export default function Login() {
           
           <Box sx={{ mt: 3, textAlign: 'center' }}>
             <Typography variant="caption" color="text.secondary">
-              Cloud Onepa Playout v1.7.0-PRO
+              Cloud Onepa Playout v1.8.0-PRO
             </Typography>
             <Typography variant="caption" color="text.secondary" display="block">
               © 2026 Onepa Technologies

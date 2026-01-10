@@ -1,5 +1,35 @@
 # Release Notes - Cloud Onepa Playout
 
+## v1.8.0-PRO (2026-01-10)
+
+### 🎉 New Features & Major Improvements
+
+#### Advanced Setup Wizard Upgrade
+
+- **Hybrid Media Selection**: Support for both internal Media Library files and External Streams (RTMP/HLS).
+- **Auto-Playlist Generation**: Automatically creates a "Setup Playlist" from selected items.
+- **Workflow Optimization**: Smoother transition from configuration to broadcasting.
+
+#### Professional Branding & Identity
+
+- **Channel Identity**: Dedicated "Channel Name" configuration displayed on Dashboard.
+- **Application Branding**: Separate upload for sidebar/UI logo, independent of the channel overlay.
+- **Visual Separation**: Clear distinction between broadcaster brand (Overlay) and system branding (UI).
+
+#### Playout Engine Stability
+
+- **Enhanced Logging**: Detailed real-time reporting of schedule detection and playlist loading.
+- **State Propagation**: Improved synchronization between the backend engine and dashboard status.
+- **Idle State Management**: Better handling of transitions between programs.
+
+### 🐛 Bug Fixes
+
+- **Dashboard Recovery**: Fixed critical "White Screen" errors caused by missing Material UI imports and duplicate code blocks.
+- **API Correctness**: Resolved settings fetching issues and standardized API calls.
+- **UI Consistency**: Fixed version display across all application layers.
+
+---
+
 ## v1.7.0-PRO (2026-01-10)
 
 ### 🎉 New Features

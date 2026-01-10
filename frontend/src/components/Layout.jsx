@@ -47,11 +47,11 @@ const AppLogo = () => (
         />
       </Box>
       <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main', fontSize: '1.1rem' }}>
-        Cloud Onepa
+        Cloud Onepa Playout v1.8.0-PRO
       </Typography>
     </Box>
     <Typography variant="caption" sx={{ color: 'text.secondary', ml: 5, mt: -0.5, fontSize: '0.7rem' }}>
-      v1.7.0-PRO
+      v1.8.0-PRO
     </Typography>
   </Box>
 );

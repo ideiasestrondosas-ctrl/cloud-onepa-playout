@@ -80,4 +80,4 @@ O sistema inclui scripts para backup e release:
 
 ---
 
-_Cloud Onepa Playout PRO v1.7.0 (2026)_
+_Cloud Onepa Playout PRO v1.8.0 (2026)_

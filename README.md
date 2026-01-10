@@ -5,7 +5,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB.svg)](https://reactjs.org/)
-[![Version](https://img.shields.io/badge/Version-1.7.0--PRO-green.svg)]()
+[![Version](https://img.shields.io/badge/Version-1.8.0--PRO-green.svg)]()
 [![Status](https://img.shields.io/badge/Status-Beta-yellow.svg)]()
 
 > ℹ️ **STATUS:** Este projeto encontra-se em fase **Beta**.
@@ -119,7 +119,7 @@ Ver [docs/INSTALL.md](docs/INSTALL.md) para instruções detalhadas.
 
 Ver [RELEASE_NOTES.md](RELEASE_NOTES.md) para detalhes completos.
 
-### Versão Atual: 1.7.0-PRO (2026-01-10)
+### Versão Atual: 1.8.0-PRO (2026-01-10)
 
 **Novidades:**
 
