@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useNotification } from '../contexts/NotificationContext';
-import { authAPI, settingsAPI } from '../services/api';
+import { authAPI, settingsAPI, protectedAPI } from '../services/api';
 import {
   Box,
   Typography,
@@ -9,6 +9,8 @@ import {
   Tab,
   Card,
   CardContent,
+  CardMedia,
+  CardActions,
   TextField,
   Button,
   Select,
@@ -33,6 +35,11 @@ import {
   Add as AddIcon,
   Delete as DeleteIcon,
   AutoAwesome as WizardIcon,
+  Folder as FolderIcon,
+  Image as ImageIcon,
+  Movie as MovieIcon,
+  CheckCircle as CheckIcon,
+  Visibility as ViewIcon,
 } from '@mui/icons-material';
 
 function TabPanel({ children, value, index }) {
@@ -62,11 +69,14 @@ export default function Settings() {
     logoPath: '',
     logoPosition: 'top-right',
     dayStart: '06:00',
+    defaultImagePath: '',
+    defaultVideoPath: '',
     version: '1.7.0-PRO',
     releaseDate: '2026-01-10'
   });
 
   const [loading, setLoading] = useState(true);
+  const [protectedAssets, setProtectedAssets] = useState([]);
   const [users, setUsers] = useState([]);
   const [userDialogOpen, setUserDialogOpen] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
@@ -77,6 +87,7 @@ export default function Settings() {
 
   useEffect(() => {
     fetchSettings();
+    fetchProtectedAssets();
     
     // Handle URL parameters for deep-linking
     const tab = searchParams.get('tab');
@@ -124,12 +135,46 @@ export default function Settings() {
         logoPath: data.logo_path || '',
         logoPosition: data.logo_position || 'top-right',
         dayStart: data.day_start || '06:00',
+        defaultImagePath: data.default_image_path || '',
+        defaultVideoPath: data.default_video_path || '',
+        version: '1.7.0-PRO', // Frontend override for consistency
+        releaseDate: '2026-01-10'
       });
     } catch (error) {
       console.error('Failed to fetch settings:', error);
       showError('Erro ao carregar configurações');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchProtectedAssets = async () => {
+    try {
+      const response = await protectedAPI.list();
+      setProtectedAssets(response.data);
+    } catch (error) {
+      console.error('Failed to fetch protected assets:', error);
+    }
+  };
+
+  const setDefaultMedia = async (type, path) => {
+    try {
+      setSaving(true);
+      const updateData = type === 'image' 
+        ? { default_image_path: path }
+        : { default_video_path: path };
+        
+      await settingsAPI.update(updateData);
+      setSettings(prev => ({
+        ...prev,
+        [type === 'image' ? 'defaultImagePath' : 'defaultVideoPath']: path
+      }));
+      showSuccess(`${type === 'image' ? 'Imagem' : 'Vídeo'} padrão atualizado!`);
+    } catch (error) {
+      console.error('Failed to set default media:', error);
+      showError('Erro ao atualizar mídia padrão');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -289,6 +334,7 @@ export default function Settings() {
               <Tab label="Output" />
               <Tab label="Caminhos" />
               <Tab label="Playout" />
+              <Tab label="Assets Protegidos" />
               <Tab label="Utilizadores" />
               <Tab label="Presets" />
               <Tab label="Release Notes" />
@@ -488,18 +534,19 @@ export default function Settings() {
                 <Grid item xs={12}>
                   <Divider sx={{ my: 2 }} />
                   <Typography variant="h6" gutterBottom id="overlay-section">
-                    Overlay e Logo
+                    Overlay & Logo
                   </Typography>
                 </Grid>
 
                 <Grid item xs={12} sm={8}>
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1 }}>
                     <TextField
                       fullWidth
-                      label="Caminho do Logo"
+                      label="Caminho Completo do Logo"
                       value={settings.logoPath}
                       onChange={(e) => setSettings({ ...settings, logoPath: e.target.value })}
                       placeholder="/path/to/logo.png"
+                      helperText="Pode fornecer um caminho local absoluto ou fazer upload"
                     />
                     <input
                       type="file"
@@ -509,16 +556,11 @@ export default function Settings() {
                       onChange={handleLogoUpload}
                     />
                     <label htmlFor="logo-upload">
-                      <Button variant="outlined" component="span">
+                      <Button variant="contained" component="span" startIcon={<AddIcon />}>
                         Upload
                       </Button>
                     </label>
                   </Box>
-                  {settings.logoPath && (
-                    <Typography variant="caption" color="text.secondary">
-                      Logo atual: {settings.logoPath}
-                    </Typography>
-                  )}
                 </Grid>
 
                 <Grid item xs={12} sm={4}>
@@ -574,8 +616,100 @@ export default function Settings() {
               </Grid>
             </TabPanel>
 
-            {/* Users Tab */}
+            {/* Protected Assets Tab */}
             <TabPanel value={tabValue} index={3}>
+              <Typography variant="h6" gutterBottom>
+                Diretório de Assets Protegidos
+              </Typography>
+              <Alert severity="warning" sx={{ mb: 3 }}>
+                Estes ficheiros são protegidos pelo sistema e não podem ser eliminados pelo utilizador.
+                Pode defini-los como mídia padrão para o playout.
+              </Alert>
+
+              <Grid container spacing={2}>
+                {protectedAssets.map((asset) => (
+                  <Grid item xs={12} sm={6} md={4} key={asset.name}>
+                    <Card variant="outlined">
+                      <CardContent sx={{ p: 2 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                          {asset.is_video ? <MovieIcon color="primary" /> : <ImageIcon color="secondary" />}
+                          <Typography variant="subtitle1" sx={{ ml: 1, fontWeight: 'bold' }} noWrap title={asset.name}>
+                            {asset.name}
+                          </Typography>
+                        </Box>
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          Tamanho: {(asset.size / 1024 / 1024).toFixed(2)} MB
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1, fontStyle: 'italic' }}>
+                          Caminho: {asset.path}
+                        </Typography>
+                      </CardContent>
+                      <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
+                        <Button 
+                          size="small" 
+                          startIcon={<ViewIcon />}
+                          onClick={() => window.open(protectedAPI.getStreamUrl(asset.name), '_blank')}
+                        >
+                          Pré-visualizar
+                        </Button>
+                        <Box>
+                          {!asset.is_video ? (
+                            <Button 
+                              size="small" 
+                              color={settings.defaultImagePath === asset.path ? "success" : "primary"}
+                              variant={settings.defaultImagePath === asset.path ? "contained" : "text"}
+                              onClick={() => setDefaultMedia('image', asset.path)}
+                              startIcon={settings.defaultImagePath === asset.path ? <CheckIcon /> : null}
+                            >
+                              Padrão Image
+                            </Button>
+                          ) : (
+                            <Button 
+                              size="small" 
+                              color={settings.defaultVideoPath === asset.path ? "success" : "primary"}
+                              variant={settings.defaultVideoPath === asset.path ? "contained" : "text"}
+                              onClick={() => setDefaultMedia('video', asset.path)}
+                              startIcon={settings.defaultVideoPath === asset.path ? <CheckIcon /> : null}
+                            >
+                              Padrão Vídeo
+                            </Button>
+                          )}
+                        </Box>
+                      </CardActions>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+              
+              <Box sx={{ mt: 4 }}>
+                <Typography variant="h6" gutterBottom>
+                  Configurações de Mídia Padrão
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Mídia Padrão (Imagem)"
+                      value={settings.defaultImagePath}
+                      disabled
+                      helperText="Usado quando não há conteúdo de imagem disponível"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Mídia Padrão (Vídeo)"
+                      value={settings.defaultVideoPath}
+                      disabled
+                      helperText="Usado como filler de segurança global"
+                    />
+                  </Grid>
+                </Grid>
+              </Box>
+            </TabPanel>
+
+            {/* Users Tab */}
+            <TabPanel value={tabValue} index={4}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="h6">
                   Utilizadores
@@ -626,7 +760,7 @@ export default function Settings() {
             </TabPanel>
 
             {/* Presets Tab */}
-            <TabPanel value={tabValue} index={4}>
+            <TabPanel value={tabValue} index={5}>
               <Typography variant="h6" gutterBottom>
                 Presets de Configuração
               </Typography>
@@ -713,7 +847,7 @@ export default function Settings() {
             </TabPanel>
 
             {/* Release Notes Tab */}
-            <TabPanel value={tabValue} index={5}>
+            <TabPanel value={tabValue} index={6}>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
                   <Typography variant="h6" gutterBottom>
@@ -722,19 +856,55 @@ export default function Settings() {
                   <Card variant="outlined" sx={{ mb: 3 }}>
                     <CardContent>
                       <Grid container spacing={2}>
-                        <Grid item xs={12} sm={4}>
-                          <Typography variant="subtitle2" color="text.secondary">Versão</Typography>
-                          <Typography variant="body1">{settings.version}</Typography>
+                        <Grid item xs={12} sm={3}>
+                          <Typography variant="subtitle2" color="text.secondary">Versão do Sistema</Typography>
+                          <Typography variant="body1" fontWeight="bold">{settings.version}</Typography>
                         </Grid>
-                        <Grid item xs={12} sm={4}>
-                          <Typography variant="subtitle2" color="text.secondary">Data de Lançamento</Typography>
+                        <Grid item xs={12} sm={3}>
+                          <Typography variant="subtitle2" color="text.secondary">Última Atualização</Typography>
                           <Typography variant="body1">{settings.releaseDate}</Typography>
                         </Grid>
-                        <Grid item xs={12} sm={4}>
+                        <Grid item xs={12} sm={3}>
+                          <Typography variant="subtitle2" color="text.secondary">Frontend</Typography>
+                          <Typography variant="body1">React 18.3 + Vite 5.4</Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={3}>
+                          <Typography variant="subtitle2" color="text.secondary">Backend</Typography>
+                          <Typography variant="body1">Rust + Actix-web</Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={3}>
+                          <Typography variant="subtitle2" color="text.secondary">Base de Dados</Typography>
+                          <Typography variant="body1">PostgreSQL 16</Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={3}>
                           <Typography variant="subtitle2" color="text.secondary">Sistema Operativo</Typography>
                           <Typography variant="body1">Docker Container (Linux)</Typography>
                         </Grid>
+                        <Grid item xs={12} sm={3}>
+                          <Typography variant="subtitle2" color="text.secondary">FFmpeg</Typography>
+                          <Typography variant="body1">7.2+</Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={3}>
+                          <Typography variant="subtitle2" color="text.secondary">Ambiente</Typography>
+                          <Typography variant="body1">Production</Typography>
+                        </Grid>
                       </Grid>
+                      <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+                        <Button 
+                          variant="outlined" 
+                          size="small"
+                          onClick={() => window.open('https://github.com/ideiasestrondosas-ctrl/cloud-onepa-playout/blob/master/RELEASE_NOTES.md', '_blank')}
+                        >
+                          Ver Release Notes Completas
+                        </Button>
+                        <Button 
+                          variant="outlined" 
+                          size="small"
+                          onClick={() => window.open('https://github.com/ideiasestrondosas-ctrl/cloud-onepa-playout', '_blank')}
+                        >
+                          GitHub Repository
+                        </Button>
+                      </Box>
                     </CardContent>
                   </Card>
                 </Grid>

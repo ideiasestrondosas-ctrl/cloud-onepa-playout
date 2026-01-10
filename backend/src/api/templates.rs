@@ -52,8 +52,40 @@ async fn delete_template(pool: web::Data<PgPool>, id: web::Path<Uuid>) -> impl R
     }
 }
 
+async fn update_template(
+    template_id: web::Path<Uuid>,
+    template_data: web::Json<CreateTemplateRequest>,
+    pool: web::Data<PgPool>,
+) -> impl Responder {
+    let result = sqlx::query(
+        "UPDATE templates 
+         SET name = $1, description = $2, structure = $3, duration = $4
+         WHERE id = $5",
+    )
+    .bind(&template_data.name)
+    .bind(&template_data.description)
+    .bind(&template_data.structure)
+    .bind(template_data.duration)
+    .bind(template_id.into_inner())
+    .execute(pool.get_ref())
+    .await;
+
+    match result {
+        Ok(res) if res.rows_affected() > 0 => {
+            HttpResponse::Ok().json(serde_json::json!({"message": "Template updated successfully"}))
+        }
+        Ok(_) => HttpResponse::NotFound().json(serde_json::json!({"error": "Template not found"})),
+        Err(e) => {
+            log::error!("Failed to update template: {}", e);
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": "Failed to update template"}))
+        }
+    }
+}
+
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.route("", web::get().to(get_templates))
         .route("", web::post().to(create_template))
+        .route("/{id}", web::put().to(update_template))
         .route("/{id}", web::delete().to(delete_template));
 }

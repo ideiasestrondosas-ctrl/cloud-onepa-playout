@@ -104,6 +104,14 @@ export default function Login() {
             </Button>
           </form>
           
+          <Box sx={{ mt: 3, textAlign: 'center' }}>
+            <Typography variant="caption" color="text.secondary">
+              Cloud Onepa Playout v1.7.0-PRO
+            </Typography>
+            <Typography variant="caption" color="text.secondary" display="block">
+              © 2026 Onepa Technologies
+            </Typography>
+          </Box>
           <Box sx={{ mt: 2, textAlign: 'center' }}>
             <Typography variant="caption" color="text.secondary">
               Default: admin / admin

@@ -24,6 +24,7 @@ import {
   Add as AddIcon,
   Delete as DeleteIcon,
   PlayArrow as PlayIcon,
+  Edit as EditIcon,
 } from '@mui/icons-material';
 
 const PRESET_TEMPLATES = [
@@ -101,19 +102,49 @@ export default function Templates() {
           name: newTemplate.name,
           description: newTemplate.description,
           duration: newTemplate.duration,
-          structure: [
+          structure: newTemplate.structure.length > 0 ? newTemplate.structure : [
             { type: 'content', duration: newTemplate.duration }
           ]
         };
         
-        await templateAPI.create(templateToAdd);
-        showSuccess('Template guardado com sucesso!');
+        if (newTemplate.id) {
+          await templateAPI.update(newTemplate.id, templateToAdd);
+          showSuccess('Template atualizado com sucesso!');
+        } else {
+          await templateAPI.create(templateToAdd);
+          showSuccess('Template criado com sucesso!');
+        }
+        
         setCreateDialogOpen(false);
         setNewTemplate({ name: '', description: '', duration: 3600, structure: [] });
         fetchTemplates();
     } catch (error) {
         console.error('Failed to save template:', error);
-        showError('Erro ao guardar template na base de dados');
+        showError('Erro ao guardar template');
+    }
+  };
+
+  const handleEditTemplate = (template) => {
+    setNewTemplate({
+      id: template.id,
+      name: template.name,
+      description: template.description,
+      duration: template.duration,
+      structure: template.structure
+    });
+    setCreateDialogOpen(true);
+  };
+
+  const handleDeleteTemplate = async (id) => {
+    if (!window.confirm('Tem a certeza que deseja eliminar este template?')) return;
+    
+    try {
+      await templateAPI.delete(id);
+      showSuccess('Template eliminado!');
+      fetchTemplates();
+    } catch (error) {
+      console.error('Failed to delete template:', error);
+      showError('Erro ao eliminar template');
     }
   };
 
@@ -230,15 +261,26 @@ export default function Templates() {
                     ))}
                   </List>
                 </Box>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  startIcon={<PlayIcon />}
-                  onClick={() => handleUseTemplate(template)}
-                  sx={{ mt: 2 }}
-                >
-                  Usar Template
-                </Button>
+                <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    startIcon={<PlayIcon />}
+                    onClick={() => handleUseTemplate(template)}
+                  >
+                    Usar
+                  </Button>
+                  {!PRESET_TEMPLATES.find(p => p.id === template.id) && (
+                    <>
+                      <IconButton onClick={() => handleEditTemplate(template)} color="primary" size="small">
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton onClick={() => handleDeleteTemplate(template.id)} color="error" size="small">
+                        <DeleteIcon />
+                      </IconButton>
+                    </>
+                  )}
+                </Box>
               </CardContent>
             </Card>
           </Grid>

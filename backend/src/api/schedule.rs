@@ -4,7 +4,7 @@ use serde::Deserialize;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::models::schedule::Schedule;
+use crate::models::schedule::{CreateSchedule, Schedule};
 
 #[derive(Deserialize)]
 pub struct ScheduleQuery {
@@ -120,6 +120,37 @@ async fn delete_schedule(schedule_id: web::Path<Uuid>, pool: web::Data<PgPool>) 
     }
 }
 
+async fn update_schedule(
+    schedule_id: web::Path<Uuid>,
+    schedule_data: web::Json<CreateSchedule>,
+    pool: web::Data<PgPool>,
+) -> impl Responder {
+    let result = sqlx::query(
+        "UPDATE schedule 
+         SET playlist_id = $1, date = $2, start_time = $3, repeat_pattern = $4 
+         WHERE id = $5",
+    )
+    .bind(schedule_data.playlist_id)
+    .bind(schedule_data.date)
+    .bind(schedule_data.start_time)
+    .bind(&schedule_data.repeat_pattern)
+    .bind(schedule_id.into_inner())
+    .execute(pool.get_ref())
+    .await;
+
+    match result {
+        Ok(res) if res.rows_affected() > 0 => {
+            HttpResponse::Ok().json(serde_json::json!({"message": "Schedule updated successfully"}))
+        }
+        Ok(_) => HttpResponse::NotFound().json(serde_json::json!({"error": "Schedule not found"})),
+        Err(e) => {
+            log::error!("Failed to update schedule: {}", e);
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": "Failed to update schedule"}))
+        }
+    }
+}
+
 #[derive(Deserialize)]
 pub struct GetPlaylistForDateRequest {
     pub date: String,
@@ -209,5 +240,6 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.route("", web::get().to(list_schedule))
         .route("", web::post().to(create_schedule))
         .route("/{id}", web::delete().to(delete_schedule))
-        .route("/for-date", web::get().to(get_playlist_for_date));
+        .route("/{id}", web::put().to(update_schedule))
+        .route("/playlist", web::get().to(get_playlist_for_date));
 }

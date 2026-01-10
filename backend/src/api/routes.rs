@@ -10,6 +10,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .service(web::scope("/playout").configure(crate::api::playout::configure))
             .service(web::scope("/schedule").configure(crate::api::schedule::configure))
             .service(web::scope("/settings").configure(crate::api::settings::configure))
-            .service(web::scope("/templates").configure(crate::api::templates::configure)),
+            .service(web::scope("/templates").configure(crate::api::templates::configure))
+            .service(web::scope("/protected").configure(crate::api::protected::configure)),
     );
 }

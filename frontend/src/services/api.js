@@ -75,6 +75,7 @@ export const playlistAPI = {
 export const scheduleAPI = {
   list: () => api.get('/schedule'),
   create: (data) => api.post('/schedule', data),
+  update: (id, data) => api.put(`/schedule/${id}`, data),
   delete: (id) => api.delete(`/schedule/${id}`),
 };
 
@@ -100,7 +101,14 @@ export const settingsAPI = {
 export const templateAPI = {
   list: () => api.get('/templates'),
   create: (data) => api.post('/templates', data),
+  update: (id, data) => api.put(`/templates/${id}`, data),
   delete: (id) => api.delete(`/templates/${id}`),
+};
+
+// Protected Assets endpoints
+export const protectedAPI = {
+  list: () => api.get('/protected'),
+  getStreamUrl: (filename) => `${API_BASE_URL}/protected/${filename}`,
 };
 
 export default api;

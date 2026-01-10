@@ -18,6 +18,8 @@ pub struct Settings {
     pub logo_path: Option<String>,
     pub logo_position: Option<String>,
     pub day_start: Option<String>,
+    pub default_image_path: Option<String>,
+    pub default_video_path: Option<String>,
     pub is_running: bool,
     pub last_error: Option<String>,
     pub updated_at: DateTime<Utc>,
@@ -38,4 +40,6 @@ pub struct UpdateSettingsRequest {
     pub logo_path: Option<String>,
     pub logo_position: Option<String>,
     pub day_start: Option<String>,
+    pub default_image_path: Option<String>,
+    pub default_video_path: Option<String>,
 }

@@ -38,12 +38,11 @@ async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
                 logo_path: None,
                 logo_position: Some("top-left".to_string()),
                 day_start: Some("06:00:00".to_string()),
+                default_image_path: Some("".to_string()),
+                default_video_path: Some("".to_string()),
                 is_running: false,
                 last_error: None,
                 updated_at: chrono::Utc::now(),
-                // Add any other missing fields here with default values if necessary
-                // For example, if `stream_key` was added to Settings:
-                // stream_key: None,
             })
         }
         Err(_) => HttpResponse::InternalServerError()
@@ -95,6 +94,12 @@ async fn update_settings(
     }
     if let Some(ref day_start) = req.day_start {
         sql.push_str(&format!(", day_start = '{}'", day_start));
+    }
+    if let Some(ref default_image_path) = req.default_image_path {
+        sql.push_str(&format!(", default_image_path = '{}'", default_image_path));
+    }
+    if let Some(ref default_video_path) = req.default_video_path {
+        sql.push_str(&format!(", default_video_path = '{}'", default_video_path));
     }
 
     sql.push_str(" WHERE id = TRUE");
