@@ -107,6 +107,24 @@ Ver [docs/INSTALL.md](docs/INSTALL.md) para instruções detalhadas.
 - **Container**: Docker + Docker Compose
 - **Auth**: JWT
 
+## 📊 Estatísticas de Desenvolvimento (Experimental Phase)
+
+Este projeto representa um esforço significativo de engenharia para criar uma solução de playout robusta e moderna.
+
+| Métrica          | Detalhe                    | Valor                                |
+| ---------------- | -------------------------- | ------------------------------------ |
+| **Código Fonte** | Frontend (React/JSX)       | ~4,700 linhas                        |
+|                  | Backend (Rust)             | ~2,900 linhas                        |
+|                  | Total                      | **~7,600+ linhas**                   |
+| **Arquitetura**  | Módulos Backend (Rust)     | 29                                   |
+|                  | Componentes Visuais        | 17+                                  |
+|                  | Migrações de Base de Dados | 9                                    |
+| **Complexidade** | Linguagens Principais      | Rust, JavaScript, SQL                |
+|                  | Tecnologias Core           | Tokio (Async), FFmpeg 7.2+, React 18 |
+|                  | Containers                 | 3 (Backend, Frontend, Postgres)      |
+
+> _Dados aproximados baseados na versão v1.8.1-EXP_
+
 ## 🎯 Roadmap
 
 - [x] Fase 1: Análise e Planeamento
