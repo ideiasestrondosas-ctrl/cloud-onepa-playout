@@ -16,6 +16,16 @@ import {
   MenuItem,
   Alert,
   Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Grid,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction,
+  IconButton,
 } from '@mui/material';
 import {
   CheckCircle as CheckCircleIcon,
@@ -28,17 +38,6 @@ import {
   Movie as MovieIcon,
   Image as ImageIcon,
 } from '@mui/icons-material';
-import { 
-  List, 
-  ListItem, 
-  ListItemText, 
-  ListItemSecondaryAction, 
-  IconButton, 
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
-  Grid 
-} from '@mui/material';
 import { settingsAPI, mediaAPI, playlistAPI, scheduleAPI } from '../../services/api';
 import { useNotification } from '../../contexts/NotificationContext';
 
@@ -226,10 +225,6 @@ export default function SetupWizard() {
           <Box sx={{ mt: 2 }}>
             <Typography variant="h6" gutterBottom>Conteúdo Inicial</Typography>
             <Alert severity="info" sx={{ mb: 2 }}>
-              Pode carregar os seus primeiros vídeos agora para começar rapidamente.
-            </Alert>
-            <Typography variant="h6" gutterBottom>Conteúdo Inicial</Typography>
-            <Alert severity="info" sx={{ mb: 2 }}>
               Adicione vídeos da sua biblioteca ou streams externos (RTMP/HLS) para a sua playlist inicial.
             </Alert>
             
@@ -270,11 +265,15 @@ export default function SetupWizard() {
                 <DialogTitle>Selecionar Mídia</DialogTitle>
                 <DialogContent dividers>
                     <List>
-                        {libraryItems.map((item) => (
-                            <ListItem button key={item.path} onClick={() => addLibraryItem(item)}>
-                                <ListItemText primary={item.filename} secondary={`${(item.size / 1024 / 1024).toFixed(2)} MB`} />
-                            </ListItem>
-                        ))}
+                        {Array.isArray(libraryItems) && libraryItems.length > 0 ? (
+                            libraryItems.map((item, idx) => (
+                                <ListItem button key={item.path || idx} onClick={() => addLibraryItem(item)}>
+                                    <ListItemText primary={item.filename} secondary={`${(item.size / 1024 / 1024).toFixed(2)} MB`} />
+                                </ListItem>
+                            ))
+                        ) : (
+                            <Typography sx={{ p: 2, textAlign: 'center' }}>Nenhuma mídia encontrada na biblioteca.</Typography>
+                        )}
                     </List>
                 </DialogContent>
                 <DialogActions>
@@ -343,7 +342,7 @@ export default function SetupWizard() {
               O seu canal está configurado e pronto para emitir.
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              Clique em finalizar para ir ao Dashboard e clicar em <b>START</b>.
+              Clique em finalizar para ir ao Dashboard {settings?.channel_name || 'Cloud Onepa'} e clicar em <b>START</b>.
             </Typography>
           </Box>
         );

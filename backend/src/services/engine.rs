@@ -4,7 +4,7 @@ use crate::models::settings::Settings;
 use crate::services::ffmpeg::FFmpegService;
 use chrono::{Datelike, Local, NaiveTime};
 use serde::{Deserialize, Serialize};
-use sqlx::PgPool;
+use sqlx::{PgPool, Row};
 use std::process::Child;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -272,11 +272,30 @@ impl PlayoutEngine {
                 .or_else(|| item["path"].as_str())
                 .ok_or("Missing clip path")?;
 
-            let filename = std::path::Path::new(clip_path)
-                .file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or(clip_path)
-                .to_string();
+            // Try to get the original filename from the media library
+            let filename = if let Ok(media_row) =
+                sqlx::query("SELECT filename FROM media WHERE path = $1 LIMIT 1")
+                    .bind(clip_path)
+                    .fetch_one(&self.pool)
+                    .await
+            {
+                media_row
+                    .try_get::<String, _>("filename")
+                    .unwrap_or_else(|_| {
+                        std::path::Path::new(clip_path)
+                            .file_name()
+                            .and_then(|n| n.to_str())
+                            .unwrap_or(clip_path)
+                            .to_string()
+                    })
+            } else {
+                // Fallback to path-based filename if not found in media library
+                std::path::Path::new(clip_path)
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or(clip_path)
+                    .to_string()
+            };
 
             let clip_id = item["id"].as_str().unwrap_or(clip_path);
             let duration = item["duration"].as_f64().unwrap_or(0.0);

@@ -180,7 +180,7 @@ async fn debug_playout(pool: web::Data<PgPool>) -> impl Responder {
 
     // Check overlay
     let settings =
-        sqlx::query("SELECT logo_path FROM settings WHERE id = TRUE AND logo_enabled = TRUE")
+        sqlx::query("SELECT logo_path FROM settings WHERE id = TRUE AND overlay_enabled = TRUE")
             .fetch_optional(pool.get_ref())
             .await;
 

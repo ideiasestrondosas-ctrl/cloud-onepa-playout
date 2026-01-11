@@ -30,27 +30,22 @@ import { useHelp } from '../context/HelpContext';
 import ConnectivityStatus from './ConnectivityStatus';
 
 const AppLogo = () => (
-  <Box sx={{ display: 'flex', flexDirection: 'column', px: 2, py: 1 }}>
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-      <Box sx={{ 
-        width: 32, 
-        height: 32, 
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
-        <img 
-          src={`/api/settings/app-logo?t=${Date.now()}`} 
-          alt="Logo" 
-          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-          onError={(e) => { e.target.src = 'https://via.placeholder.com/32?text=C'; }}
-        />
-      </Box>
-      <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main', fontSize: '1.1rem' }}>
-        Cloud Onepa Playout v1.8.0-PRO
-      </Typography>
+  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', px: 2, py: 2 }}>
+    <Box sx={{ 
+      width: 64, 
+      height: 64, 
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}>
+      <img 
+        src={`/api/settings/app-logo?t=${Date.now()}`} 
+        alt="Logo" 
+        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+        onError={(e) => { e.target.src = 'https://via.placeholder.com/64?text=C'; }}
+      />
     </Box>
-    <Typography variant="caption" sx={{ color: 'text.secondary', ml: 5, mt: -0.5, fontSize: '0.7rem' }}>
+    <Typography variant="caption" sx={{ color: 'text.secondary', mt: 1, fontSize: '0.75rem', fontWeight: 'bold', textAlign: 'center' }}>
       v1.8.0-PRO
     </Typography>
   </Box>
@@ -136,8 +131,8 @@ export default function Layout({ children }) {
             <MenuIcon />
           </IconButton>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexGrow: 1 }}>
-              <Typography variant="h6" noWrap component="div">
-                ONEPA PRO PLAYOUT
+              <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 'bold' }}>
+                Cloud Onepa Playout
               </Typography>
             </Box>
             <IconButton 

@@ -134,13 +134,21 @@ export default function Dashboard() {
 
   const isPlaying = status.status === 'playing';
 
+  const formatTime = (seconds) => {
+    if (seconds === null || seconds === undefined || isNaN(seconds)) return '00:00:00';
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    return [h, m, s].map(v => v.toString().padStart(2, '0')).join(':');
+  };
+
   return (
     <Box>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>
           <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main', display: 'flex', alignItems: 'center', gap: 2 }}>
             <DashboardIcon fontSize="large" />
-            {settings?.channel_name || 'Dashboard de Playout'}
+            {settings?.channel_name || 'Cloud Onepa'}
           </Typography>
           <Typography variant="subtitle1" color="text.secondary">
             Visão geral do estado do sistema e monitorização em tempo real.
@@ -197,8 +205,8 @@ export default function Dashboard() {
               <Typography color="text.secondary" gutterBottom>
                 Uptime
               </Typography>
-              <Typography variant="h4" component="div" sx={{ mt: 2 }}>
-                {Math.floor(status.uptime / 3600)}h {Math.floor((status.uptime % 3600) / 60)}m
+              <Typography variant="h4" component="div" sx={{ mt: 2, fontFamily: 'monospace', fontWeight: 'bold' }}>
+                {formatTime(status.uptime)}
               </Typography>
             </CardContent>
           </Card>
@@ -406,9 +414,11 @@ export default function Dashboard() {
                   backdropFilter: 'blur(4px)',
                   borderTop: '1px solid rgba(255,255,255,0.1)'
                 }}>
-                  <Typography variant="caption" sx={{ color: '#fff', display: 'flex', justifyContent: 'space-between' }}>
-                    <span>REC: {status.current_clip.filename}</span>
-                    <span>{Math.floor(status.current_clip.position || 0)}s / {status.current_clip.duration || 0}s</span>
+                  <Typography variant="caption" sx={{ color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%', fontWeight: 'bold' }}>
+                      REC: {status.current_clip.filename}
+                    </Box>
+                    <span style={{ fontFamily: 'monospace' }}>{formatTime(status.current_clip.position)} / {formatTime(status.current_clip.duration)}</span>
                   </Typography>
                   <LinearProgress 
                     variant="determinate" 
@@ -432,11 +442,11 @@ export default function Dashboard() {
               </Typography>
               {status.current_clip ? (
                 <Box>
-                  <Typography variant="body1">
+                  <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
                     {status.current_clip.filename || 'Sem nome'}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Duração: {status.current_clip.duration || 0}s
+                    Duração: {formatTime(status.current_clip.duration)}
                   </Typography>
                 </Box>
               ) : (

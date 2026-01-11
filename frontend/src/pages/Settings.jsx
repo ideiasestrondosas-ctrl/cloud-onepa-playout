@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import ReactPlayer from 'react-player';
 import { useNotification } from '../contexts/NotificationContext';
 import { authAPI, settingsAPI, protectedAPI } from '../services/api';
 import {
@@ -88,6 +89,8 @@ export default function Settings() {
   const [newUser, setNewUser] = useState({ username: '', password: '', role: 'operator' });
   const [saving, setSaving] = useState(false);
   const [releaseNotesOpen, setReleaseNotesOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewAsset, setPreviewAsset] = useState(null);
 
   useEffect(() => {
     fetchSettings();
@@ -623,13 +626,6 @@ export default function Settings() {
                           alt="Logo" 
                           style={{ maxWidth: '100%', maxHeight: '50px', objectFit: 'contain' }} 
                         />
-                        <Typography 
-                          variant="caption" 
-                          sx={{ display: 'block', mt: 1, color: 'primary.main', cursor: 'pointer', textDecoration: 'underline' }}
-                          onClick={() => window.open(`${window.location.origin}/api/settings/logo`, '_blank')}
-                        >
-                          Link Público
-                        </Typography>
                       </Box>
                     ) : (
                       <Typography variant="caption" color="text.secondary">
@@ -720,75 +716,87 @@ export default function Settings() {
                 Pode defini-los como mídia padrão para o playout.
               </Alert>
 
-              <Grid container spacing={3}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Diretório: <code>/var/lib/onepa-playout/assets/protected</code>
+              </Typography>
+
+              <Grid container spacing={2}>
                 {protectedAssets.map((asset) => (
-                  <Grid item xs={12} sm={6} md={3} key={asset.name}>
+                  <Grid item xs={12} sm={6} md={4} lg={3} key={asset.name}>
                     <Card 
                       variant="outlined" 
                       sx={{ 
                         height: '100%', 
                         display: 'flex', 
                         flexDirection: 'column',
-                        transition: 'transform 0.2s',
-                        '&:hover': { transform: 'translateY(-4px)', boxShadow: 3 }
+                        transition: 'transform 0.2s, box-shadow 0.2s',
+                        '&:hover': { transform: 'translateY(-4px)', boxShadow: 4 }
                       }}
                     >
                       <Box sx={{ position: 'relative', pt: '56.25%', bgcolor: '#000' }}>
                         {asset.is_video ? (
-                          <MovieIcon sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: 40, opacity: 0.3, color: '#fff' }} />
+                          <MovieIcon sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: 48, opacity: 0.3, color: '#fff' }} />
                         ) : (
-                          <ImageIcon sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: 40, opacity: 0.3, color: '#fff' }} />
+                          <ImageIcon sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: 48, opacity: 0.3, color: '#fff' }} />
                         )}
-                        <Box 
-                          sx={{ 
-                            position: 'absolute', 
-                            top: 0, left: 0, width: '100%', height: '100%', 
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            bgcolor: 'rgba(0,0,0,0.4)',
-                            opacity: 0,
-                            '&:hover': { opacity: 1 },
-                            transition: 'opacity 0.2s',
-                            cursor: 'pointer'
-                          }}
-                          onClick={() => window.open(protectedAPI.getStreamUrl(asset.name), '_blank')}
-                        >
-                          <PlayIcon sx={{ fontSize: 50, color: '#fff' }} />
-                        </Box>
                       </Box>
-                      <CardContent sx={{ flexGrow: 1, p: 1.5 }}>
-                        <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block', mb: 0.5 }} noWrap title={asset.name}>
+                      <CardContent sx={{ flexGrow: 1, p: 2 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }} noWrap title={asset.name}>
                           {asset.name}
                         </Typography>
-                        <Box sx={{ display: 'flex', gap: 0.5 }}>
-                          <Chip label={asset.is_video ? "VÍDEO" : "IMAGEM"} size="small" variant="outlined" sx={{ height: 16, fontSize: '0.6rem' }} />
-                          <Chip label={`${(asset.size / 1024 / 1024).toFixed(1)} MB`} size="small" variant="outlined" sx={{ height: 16, fontSize: '0.6rem' }} />
+                        <Box sx={{ display: 'flex', gap: 0.5, mb: 1, flexWrap: 'wrap' }}>
+                          <Chip 
+                            label={asset.is_video ? "VÍDEO" : "IMAGEM"} 
+                            size="small" 
+                            color="primary"
+                          />
+                          <Chip 
+                            label={`${(asset.size / 1024 / 1024).toFixed(2)} MB`} 
+                            size="small" 
+                          />
                         </Box>
+                        {asset.resolution && (
+                          <Typography variant="caption" color="text.secondary" display="block">
+                            Resolução: {asset.resolution}
+                          </Typography>
+                        )}
+                        {asset.codec && (
+                          <Typography variant="caption" color="text.secondary" display="block">
+                            Codec: {asset.codec}
+                          </Typography>
+                        )}
                       </CardContent>
                       <Divider />
-                      <Box sx={{ p: 1, display: 'flex', justifyContent: 'center' }}>
+                      <Box sx={{ p: 1.5, display: 'flex', gap: 1 }}>
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() => { setPreviewAsset(asset); setPreviewOpen(true); }}
+                          title="Pré-visualizar"
+                        >
+                          <ViewIcon />
+                        </IconButton>
                         {!asset.is_video ? (
                           <Button 
                             fullWidth
                             size="small" 
                             color={settings.defaultImagePath === asset.path ? "success" : "primary"}
-                            variant={settings.defaultImagePath === asset.path ? "contained" : "text"}
+                            variant={settings.defaultImagePath === asset.path ? "contained" : "outlined"}
                             onClick={() => setDefaultMedia('image', asset.path)}
                             startIcon={settings.defaultImagePath === asset.path ? <CheckIcon /> : null}
-                            sx={{ fontSize: '0.7rem' }}
                           >
-                            {settings.defaultImagePath === asset.path ? 'DEFINIDO' : 'USAR COMO PADRÃO'}
+                            {settings.defaultImagePath === asset.path ? 'PADRÃO' : 'USAR'}
                           </Button>
                         ) : (
                           <Button 
                             fullWidth
                             size="small" 
                             color={settings.defaultVideoPath === asset.path ? "success" : "primary"}
-                            variant={settings.defaultVideoPath === asset.path ? "contained" : "text"}
+                            variant={settings.defaultVideoPath === asset.path ? "contained" : "outlined"}
                             onClick={() => setDefaultMedia('video', asset.path)}
                             startIcon={settings.defaultVideoPath === asset.path ? <CheckIcon /> : null}
-                            sx={{ fontSize: '0.7rem' }}
                           >
-                            {settings.defaultVideoPath === asset.path ? 'DEFINIDO' : 'USAR COMO PADRÃO'}
+                            {settings.defaultVideoPath === asset.path ? 'PADRÃO' : 'USAR'}
                           </Button>
                         )}
                       </Box>
@@ -1241,6 +1249,56 @@ export default function Settings() {
           >
             Entendido
           </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Preview Dialog */}
+      <Dialog 
+        open={previewOpen} 
+        onClose={() => setPreviewOpen(false)} 
+        maxWidth="md" 
+        fullWidth
+        PaperProps={{ sx: { bgcolor: '#000', color: '#fff' } }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: '#222' }}>
+          <Typography variant="h6">{previewAsset?.name}</Typography>
+          <IconButton onClick={() => setPreviewOpen(false)} sx={{ color: '#fff' }}>
+            <AddIcon sx={{ transform: 'rotate(45deg)' }} />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+          {previewAsset && (
+            previewAsset.is_video ? (
+              <ReactPlayer
+                url={protectedAPI.getStreamUrl(previewAsset.name)}
+                playing
+                controls
+                width="100%"
+                height="100%"
+                style={{ maxHeight: '70vh' }}
+              />
+            ) : (
+              <img 
+                src={protectedAPI.getStreamUrl(previewAsset.name)} 
+                alt={previewAsset.name} 
+                style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain' }} 
+              />
+            )
+          )}
+        </DialogContent>
+        <DialogActions sx={{ bgcolor: '#222' }}>
+          <Button onClick={() => setPreviewOpen(false)} sx={{ color: '#fff' }}>Fechar</Button>
+          {previewAsset && (
+            <Button 
+              variant="contained" 
+              color="primary"
+              onClick={() => {
+                setDefaultMedia(previewAsset.is_video ? 'video' : 'image', previewAsset.path);
+                setPreviewOpen(false);
+              }}
+            >
+              Definir como Padrão
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
     </Box>

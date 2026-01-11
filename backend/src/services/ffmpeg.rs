@@ -235,10 +235,6 @@ impl FFmpegService {
             "libx264".to_string(),
             "-preset".to_string(),
             "veryfast".to_string(),
-        ]);
-
-        // Map to first output (Main Output URL)
-        args.extend(vec![
             "-maxrate".to_string(),
             video_bitrate.to_string(),
             "-bufsize".to_string(),
@@ -253,7 +249,7 @@ impl FFmpegService {
             "-pix_fmt".to_string(),
             "yuv420p".to_string(),
             "-g".to_string(),
-            "25".to_string(), // Shorter GOP for HLS
+            "25".to_string(),
             "-vf".to_string(),
             format!("scale={}", resolution),
             "-c:a".to_string(),
@@ -262,23 +258,28 @@ impl FFmpegService {
             audio_bitrate.to_string(),
             "-ar".to_string(),
             "44100".to_string(),
-            "-f".to_string(),
-            "flv".to_string(),
-            output_url.to_string(),
         ]);
 
-        // Map to second output (HLS Preview)
+        // Use tee muxer for dual output if HLS preview is requested
         if let Some(hls_path) = hls_preview_path {
             args.extend(vec![
                 "-f".to_string(),
-                "hls".to_string(),
-                "-hls_time".to_string(),
-                "2".to_string(),
-                "-hls_list_size".to_string(),
-                "5".to_string(),
-                "-hls_flags".to_string(),
-                "delete_segments".to_string(),
-                format!("{}/preview.m3u8", hls_path),
+                "tee".to_string(),
+                "-map".to_string(),
+                "0:v".to_string(),
+                "-map".to_string(),
+                "0:a".to_string(),
+                format!(
+                    "[f=flv]{}|[f=hls:hls_time=2:hls_list_size=5:hls_flags=delete_segments]{}/preview.m3u8",
+                    output_url, hls_path
+                ),
+            ]);
+        } else {
+            // Single output (RTMP only)
+            args.extend(vec![
+                "-f".to_string(),
+                "flv".to_string(),
+                output_url.to_string(),
             ]);
         }
 
