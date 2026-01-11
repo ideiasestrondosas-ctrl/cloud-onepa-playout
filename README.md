@@ -5,11 +5,11 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB.svg)](https://reactjs.org/)
-[![Version](https://img.shields.io/badge/Version-1.8.1--EXP-purple.svg)]()
+[![Version](https://img.shields.io/badge/Version-1.8.2--EXP-purple.svg)]()
 [![Status](https://img.shields.io/badge/Status-Experimental-purple.svg)]()
 
 > ⚠️ **EXPERIMENTAL PHASE:** Este projeto encontra-se em fase **Experimental (EXP)**.
-> A versão `v1.8.1-EXP` introduz funcionalidades avançadas de UI e Playout que estão sob testes intensivos. Use com cautela em ambientes de produção.
+> A versão `v1.8.2-EXP` introduz estabilidade crítica no Dashboard, integração VLC via HTTP direto e análise de áudio em tempo real (LUFS). Use com cautela em ambientes de produção.
 
 ## 📖 Sobre
 
@@ -173,15 +173,15 @@ _Focus: Innovation and High Availability_
 
 Ver [RELEASE_NOTES.md](RELEASE_NOTES.md) para detalhes completos.
 
-### Versão Atual: 1.8.1-EXP (2026-01-11)
+### Versão Atual: 1.8.2-EXP (2026-01-11)
 
 **Novidades Experimentais:**
 
-- 🧪 **Live Preview HLS/RTMP Dual**: Nova arquitetura `tee muxer` para preview e stream simultâneos.
-- 🎨 **UI Refinements**: Branding centralizado, labels de uptime e melhoria visual geral.
-- 🛡️ **Protected Assets Enhanced**: Visualização detalhada de assets protegidos com metadados.
-- 🏷️ **Original Filenames**: Engine capaz de recuperar nomes originais da Media Library.
-- 📁 **Container Assets**: Diretório `/var/lib/onepa-playout/assets/protected` populado automaticamente.
+- 🧪 **LUFS Meter Real-time**: Análise de áudio precisa usando Web Audio API diretamente do stream HLS.
+- 📡 **VLC Integration Fix**: Lançamento robusto do VLC usando URLs HTTP diretos e diagnósticos detalhados.
+- 📊 **Clips Counter**: Novo contador diário de clips reproduzidos nas Configurações.
+- 🛠️ **Dashboard Stabilization**: Correção crítica de `ReferenceError` para load fiável.
+- 🔗 **Direct HLS Link**: Link direto para streams móveis/VLC nas configurações.
 
 **Correções:**
 

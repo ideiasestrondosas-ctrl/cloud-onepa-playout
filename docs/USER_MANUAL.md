@@ -277,7 +277,32 @@ O calendário mostra agendamentos por mês:
 - Lista dos próximos 5 clips
 - Ordem de reprodução
 
----
+### Monitor de Saída
+
+281:
+282: O **Monitor de Saída** oferece ferramentas profissionais para verificar a qualidade do broadcast:
+283:
+284: **Live Preview:**
+285:
+286: - Player HLS de baixa latência
+287: - Mostra exatamente o que está a ser transmitido
+288: - Controlo de volume independente (local)
+289:
+290: **LUFS Meter (Áudio):**
+291:
+292: - Barra vertical à direita do vídeo
+293: - **Verde:** Níveis seguros (-23 LUFS)
+294: - **Amarelo:** Atenção, níveis elevados
+295: - **Vermelho:** Clipping/Distorção
+296: - _Nota: Requer que o volume local esteja ativo (unmuted)_
+297:
+298: **Ações de Diagnóstico:**
+299:
+300: - **Open VLC:** Abre o stream diretamente no VLC Media Player (nativo)
+301: - **Copy Link:** Copia o link HLS para a área de transferência
+302: - **Diagnosticar:** Abre janela com logs técnicos do FFmpeg e sistema
+303:
+304: ---
 
 ## 7. Configurações
 
@@ -456,5 +481,5 @@ Cada template define:
 
 ---
 
-**Última atualização:** 2026-01-09  
-**Versão:** 1.0.0
+**Última atualização:** 2026-01-11  
+**Versão:** 1.8.2-EXP
