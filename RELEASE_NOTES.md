@@ -1,4 +1,27 @@
-# Release Notes - Cloud Onepa Playout
+# Release Notes
+
+## [v1.8.1-EXP] - 2026-01-11 - Experimental Phase
+
+> ⚠️ **EXPERIMENTAL:** Esta versão introduz mudanças significativas na engine de playout e UI. Recomendada para testes.
+
+### 🧪 Experimental Features
+
+- **Dual-Output Streaming**: Implementação de `tee muxer` no FFmpeg para gerar RTMP e HLS simultaneamente, resolvendo o problema de preview.
+- **Protected Assets Metadata**: Visualização rica de assets protegidos com metadados (resolução, codec, tamanho) e caminho do diretório.
+- **Original Filename Recovery**: O engine agora consulta a base de dados para exibir o nome original do ficheiro em vez do UUID interno.
+
+### 🚀 Melhorias
+
+- **UI Branding**:
+  - Logo aumentado para 64px e centralizado na sidebar.
+  - Versão do sistema alinhada e centralizada.
+  - Título da aplicação atualizado para "Cloud Onepa Playout".
+- **Dashboard**:
+  - Adicionado label "Uptime" para clareza.
+  - Melhoria na exibição de metadados no player.
+- **Infraestrutura**:
+  - População automática do diretório de assets protegidos no container.
+- Cloud Onepa Playout
 
 ## v1.8.0-PRO (2026-01-10)
 

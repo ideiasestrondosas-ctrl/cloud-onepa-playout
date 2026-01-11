@@ -5,11 +5,11 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB.svg)](https://reactjs.org/)
-[![Version](https://img.shields.io/badge/Version-1.8.0--PRO-green.svg)]()
-[![Status](https://img.shields.io/badge/Status-Beta-yellow.svg)]()
+[![Version](https://img.shields.io/badge/Version-1.8.1--EXP-purple.svg)]()
+[![Status](https://img.shields.io/badge/Status-Experimental-purple.svg)]()
 
-> ℹ️ **STATUS:** Este projeto encontra-se em fase **Beta**.
-> Funcionalidades principais estão estáveis, mas podem existir bugs. Recomendado para testes e ambientes não-críticos.
+> ⚠️ **EXPERIMENTAL PHASE:** Este projeto encontra-se em fase **Experimental (EXP)**.
+> A versão `v1.8.1-EXP` introduz funcionalidades avançadas de UI e Playout que estão sob testes intensivos. Use com cautela em ambientes de produção.
 
 ## 📖 Sobre
 
@@ -119,22 +119,21 @@ Ver [docs/INSTALL.md](docs/INSTALL.md) para instruções detalhadas.
 
 Ver [RELEASE_NOTES.md](RELEASE_NOTES.md) para detalhes completos.
 
-### Versão Atual: 1.8.0-PRO (2026-01-10)
+### Versão Atual: 1.8.1-EXP (2026-01-11)
 
-**Novidades:**
+**Novidades Experimentais:**
 
-- ✨ Setup Wizard para configuração inicial
-- 📋 Release Notes tab com histórico de versões
-- 🔗 Links públicos para HLS e Logo
-- 🎯 Diagnósticos melhorados com ações rápidas
-- 🛡️ Protected assets directory
-- 🚀 Solução permanente para cache do browser
+- 🧪 **Live Preview HLS/RTMP Dual**: Nova arquitetura `tee muxer` para preview e stream simultâneos.
+- 🎨 **UI Refinements**: Branding centralizado, labels de uptime e melhoria visual geral.
+- 🛡️ **Protected Assets Enhanced**: Visualização detalhada de assets protegidos com metadados.
+- 🏷️ **Original Filenames**: Engine capaz de recuperar nomes originais da Media Library.
+- 📁 **Container Assets**: Diretório `/var/lib/onepa-playout/assets/protected` populado automaticamente.
 
 **Correções:**
 
-- ✅ Templates agora persistem corretamente
-- ✅ Thumbnails de vídeo funcionam
-- ✅ Sistema de ajuda visível e funcional
+- ✅ Setup Wizard para configuração inicial (Estável)
+- ✅ Links públicos para HLS e Logo (Estável)
+- ✅ Diagnósticos melhorados (Estável)
 
 ## 📄 Licença
 

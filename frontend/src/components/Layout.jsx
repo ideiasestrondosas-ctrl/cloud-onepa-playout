@@ -46,7 +46,7 @@ const AppLogo = () => (
       />
     </Box>
     <Typography variant="caption" sx={{ color: 'text.secondary', mt: 1, fontSize: '0.75rem', fontWeight: 'bold', textAlign: 'center' }}>
-      v1.8.0-PRO
+      v1.8.1-EXP
     </Typography>
   </Box>
 );
