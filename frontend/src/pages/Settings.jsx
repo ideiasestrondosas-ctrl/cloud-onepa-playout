@@ -73,7 +73,7 @@ export default function Settings() {
     dayStart: '06:00',
     defaultImagePath: '',
     defaultVideoPath: '',
-    version: '1.8.0-PRO',
+    version: '1.8.1-EXP',
     releaseDate: '2026-01-10',
     overlay_enabled: true,
     channelName: 'Cloud Onepa'
@@ -144,8 +144,8 @@ export default function Settings() {
         dayStart: data.day_start || '06:00',
         defaultImagePath: data.default_image_path || '',
         defaultVideoPath: data.default_video_path || '',
-        version: '1.8.0-PRO', // Frontend override for consistency
-        releaseDate: '2026-01-10',
+        version: '1.8.1-EXP', // Frontend override for consistency
+        releaseDate: '2026-01-11',
         overlay_enabled: data.overlay_enabled ?? true,
         channelName: data.channel_name || 'Cloud Onepa'
       });
@@ -1040,7 +1040,7 @@ export default function Settings() {
                   <List>
                     <ListItem>
                       <ListItemText
-                        primary={<Typography variant="subtitle1"><strong>v1.8.0-PRO</strong> - 2026-01-10</Typography>}
+                        primary={<Typography variant="subtitle1"><strong>v1.8.1-EXP</strong> - 2026-01-11</Typography>}
                         secondary={
                           <Box component="span">
                             • Setup Wizard para configuração inicial<br />
@@ -1182,42 +1182,42 @@ export default function Settings() {
         </DialogTitle>
         <DialogContent dividers>
           <Box sx={{ mb: 4 }}>
-            <Typography variant="h6" color="primary" gutterBottom>Destaques da Versão 1.8.0-PRO</Typography>
+            <Typography variant="h6" color="primary" gutterBottom>Destaques da Versão 1.8.1-EXP</Typography>
             <Typography variant="body2" paragraph>
-              Esta versão traz melhorias críticas na estabilidade do motor de playout e novas funcionalidades de branding para o seu canal.
+              Esta versão experimental introduz melhorias significativas na engine de preview e refinamentos visuais em toda a aplicação.
             </Typography>
             
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
                 <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'success.main' }}>
-                  <Typography variant="subtitle2" fontWeight="bold">🚀 Nova UX no Dashboard</Typography>
-                  <Typography variant="caption">• Preview de vídeo em tempo real com moldura premium</Typography><br />
-                  <Typography variant="caption">• Assistente de diagnóstico interativo passo-a-passo</Typography><br />
-                  <Typography variant="caption">• Medidores de tempo real e estado de clips</Typography>
+                  <Typography variant="subtitle2" fontWeight="bold">🧪 Live Preview Dual-Output</Typography>
+                  <Typography variant="caption">• Nova arquitetura Tee Muxer para RTMP + HLS simultâneos</Typography><br />
+                  <Typography variant="caption">• Correção da geração de stream de preview</Typography><br />
+                  <Typography variant="caption">• Reprodução estável no Dashboard</Typography>
                 </Box>
               </Grid>
               <Grid item xs={12} md={6}>
                 <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'primary.main' }}>
-                  <Typography variant="subtitle2" fontWeight="bold">🎨 Branding & Logos</Typography>
-                  <Typography variant="caption">• Upload de logotipo da aplicação para a barra lateral</Typography><br />
-                  <Typography variant="caption">• Melhor gestão de logos de overlay no stream</Typography><br />
-                  <Typography variant="caption">• Suporte para SVG e PNG transparente</Typography>
+                  <Typography variant="subtitle2" fontWeight="bold">🎨 UI Refinements</Typography>
+                  <Typography variant="caption">• Branding centralizado com logo aumentado (64px)</Typography><br />
+                  <Typography variant="caption">• Label 'Uptime' no Dashboard</Typography><br />
+                  <Typography variant="caption">• Título da aplicação atualizado em toda a interface</Typography>
                 </Box>
               </Grid>
               <Grid item xs={12} md={6}>
                 <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'warning.main' }}>
-                  <Typography variant="subtitle2" fontWeight="bold">⚙️ Estabilidade de Backend</Typography>
-                  <Typography variant="caption">• Motor de playout reconstruído em Rust async</Typography><br />
-                  <Typography variant="caption">• Melhor gestão de processos FFmpeg (zombie cleanup)</Typography><br />
-                  <Typography variant="caption">• Sincronização de horário precisa (Local Timebase)</Typography>
+                  <Typography variant="subtitle2" fontWeight="bold">📦 Assets Protegidos 2.0</Typography>
+                  <Typography variant="caption">• Visualização rica com metadados (Resolução, Codec)</Typography><br />
+                  <Typography variant="caption">• Chips de tipo de ficheiro (Vídeo/Imagem)</Typography><br />
+                  <Typography variant="caption">• População automática do diretório no container</Typography>
                 </Box>
               </Grid>
               <Grid item xs={12} md={6}>
                 <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'secondary.main' }}>
-                  <Typography variant="subtitle2" fontWeight="bold">📦 Assets Protegidos</Typography>
-                  <Typography variant="caption">• Nova vista em grelha para ficheiros do sistema</Typography><br />
-                  <Typography variant="caption">• Atribuição rápida de Imagem/Vídeo padrão</Typography><br />
-                  <Typography variant="caption">• Prevenção de eliminação acidental</Typography>
+                  <Typography variant="subtitle2" fontWeight="bold">🔌 Engine & Filenames</Typography>
+                  <Typography variant="caption">• Recuperação inteligente de nomes originais da DB</Typography><br />
+                  <Typography variant="caption">• Eliminação de nomes UUID na interface</Typography><br />
+                  <Typography variant="caption">• Logs de playout mais detalhados</Typography>
                 </Box>
               </Grid>
             </Grid>
