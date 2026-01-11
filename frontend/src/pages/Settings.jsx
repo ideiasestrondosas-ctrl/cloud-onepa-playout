@@ -1228,13 +1228,19 @@ export default function Settings() {
           <Typography variant="h6" gutterBottom>Próximos Passos (Roadmap)</Typography>
           <List dense>
             <ListItem>
-              <ListItemText primary="• Integração com YouTube Live / Facebook Live APIs" />
+              <ListItemText primary="📡 Fase 22: Conectividade & Live Inputs" secondary="WebRTC, NDI, SDI, Streaming nativo para YouTube/Facebook Live, SRT Support" />
             </ListItem>
             <ListItem>
-              <ListItemText primary="• Editor de templates gráfico com drag-and-drop" />
+              <ListItemText primary="📅 Fase 23: EPG & Metadata Engine" secondary="Gerador de EPG, Exportação Web, Compliance XMLTV/DVB-EIT" />
             </ListItem>
             <ListItem>
-              <ListItemText primary="• Suporte para Live Inputs (WebRTC / NDI / SDI)" />
+              <ListItemText primary="🎨 Fase 24: Graphics & Visual Experience" secondary="Editor Drag-and-Drop, HTML5 Graphics, Mobile Responsive Layout" />
+            </ListItem>
+            <ListItem>
+              <ListItemText primary="🏢 Fase 25: Enterprise & Compliance" secondary="Multi-user (RBAC), Audit Logs, As-Run Logs, SCTE-35 Support" />
+            </ListItem>
+            <ListItem>
+              <ListItemText primary="🚀 Fase 26: Future Tech" secondary="AI Integration, Multi-Channel Core, High Availability" />
             </ListItem>
           </List>
         </DialogContent>
