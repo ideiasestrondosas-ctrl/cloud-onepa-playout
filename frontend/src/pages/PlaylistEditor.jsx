@@ -230,12 +230,16 @@ export default function PlaylistEditor() {
 
     // Parse clips from content
     if (playlist.content && playlist.content.program) {
-      const loadedClips = playlist.content.program.map((item, index) => ({
-        id: `clip-${index}`,
-        filename: item.source.split('/').pop(),
-        path: item.source,
-        duration: item.duration,
-      }));
+      const loadedClips = playlist.content.program.map((item, index) => {
+        // Try to find the media in availableMedia to get the real filename
+        const media = availableMedia.find(m => m.path === item.source);
+        return {
+          id: `clip-${index}`,
+          filename: media ? media.filename : item.source.split('/').pop(),
+          path: item.source,
+          duration: item.duration,
+        };
+      });
       setClips(loadedClips);
     }
   };

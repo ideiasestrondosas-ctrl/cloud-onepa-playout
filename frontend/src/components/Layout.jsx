@@ -32,17 +32,18 @@ import ConnectivityStatus from './ConnectivityStatus';
 const AppLogo = () => (
   <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', px: 2, py: 2 }}>
     <Box sx={{ 
-      width: 64, 
-      height: 64, 
+      width: '100%', 
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
     }}>
-      <img 
-        src={`/api/settings/app-logo?t=${Date.now()}`} 
-        alt="Logo" 
-        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-        onError={(e) => { e.target.src = 'https://via.placeholder.com/64?text=C'; }}
+      <video 
+        src="/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4" 
+        autoPlay 
+        loop 
+        muted 
+        playsInline
+        style={{ width: '100%', height: 'auto', maxHeight: '80px', objectFit: 'contain' }}
       />
     </Box>
     <Typography variant="caption" sx={{ color: 'text.secondary', mt: 1, fontSize: '0.75rem', fontWeight: 'bold', textAlign: 'center' }}>

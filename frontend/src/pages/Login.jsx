@@ -48,12 +48,14 @@ export default function Login() {
           alignItems: 'center',
         }}
       >
-        <img 
-          src="/api/media/30172608-5714-4aa7-a5d6-a862d8a1d5aa/stream" 
-          alt="Cloud Onepa Playout" 
+        <video 
+          src="/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4" 
+          autoPlay 
+          loop 
+          muted 
+          playsInline
           className="logo-animated"
-          style={{ height: '120px', marginBottom: '8px', objectFit: 'contain' }}
-          onError={(e) => { e.target.style.display = 'none'; }}
+          style={{ height: '140px', marginBottom: '8px', objectFit: 'contain', maxWidth: '100%' }}
         />
         <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }} align="center">
           Cloud Onepa Playout

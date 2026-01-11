@@ -105,6 +105,16 @@ impl PlayoutEngine {
             *r = settings.is_running;
             let mut err = self.last_error.lock().await;
             *err = settings.last_error;
+
+            // If running, initialize start time
+            if settings.is_running {
+                let mut start_time = self.engine_start_time.lock().await;
+                *start_time = Some(Local::now());
+            }
+
+            // Sync clips counter from DB
+            let mut status = self.status.lock().await;
+            status.clips_played_today = settings.clips_played_today.unwrap_or(0);
         }
 
         loop {
@@ -322,27 +332,45 @@ impl PlayoutEngine {
                 });
 
                 // Set next clips
-                status.next_clips = items
-                    .iter()
-                    .skip(target_index + 1)
-                    .take(5)
-                    .map(|it| {
-                        let it_path = it["source"]
-                            .as_str()
-                            .or_else(|| it["path"].as_str())
-                            .unwrap_or("");
-                        let it_filename = std::path::Path::new(it_path)
+                let mut next_clips_vec = Vec::new();
+                for it in items.iter().skip(target_index + 1).take(5) {
+                    let it_path = it["source"]
+                        .as_str()
+                        .or_else(|| it["path"].as_str())
+                        .unwrap_or("");
+
+                    // Try to get the original filename from the media library
+                    let it_filename = if let Ok(media_row) =
+                        sqlx::query("SELECT filename FROM media WHERE path = $1 LIMIT 1")
+                            .bind(it_path)
+                            .fetch_one(&self.pool)
+                            .await
+                    {
+                        media_row
+                            .try_get::<String, _>("filename")
+                            .unwrap_or_else(|_| {
+                                std::path::Path::new(it_path)
+                                    .file_name()
+                                    .and_then(|n| n.to_str())
+                                    .unwrap_or(it_path)
+                                    .to_string()
+                            })
+                    } else {
+                        // Fallback to path-based filename if not found in media library
+                        std::path::Path::new(it_path)
                             .file_name()
                             .and_then(|n| n.to_str())
                             .unwrap_or(it_path)
-                            .to_string();
-                        ClipInfo {
-                            filename: it_filename,
-                            duration: it["duration"].as_f64().unwrap_or(0.0),
-                            position: 0.0,
-                        }
-                    })
-                    .collect();
+                            .to_string()
+                    };
+
+                    next_clips_vec.push(ClipInfo {
+                        filename: it_filename,
+                        duration: it["duration"].as_f64().unwrap_or(0.0),
+                        position: 0.0,
+                    });
+                }
+                status.next_clips = next_clips_vec;
             }
 
             let mut current_id = self.current_clip_id.lock().await;
@@ -375,6 +403,24 @@ impl PlayoutEngine {
                         .replace("127.0.0.1", "host.docker.internal");
                 }
 
+                let logo_path = if settings.overlay_enabled {
+                    settings
+                        .logo_path
+                        .as_ref()
+                        .map(|p| {
+                            if p.starts_with("/assets/") {
+                                p.replace("/assets/", "/var/lib/onepa-playout/assets/")
+                            } else {
+                                p.clone()
+                            }
+                        })
+                        .as_deref()
+                        .filter(|s| !s.is_empty())
+                        .map(|s| s.to_string())
+                } else {
+                    None
+                };
+
                 let child = ffmpeg.start_stream(
                     clip_path,
                     &output_url,
@@ -383,15 +429,32 @@ impl PlayoutEngine {
                     &settings.video_bitrate,
                     &settings.audio_bitrate,
                     Some(hls_preview_path),
+                    logo_path.as_deref(),
+                    settings.logo_position.as_deref().filter(|s| !s.is_empty()),
                 )?;
 
                 *proc_lock = Some(child);
                 *current_id = Some(clip_id.to_string());
                 log::info!("FFmpeg process started successfully for clip: {}", filename);
 
-                // Increment clips played today (simplified)
-                let mut status = self.status.lock().await;
-                status.clips_played_today += 1;
+                // ONLY increment clips played today if it's a NEW clip ID (not a restart on failure)
+                if current_id.as_ref() != Some(&clip_id.to_string()) {
+                    let mut status = self.status.lock().await;
+                    status.clips_played_today += 1;
+                    let new_count = status.clips_played_today;
+
+                    let pool = self.pool.clone();
+                    tokio::spawn(async move {
+                        let _ = sqlx::query(
+                            "UPDATE settings SET clips_played_today = $1 WHERE id = TRUE",
+                        )
+                        .bind(new_count)
+                        .execute(&pool)
+                        .await;
+                    });
+                }
+                *current_id = Some(clip_id.to_string());
+                log::info!("FFmpeg process started successfully for clip: {}", filename);
             }
         } else {
             // Playlist finished or gap

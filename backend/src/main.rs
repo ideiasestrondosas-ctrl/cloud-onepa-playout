@@ -74,6 +74,10 @@ async fn main() -> std::io::Result<()> {
             .service(
                 actix_files::Files::new("/hls", "/var/lib/onepa-playout/hls").show_files_listing(),
             )
+            .service(
+                actix_files::Files::new("/assets", "/var/lib/onepa-playout/assets")
+                    .show_files_listing(),
+            )
     })
     .bind(&bind_address)?
     .run()

@@ -30,6 +30,11 @@ import {
   DialogContent,
   DialogActions,
   Chip,
+  ToggleButton,
+  ToggleButtonGroup,
+  ListItemButton,
+  ListItemIcon,
+  Paper,
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -42,6 +47,10 @@ import {
   CheckCircle as CheckIcon,
   Visibility as ViewIcon,
   PlayArrow as PlayIcon,
+  Star as StartIcon,
+  Tv as TvIcon,
+  Dvr as PlatformIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
 
 function TabPanel({ children, value, index }) {
@@ -76,7 +85,8 @@ export default function Settings() {
     version: '1.8.1-EXP',
     releaseDate: '2026-01-10',
     overlay_enabled: true,
-    channelName: 'Cloud Onepa'
+    channelName: 'Cloud Onepa',
+    branding_type: 'static'
   });
 
   const [loading, setLoading] = useState(true);
@@ -91,6 +101,8 @@ export default function Settings() {
   const [releaseNotesOpen, setReleaseNotesOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewAsset, setPreviewAsset] = useState(null);
+  const [mediaSelectorOpen, setMediaSelectorOpen] = useState(false);
+  const [mediaTypeSelector, setMediaTypeSelector] = useState('image'); // 'image' or 'video'
 
   useEffect(() => {
     fetchSettings();
@@ -119,7 +131,7 @@ export default function Settings() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (tabValue === 3) {
+    if (tabValue === 4) {
       fetchUsers();
     }
   }, [tabValue]);
@@ -128,6 +140,10 @@ export default function Settings() {
     try {
       const response = await settingsAPI.get();
       const data = response.data;
+      
+      // Determine branding type from logo path extension
+      const isVideoBranding = data.logo_path && (data.logo_path.endsWith('.mp4') || data.logo_path.endsWith('.webm'));
+      
       setSettings({
         outputType: data.output_type || 'rtmp',
         outputUrl: data.output_url || '',
@@ -147,7 +163,8 @@ export default function Settings() {
         version: '1.8.1-EXP', // Frontend override for consistency
         releaseDate: '2026-01-11',
         overlay_enabled: data.overlay_enabled ?? true,
-        channelName: data.channel_name || 'Cloud Onepa'
+        channelName: data.channel_name || 'Cloud Onepa',
+        branding_type: isVideoBranding ? 'video' : 'static'
       });
     } catch (error) {
       console.error('Failed to fetch settings:', error);
@@ -160,9 +177,10 @@ export default function Settings() {
   const fetchProtectedAssets = async () => {
     try {
       const response = await protectedAPI.list();
-      setProtectedAssets(response.data);
+      setProtectedAssets(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Failed to fetch protected assets:', error);
+      setProtectedAssets([]);
     }
   };
 
@@ -170,8 +188,8 @@ export default function Settings() {
     try {
       setSaving(true);
       const updateData = type === 'image' 
-        ? { default_image_path: path }
-        : { default_video_path: path };
+        ? { default_image_path: path || '' }
+        : { default_video_path: path || '' };
         
       await settingsAPI.update(updateData);
       setSettings(prev => ({
@@ -385,11 +403,13 @@ export default function Settings() {
                     onChange={(e) => setSettings({ ...settings, outputUrl: e.target.value })}
                     placeholder="rtmp://localhost:1935/live/stream"
                   />
-                  {settings.outputType === 'hls' && (
-                    <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'primary.main', cursor: 'pointer' }} onClick={() => window.open(`${window.location.origin}${settings.outputUrl}`, '_blank')}>
-                      Link Direto: {window.location.origin}{settings.outputUrl}
-                    </Typography>
-                  )}
+                  <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'primary.main', cursor: 'pointer' }} onClick={() => {
+                        const hlsUrl = `${window.location.origin}/hls/stream.m3u8`;
+                        navigator.clipboard.writeText(hlsUrl);
+                        setSnackbar({ open: true, message: `Link HLS copiado: ${hlsUrl}` });
+                    }}>
+                    Link HLS (VLC/Mobile): {window.location.origin}/hls/stream.m3u8
+                  </Typography>
                 </Grid>
 
                 <Grid item xs={12}>
@@ -706,130 +726,275 @@ export default function Settings() {
               </Box>
             </TabPanel>
 
-            {/* Protected Assets Tab */}
+            {/* Protected Assets & Branding Tab */}
             <TabPanel value={tabValue} index={3}>
               <Typography variant="h6" gutterBottom>
-                Diretório de Assets Protegidos
+                Branding & Assets Protegidos
               </Typography>
-              <Alert severity="warning" sx={{ mb: 3 }}>
-                Estes ficheiros são protegidos pelo sistema e não podem ser eliminados pelo utilizador.
-                Pode defini-los como mídia padrão para o playout.
+              <Alert severity="info" sx={{ mb: 3 }}>
+                Configure a identidade visual do canal e os ficheiros de contingência (fillers).
+                Os assets protegidos estão em: <code>/var/lib/onepa-playout/assets/protected</code>
               </Alert>
 
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Diretório: <code>/var/lib/onepa-playout/assets/protected</code>
-              </Typography>
+              {/* Branding Section */}
+              <Paper sx={{ p: 3, mb: 3 }}>
+                 <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <StartIcon /> Identidade Visual (Branding)
+                 </Typography>
+                 <Divider sx={{ mb: 2 }} />
+                 <Grid container spacing={3}>
+                    <Grid item xs={12} md={6}>
+                       <Box sx={{ p: 2, bgcolor: '#000', borderRadius: 1, textAlign: 'center', height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {/* Preview of Branding */}
+                          {(settings.brandingType === 'video' || settings.branding_type === 'video') ? (
+                              <video 
+                                src="/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4" 
+                                autoPlay loop muted playsInline
+                                style={{ maxHeight: '100%', maxWidth: '100%' }}
+                              />
+                          ) : (
+                              <img 
+                                src={`/api/settings/app-logo?t=${Date.now()}`} 
+                                alt="Logo" 
+                                style={{ maxHeight: '100%', maxWidth: '100%' }}
+                              />
+                          )}
+                       </Box>
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                       <Typography variant="subtitle2" gutterBottom>Modo de Exibição</Typography>
+                       <ToggleButtonGroup
+                          value={settings.branding_type || 'static'}
+                          exclusive
+                          onChange={(e, val) => {
+                            if (val) {
+                              const newLogoPath = val === 'video' 
+                                ? '/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4'
+                                : '/assets/protected/Cloud_Onepa_Playout_Infinity_Logo_remodelado.png';
+                              
+                              setSettings({
+                                ...settings, 
+                                branding_type: val,
+                                logoPath: newLogoPath
+                              });
+                            }
+                          }}
+                          fullWidth
+                          sx={{ mb: 3 }}
+                       >
+                          <ToggleButton value="static">
+                             <ImageIcon sx={{ mr: 1 }} /> Logotipo Estático
+                          </ToggleButton>
+                          <ToggleButton value="video">
+                             <MovieIcon sx={{ mr: 1 }} /> Vídeo Animado
+                          </ToggleButton>
+                       </ToggleButtonGroup>
+                       
+                       <Typography variant="subtitle2" gutterBottom>Ficheiro de Vídeo (Branding)</Typography>
+                       <Box sx={{ display: 'flex', gap: 1 }}>
+                          <TextField 
+                             fullWidth 
+                             size="small" 
+                             value="/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4"
+                             disabled
+                          />
+                          {/* Hardcoded for now as per specific request, or could use selector */}
+                       </Box>
+                       <Alert severity="info" sx={{ mt: 2, fontSize: '0.8rem' }}>
+                          A alteração reflete-se no Login e no topo do Dashboard.
+                        </Alert>
+                    </Grid>
+                 </Grid>
+              </Paper>
 
+              <Typography variant="h6" gutterBottom>
+                Assets de Contingência (Padrão)
+              </Typography>
               <Grid container spacing={2}>
-                {protectedAssets.map((asset) => (
-                  <Grid item xs={12} sm={6} md={4} lg={3} key={asset.name}>
-                    <Card 
-                      variant="outlined" 
-                      sx={{ 
-                        height: '100%', 
-                        display: 'flex', 
-                        flexDirection: 'column',
-                        transition: 'transform 0.2s, box-shadow 0.2s',
-                        '&:hover': { transform: 'translateY(-4px)', boxShadow: 4 }
-                      }}
-                    >
-                      <Box sx={{ position: 'relative', pt: '56.25%', bgcolor: '#000' }}>
-                        {asset.is_video ? (
-                          <MovieIcon sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: 48, opacity: 0.3, color: '#fff' }} />
-                        ) : (
-                          <ImageIcon sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: 48, opacity: 0.3, color: '#fff' }} />
-                        )}
-                      </Box>
-                      <CardContent sx={{ flexGrow: 1, p: 2 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }} noWrap title={asset.name}>
-                          {asset.name}
-                        </Typography>
-                        <Box sx={{ display: 'flex', gap: 0.5, mb: 1, flexWrap: 'wrap' }}>
-                          <Chip 
-                            label={asset.is_video ? "VÍDEO" : "IMAGEM"} 
-                            size="small" 
-                            color="primary"
-                          />
-                          <Chip 
-                            label={`${(asset.size / 1024 / 1024).toFixed(2)} MB`} 
-                            size="small" 
-                          />
-                        </Box>
-                        {asset.resolution && (
-                          <Typography variant="caption" color="text.secondary" display="block">
-                            Resolução: {asset.resolution}
-                          </Typography>
-                        )}
-                        {asset.codec && (
-                          <Typography variant="caption" color="text.secondary" display="block">
-                            Codec: {asset.codec}
-                          </Typography>
-                        )}
-                      </CardContent>
-                      <Divider />
-                      <Box sx={{ p: 1.5, display: 'flex', gap: 1 }}>
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={() => { setPreviewAsset(asset); setPreviewOpen(true); }}
-                          title="Pré-visualizar"
-                        >
-                          <ViewIcon />
-                        </IconButton>
-                        {!asset.is_video ? (
+                 <Grid item xs={12} md={6}>
+                    <Card variant="outlined">
+                       <CardContent>
+                          <Typography color="text.secondary" gutterBottom>Imagem Padrão (Fallback)</Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, my: 2 }}>
+                             <ImageIcon fontSize="large" color="primary" />
+                             <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
+                                <Typography variant="body2" noWrap title={settings.defaultImagePath}>
+                                   {settings.defaultImagePath ? settings.defaultImagePath.split('/').pop() : 'Não definido'}
+                                </Typography>
+                             </Box>
+                          </Box>
                           <Button 
-                            fullWidth
-                            size="small" 
-                            color={settings.defaultImagePath === asset.path ? "success" : "primary"}
-                            variant={settings.defaultImagePath === asset.path ? "contained" : "outlined"}
-                            onClick={() => setDefaultMedia('image', asset.path)}
-                            startIcon={settings.defaultImagePath === asset.path ? <CheckIcon /> : null}
+                             variant="outlined" 
+                             fullWidth 
+                             startIcon={<FolderIcon />}
+                             onClick={() => { setMediaTypeSelector('image'); setMediaSelectorOpen(true); }}
                           >
-                            {settings.defaultImagePath === asset.path ? 'PADRÃO' : 'USAR'}
+                             Selecionar Imagem
                           </Button>
-                        ) : (
-                          <Button 
-                            fullWidth
-                            size="small" 
-                            color={settings.defaultVideoPath === asset.path ? "success" : "primary"}
-                            variant={settings.defaultVideoPath === asset.path ? "contained" : "outlined"}
-                            onClick={() => setDefaultMedia('video', asset.path)}
-                            startIcon={settings.defaultVideoPath === asset.path ? <CheckIcon /> : null}
-                          >
-                            {settings.defaultVideoPath === asset.path ? 'PADRÃO' : 'USAR'}
-                          </Button>
-                        )}
-                      </Box>
+                       </CardContent>
                     </Card>
-                  </Grid>
-                ))}
+                 </Grid>
+                 <Grid item xs={12} md={6}>
+                    <Card variant="outlined">
+                       <CardContent>
+                          <Typography color="text.secondary" gutterBottom>Vídeo Padrão (Filler)</Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, my: 2 }}>
+                             <MovieIcon fontSize="large" color="primary" />
+                             <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
+                                <Typography variant="body2" noWrap title={settings.defaultVideoPath}>
+                                   {settings.defaultVideoPath ? settings.defaultVideoPath.split('/').pop() : 'Não definido'}
+                                </Typography>
+                             </Box>
+                          </Box>
+                          <Button 
+                             variant="outlined" 
+                             fullWidth 
+                             startIcon={<FolderIcon />}
+                             onClick={() => { setMediaTypeSelector('video'); setMediaSelectorOpen(true); }}
+                          >
+                             Selecionar Vídeo
+                          </Button>
+                       </CardContent>
+                    </Card>
+                 </Grid>
               </Grid>
-              
-              <Box sx={{ mt: 4 }}>
-                <Typography variant="h6" gutterBottom>
-                  Configurações de Mídia Padrão
-                </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Mídia Padrão (Imagem)"
-                      value={settings.defaultImagePath}
-                      disabled
-                      helperText="Usado quando não há conteúdo de imagem disponível"
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Mídia Padrão (Vídeo)"
-                      value={settings.defaultVideoPath}
-                      disabled
-                      helperText="Usado como filler de segurança global"
-                    />
-                  </Grid>
-                </Grid>
-              </Box>
+
+              {/* Enhanced Media Selector Dialog with Preview */}
+              <Dialog 
+                open={mediaSelectorOpen} 
+                onClose={() => { setMediaSelectorOpen(false); setSelectedAssetForPreview(null); }} 
+                maxWidth="md" 
+                fullWidth
+              >
+                 <DialogTitle sx={{ borderBottom: '1px solid', borderColor: 'divider', py: 1.5, px: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.paper' }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                       {mediaTypeSelector === 'video' ? 'Selecionar Vídeo' : 'Selecionar Imagem'}
+                    </Typography>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <Button 
+                            variant="outlined" 
+                            color="error" 
+                            size="small"
+                            startIcon={<DeleteIcon />}
+                            onClick={() => {
+                                setDefaultMedia(mediaTypeSelector, null);
+                                setMediaSelectorOpen(false);
+                                setPreviewAsset(null);
+                            }}
+                            sx={{ height: 32, fontSize: '0.75rem' }}
+                        >
+                            LIMPAR (Padrão)
+                        </Button>
+                        <Button 
+                            variant="contained" 
+                            color="primary"
+                            size="small"
+                            disabled={!previewAsset}
+                            onClick={() => {
+                                setDefaultMedia(mediaTypeSelector, previewAsset.path);
+                                setMediaSelectorOpen(false);
+                                setPreviewAsset(null);
+                            }}
+                            sx={{ height: 32, fontSize: '0.75rem' }}
+                        >
+                            CONFIRMAR
+                        </Button>
+                        <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+                        <IconButton onClick={() => { setMediaSelectorOpen(false); setPreviewAsset(null); }} size="small" sx={{ bgcolor: 'rgba(0,0,0,0.05)' }}>
+                           <CloseIcon fontSize="small" />
+                        </IconButton>
+                    </Box>
+                 </DialogTitle>
+                 <DialogContent sx={{ p: 0 }}>
+                    <Grid container sx={{ height: 500 }}>
+                       {/* Left Column: List */}
+                       <Grid item xs={12} md={5} sx={{ borderRight: '1px solid', borderColor: 'divider', overflowY: 'auto' }}>
+                          <List>
+                             {protectedAssets
+                                .filter(a => mediaTypeSelector === 'video' ? a.is_video : !a.is_video)
+                                .map((asset) => (
+                                   <ListItem key={asset.path} disablePadding>
+                                      <ListItemButton 
+                                        selected={previewAsset?.path === asset.path}
+                                        onClick={() => setPreviewAsset(asset)}
+                                      >
+                                         <ListItemIcon>
+                                            {asset.is_video ? <MovieIcon /> : <ImageIcon />}
+                                         </ListItemIcon>
+                                         <ListItemText 
+                                            primary={asset.name} 
+                                            secondary={`${(asset.size / 1024 / 1024).toFixed(2)} MB`} 
+                                            primaryTypographyProps={{ variant: 'body2', fontWeight: 'medium' }}
+                                         />
+                                         {((mediaTypeSelector === 'video' && settings.defaultVideoPath === asset.path) || 
+                                           (mediaTypeSelector === 'image' && settings.defaultImagePath === asset.path)) && (
+                                            <CheckIcon color="success" fontSize="small" />
+                                         )}
+                                      </ListItemButton>
+                                   </ListItem>
+                             ))}
+                             {protectedAssets.filter(a => mediaTypeSelector === 'video' ? a.is_video : !a.is_video).length === 0 && (
+                                <Box sx={{ p: 4, textAlign: 'center', opacity: 0.6 }}>
+                                   <PlatformIcon sx={{ fontSize: 48, mb: 1 }} />
+                                   <Typography variant="body2">Nenhum asset encontrado.</Typography>
+                                </Box>
+                             )}
+                          </List>
+                       </Grid>
+
+                       {/* Right Column: Preview & Confirm */}
+                       <Grid item xs={12} md={7} sx={{ bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
+                          <Box sx={{ flexGrow: 1, p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                             {previewAsset ? (
+                                <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                                   <Typography variant="subtitle2" gutterBottom color="primary">
+                                      PREVIEW: {previewAsset.name}
+                                   </Typography>
+                                   <Box sx={{ 
+                                      flexGrow: 1, 
+                                      bgcolor: '#000', 
+                                      borderRadius: 2, 
+                                      overflow: 'hidden', 
+                                      display: 'flex', 
+                                      alignItems: 'center', 
+                                      justifyContent: 'center',
+                                      boxShadow: 4,
+                                      position: 'relative'
+                                   }}>
+                                      {previewAsset.is_video ? (
+                                         <ReactPlayer
+                                            url={protectedAPI.getStreamUrl(previewAsset.name)}
+                                            width="100%"
+                                            height="100%"
+                                            playing={true}
+                                            controls={true}
+                                            muted={true}
+                                            playsinline
+                                            style={{ maxHeight: '100%' }}
+                                         />
+                                      ) : (
+                                         <img 
+                                            src={protectedAPI.getStreamUrl(previewAsset.name)} 
+                                            alt="Preview" 
+                                            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} 
+                                         />
+                                      )}
+                                   </Box>
+                                </Box>
+                             ) : (
+                                <Box sx={{ textAlign: 'center', opacity: 0.5 }}>
+                                   <TvIcon sx={{ fontSize: 64, mb: 2 }} />
+                                   <Typography>Selecione um ficheiro para pré-visualizar</Typography>
+                                </Box>
+                             )}
+                          </Box>
+
+                           {/* No footer buttons as they were moved to the top */}
+                       </Grid>
+                    </Grid>
+                 </DialogContent>
+              </Dialog>
             </TabPanel>
 
             {/* Users Tab */}

@@ -25,6 +25,7 @@ pub struct Settings {
     pub overlay_enabled: bool,
     pub app_logo_path: Option<String>,
     pub channel_name: Option<String>,
+    pub clips_played_today: Option<i32>,
     pub updated_at: DateTime<Utc>,
 }
 
@@ -48,4 +49,5 @@ pub struct UpdateSettingsRequest {
     pub overlay_enabled: Option<bool>,
     pub app_logo_path: Option<String>,
     pub channel_name: Option<String>,
+    pub clips_played_today: Option<i32>,
 }

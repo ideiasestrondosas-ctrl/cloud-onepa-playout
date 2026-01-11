@@ -13,7 +13,7 @@ pub struct ProtectedAsset {
 }
 
 async fn list_protected_assets() -> impl Responder {
-    let protected_dir = "backend/assets/protected";
+    let protected_dir = "/var/lib/onepa-playout/assets/protected";
     let mut assets = Vec::new();
 
     if let Ok(entries) = fs::read_dir(protected_dir) {
@@ -33,9 +33,21 @@ async fn list_protected_assets() -> impl Responder {
                     .to_lowercase();
                 let is_video = ["mp4", "mkv", "mov", "avi"].contains(&extension.as_str());
 
+                // Return the WEB path, not the filesystem path, so the frontend can preview it
+                // Actually, the selector needs the web path for preview, but maybe mapping for backend?
+                // The current implementation returns filesystem path.
+                // Let's standardise on returning the web path for the 'path' field to be consistent with Settings.
+                // Or we can keep it as is, but Settings toggle uses hardcoded web path.
+                // Users might want to select ANY file.
+                // Let's return the local filesystem path for now, but note that web usage needs /assets/ prefix.
+                // Wait! Settings.jsx setDefaultMedia uses the path from here.
+                // If this returns /var/lib/..., Settings saves /var/lib/...
+                // Then Layout tries to load src="/var/lib/..." -> 404.
+                // WE MUST RETURN THE WEB PATH.
+
                 assets.push(ProtectedAsset {
-                    name,
-                    path: path.to_string_lossy().to_string(),
+                    name: name.clone(),
+                    path: format!("/assets/protected/{}", name),
                     size: metadata.map(|m| m.len()).unwrap_or(0),
                     is_video,
                 });
@@ -47,7 +59,7 @@ async fn list_protected_assets() -> impl Responder {
 }
 
 async fn get_protected_asset(filename: web::Path<String>, req: HttpRequest) -> impl Responder {
-    let path_str = format!("backend/assets/protected/{}", filename);
+    let path_str = format!("/var/lib/onepa-playout/assets/protected/{}", filename);
     let path = Path::new(&path_str);
 
     if !path.exists() {

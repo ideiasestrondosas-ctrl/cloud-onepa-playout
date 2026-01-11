@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ReactPlayer from 'react-player';
 import {
@@ -11,6 +11,9 @@ import {
   Chip,
   LinearProgress,
   Paper,
+  IconButton,
+  Tooltip,
+  Divider
 } from '@mui/material';
 import {
   Error as ErrorIcon,
@@ -23,6 +26,13 @@ import {
   CheckCircle as CheckIcon,
   Dashboard as DashboardIcon,
   Tv as TvIcon,
+  PlayCircleOutline as PlayCircleOutlineIcon,
+  PauseCircleOutline as PauseCircleOutlineIcon,
+  VolumeUp as VolumeUpIcon,
+  VolumeOff as VolumeOffIcon,
+  ContentCopy as ContentCopyIcon,
+  Launch as LaunchIcon,
+  Close as CloseIcon
 } from '@mui/icons-material';
 import {
   Dialog,
@@ -33,9 +43,15 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import { playoutAPI, settingsAPI } from '../services/api';
 import { useNotification } from '../contexts/NotificationContext';
+import LufsMeter from '../components/LufsMeter';
+
+// Real-time LUFS Meter Component (driven by audio analyzer)
+
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -55,7 +71,18 @@ export default function Dashboard() {
   const [diagnosing, setDiagnosing] = useState(false);
   const [debugReport, setDebugReport] = useState(null);
   const [debugDialogOpen, setDebugDialogOpen] = useState(false);
+  const [audioLevel, setAudioLevel] = useState(0);
   const [now, setNow] = useState(new Date());
+  const [previewPaused, setPreviewPaused] = useState(false);
+  const [previewMuted, setPreviewMuted] = useState(true);
+  
+  // Audio Analysis Refs
+  const playerRef = useRef(null);
+  const audioCtxRef = useRef(null);
+  const analyzerRef = useRef(null);
+  const animationRef = useRef(null);
+  const sourceNodeRef = useRef(null);
+
 
   useEffect(() => {
     fetchStatus();
@@ -64,25 +91,97 @@ export default function Dashboard() {
     return () => {
       clearInterval(interval);
       clearInterval(clockInterval);
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+      if (audioCtxRef.current) {
+        audioCtxRef.current.close().catch(e => console.warn('AudioContext close failed:', e));
+      }
     };
   }, []);
+
+  // Setup Audio Analysis
+  const setupAudioAnalysis = useCallback(() => {
+    try {
+      if (!playerRef.current) {
+        console.warn('PlayerRef not ready');
+        return;
+      }
+      
+      const internalPlayer = playerRef.current.getInternalPlayer();
+      if (!internalPlayer || !(internalPlayer instanceof HTMLMediaElement)) {
+        console.warn('ReactPlayer internal element not ready');
+        return;
+      }
+
+      // Initialize AudioContext once
+      if (!audioCtxRef.current) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtxRef.current = new AudioContext();
+        analyzerRef.current = audioCtxRef.current.createAnalyser();
+        analyzerRef.current.fftSize = 256;
+        analyzerRef.current.smoothingTimeConstant = 0.8;
+      }
+
+      // Resume if suspended (requires user gesture)
+      if (audioCtxRef.current.state === 'suspended') {
+        audioCtxRef.current.resume();
+      }
+
+      // Create source node only once to avoid "already connected" error
+      if (!sourceNodeRef.current) {
+        sourceNodeRef.current = audioCtxRef.current.createMediaElementSource(internalPlayer);
+        sourceNodeRef.current.connect(analyzerRef.current);
+        analyzerRef.current.connect(audioCtxRef.current.destination);
+      }
+
+      // Start analysis loop
+      const bufferLength = analyzerRef.current.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+
+      const updateLevel = () => {
+        if (!analyzerRef.current) return;
+        
+        analyzerRef.current.getByteFrequencyData(dataArray);
+        
+        // Calculate RMS (Root Mean Square) for more accurate level
+        let sum = 0;
+        for (let i = 0; i < bufferLength; i++) {
+          sum += dataArray[i] * dataArray[i];
+        }
+        const rms = Math.sqrt(sum / bufferLength);
+        
+        // Map to 0-100 scale with sensitivity adjustment
+        const normalized = Math.min(100, (rms / 128) * 100);
+        setAudioLevel(normalized);
+        
+        animationRef.current = requestAnimationFrame(updateLevel);
+      };
+
+      updateLevel();
+    } catch (e) {
+      console.error('Audio analysis setup failed:', e);
+      setAudioLevel(0);
+    }
+  }, []);
+
+
+
+
+
+  const [snackbar, setSnackbar] = useState({ open: false, message: '' });
 
   const fetchStatus = async () => {
     try {
       // Fetch settings first
       const settingsRes = await settingsAPI.get();
       setSettings(settingsRes.data);
-      if (settingsRes.data.channel_name) {
-        // We can use this to set document title or local state
-      }
 
       // Then fetch playout status
       const response = await playoutAPI.status();
       setStatus(response.data);
     } catch (error) {
       console.error('Failed to fetch status or settings:', error);
-      // Optionally, show an error notification if critical
-      // showError('Erro ao carregar dados do dashboard.');
     } finally {
       setLoading(false);
     }
@@ -131,8 +230,76 @@ export default function Dashboard() {
       setDiagnosing(false);
     }
   };
+  
+  const togglePreviewPause = () => {
+    setPreviewPaused(!previewPaused);
+  };
+  
+  const handleCopyVLC = () => {
+    // Generate absolute URL using origin
+    const hlsUrl = `${window.location.origin}/hls/stream.m3u8`;
+    navigator.clipboard.writeText(hlsUrl);
+    setSnackbar({ open: true, message: `Link de saída (HLS) copiado: ${hlsUrl}` });
+  };
+
+  const handleLaunchVLC = () => {
+    const hlsUrl = `${window.location.origin}/hls/stream.m3u8`;
+    
+    console.log('--- VLC LAUNCH DIAGNOSTICS ---');
+    console.log('HLS Source:', hlsUrl);
+    console.log('Platform:', navigator.platform.toLowerCase());
+    console.log('User Agent:', navigator.userAgent);
+    console.log('Launch Method: Direct HTTP URL (VLC will handle .m3u8)');
+    
+    const os = navigator.platform.toLowerCase();
+    const isMac = os.includes('mac');
+    const isWin = os.includes('win');
+    
+    let osMsg = 'Detectado: ';
+    if (isMac) osMsg += 'macOS';
+    else if (isWin) osMsg += 'Windows';
+    else osMsg += 'Sistema';
+
+    // Use direct HTTP URL - modern VLC handles .m3u8 files correctly
+    try {
+      // 1. Try direct navigation (works if VLC is default handler for .m3u8)
+      window.location.href = hlsUrl;
+      
+      // 2. Fallback: hidden anchor click
+      setTimeout(() => {
+        const link = document.createElement('a');
+        link.href = hlsUrl;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }, 500);
+
+      setSnackbar({ open: true, message: `${osMsg} - A abrir stream no VLC... (Verifique se o VLC está instalado)` });
+    } catch (err) {
+      console.error('Launch failed:', err);
+      setSnackbar({ open: true, message: 'Falha ao lançar. Copie o link e abra manualmente no VLC.' });
+    }
+  };
 
   const isPlaying = status.status === 'playing';
+
+  // Trigger audio analysis when playing and unmuted
+  useEffect(() => {
+    if (isPlaying && !previewPaused && !previewMuted) {
+      // Small delay to ensure player is fully loaded
+      const timer = setTimeout(() => {
+        setupAudioAnalysis();
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+      setAudioLevel(0);
+    }
+  }, [isPlaying, previewPaused, previewMuted, setupAudioAnalysis]);
 
   const formatTime = (seconds) => {
     if (seconds === null || seconds === undefined || isNaN(seconds)) return '00:00:00';
@@ -188,9 +355,12 @@ export default function Dashboard() {
                 )}
               </Box>
               {isPlaying && status.output_url && (
-                <Box sx={{ mt: 2 }}>
-                  <Typography variant="caption" color="text.secondary" display="block">
-                    {status.protocol?.toUpperCase()}: {status.output_url}
+                <Box sx={{ mt: 2, p: 1, bgcolor: 'background.default', borderRadius: 1 }}>
+                  <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+                    LINK DE SAÍDA ({status.protocol?.toUpperCase()}):
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontFamily: 'monospace', wordBreak: 'break-all', fontSize: '0.8rem' }}>
+                    {status.output_url}
                   </Typography>
                 </Box>
               )}
@@ -228,7 +398,7 @@ export default function Dashboard() {
 
         {/* Controls Card */}
         <Grid item xs={12} md={6} lg={3}>
-          <Card>
+          <Card sx={{ height: '100%' }}>
             <CardContent>
               <Typography color="text.secondary" gutterBottom>
                 Controlos
@@ -277,6 +447,37 @@ export default function Dashboard() {
                 >
                   Diagnosticar
                 </Button>
+                
+                <Divider sx={{ width: '100%', my: 1 }} />
+                
+                <Typography variant="caption" color="text.secondary" sx={{ width: '100%', mb: 0.5 }}>
+                  AÇÕES VLC / LINK:
+                </Typography>
+                
+                <Box sx={{ display: 'flex', gap: 1, width: '100%' }}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={<LaunchIcon />}
+                    onClick={handleLaunchVLC}
+                    size="small"
+                    fullWidth
+                    sx={{ textTransform: 'none' }}
+                  >
+                    Open VLC
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    startIcon={<ContentCopyIcon />}
+                    onClick={handleCopyVLC}
+                    size="small"
+                    fullWidth
+                    sx={{ textTransform: 'none' }}
+                  >
+                    Copy Link
+                  </Button>
+                </Box>
               </Box>
             </CardContent>
           </Card>
@@ -328,36 +529,108 @@ export default function Dashboard() {
           >
             <Box sx={{ p: 2, bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Typography variant="h6" display="flex" alignItems="center" gap={1}>
-                <TvIcon color={status?.status === 'playing' ? 'success' : 'disabled'} />
+                <TvIcon color={isPlaying ? 'success' : 'disabled'} />
+                <VolumeUpIcon sx={{ ml: 1, fontSize: 20, color: isPlaying ? 'primary.main' : 'disabled' }} />
                 Monitor de Saída
               </Typography>
-              <Chip
-                label={status?.status === 'playing' ? "NO AR" : "OFFLINE"}
-                color={status?.status === 'playing' ? "success" : "default"}
-                size="small"
-                variant={status?.status === 'playing' ? "filled" : "outlined"}
-              />
-            </Box>
-            <Box sx={{ p: '0 !important', position: 'relative', pt: '56.25%', flexGrow: 1 }}>
-              <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
-                {isPlaying ? (
-                  <ReactPlayer
-                    url="/hls/preview.m3u8"
-                    playing
-                    muted
-                    controls
-                    width="100%"
-                    height="100%"
-                    config={{
-                      file: {
-                        forceHLS: true,
-                        attributes: {
-                          style: { objectFit: 'contain' }
-                        }
-                      }
-                    }}
-                    onError={(e) => console.log('Preview error:', e)}
+              
+              {/* Toolbar Actions */}
+              <Box display="flex" gap={2} alignItems="center">
+                 {/* Pause Overlay Control */}
+                 <Tooltip title="Local Pause (Visualização apenas)">
+                    <IconButton size="small" onClick={togglePreviewPause} color="inherit" disabled={!isPlaying}>
+                        {previewPaused ? <PlayCircleOutlineIcon color="warning" /> : <PauseCircleOutlineIcon />}
+                    </IconButton>
+                 </Tooltip>
+                 
+                 <Chip
+                    label={status?.status === 'playing' ? "NO AR" : "OFFLINE"}
+                    color={status?.status === 'playing' ? "success" : "default"}
+                    size="small"
+                    variant={status?.status === 'playing' ? "filled" : "outlined"}
                   />
+              </Box>
+            </Box>
+            
+            {/* Monitor Area */}
+            <Box sx={{ p: '0 !important', position: 'relative', flexGrow: 1, display: 'flex' }}>
+              
+              {/* Main Video Area */}
+              <Box sx={{ position: 'relative', flexGrow: 1, bgcolor: '#000' }}>
+                {isPlaying ? (
+                  <Box sx={{ width: '100%', height: '100%', position: 'relative' }}>
+                      <ReactPlayer
+                        ref={playerRef}
+                        url={`${window.location.origin}/hls/stream.m3u8`}
+                        playing={!previewPaused}
+                        muted={previewMuted}
+                        controls={false}
+                        width="100%"
+                        height="100%"
+                        style={{ position: 'absolute', top: 0, left: 0, objectFit: 'contain' }}
+                        config={{
+                          file: {
+                            forceHLS: true,
+                            attributes: {
+                              crossOrigin: 'anonymous',
+                              style: { 
+                                objectFit: 'contain',
+                                width: '100%',
+                                height: '100%'
+                              }
+                            }
+                          }
+                        }}
+                        onError={(e) => console.log('Preview error:', e)}
+                      />
+                      
+                      {/* Audio Toggle Control */}
+                      <Box sx={{ position: 'absolute', left: 10, bottom: 10, zIndex: 25 }}>
+                         <Tooltip title={previewMuted ? "Ativar Áudio (Unmute)" : "Mudar Áudio (Mute)"}>
+                            <IconButton 
+                               onClick={() => setPreviewMuted(!previewMuted)}
+                               sx={{ 
+                                  bgcolor: 'rgba(0,0,0,0.5)', 
+                                  color: '#fff',
+                                  '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' }
+                               }}
+                            >
+                               {previewMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
+                            </IconButton>
+                         </Tooltip>
+                      </Box>
+                      
+                      {/* LUFS Meter Overlay (Transparent) */}
+                      <Box sx={{ 
+                          position: 'absolute', 
+                          right: 15, 
+                          bottom: 20, 
+                          height: 'calc(100% - 40px)', 
+                          maxHeight: 300,
+                          zIndex: 100, // HIGH zIndex to stay on top
+                          bgcolor: 'rgba(0,0,0,0.6)', 
+                          p: 1.5, 
+                          borderRadius: 2,
+                          border: '1px solid rgba(255,255,255,0.2)',
+                          backdropFilter: 'blur(10px)',
+                          display: 'flex',
+                          alignItems: 'center'
+                      }}>
+                          <LufsMeter level={audioLevel} active={isPlaying && !previewPaused && !previewMuted} />
+                      </Box>
+                      
+                      {/* Paused Overlay */}
+                      {previewPaused && (
+                         <Box sx={{
+                             position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+                             bgcolor: 'rgba(0,0,0,0.5)',
+                             display: 'flex', alignItems: 'center', justifyContent: 'center',
+                             zIndex: 20
+                         }}>
+                              <PlayCircleOutlineIcon sx={{ fontSize: 100, color: 'rgba(255,255,255,0.8)' }} />
+                         </Box>
+                      )}
+                  </Box>
                 ) : (
                   <Box sx={{
                     width: '100%',
@@ -376,34 +649,39 @@ export default function Dashboard() {
                     <Typography variant="caption" sx={{ opacity: 0.4 }}>O playout está parado ou em standby</Typography>
                   </Box>
                 )}
-              </Box>
-              <Box sx={{
-                position: 'absolute',
-                top: 16,
-                left: 16,
-                bgcolor: isPlaying ? 'rgba(76, 175, 80, 0.8)' : 'rgba(0,0,0,0.6)',
-                px: 1.5,
-                py: 0.5,
-                borderRadius: 1,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-                zIndex: 10,
-                backdropFilter: 'blur(4px)'
-              }}>
+                
+                {/* Uptime / REC Status Overlay (Only show if playing and not paused, or custom logic) */}
                 <Box sx={{
-                  width: 8,
-                  height: 8,
-                  bgcolor: isPlaying ? '#fff' : '#f44336',
-                  borderRadius: '50%',
-                  animation: isPlaying ? 'pulse 1.5s infinite' : 'none'
-                }} />
-                <Typography variant="caption" sx={{ color: '#fff', fontWeight: 'bold' }}>
-                  {isPlaying ? 'LIVE PREVIEW' : 'OFFLINE'}
-                </Typography>
+                    position: 'absolute',
+                    top: 16,
+                    left: 16,
+                    bgcolor: isPlaying ? 'rgba(76, 175, 80, 0.8)' : 'rgba(0,0,0,0.6)',
+                    px: 1.5,
+                    py: 0.5,
+                    borderRadius: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    zIndex: 10,
+                    backdropFilter: 'blur(4px)'
+                  }}>
+                    <Box sx={{
+                      width: 8,
+                      height: 8,
+                      bgcolor: isPlaying ? '#fff' : '#f44336',
+                      borderRadius: '50%',
+                      animation: isPlaying ? 'pulse 1.5s infinite' : 'none'
+                    }} />
+                    <Typography variant="caption" sx={{ color: '#fff', fontWeight: 'bold' }}>
+                      {isPlaying ? 'LIVE PREVIEW' : 'OFFLINE'}
+                    </Typography>
+                </Box>
               </Box>
+              
+            </Box> {/* End Monitor Area */}
 
-              {isPlaying && status.current_clip && (
+            {/* Bottom Info Bar */}
+            {isPlaying && status.current_clip && (
                 <Box sx={{ 
                   position: 'absolute', 
                   bottom: 0, 
@@ -427,9 +705,8 @@ export default function Dashboard() {
                   />
                 </Box>
               )}
-            </Box>
-          </Paper>
-        </Grid>
+            </Paper>
+          </Grid>
       </Grid>
 
       <Grid container spacing={3}>
@@ -591,6 +868,17 @@ export default function Dashboard() {
           )}
         </DialogActions>
       </Dialog>
+      {/* Copy Feedback Snackbar */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="success" sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

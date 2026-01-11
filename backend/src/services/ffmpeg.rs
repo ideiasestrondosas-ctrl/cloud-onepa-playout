@@ -218,19 +218,72 @@ impl FFmpegService {
         video_bitrate: &str,
         audio_bitrate: &str,
         hls_preview_path: Option<&str>,
+        logo_path: Option<&str>,
+        logo_position: Option<&str>,
     ) -> Result<std::process::Child, String> {
         let mut args = vec![
             "-re".to_string(), // Read at native frame rate
         ];
 
+        // 1. INPUTS
+
+        // Input 0: Main Video
         if offset > 0.0 {
-            args.push("-ss".to_string());
-            args.push(offset.to_string());
+            args.extend(vec!["-ss".to_string(), offset.to_string()]);
+        }
+        args.extend(vec!["-i".to_string(), input_path.to_string()]);
+
+        // Input 1: Logo/Overlay (if present)
+        let has_logo = if let Some(logo_path) = logo_path {
+            if !logo_path.is_empty() {
+                // Add loop for video files (INPUT OPTION)
+                if logo_path.ends_with(".mp4") || logo_path.ends_with(".webm") {
+                    args.extend(vec!["-stream_loop".to_string(), "-1".to_string()]);
+                }
+
+                // Add loop for image files to ensure they persist
+                if logo_path.ends_with(".jpg")
+                    || logo_path.ends_with(".jpeg")
+                    || logo_path.ends_with(".png")
+                    || logo_path.ends_with(".webp")
+                {
+                    args.extend(vec!["-loop".to_string(), "1".to_string()]);
+                }
+
+                args.extend(vec!["-i".to_string(), logo_path.to_string()]);
+                true
+            } else {
+                false
+            }
+        } else {
+            false
+        };
+
+        // 2. FILTER COMPLEX
+        let mut filter_complex = format!("scale={}", resolution);
+
+        if has_logo {
+            // Determine overlay position coordinates
+            let pos_coords = match logo_position.unwrap_or("top-right") {
+                "top-left" => "50:50",
+                "bottom-left" => "50:H-h-50",
+                "bottom-right" => "W-w-50:H-h-50",
+                _ => "W-w-50:50", // top-right default
+            };
+
+            filter_complex = format!(
+                "[0:v]scale={}[bg];[1:v]scale=-1:250[logo];[bg][logo]overlay={}[v_out]",
+                resolution, pos_coords
+            );
+        } else {
+            // No logo, just scale and label
+            filter_complex = format!("[0:v]scale={}[v_out]", resolution);
         }
 
+        args.extend(vec!["-filter_complex".to_string(), filter_complex]);
+
+        // 3. OUTPUT CODECS & OPTIONS (Applied to mapped streams)
         args.extend(vec![
-            "-i".to_string(),
-            input_path.to_string(),
             "-c:v".to_string(),
             "libx264".to_string(),
             "-preset".to_string(),
@@ -249,9 +302,7 @@ impl FFmpegService {
             "-pix_fmt".to_string(),
             "yuv420p".to_string(),
             "-g".to_string(),
-            "25".to_string(),
-            "-vf".to_string(),
-            format!("scale={}", resolution),
+            "50".to_string(), // 2 sec gop for 25fps
             "-c:a".to_string(),
             "aac".to_string(),
             "-b:a".to_string(),
@@ -260,17 +311,17 @@ impl FFmpegService {
             "44100".to_string(),
         ]);
 
-        // Use tee muxer for dual output if HLS preview is requested
+        // 4. OUTPUT MAPPING & FORMAT (Tee or Single)
         if let Some(hls_path) = hls_preview_path {
             args.extend(vec![
                 "-f".to_string(),
                 "tee".to_string(),
                 "-map".to_string(),
-                "0:v".to_string(),
+                "[v_out]".to_string(),
                 "-map".to_string(),
-                "0:a".to_string(),
+                "0:a?".to_string(),
                 format!(
-                    "[f=flv]{}|[f=hls:hls_time=2:hls_list_size=5:hls_flags=delete_segments]{}/preview.m3u8",
+                    "[f=flv]{}|[f=hls:hls_time=2:hls_list_size=5:hls_flags=delete_segments]{}/stream.m3u8",
                     output_url, hls_path
                 ),
             ]);
@@ -279,6 +330,10 @@ impl FFmpegService {
             args.extend(vec![
                 "-f".to_string(),
                 "flv".to_string(),
+                "-map".to_string(),
+                "[v_out]".to_string(),
+                "-map".to_string(),
+                "0:a?".to_string(),
                 output_url.to_string(),
             ]);
         }

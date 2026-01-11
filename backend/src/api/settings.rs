@@ -45,6 +45,7 @@ async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
                 overlay_enabled: true,
                 app_logo_path: None,
                 channel_name: Some("Cloud Onepa".to_string()),
+                clips_played_today: Some(0),
                 updated_at: chrono::Utc::now(),
             })
         }
@@ -98,20 +99,25 @@ async fn update_settings(
     if let Some(ref day_start) = req.day_start {
         sql.push_str(&format!(", day_start = '{}'", day_start));
     }
-    if let Some(ref default_image_path) = req.default_image_path {
-        sql.push_str(&format!(", default_image_path = '{}'", default_image_path));
-    }
-    if let Some(ref default_video_path) = req.default_video_path {
-        sql.push_str(&format!(", default_video_path = '{}'", default_video_path));
-    }
-    if let Some(overlay_enabled) = req.overlay_enabled {
-        sql.push_str(&format!(", overlay_enabled = {}", overlay_enabled));
-    }
-    if let Some(ref app_logo_path) = req.app_logo_path {
-        sql.push_str(&format!(", app_logo_path = '{}'", app_logo_path));
-    }
     if let Some(ref channel_name) = req.channel_name {
         sql.push_str(&format!(", channel_name = '{}'", channel_name));
+    }
+    if let Some(ref default_image_path) = req.default_image_path {
+        if default_image_path.is_empty() || default_image_path == "null" {
+            sql.push_str(", default_image_path = NULL");
+        } else {
+            sql.push_str(&format!(", default_image_path = '{}'", default_image_path));
+        }
+    }
+    if let Some(ref default_video_path) = req.default_video_path {
+        if default_video_path.is_empty() || default_video_path == "null" {
+            sql.push_str(", default_video_path = NULL");
+        } else {
+            sql.push_str(&format!(", default_video_path = '{}'", default_video_path));
+        }
+    }
+    if let Some(clips_played_today) = req.clips_played_today {
+        sql.push_str(&format!(", clips_played_today = {}", clips_played_today));
     }
 
     sql.push_str(" WHERE id = TRUE");
