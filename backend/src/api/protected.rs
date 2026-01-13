@@ -13,7 +13,10 @@ pub struct ProtectedAsset {
 }
 
 async fn list_protected_assets() -> impl Responder {
-    let protected_dir = "/var/lib/onepa-playout/assets/protected";
+    let assets_path = std::env::var("ASSETS_PATH")
+        .unwrap_or_else(|_| "/var/lib/onepa-playout/assets".to_string());
+    let protected_dir_str = format!("{}/protected", assets_path);
+    let protected_dir = protected_dir_str.as_str();
     let mut assets = Vec::new();
 
     if let Ok(entries) = fs::read_dir(protected_dir) {
@@ -59,7 +62,9 @@ async fn list_protected_assets() -> impl Responder {
 }
 
 async fn get_protected_asset(filename: web::Path<String>, req: HttpRequest) -> impl Responder {
-    let path_str = format!("/var/lib/onepa-playout/assets/protected/{}", filename);
+    let assets_path = std::env::var("ASSETS_PATH")
+        .unwrap_or_else(|_| "/var/lib/onepa-playout/assets".to_string());
+    let path_str = format!("{}/protected/{}", assets_path, filename);
     let path = Path::new(&path_str);
 
     if !path.exists() {

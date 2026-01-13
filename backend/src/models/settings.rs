@@ -26,7 +26,12 @@ pub struct Settings {
     pub app_logo_path: Option<String>,
     pub channel_name: Option<String>,
     pub clips_played_today: Option<i32>,
+    pub overlay_opacity: Option<f32>,
+    pub overlay_scale: Option<f32>,
+    pub srt_mode: Option<String>,
     pub updated_at: DateTime<Utc>,
+    pub system_version: Option<String>,
+    pub release_date: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -50,4 +55,9 @@ pub struct UpdateSettingsRequest {
     pub app_logo_path: Option<String>,
     pub channel_name: Option<String>,
     pub clips_played_today: Option<i32>,
+    pub overlay_opacity: Option<f32>,
+    pub overlay_scale: Option<f32>,
+    pub srt_mode: Option<String>,
+    pub system_version: Option<String>,
+    pub release_date: Option<String>,
 }

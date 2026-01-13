@@ -41,8 +41,14 @@ async fn main() -> std::io::Result<()> {
     let bind_address = format!("{}:{}", host, port);
 
     // Ensure HLS directory exists
-    let hls_path = "/var/lib/onepa-playout/hls";
-    std::fs::create_dir_all(hls_path).expect("Failed to create HLS directory");
+    let hls_path =
+        env::var("HLS_PATH").unwrap_or_else(|_| "/var/lib/onepa-playout/hls".to_string());
+    std::fs::create_dir_all(&hls_path).expect("Failed to create HLS directory");
+
+    // Ensure Assets directory exists
+    let assets_path =
+        env::var("ASSETS_PATH").unwrap_or_else(|_| "/var/lib/onepa-playout/assets".to_string());
+    std::fs::create_dir_all(&assets_path).ok(); // Optional
 
     log::info!("Starting server at {}", bind_address);
 
@@ -65,19 +71,20 @@ async fn main() -> std::io::Result<()> {
             .allow_any_header()
             .max_age(3600);
 
+        // Use local vars for closures
+        let hls_serve_path =
+            env::var("HLS_PATH").unwrap_or_else(|_| "/var/lib/onepa-playout/hls".to_string());
+        let assets_serve_path =
+            env::var("ASSETS_PATH").unwrap_or_else(|_| "/var/lib/onepa-playout/assets".to_string());
+
         App::new()
             .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(engine.clone()))
             .wrap(cors)
             .wrap(middleware::Logger::default())
             .configure(api::routes::configure)
-            .service(
-                actix_files::Files::new("/hls", "/var/lib/onepa-playout/hls").show_files_listing(),
-            )
-            .service(
-                actix_files::Files::new("/assets", "/var/lib/onepa-playout/assets")
-                    .show_files_listing(),
-            )
+            .service(actix_files::Files::new("/hls", &hls_serve_path).show_files_listing())
+            .service(actix_files::Files::new("/assets", &assets_serve_path).show_files_listing())
     })
     .bind(&bind_address)?
     .run()

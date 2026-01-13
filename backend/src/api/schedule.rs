@@ -105,18 +105,65 @@ async fn create_schedule(
 }
 
 async fn delete_schedule(schedule_id: web::Path<Uuid>, pool: web::Data<PgPool>) -> impl Responder {
+    let id = schedule_id.into_inner();
+    log::info!("Deleting schedule item: {}", id);
     let result = sqlx::query("DELETE FROM schedule WHERE id = $1")
-        .bind(schedule_id.into_inner())
+        .bind(id)
         .execute(pool.get_ref())
         .await;
 
     match result {
         Ok(res) if res.rows_affected() > 0 => {
+            log::info!("Schedule item {} deleted successfully", id);
             HttpResponse::Ok().json(serde_json::json!({"message": "Schedule deleted successfully"}))
         }
-        Ok(_) => HttpResponse::NotFound().json(serde_json::json!({"error": "Schedule not found"})),
-        Err(_) => HttpResponse::InternalServerError()
-            .json(serde_json::json!({"error": "Failed to delete schedule"})),
+        Ok(_) => {
+            log::warn!("Schedule item {} not found", id);
+            HttpResponse::NotFound().json(serde_json::json!({"error": "Schedule not found"}))
+        }
+        Err(e) => {
+            log::error!("Failed to delete schedule {}: {}", id, e);
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": format!("Failed to delete schedule: {}", e)}))
+        }
+    }
+}
+
+#[derive(Deserialize)]
+pub struct BulkDeleteRequest {
+    pub start_date: String,
+    pub end_date: String,
+}
+
+async fn delete_bulk(req: web::Json<BulkDeleteRequest>, pool: web::Data<PgPool>) -> impl Responder {
+    let start = match chrono::NaiveDate::parse_from_str(&req.start_date, "%Y-%m-%d") {
+        Ok(d) => d,
+        Err(_) => {
+            return HttpResponse::BadRequest()
+                .json(serde_json::json!({"error": "Invalid start_date"}))
+        }
+    };
+    let end = match chrono::NaiveDate::parse_from_str(&req.end_date, "%Y-%m-%d") {
+        Ok(d) => d,
+        Err(_) => {
+            return HttpResponse::BadRequest()
+                .json(serde_json::json!({"error": "Invalid end_date"}))
+        }
+    };
+
+    let result = sqlx::query("DELETE FROM schedule WHERE date >= $1 AND date <= $2")
+        .bind(start)
+        .bind(end)
+        .execute(pool.get_ref())
+        .await;
+
+    match result {
+        Ok(res) => HttpResponse::Ok().json(serde_json::json!({
+            "message": format!("Deleted {} schedule items", res.rows_affected())
+        })),
+        Err(e) => {
+            HttpResponse::InternalServerError().json(serde_json::json!({"error": e.to_string()}))
+        }
     }
 }
 
@@ -239,6 +286,7 @@ async fn get_playlist_for_date(
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.route("", web::get().to(list_schedule))
         .route("", web::post().to(create_schedule))
+        .route("/bulk", web::post().to(delete_bulk))
         .route("/{id}", web::delete().to(delete_schedule))
         .route("/{id}", web::put().to(update_schedule))
         .route("/playlist", web::get().to(get_playlist_for_date));

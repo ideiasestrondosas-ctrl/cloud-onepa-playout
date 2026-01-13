@@ -10,15 +10,29 @@ import {
   Alert,
   CircularProgress,
 } from '@mui/material';
-import { authAPI } from '../services/api';
+import { authAPI, settingsAPI } from '../services/api';
 import useAuthStore from '../stores/authStore';
+import { useEffect } from 'react';
 
 export default function Login() {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [version, setVersion] = useState('');
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
+
+  useEffect(() => {
+    const fetchVersion = async () => {
+      try {
+        const response = await settingsAPI.get();
+        setVersion(response.data.system_version);
+      } catch (err) {
+        console.error('Failed to fetch version:', err);
+      }
+    };
+    fetchVersion();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -107,8 +121,8 @@ export default function Login() {
           </form>
           
           <Box sx={{ mt: 3, textAlign: 'center' }}>
-            <Typography variant="caption" color="text.secondary">
-              Cloud Onepa Playout v1.8.1-EXP
+            <Typography variant="caption" color="text.secondary" display="block">
+              Versão: {version || 'v1.9.1-PRO'}
             </Typography>
             <Typography variant="caption" color="text.secondary" display="block">
               © 2026 Onepa Technologies

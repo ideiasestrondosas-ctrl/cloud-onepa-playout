@@ -31,10 +31,14 @@ async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
                 fps: "30".to_string(),
                 video_bitrate: "5000".to_string(),
                 audio_bitrate: "192".to_string(),
-                media_path: "/var/lib/onepa-playout/media".to_string(),
-                thumbnails_path: "/var/lib/onepa-playout/thumbnails".to_string(),
-                playlists_path: "/var/lib/onepa-playout/playlists".to_string(),
-                fillers_path: "/var/lib/onepa-playout/fillers".to_string(),
+                media_path: std::env::var("MEDIA_PATH")
+                    .unwrap_or_else(|_| "/var/lib/onepa-playout/media".to_string()),
+                thumbnails_path: std::env::var("THUMBNAILS_PATH")
+                    .unwrap_or_else(|_| "/var/lib/onepa-playout/thumbnails".to_string()),
+                playlists_path: std::env::var("PLAYLISTS_PATH")
+                    .unwrap_or_else(|_| "/var/lib/onepa-playout/playlists".to_string()),
+                fillers_path: std::env::var("FILLERS_PATH")
+                    .unwrap_or_else(|_| "/var/lib/onepa-playout/fillers".to_string()),
                 logo_path: None,
                 logo_position: Some("top-left".to_string()),
                 day_start: Some("06:00:00".to_string()),
@@ -46,7 +50,12 @@ async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
                 app_logo_path: None,
                 channel_name: Some("Cloud Onepa".to_string()),
                 clips_played_today: Some(0),
+                overlay_opacity: Some(1.0),
+                overlay_scale: Some(1.0),
+                srt_mode: Some("caller".to_string()),
                 updated_at: chrono::Utc::now(),
+                system_version: Some("1.9.1-PRO".to_string()),
+                release_date: Some("2026-01-12".to_string()),
             })
         }
         Err(_) => HttpResponse::InternalServerError()
@@ -118,6 +127,21 @@ async fn update_settings(
     }
     if let Some(clips_played_today) = req.clips_played_today {
         sql.push_str(&format!(", clips_played_today = {}", clips_played_today));
+    }
+    if let Some(overlay_opacity) = req.overlay_opacity {
+        sql.push_str(&format!(", overlay_opacity = {}", overlay_opacity));
+    }
+    if let Some(overlay_scale) = req.overlay_scale {
+        sql.push_str(&format!(", overlay_scale = {}", overlay_scale));
+    }
+    if let Some(ref srt_mode) = req.srt_mode {
+        sql.push_str(&format!(", srt_mode = '{}'", srt_mode));
+    }
+    if let Some(ref system_version) = req.system_version {
+        sql.push_str(&format!(", system_version = '{}'", system_version));
+    }
+    if let Some(ref release_date) = req.release_date {
+        sql.push_str(&format!(", release_date = '{}'", release_date));
     }
 
     sql.push_str(" WHERE id = TRUE");

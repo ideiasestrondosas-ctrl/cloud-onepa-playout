@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import useAuthStore from '../stores/authStore';
+import { settingsAPI } from '../services/api';
 import {
   Box,
   Drawer,
@@ -29,7 +30,7 @@ import {
 import { useHelp } from '../context/HelpContext';
 import ConnectivityStatus from './ConnectivityStatus';
 
-const AppLogo = () => (
+const AppLogo = ({ version }) => (
   <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', px: 2, py: 2 }}>
     <Box sx={{ 
       width: '100%', 
@@ -47,7 +48,6 @@ const AppLogo = () => (
       />
     </Box>
     <Typography variant="caption" sx={{ color: 'text.secondary', mt: 1, fontSize: '0.75rem', fontWeight: 'bold', textAlign: 'center' }}>
-      v1.8.1-EXP
     </Typography>
   </Box>
 );
@@ -65,10 +65,30 @@ const menuItems = [
 
 export default function Layout({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [version, setVersion] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
   const logout = useAuthStore((state) => state.logout);
   const { showHelp } = useHelp();
+
+  useEffect(() => {
+    const fetchVersion = async () => {
+      try {
+        const response = await settingsAPI.get();
+        setVersion(response.data.system_version);
+      } catch (err) {
+        console.error('Failed to fetch system version:', err);
+      }
+    };
+    fetchVersion();
+  }, []);
+
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const clockInterval = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(clockInterval);
+  }, []);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -79,10 +99,19 @@ export default function Layout({ children }) {
     navigate('/login');
   };
 
+  const formatDate = (date) => {
+    return date.toLocaleDateString('pt-PT', { 
+        weekday: 'short', 
+        day: '2-digit', 
+        month: 'short', 
+        year: 'numeric' 
+    }).replace('.', '');
+  };
+
   const drawer = (
     <div>
       <Toolbar sx={{ display: 'flex', justifyContent: 'center', py: 1, cursor: 'pointer' }} onClick={() => navigate('/')}>
-        <AppLogo />
+        <AppLogo version={version} />
       </Toolbar>
       <Divider />
       <List>
@@ -120,6 +149,11 @@ export default function Layout({ children }) {
         sx={{
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           ml: { sm: `${drawerWidth}px` },
+          bgcolor: 'background.paper',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          boxShadow: 'none',
+          color: 'text.primary'
         }}
       >
         <Toolbar>
@@ -131,10 +165,32 @@ export default function Layout({ children }) {
           >
             <MenuIcon />
           </IconButton>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexGrow: 1 }}>
-              <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 'bold' }}>
-                Cloud Onepa Playout
-              </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, flexGrow: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1.5 }}>
+                    <Typography 
+                        variant="h4" 
+                        sx={{ 
+                            fontFamily: 'monospace', 
+                            fontWeight: 'bold', 
+                            color: 'primary.main',
+                            lineHeight: 1
+                        }}
+                    >
+                        {now.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                    </Typography>
+                    <Typography 
+                        variant="subtitle2" 
+                        sx={{ 
+                            color: 'text.secondary', 
+                            fontWeight: 'medium',
+                            textTransform: 'uppercase',
+                            letterSpacing: 1,
+                            pb: 0.2
+                        }}
+                    >
+                        {formatDate(now)}
+                    </Typography>
+                </Box>
             </Box>
             <IconButton 
               color="inherit"

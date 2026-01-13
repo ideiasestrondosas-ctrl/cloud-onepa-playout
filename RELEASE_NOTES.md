@@ -1,25 +1,30 @@
-# Release Notes v1.8.2-EXP
+# Release Notes v1.9.2-PRO (2026-01-13)
 
-## 🚀 Enhancements & Fixes
+## 🕒 Top Bar & Header
 
-### 📺 Dashboard & Live Preview
+- **Real-time Clock & Date**: Integrated a professional real-time clock and date into the Top Bar using a premium monospace font.
+- **Dashboard Refinement**: Cleaned up the Dashboard header by removing redundant titles and clocks, creating a more professional and focused monitor view.
 
-- **Stabilization Fix**: Resolved a critical `ReferenceError: useCallback is not defined` crash that prevented the Dashboard from loading in production builds.
-- **LUFS Meter**: Restored real-time audio analysis using the Web Audio API. The meter now dynamically displays audio levels (Green/Yellow/Red) directly from the HLS stream.
-- **VLC Integration**:
-  - Fixed the "Open VLC" button to use a direct HTTP URL (`http://[host]:[port]/hls/stream.m3u8`) instead of the unreliable `vlc://` protocol.
-  - Added extensive console diagnostics for tracking VLC launch attempts (Platform, User Agent, Source URL).
+## 📊 Audio & Monitoring
 
-### ⚙️ Backend & Settings
+- **LUFS Meter v2**: Fixed `AudioContext` suspension issues in Chrome and Safari. The meter now automatically resumes synchronization when the user starts playback.
+- **Enhanced Diagnostics**: Improved RTMP/HLS diagnostics for easier troubleshooting of stream failures.
 
-- **Clips Counter**: Added a persistent `clips_played_today` counter to the Settings, tracking the number of clips played daily.
-- **HLS Link**: Added a direct "Link HLS (VLC/Mobile)" in the Settings page for easy access to the stream URL.
-- **Asset Management**: Fixed an issue where clearing default media assets didn't correctly persist `NULL` values to the database.
+## 📂 Media Library & Assets
 
-### 🛠️ Technical
+- **Subfolder Support**: Full support for navigating and managing media within hierarchical folders.
+- **Recursive Deletion**: Deleting a folder now correctly and recursively removes all files within it from both the database and disk.
+- **Thumbnail Healing**: Implemented automatic logic to serve video thumbnails via a stable proxy and regenerate missing ones on the fly.
 
-- **Audio Context Management**: Implemented proper cleanup for `AudioContext` and `animationFrame` to prevent memory leaks in the Dashboard.
-- **Code Optimization**: Re-introduced `useCallback` and `useRef` for optimized performance in high-frequency UI updates.
+## 🔗 UX & Connectivity
+
+- **Smart Copy Icons**: Added fast-copy icons to all output URLs (RTMP, HLS, SRT, UDP) for easy distribution to VLC or OBS.
+- **HLS Protocol Optimization**: Configured low-latency HLS links for smoother real-time preview in browsers.
+
+## 🐳 Infrastructure & Reliability
+
+- **Docker Orchestration**: Added healthchecks to the PostgreSQL container and precise startup orders to ensure the backend always waits for the database.
+- **Stability Fixes**: Resolved "White Screen" crashes in the Settings panel and improved general system uptime tracking.
 
 ---
 

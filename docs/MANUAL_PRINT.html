@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Onepa Playout - Manual do Utilizador (v1.9.0)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1976d2;
+            --success: #2e7d32;
+            --text: #333;
+            --bg: #fff;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            margin: 0;
+            padding: 40px;
+            background: var(--bg);
+        }
+        @media print {
+            body { padding: 0; }
+            .no-print { display: none; }
+            section { page-break-after: always; }
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid var(--primary);
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+        }
+        h1 { color: var(--primary); margin: 0; }
+        h2 { color: var(--primary); border-left: 5px solid var(--primary); padding-left: 10px; margin-top: 30px; }
+        h3 { color: var(--success); }
+        .feature-box {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .alert {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .alert-info { background: #e3f2fd; color: #0d47a1; border-left: 4px solid #1976d2; }
+        code { background: #eee; padding: 2px 5px; border-radius: 3px; font-family: monospace; }
+        img { max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 20px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background: #f2f2f2; }
+        .footer { text-align: center; font-size: 0.8rem; color: #666; margin-top: 50px; border-top: 1px solid #ddd; padding-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Cloud Onepa Playout PRO</h1>
+    </div>
+
+    <section id="introducao">
+        <h2>1. Introdução</h2>
+        <p>O Cloud Onepa Playout é uma solução profissional de emissão televisiva baseada na web, projetada para automação de canais 24/7 com suporte a HLS, RTMP e SRT.</p>
+        <div class="alert alert-info">Dica: Para gerar um PDF deste manual, pressione <code>Ctrl + P</code> (Windows) ou <code>Cmd + P</code> (Mac) no seu browser e escolha "Guardar como PDF".</div>
+    </section>
+
+    <section id="dashboard">
+        <h2>2. Dashboard de Emissão</h2>
+        <p>O centro de controlo do seu canal. Aqui pode monitorizar o sinal de saída e gerir os clips em exibição.</p>
+        <h3>Funcionalidades de Phase 31:</h3>
+        <ul>
+            <li><strong>Monitor de Áudio Standardizado:</strong> Visualização em tempo real com alvo de -23 LUFS (Norma EBU R128).</li>
+            <li><strong>Botão Skip:</strong> Pula imediatamente para o próximo clip agendado, sem interrupções pretas.</li>
+            <li><strong>Smart VLC Launcher:</strong> Botão "Open VLC" que deteta o seu sistema operativo e abre o player localmente com as configurações corretas.</li>
+        </ul>
+    </section>
+
+    <section id="configuracoes">
+        <h2>3. Configurações e Overlay</h2>
+        <p>Personalize a identidade visual do seu canal em tempo real.</p>
+        <div class="feature-box">
+            <strong>Novidade:</strong> As alterações de Opacidade e Escala do logotipo agora são aplicadas <strong>instantaneamente</strong> ao stream. O sistema reinicia o processo de vídeo de forma seamless para refletir as definições.
+        </div>
+        <p>Parâmetros Recomendados:</p>
+        <table>
+            <tr>
+                <th>Parâmetro</th>
+                <th>Valor Recomendado</th>
+                <th>Descrição</th>
+            </tr>
+            <tr>
+                <td>Resolução</td>
+                <td>1920x1080</td>
+                <td>Full HD standard.</td>
+            </tr>
+            <tr>
+                <td>Bitrate Vídeo</td>
+                <td>4000k</td>
+                <td>Equilíbrio entre qualidade e largura de banda.</td>
+            </tr>
+            <tr>
+                <td>Normalização</td>
+                <td>-23 LUFS</td>
+                <td>Ativada automaticamente em todos os clips.</td>
+            </tr>
+        </table>
+    </section>
+
+    <section id="diagnostico">
+        <h2>4. Resolução de Problemas</h2>
+        <p>O sistema inclui um <strong>Assistente de Diagnóstico</strong> que verifica:</p>
+        <ol>
+            <li>Se o motor de playout está ligado.</li>
+            <li>Se existe uma playlist agendada para o horário atual.</li>
+            <li>Se os ficheiros físicos de vídeo existem no servidor Cloud.</li>
+            <li>A integridade das permissões de ficheiros.</li>
+        </ol>
+    </section>
+
+    <div class="footer">
+        © 2026 Ideias Estrondosas - Cloud Onepa Playout. Todos os direitos reservados.
+    </div>
+</body>
+</html>

@@ -1,6 +1,5 @@
 [package]
 name = "cloud-onepa-playout"
-version = "1.8.1"
 edition = "2021"
 authors = ["Cloud Onepa Team"]
 description = "Sistema de Automação de Playout 24/7 para Streaming de Vídeo"

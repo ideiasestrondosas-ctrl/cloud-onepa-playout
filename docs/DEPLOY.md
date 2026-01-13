@@ -6,8 +6,20 @@
 
 - Docker 20.10+
 - Docker Compose 2.0+
-- 4GB RAM mínimo (8GB recomendado)
-- 20GB espaço em disco
+
+### Hardware Mínimo (720p/1080p Básico)
+
+- **CPU**: 4 Cores (Intel i5 6th Gen ou equivalente)
+- **RAM**: 8GB DDR4
+- **Storage**: SSD 20GB+ (Sistema), HDD para Media
+- **GPU**: Opcional (Software Encoding)
+
+### Hardware Recomendado (1080p High Bitrate / 4K)
+
+- **CPU**: 8 Cores (Intel i7 10th Gen / Ryzen 7 3000+)
+- **RAM**: 16GB DDR4
+- **Storage**: NVMe 100GB+ (Sistema/Cache), HDD/NAS para Media
+- **GPU**: NVIDIA GTX 1660 / RTX Series (Necessário para NVENC HW Accel)
 
 ### Opcional (Deploy Manual)
 
@@ -239,13 +251,44 @@ tar -czf media-backup.tar.gz /var/lib/onepa-playout/media
 
 ### Restore
 
-```bash
-# Database
-docker-compose exec -T db psql -U onepa onepa_playout < backup.sql
+---
 
-# Media
-tar -xzf media-backup.tar.gz -C /
+## 💻 Instalação em Diferentes Sistemas
+
+### Linux (Ubuntu/Debian) - Automatizado
+
+Use o script fornecido na pasta `scripts/`:
+
+```bash
+cd scripts
+chmod +x install_linux.sh
+./install_linux.sh
 ```
+
+### Docker (Todas as Plataformas)
+
+A forma mais segura e isolada:
+
+```bash
+# Windows (WSL2), Mac ou Linux
+cd scripts
+chmod +x setup_docker.sh
+./setup_docker.sh
+```
+
+### Windows Nativo (Sem Docker)
+
+1. Instalar [Rust](https://rustup.rs/)
+2. Instalar [Node.js](https://nodejs.org/)
+3. Instalar [PostgreSQL](https://www.postgresql.org/download/windows/)
+4. Instalar [FFmpeg](https://ffmpeg.org/download.html) (Adicionar ao PATH)
+5. Seguir os passos de "Deploy Manual" acima, usando PowerShell.
+
+### macOS
+
+1. `brew install rust node postgresql ffmpeg`
+2. Iniciar serviço Postgres: `brew services start postgresql`
+3. Seguir "Deploy Manual".
 
 ---
 

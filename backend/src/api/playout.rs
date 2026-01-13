@@ -41,10 +41,10 @@ async fn stop_playout(engine: web::Data<Arc<PlayoutEngine>>) -> impl Responder {
     }))
 }
 
-async fn skip_clip(_engine: web::Data<Arc<PlayoutEngine>>) -> impl Responder {
-    // TODO: Implement skip in PlayoutEngine
+async fn skip_clip(engine: web::Data<Arc<PlayoutEngine>>) -> impl Responder {
+    engine.skip_current_clip().await;
     HttpResponse::Ok().json(serde_json::json!({
-        "message": "Skip requested (not implemented yet)"
+        "message": "Skip requested"
     }))
 }
 
@@ -62,7 +62,7 @@ async fn resume_playout(_engine: web::Data<Arc<PlayoutEngine>>) -> impl Responde
     }))
 }
 
-async fn debug_playout(pool: web::Data<PgPool>) -> impl Responder {
+async fn diagnose_playout(pool: web::Data<PgPool>) -> impl Responder {
     let mut report = DebugReport {
         has_active_schedule: false,
         active_schedule_id: None,
@@ -205,5 +205,5 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         .route("/skip", web::post().to(skip_clip))
         .route("/pause", web::post().to(pause_playout))
         .route("/resume", web::post().to(resume_playout))
-        .route("/debug", web::get().to(debug_playout));
+        .route("/diagnose", web::get().to(diagnose_playout));
 }

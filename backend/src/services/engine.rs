@@ -34,6 +34,9 @@ pub struct PlayoutEngine {
     pub last_error: Arc<Mutex<Option<String>>>,
     pub status: Arc<Mutex<PlayoutStatus>>,
     engine_start_time: Arc<Mutex<Option<chrono::DateTime<Local>>>>,
+    skip_requested: Arc<Mutex<bool>>,
+    last_overlay_opacity: Arc<Mutex<f32>>,
+    last_overlay_scale: Arc<Mutex<f32>>,
 }
 
 impl PlayoutEngine {
@@ -52,7 +55,15 @@ impl PlayoutEngine {
                 clips_played_today: 0,
             })),
             engine_start_time: Arc::new(Mutex::new(None)),
+            skip_requested: Arc::new(Mutex::new(false)),
+            last_overlay_opacity: Arc::new(Mutex::new(1.0)),
+            last_overlay_scale: Arc::new(Mutex::new(1.0)),
         }
+    }
+
+    pub async fn skip_current_clip(&self) {
+        let mut skip = self.skip_requested.lock().await;
+        *skip = true;
     }
 
     pub async fn set_running(&self, running: bool) {
@@ -72,6 +83,7 @@ impl PlayoutEngine {
             status.status = "stopped".to_string();
             status.current_clip = None;
             status.next_clips.clear();
+            status.uptime = 0;
             *start_time = None;
             self.stop_process().await;
         } else {
@@ -129,8 +141,55 @@ impl PlayoutEngine {
                     .execute(&self.pool)
                     .await;
             }
-            sleep(Duration::from_secs(5)).await;
+
+            // --- Handle Skip Request ---
+            let mut skip = self.skip_requested.lock().await;
+            if *skip {
+                log::info!("Processing skip request...");
+                if let Err(e) = self.process_skip().await {
+                    log::error!("Failed to process skip: {}", e);
+                }
+                *skip = false;
+            }
+            // ---------------------------
+
+            sleep(Duration::from_secs(1)).await;
         }
+    }
+
+    async fn process_skip(&self) -> Result<(), String> {
+        let status = self.status.lock().await;
+        if let Some(ref current) = status.current_clip {
+            let remaining = current.duration - current.position;
+            if remaining > 0.0 {
+                log::info!(
+                    "Skipping clip. Advancing schedule by {} seconds.",
+                    remaining
+                );
+                // Update schedule start_time by shifting it back
+                // We target the current ACTIVE schedule item
+                let _ = sqlx::query("UPDATE schedule SET start_time = start_time - ($1 * interval '1 second') WHERE id = (
+                    SELECT id FROM schedule 
+                    WHERE (date = current_date OR repeat_pattern != 'none')
+                    AND start_time <= current_time 
+                    ORDER BY CASE WHEN date = current_date THEN 0 ELSE 1 END, start_time DESC 
+                    LIMIT 1
+                )")
+                    .bind(remaining)
+                    .execute(&self.pool)
+                    .await
+                    .map_err(|e| e.to_string())?;
+
+                log::info!(
+                    "Skip: Schedule shifted by {}s. Stopping process for reload.",
+                    remaining
+                );
+
+                // Force immediate process stop to pick up new clip on next tick
+                self.stop_process().await;
+            }
+        }
+        Ok(())
     }
 
     async fn tick(&self) -> Result<(), String> {
@@ -139,11 +198,13 @@ impl PlayoutEngine {
             return Ok(());
         }
 
-        // Update uptime
+        // Update uptime only if playing
         {
             let mut status = self.status.lock().await;
-            if let Some(start) = *self.engine_start_time.lock().await {
-                status.uptime = (Local::now() - start).num_seconds();
+            if status.status == "playing" {
+                if let Some(start) = *self.engine_start_time.lock().await {
+                    status.uptime = (Local::now() - start).num_seconds();
+                }
             }
         }
 
@@ -246,9 +307,10 @@ impl PlayoutEngine {
         settings: &Settings,
     ) -> Result<(), String> {
         let now = Local::now().time();
-        let seconds_since_start = (now - start_time).num_seconds();
+        let duration_since_start = now - start_time;
+        let seconds_since_start = duration_since_start.num_milliseconds() as f64 / 1000.0;
 
-        if seconds_since_start < 0 {
+        if seconds_since_start < 0.0 {
             return Ok(());
         }
 
@@ -375,10 +437,32 @@ impl PlayoutEngine {
 
             let mut current_id = self.current_clip_id.lock().await;
             let mut proc_lock = self.current_process.lock().await;
+            let mut last_opacity = self.last_overlay_opacity.lock().await;
+            let mut last_scale = self.last_overlay_scale.lock().await;
+
+            let current_opacity = settings.overlay_opacity.unwrap_or(1.0);
+            let current_scale = settings.overlay_scale.unwrap_or(1.0);
+
+            // Detect overlay changes to force restart
+            let overlay_changed = settings.overlay_enabled
+                && ((current_opacity - *last_opacity).abs() > 0.01
+                    || (current_scale - *last_scale).abs() > 0.01);
+
+            if overlay_changed {
+                log::info!(
+                    "Overlay settings changed (Opacity: {}->{}, Scale: {}->{}). Restarting stream.",
+                    *last_opacity,
+                    current_opacity,
+                    *last_scale,
+                    current_scale
+                );
+                *last_opacity = current_opacity;
+                *last_scale = current_scale;
+            }
 
             let is_running = if let Some(ref mut child) = *proc_lock {
                 match child.try_wait() {
-                    Ok(None) => true,
+                    Ok(None) => !overlay_changed, // If overlay changed, treat as not running to force restart
                     _ => false,
                 }
             } else {
@@ -393,7 +477,9 @@ impl PlayoutEngine {
                 }
 
                 let ffmpeg = FFmpegService::new();
-                let hls_preview_path = "/var/lib/onepa-playout/hls";
+                let hls_preview_path_str = std::env::var("HLS_PATH")
+                    .unwrap_or_else(|_| "/var/lib/onepa-playout/hls".to_string());
+                let hls_preview_path = hls_preview_path_str.as_str();
                 std::fs::create_dir_all(hls_preview_path).ok();
 
                 let mut output_url = settings.output_url.clone();
@@ -409,7 +495,11 @@ impl PlayoutEngine {
                         .as_ref()
                         .map(|p| {
                             if p.starts_with("/assets/") {
-                                p.replace("/assets/", "/var/lib/onepa-playout/assets/")
+                                let assets_path =
+                                    std::env::var("ASSETS_PATH").unwrap_or_else(|_| {
+                                        "/var/lib/onepa-playout/assets".to_string()
+                                    });
+                                p.replace("/assets/", &format!("{}/", assets_path))
                             } else {
                                 p.clone()
                             }
@@ -431,6 +521,8 @@ impl PlayoutEngine {
                     Some(hls_preview_path),
                     logo_path.as_deref(),
                     settings.logo_position.as_deref().filter(|s| !s.is_empty()),
+                    settings.overlay_opacity,
+                    settings.overlay_scale,
                 )?;
 
                 *proc_lock = Some(child);
@@ -477,5 +569,23 @@ impl PlayoutEngine {
         }
         let mut current_id = self.current_clip_id.lock().await;
         *current_id = None;
+
+        // Cleanup HLS cache
+        self.cleanup_cache().await;
+    }
+
+    async fn cleanup_cache(&self) {
+        let hls_path =
+            std::env::var("HLS_PATH").unwrap_or_else(|_| "/var/lib/onepa-playout/hls".to_string());
+        log::info!("Cleaning up HLS cache in {}", hls_path);
+
+        if let Ok(entries) = std::fs::read_dir(&hls_path) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_file() {
+                    let _ = std::fs::remove_file(path);
+                }
+            }
+        }
     }
 }

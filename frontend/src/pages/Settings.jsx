@@ -35,6 +35,7 @@ import {
   ListItemButton,
   ListItemIcon,
   Paper,
+  Slider,
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -51,6 +52,7 @@ import {
   Tv as TvIcon,
   Dvr as PlatformIcon,
   Close as CloseIcon,
+  ContentCopy as ContentCopyIcon,
 } from '@mui/icons-material';
 
 function TabPanel({ children, value, index }) {
@@ -82,11 +84,16 @@ export default function Settings() {
     dayStart: '06:00',
     defaultImagePath: '',
     defaultVideoPath: '',
-    version: '1.8.1-EXP',
-    releaseDate: '2026-01-10',
+    version: '',
+    releaseDate: '',
     overlay_enabled: true,
     channelName: 'Cloud Onepa',
-    branding_type: 'static'
+    branding_type: 'static',
+    overlayOpacity: 1.0,
+    overlayScale: 1.0,
+    srtMode: 'caller',
+    system_version: '',
+    release_date: ''
   });
 
   const [loading, setLoading] = useState(true);
@@ -160,11 +167,16 @@ export default function Settings() {
         dayStart: data.day_start || '06:00',
         defaultImagePath: data.default_image_path || '',
         defaultVideoPath: data.default_video_path || '',
-        version: '1.8.1-EXP', // Frontend override for consistency
-        releaseDate: '2026-01-11',
+        version: data.system_version || '1.9.1-PRO', 
+        releaseDate: data.release_date || '2026-01-12',
         overlay_enabled: data.overlay_enabled ?? true,
         channelName: data.channel_name || 'Cloud Onepa',
-        branding_type: isVideoBranding ? 'video' : 'static'
+        branding_type: isVideoBranding ? 'video' : 'static',
+        overlayOpacity: data.overlay_opacity ?? 1.0,
+        overlayScale: data.overlay_scale ?? 1.0,
+        srtMode: data.srt_mode || 'caller',
+        system_version: data.system_version || '1.9.1-PRO',
+        release_date: data.release_date || '2026-01-12'
       });
     } catch (error) {
       console.error('Failed to fetch settings:', error);
@@ -254,7 +266,12 @@ export default function Settings() {
         logo_position: settings.logoPosition,
         day_start: settings.dayStart,
         overlay_enabled: settings.overlay_enabled,
-        channel_name: settings.channelName
+        channel_name: settings.channelName,
+        overlay_opacity: settings.overlayOpacity,
+        overlay_scale: settings.overlayScale,
+        srt_mode: settings.srtMode,
+        system_version: settings.version,
+        release_date: settings.releaseDate
       });
       showSuccess('Configurações salvas com sucesso!');
     } catch (error) {
@@ -393,6 +410,20 @@ export default function Settings() {
                       <MenuItem value="desktop">Desktop (Preview)</MenuItem>
                     </Select>
                   </FormControl>
+
+                  {settings.outputType === 'srt' && (
+                     <FormControl fullWidth sx={{ mt: 2 }}>
+                        <InputLabel>Modo SRT</InputLabel>
+                        <Select
+                           value={settings.srtMode || 'caller'}
+                           label="Modo SRT"
+                           onChange={(e) => setSettings({ ...settings, srtMode: e.target.value })}
+                        >
+                           <MenuItem value="caller">Caller (Envia para servidor)</MenuItem>
+                           <MenuItem value="listener">Listener (Aguarda conexão)</MenuItem>
+                        </Select>
+                     </FormControl>
+                  )}
                 </Grid>
 
                 <Grid item xs={12} sm={6}>
@@ -403,12 +434,89 @@ export default function Settings() {
                     onChange={(e) => setSettings({ ...settings, outputUrl: e.target.value })}
                     placeholder="rtmp://localhost:1935/live/stream"
                   />
+                  
+                  {/* RTMP Guidance */}
+                  {settings.outputType === 'rtmp' && (
+                    <Alert severity="info" sx={{ mt: 2 }}>
+                      <Typography variant="subtitle2" fontWeight="bold">Servidor RTMP (VLC/OBS)</Typography>
+                      <Typography variant="caption" display="block">
+                        O Playout atua como <strong>Publisher</strong>. Para ver no VLC:
+                      </Typography>
+                      <Paper sx={{ mt: 1, p: 0.5, bgcolor: 'rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>rtmp://{window.location.hostname}:1935/live/stream</code>
+                        <IconButton size="small" onClick={() => { navigator.clipboard.writeText(`rtmp://${window.location.hostname}:1935/live/stream`); showSuccess('Copiado!'); }}>
+                            <ContentCopyIcon fontSize="small" />
+                        </IconButton>
+                      </Paper>
+                      <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                        💡 <strong>Dica VLC:</strong> Se der erro de I/O, verifique se o container 'mediamtx' está rodando (porta 1935).
+                      </Typography>
+                    </Alert>
+                  )}
+
+                  {/* SRT Guidance */}
+                  {settings.outputType === 'srt' && (
+                    <Alert severity={settings.srtMode === 'listener' ? "success" : "info"} sx={{ mt: 2 }}>
+                      <Typography variant="subtitle2" fontWeight="bold">Conexão SRT ({settings.srtMode === 'listener' ? 'Listener' : 'Caller'})</Typography>
+                      {settings.srtMode === 'listener' ? (
+                        <>
+                          <Typography variant="caption" display="block">O Playout aguarda conexões. No VLC use a opção <strong>"Caller"</strong> connectando para:</Typography>
+                          <Paper sx={{ mt: 1, p: 0.5, bgcolor: 'rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>srt://{window.location.hostname}:9000</code>
+                            <IconButton size="small" onClick={() => { navigator.clipboard.writeText(`srt://${window.location.hostname}:9000`); showSuccess('Copiado!'); }}>
+                                <ContentCopyIcon fontSize="small" />
+                            </IconButton>
+                          </Paper>
+                          <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>
+                            Nota: O Playout é o <strong>Servidor (Listener)</strong>.
+                          </Typography>
+                        </>
+                      ) : (
+                        <>
+                          <Typography variant="caption" display="block">O Playout tenta conectar-se a um servidor remoto.</Typography>
+                          <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+                            Configure o seu receptor (VLC/OBS) como <strong>Listener</strong> no IP do servidor de destino e porta {settings.outputUrl.split(':').pop()}.
+                          </Typography>
+                        </>
+                      )}
+                    </Alert>
+                  )}
+
+                  {/* UDP Guidance */}
+                  {settings.outputType === 'udp' && (
+                    <Alert severity="info" sx={{ mt: 2 }}>
+                      <Typography variant="subtitle2" fontWeight="bold">Configuração UDP</Typography>
+                      <Typography variant="caption" display="block">Para Multicast use o prefixo @:</Typography>
+                      <Paper sx={{ mt: 0.5, p: 0.5, bgcolor: 'rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>udp://@239.0.0.1:1234</code>
+                        <IconButton size="small" onClick={() => { navigator.clipboard.writeText('udp://@239.0.0.1:1234'); showSuccess('Copiado!'); }}>
+                            <ContentCopyIcon fontSize="small" />
+                        </IconButton>
+                      </Paper>
+                      <Typography variant="caption" display="block" sx={{ mt: 1 }}>Para Unicast (VLC):</Typography>
+                      <Paper sx={{ mt: 0.5, p: 0.5, bgcolor: 'rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                         <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>udp://[IP_DESTINO]:1234</code>
+                      </Paper>
+                    </Alert>
+                  )}
+
+                  {/* Desktop Preview Guidance */}
+                  {settings.outputType === 'desktop' && (
+                    <Alert severity="warning" sx={{ mt: 2 }}>
+                      <Typography variant="subtitle2" fontWeight="bold">Desktop Preview</Typography>
+                      <Typography variant="caption">
+                        Esta opção abre uma janela SDL direta no servidor. 
+                        <strong> Pode não funcionar em ambientes Docker ou Cloud sem X11/Display.</strong>
+                      </Typography>
+                    </Alert>
+                  )}
+
                   <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'primary.main', cursor: 'pointer' }} onClick={() => {
                         const hlsUrl = `${window.location.origin}/hls/stream.m3u8`;
                         navigator.clipboard.writeText(hlsUrl);
-                        setSnackbar({ open: true, message: `Link HLS copiado: ${hlsUrl}` });
+                        showSuccess(`Link HLS copiado: ${hlsUrl}`);
                     }}>
-                    Link HLS (VLC/Mobile): {window.location.origin}/hls/stream.m3u8
+                    Link HLS de Baixa Latência: {window.location.origin}/hls/stream.m3u8
                   </Typography>
                 </Grid>
 
@@ -595,6 +703,33 @@ export default function Settings() {
                       >
                         {settings.overlay_enabled ? "ATIVADO" : "DESATIVADO"}
                       </Button>
+                    </Box>
+                    <Box sx={{ mt: 2 }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Opacidade do Logo ({Math.round(settings.overlayOpacity * 100)}%)
+                      </Typography>
+                      <Slider
+                        value={settings.overlayOpacity || 1.0}
+                        min={0}
+                        max={1}
+                        step={0.1}
+                        onChange={(e, val) => setSettings({ ...settings, overlayOpacity: val })}
+                        valueLabelDisplay="auto"
+                        sx={{ mb: 2 }}
+                      />
+
+                      <Typography variant="subtitle2" gutterBottom>
+                        Escala do Logo ({settings.overlayScale}x)
+                      </Typography>
+                      <Slider
+                        value={settings.overlayScale || 1.0}
+                        min={0.1}
+                        max={2.0}
+                        step={0.1}
+                        onChange={(e, val) => setSettings({ ...settings, overlayScale: val })}
+                        valueLabelDisplay="auto"
+                        sx={{ mb: 2 }}
+                      />
                     </Box>
                   </FormControl>
                 </Grid>
@@ -1147,7 +1282,7 @@ export default function Settings() {
                       <Grid container spacing={2}>
                         <Grid item xs={12} sm={3}>
                           <Typography variant="subtitle2" color="text.secondary">Versão do Sistema</Typography>
-                          <Typography variant="body1" fontWeight="bold">{settings.version}</Typography>
+                          <Typography variant="body1" fontWeight="bold">{settings.version ? (settings.version.startsWith('v') ? settings.version : 'v' + settings.version) : 'v1.9.2-PRO'}</Typography>
                         </Grid>
                         <Grid item xs={12} sm={3}>
                           <Typography variant="subtitle2" color="text.secondary">Última Atualização</Typography>
@@ -1205,13 +1340,41 @@ export default function Settings() {
                   <List>
                     <ListItem>
                       <ListItemText
+                        primary={<Typography variant="subtitle1"><strong>v1.9.2-PRO</strong> - 2026-01-12</Typography>}
+                        secondary={
+                          <Box component="span">
+                            • Intermediary RTMP Server Integration (VLC Support)<br />
+                            • Smart Media Deletion (Usage check & Replacement)<br />
+                            • Friendly Media Copy (Cópia naming convention)<br />
+                            • Calendar Event Deletion Fixes<br />
+                            • Improved Output Configuration UI
+                          </Box>
+                        }
+                      />
+                    </ListItem>
+                    <Divider />
+                    <ListItem>
+                      <ListItemText
+                        primary={<Typography variant="subtitle1"><strong>v1.9.0-PRO</strong> - 2026-01-12</Typography>}
+                        secondary={
+                          <Box component="span">
+                            • Áudio Standardizado (EBU R128 / Loudnorm)<br />
+                            • Controlos de Overlay em Tempo Real (Opacidade/Escala)<br />
+                            • Função Skip Instantâneo no Dashboard<br />
+                            • Smart Launcher VLC com deteção de OS e Diagnóstico<br />
+                            • Manual Visual e Ajuda Integrada
+                          </Box>
+                        }
+                      />
+                    </ListItem>
+                    <Divider />
+                    <ListItem>
+                      <ListItemText
                         primary={<Typography variant="subtitle1"><strong>v1.8.1-EXP</strong> - 2026-01-11</Typography>}
                         secondary={
                           <Box component="span">
                             • Setup Wizard para configuração inicial<br />
-                            • Melhorias na página de Settings (HLS links, Logo público)<br />
-                            • Correção de bugs em Templates e Media Library<br />
-                            • Dashboard com ações rápidas de diagnóstico
+                            • Melhorias na página de Settings (HLS links, Logo público)
                           </Box>
                         }
                       />
@@ -1240,11 +1403,21 @@ export default function Settings() {
             <Box sx={{ p: 2, bgcolor: 'rgba(0,0,0,0.02)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Box>
                 <Typography variant="subtitle2" color="text.secondary">Versão do Sistema</Typography>
-                <Typography variant="body2">{settings.version}</Typography>
+                <TextField 
+                  variant="standard" 
+                  value={settings.version} 
+                  onChange={(e) => setSettings({...settings, version: e.target.value})}
+                  sx={{ width: 150 }}
+                />
               </Box>
               <Box sx={{ textAlign: 'right' }}>
                 <Typography variant="subtitle2" color="text.secondary">Última Atualização</Typography>
-                <Typography variant="body2">{settings.releaseDate}</Typography>
+                <TextField 
+                  variant="standard" 
+                  value={settings.releaseDate} 
+                  onChange={(e) => setSettings({...settings, releaseDate: e.target.value})}
+                  sx={{ width: 150 }}
+                />
               </Box>
               <Button size="small" color="primary" variant="outlined" onClick={() => setReleaseNotesOpen(true)}>Release Notes</Button>
             </Box>
@@ -1341,48 +1514,48 @@ export default function Settings() {
       >
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <WizardIcon color="primary" /> Notas de Lançamento - {settings.version}
+            <WizardIcon color="primary" /> Notas de Lançamento - {settings.version ? (settings.version.startsWith('v') ? settings.version : 'v' + settings.version) : 'v1.9.2-PRO'}
           </Box>
-          <Chip label="PRE-RELEASE" color="warning" size="small" />
+          <Chip label="PRO-RELEASE" color="success" size="small" />
         </DialogTitle>
         <DialogContent dividers>
           <Box sx={{ mb: 4 }}>
-            <Typography variant="h6" color="primary" gutterBottom>Destaques da Versão 1.8.1-EXP</Typography>
+            <Typography variant="h6" color="primary" gutterBottom>Destaques da Versão 1.9.2-PRO</Typography>
             <Typography variant="body2" paragraph>
-              Esta versão experimental introduz melhorias significativas na engine de preview e refinamentos visuais em toda a aplicação.
+              Esta versão foca na excelência da interface de monitorização, estabilidade em Docker e melhorias significativas na gestão da biblioteca de media.
             </Typography>
             
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
-                <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'success.main' }}>
-                  <Typography variant="subtitle2" fontWeight="bold">🧪 Live Preview Dual-Output</Typography>
-                  <Typography variant="caption">• Nova arquitetura Tee Muxer para RTMP + HLS simultâneos</Typography><br />
-                  <Typography variant="caption">• Correção da geração de stream de preview</Typography><br />
-                  <Typography variant="caption">• Reprodução estável no Dashboard</Typography>
+                <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'primary.main' }}>
+                  <Typography variant="subtitle2" fontWeight="bold">🕒 Monitorização em Tempo Real</Typography>
+                  <Typography variant="caption">• Relógio e Data integrados no Top Bar</Typography><br />
+                  <Typography variant="caption">• Dashboard limpo e focado no essencial</Typography><br />
+                  <Typography variant="caption">• LUFS Meter fix para Chrome/Safari</Typography>
                 </Box>
               </Grid>
               <Grid item xs={12} md={6}>
-                <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'primary.main' }}>
-                  <Typography variant="subtitle2" fontWeight="bold">🎨 UI Refinements</Typography>
-                  <Typography variant="caption">• Branding centralizado com logo aumentado (64px)</Typography><br />
-                  <Typography variant="caption">• Label 'Uptime' no Dashboard</Typography><br />
-                  <Typography variant="caption">• Título da aplicação atualizado em toda a interface</Typography>
+                <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'success.main' }}>
+                  <Typography variant="subtitle2" fontWeight="bold">📂 Media & Reliability</Typography>
+                  <Typography variant="caption">• Suporte total a subpastas e delete recursivo</Typography><br />
+                  <Typography variant="caption">•Thumbnail proxy estável e auto-healing</Typography><br />
+                  <Typography variant="caption">• Orquestração Docker com Healthchecks</Typography>
                 </Box>
               </Grid>
               <Grid item xs={12} md={6}>
                 <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'warning.main' }}>
-                  <Typography variant="subtitle2" fontWeight="bold">📦 Assets Protegidos 2.0</Typography>
-                  <Typography variant="caption">• Visualização rica com metadados (Resolução, Codec)</Typography><br />
-                  <Typography variant="caption">• Chips de tipo de ficheiro (Vídeo/Imagem)</Typography><br />
-                  <Typography variant="caption">• População automática do diretório no container</Typography>
+                  <Typography variant="subtitle2" fontWeight="bold">🔗 Connectivity & Speed</Typography>
+                  <Typography variant="caption">• Botões "Fast Copy" para URLs de stream</Typography><br />
+                  <Typography variant="caption">• Protocolo HTTP estável para visualização VLC</Typography><br />
+                  <Typography variant="caption">• Otimização de latência em HLS preview</Typography>
                 </Box>
               </Grid>
               <Grid item xs={12} md={6}>
                 <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'secondary.main' }}>
-                  <Typography variant="subtitle2" fontWeight="bold">🔌 Engine & Filenames</Typography>
-                  <Typography variant="caption">• Recuperação inteligente de nomes originais da DB</Typography><br />
-                  <Typography variant="caption">• Eliminação de nomes UUID na interface</Typography><br />
-                  <Typography variant="caption">• Logs de playout mais detalhados</Typography>
+                  <Typography variant="subtitle2" fontWeight="bold">🛠️ Bugfixes Críticos</Typography>
+                  <Typography variant="caption">• Fix: "White Screen" no painel Settings</Typography><br />
+                  <Typography variant="caption">• Fix: Reset de Uptime no playout engine</Typography><br />
+                  <Typography variant="caption">• Fix: Estabilidade na persistência de caminhos</Typography>
                 </Box>
               </Grid>
             </Grid>

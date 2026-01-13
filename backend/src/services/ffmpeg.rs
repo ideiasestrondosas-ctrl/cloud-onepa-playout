@@ -208,6 +208,44 @@ impl FFmpegService {
         Ok(())
     }
 
+    /// Process media to remove background (Green or Black)
+    pub fn process_transparency(
+        &self,
+        input_path: &str,
+        output_path: &str,
+        color: &str, // "green" or "black"
+    ) -> Result<(), String> {
+        let filter = match color {
+            "green" => "chromakey=0x00FF00:0.1:0.2",
+            "black" => "colorkey=0x000000:0.01:0.02",
+            _ => return Err("Unsupported color for transparency".to_string()),
+        };
+
+        // Use VP9 for transparency support in web/overlay context
+        let output = Command::new(&self.ffmpeg_path)
+            .args(&[
+                "-i",
+                input_path,
+                "-vf",
+                filter,
+                "-c:v",
+                "libvpx-vp9",
+                "-lossless",
+                "1",
+                "-y",
+                output_path,
+            ])
+            .output()
+            .map_err(|e| format!("Failed to execute ffmpeg: {}", e))?;
+
+        if !output.status.success() {
+            let error = String::from_utf8_lossy(&output.stderr);
+            return Err(format!("FFmpeg transparency processing failed: {}", error));
+        }
+
+        Ok(())
+    }
+
     /// Start a live stream from a file with HLS preview
     pub fn start_stream(
         &self,
@@ -220,7 +258,24 @@ impl FFmpegService {
         hls_preview_path: Option<&str>,
         logo_path: Option<&str>,
         logo_position: Option<&str>,
+        overlay_opacity: Option<f32>,
+        overlay_scale: Option<f32>,
     ) -> Result<std::process::Child, String> {
+        // Automatic Docker Network Fix
+        // If we are in Docker (indicated by /.dockerenv) and the output is RTMP to localhost,
+        // we switch to 'mediamtx' hostname because localhost inside container is not the host.
+        let effective_output_url = if std::path::Path::new("/.dockerenv").exists()
+            && (output_url.contains("localhost") || output_url.contains("127.0.0.1"))
+            && output_url.starts_with("rtmp")
+        {
+            log::info!("Docker environment detected: Swapping localhost for mediamtx in RTMP URL");
+            output_url
+                .replace("localhost", "mediamtx")
+                .replace("127.0.0.1", "mediamtx")
+        } else {
+            output_url.to_string()
+        };
+
         let mut args = vec![
             "-re".to_string(), // Read at native frame rate
         ];
@@ -260,9 +315,14 @@ impl FFmpegService {
         };
 
         // 2. FILTER COMPLEX
-        let mut filter_complex = format!("scale={}", resolution);
+        let mut filter_complex = String::new();
 
+        // Video Chain
         if has_logo {
+            // Get opacity and scale values with defaults
+            let opacity = overlay_opacity.unwrap_or(1.0).clamp(0.0, 1.0);
+            let scale = overlay_scale.unwrap_or(1.0).clamp(0.1, 2.0);
+
             // Determine overlay position coordinates
             let pos_coords = match logo_position.unwrap_or("top-right") {
                 "top-left" => "50:50",
@@ -271,14 +331,16 @@ impl FFmpegService {
                 _ => "W-w-50:50", // top-right default
             };
 
-            filter_complex = format!(
-                "[0:v]scale={}[bg];[1:v]scale=-1:250[logo];[bg][logo]overlay={}[v_out]",
-                resolution, pos_coords
-            );
+            filter_complex.push_str(&format!(
+                "[0:v]scale={}[bg];[1:v]scale=iw*{}:ih*{},format=rgba,colorchannelmixer=aa={}[logo];[bg][logo]overlay={}[v_out];",
+                resolution, scale, scale, opacity, pos_coords
+            ));
         } else {
-            // No logo, just scale and label
-            filter_complex = format!("[0:v]scale={}[v_out]", resolution);
+            filter_complex.push_str(&format!("[0:v]scale={}[v_out];", resolution));
         }
+
+        // Audio Chain (Standardize to EBU R128)
+        filter_complex.push_str("[0:a]loudnorm=I=-23:LRA=7:TP=-2.0[a_out]");
 
         args.extend(vec!["-filter_complex".to_string(), filter_complex]);
 
@@ -312,6 +374,7 @@ impl FFmpegService {
         ]);
 
         // 4. OUTPUT MAPPING & FORMAT (Tee or Single)
+        // Explicitly map [v_out] and [a_out] from the filter complex
         if let Some(hls_path) = hls_preview_path {
             args.extend(vec![
                 "-f".to_string(),
@@ -319,10 +382,10 @@ impl FFmpegService {
                 "-map".to_string(),
                 "[v_out]".to_string(),
                 "-map".to_string(),
-                "0:a?".to_string(),
+                "[a_out]".to_string(),
                 format!(
                     "[f=flv]{}|[f=hls:hls_time=2:hls_list_size=5:hls_flags=delete_segments]{}/stream.m3u8",
-                    output_url, hls_path
+                    effective_output_url, hls_path
                 ),
             ]);
         } else {
@@ -333,8 +396,8 @@ impl FFmpegService {
                 "-map".to_string(),
                 "[v_out]".to_string(),
                 "-map".to_string(),
-                "0:a?".to_string(),
-                output_url.to_string(),
+                "[a_out]".to_string(),
+                effective_output_url.to_string(),
             ]);
         }
 

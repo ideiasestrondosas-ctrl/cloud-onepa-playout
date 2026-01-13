@@ -8,7 +8,7 @@ services:
     environment:
       POSTGRES_DB: onepa_playout
       POSTGRES_USER: onepa
-      POSTGRES_PASSWORD: onepa_password
+      POSTGRES_PASSWORD: onepa
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -28,7 +28,7 @@ services:
       dockerfile: ../docker/Dockerfile.backend
     container_name: onepa-backend
     environment:
-      DATABASE_URL: postgresql://onepa:onepa_password@postgres:5432/onepa_playout
+      DATABASE_URL: postgresql://onepa:onepa@postgres:5432/onepa_playout
       SERVER_HOST: 0.0.0.0
       SERVER_PORT: 8081
       RUST_LOG: info
@@ -46,7 +46,25 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      mediamtx:
+        condition: service_started
     restart: unless-stopped
+
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    container_name: onepa-mediamtx
+    ports:
+      - "1935:1935" # RTMP
+      - "8888:8888" # HLS
+      - "8889:8889" # WebRTC
+    environment:
+      - MTX_PROTOCOLS=tcp
+      - MTX_WEBRTC_ADDITIONAL_HOSTS=127.0.0.1
+    networks:
+      - onepa-network
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   # React Frontend
   frontend:

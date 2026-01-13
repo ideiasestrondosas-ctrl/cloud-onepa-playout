@@ -5,11 +5,8 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB.svg)](https://reactjs.org/)
-[![Version](https://img.shields.io/badge/Version-1.8.2--EXP-purple.svg)]()
-[![Status](https://img.shields.io/badge/Status-Experimental-purple.svg)]()
-
-> ⚠️ **EXPERIMENTAL PHASE:** Este projeto encontra-se em fase **Experimental (EXP)**.
-> A versão `v1.8.2-EXP` introduz estabilidade crítica no Dashboard, integração VLC via HTTP direto e análise de áudio em tempo real (LUFS). Use com cautela em ambientes de produção.
+[![Version](https://img.shields.io/badge/Version-1.9.2--PRO-blue.svg)]()
+[![Status](https://img.shields.io/badge/Status-Stable-green.svg)]()
 
 ## 📖 Sobre
 
@@ -123,7 +120,7 @@ Este projeto representa um esforço significativo de engenharia para criar uma s
 |                  | Tecnologias Core           | Tokio (Async), FFmpeg 7.2+, React 18 |
 |                  | Containers                 | 3 (Backend, Frontend, Postgres)      |
 
-> _Dados aproximados baseados na versão v1.8.1-EXP_
+> _Dados aproximados baseados na versão v1.9.2-PRO_
 
 ## 🎯 Roadmap & Future
 
@@ -173,21 +170,23 @@ _Focus: Innovation and High Availability_
 
 Ver [RELEASE_NOTES.md](RELEASE_NOTES.md) para detalhes completos.
 
-### Versão Atual: 1.8.2-EXP (2026-01-11)
+### Versão Atual: 1.9.2-PRO (2026-01-13)
 
-**Novidades Experimentais:**
+**Principais Novidades:**
 
-- 🧪 **LUFS Meter Real-time**: Análise de áudio precisa usando Web Audio API diretamente do stream HLS.
-- 📡 **VLC Integration Fix**: Lançamento robusto do VLC usando URLs HTTP diretos e diagnósticos detalhados.
-- 📊 **Clips Counter**: Novo contador diário de clips reproduzidos nas Configurações.
-- 🛠️ **Dashboard Stabilization**: Correção crítica de `ReferenceError` para load fiável.
-- 🔗 **Direct HLS Link**: Link direto para streams móveis/VLC nas configurações.
+- 🕒 **Header Clock**: Relógio e data em tempo real integrados na barra superior para monitorização precisa.
+- 🧹 **Dashboard Streamlined**: Interface limpa e profissional, removendo redundâncias e focada no essencial.
+- 🧪 **LUFS Meter v2**: Análise de áudio melhorada para Chrome/Safari com ativação automática ao reproduzir.
+- 📂 **Enhanced Media Library**: Suporte total a subpastas com exibição fiável de miniaturas e eliminação recursiva.
+- 🔗 **Smart Links**: Ícones de cópia rápida para todos os URLs de output (RTMP/HLS/SRT/UDP).
+- 🎬 **VLC Integration**: Botão de visualização externa direta via protocolo HTTP estável.
+- 🐳 **Docker Stability**: Healthchecks integrados e ordem de arranque garantida entre base de dados e serviços.
 
 **Correções:**
 
-- ✅ Setup Wizard para configuração inicial (Estável)
-- ✅ Links públicos para HLS e Logo (Estável)
-- ✅ Diagnósticos melhorados (Estável)
+- ✅ Resolução de crash "White Screen" por falta de imports no painel de configurações.
+- ✅ Automação de miniaturas (Heal logic) para maior fiabilidade.
+- ✅ Fix no reset de uptime e persistência de definições standard.
 
 ## 📄 Licença
 

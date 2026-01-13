@@ -1,7 +1,6 @@
 {
   "name": "cloud-onepa-playout-frontend",
   "private": true,
-  "version": "1.8.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
