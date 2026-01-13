@@ -55,8 +55,9 @@ export const authAPI = {
 // Media endpoints
 export const mediaAPI = {
   list: (params) => api.get('/media', { params }),
-  upload: (formData) => api.post('/media/upload', formData, {
+  upload: (formData, onProgress) => api.post('/media/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress: onProgress
   }),
   delete: (id) => api.delete(`/media/${id}`),
   setFiller: (id, isFiller) => api.put(`/media/${id}/filler`, { is_filler: isFiller }),
@@ -108,6 +109,7 @@ export const settingsAPI = {
   uploadAppLogo: (formData) => api.post('/settings/upload-app-logo', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
+  resetAll: () => api.post('/settings/reset-all'),
 };
 
 // Template endpoints

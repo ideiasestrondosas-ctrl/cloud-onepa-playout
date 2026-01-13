@@ -53,6 +53,7 @@ import {
   Dvr as PlatformIcon,
   Close as CloseIcon,
   ContentCopy as ContentCopyIcon,
+  Warning as WarningIcon,
 } from '@mui/icons-material';
 
 function TabPanel({ children, value, index }) {
@@ -110,6 +111,7 @@ export default function Settings() {
   const [previewAsset, setPreviewAsset] = useState(null);
   const [mediaSelectorOpen, setMediaSelectorOpen] = useState(false);
   const [mediaTypeSelector, setMediaTypeSelector] = useState('image'); // 'image' or 'video'
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -175,8 +177,10 @@ export default function Settings() {
         overlayOpacity: data.overlay_opacity ?? 1.0,
         overlayScale: data.overlay_scale ?? 1.0,
         srtMode: data.srt_mode || 'caller',
-        system_version: data.system_version || '1.9.1-PRO',
-        release_date: data.release_date || '2026-01-12'
+        protectedPath: data.protected_path || '/var/lib/onepa-playout/assets/protected',
+        docsPath: data.docs_path || '/app/docs',
+        system_version: data.system_version || '1.9.2-PRO',
+        release_date: data.release_date || '2026-01-13'
       });
     } catch (error) {
       console.error('Failed to fetch settings:', error);
@@ -417,7 +421,16 @@ export default function Settings() {
                         <Select
                            value={settings.srtMode || 'caller'}
                            label="Modo SRT"
-                           onChange={(e) => setSettings({ ...settings, srtMode: e.target.value })}
+                           onChange={(e) => {
+                             const mode = e.target.value;
+                             setSettings({ 
+                               ...settings, 
+                               srtMode: mode,
+                               outputUrl: mode === 'listener' 
+                                 ? 'srt://0.0.0.0:9000?mode=listener'
+                                 : 'srt://localhost:9000?mode=caller'
+                             });
+                           }}
                         >
                            <MenuItem value="caller">Caller (Envia para servidor)</MenuItem>
                            <MenuItem value="listener">Listener (Aguarda conexão)</MenuItem>
@@ -454,28 +467,34 @@ export default function Settings() {
                     </Alert>
                   )}
 
-                  {/* SRT Guidance */}
+                   {/* SRT Guidance */}
                   {settings.outputType === 'srt' && (
                     <Alert severity={settings.srtMode === 'listener' ? "success" : "info"} sx={{ mt: 2 }}>
                       <Typography variant="subtitle2" fontWeight="bold">Conexão SRT ({settings.srtMode === 'listener' ? 'Listener' : 'Caller'})</Typography>
                       {settings.srtMode === 'listener' ? (
                         <>
-                          <Typography variant="caption" display="block">O Playout aguarda conexões. No VLC use a opção <strong>"Caller"</strong> connectando para:</Typography>
+                          <Typography variant="caption" display="block">O Playout está em modo <strong>Listener</strong>. Configure o VLC como <strong>Caller</strong>:</Typography>
                           <Paper sx={{ mt: 1, p: 0.5, bgcolor: 'rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>srt://{window.location.hostname}:9000</code>
-                            <IconButton size="small" onClick={() => { navigator.clipboard.writeText(`srt://${window.location.hostname}:9000`); showSuccess('Copiado!'); }}>
+                            <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>srt://{window.location.hostname}:9000?mode=caller</code>
+                            <IconButton size="small" onClick={() => { navigator.clipboard.writeText(`srt://${window.location.hostname}:9000?mode=caller`); showSuccess('Copiado!'); }}>
                                 <ContentCopyIcon fontSize="small" />
                             </IconButton>
                           </Paper>
                           <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>
-                            Nota: O Playout é o <strong>Servidor (Listener)</strong>.
+                            Nota: Certifique-se que o Firewall permite tráfego UDP na porta 9000.
                           </Typography>
                         </>
                       ) : (
                         <>
-                          <Typography variant="caption" display="block">O Playout tenta conectar-se a um servidor remoto.</Typography>
+                          <Typography variant="caption" display="block">O Playout está em modo <strong>Caller</strong>. Ele tentará conectar ao servidor abaixo:</Typography>
+                          <Paper sx={{ mt: 1, p: 0.5, bgcolor: 'rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                             <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>srt://{settings.outputUrl.split('//')[1] || 'DESTINO:9000'}?mode=listener</code>
+                             <IconButton size="small" onClick={() => { navigator.clipboard.writeText(`srt://${settings.outputUrl.split('//')[1] || 'DESTINO:9000'}?mode=listener`); showSuccess('Copiado!'); }}>
+                                <ContentCopyIcon fontSize="small" />
+                             </IconButton>
+                          </Paper>
                           <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                            Configure o seu receptor (VLC/OBS) como <strong>Listener</strong> no IP do servidor de destino e porta {settings.outputUrl.split(':').pop()}.
+                            No receptor (VLC/OBS), configure como <strong>Listener</strong> na porta 9000 do servidor de destino.
                           </Typography>
                         </>
                       )}
@@ -631,6 +650,26 @@ export default function Settings() {
                     helperText="Diretório com vídeos para preencher espaços vazios"
                   />
                 </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Caminho Assets Protegidos"
+                    value={settings.protectedPath}
+                    disabled
+                    helperText="Diretório de segurança (Somente Leitura)"
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Caminho Documentação"
+                    value={settings.docsPath}
+                    disabled
+                    helperText="Localização dos manuais e guias"
+                  />
+                </Grid>
               </Grid>
             </TabPanel>
 
@@ -646,14 +685,23 @@ export default function Settings() {
                       <Typography variant="body2">
                         Precisa de ajuda para configurar o seu canal? Use o assistente de configuração.
                       </Typography>
-                      <Button 
-                        variant="contained" 
-                        startIcon={<WizardIcon />}
-                        onClick={() => navigate('/setup')}
-                        sx={{ ml: 2 }}
-                      >
-                        Configurar Canal
-                      </Button>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button 
+                          variant="contained" 
+                          startIcon={<WizardIcon />}
+                          onClick={() => navigate('/setup')}
+                        >
+                          Configurar Canal
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          startIcon={<DeleteIcon />}
+                          onClick={() => setResetConfirmOpen(true)}
+                        >
+                          Eliminar Tudo
+                        </Button>
+                      </Box>
                     </Box>
                   </Alert>
                 </Grid>
@@ -1522,40 +1570,40 @@ export default function Settings() {
           <Box sx={{ mb: 4 }}>
             <Typography variant="h6" color="primary" gutterBottom>Destaques da Versão 1.9.2-PRO</Typography>
             <Typography variant="body2" paragraph>
-              Esta versão foca na excelência da interface de monitorização, estabilidade em Docker e melhorias significativas na gestão da biblioteca de media.
+              Esta versão consolida a experiência PRO com refinamentos críticos na interface, estabilidade de upload e diagnósticos avançados de rede.
             </Typography>
             
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
                 <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'primary.main' }}>
-                  <Typography variant="subtitle2" fontWeight="bold">🕒 Monitorização em Tempo Real</Typography>
-                  <Typography variant="caption">• Relógio e Data integrados no Top Bar</Typography><br />
-                  <Typography variant="caption">• Dashboard limpo e focado no essencial</Typography><br />
-                  <Typography variant="caption">• LUFS Meter fix para Chrome/Safari</Typography>
+                  <Typography variant="subtitle2" fontWeight="bold">✨ UI/UX Refinements</Typography>
+                  <Typography variant="caption">• Setup Wizard: Multi-select & Metadata</Typography><br />
+                  <Typography variant="caption">• Playlist: Unique Clips & Bulk Add</Typography><br />
+                  <Typography variant="caption">• Dashboard: Novo indicador ON AIR Pulsante</Typography>
                 </Box>
               </Grid>
               <Grid item xs={12} md={6}>
                 <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'success.main' }}>
-                  <Typography variant="subtitle2" fontWeight="bold">📂 Media & Reliability</Typography>
-                  <Typography variant="caption">• Suporte total a subpastas e delete recursivo</Typography><br />
-                  <Typography variant="caption">•Thumbnail proxy estável e auto-healing</Typography><br />
-                  <Typography variant="caption">• Orquestração Docker com Healthchecks</Typography>
+                  <Typography variant="subtitle2" fontWeight="bold">📡 Protocol & Diagnostics</Typography>
+                  <Typography variant="caption">• VLC Smart Launcher com Logs em Tempo Real</Typography><br />
+                  <Typography variant="caption">• SRT: Configuração Dinâmica (Caller/Listener)</Typography><br />
+                  <Typography variant="caption">• Safari: Fix Áudio Context & LUFS Meter</Typography>
                 </Box>
               </Grid>
               <Grid item xs={12} md={6}>
                 <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'warning.main' }}>
-                  <Typography variant="subtitle2" fontWeight="bold">🔗 Connectivity & Speed</Typography>
-                  <Typography variant="caption">• Botões "Fast Copy" para URLs de stream</Typography><br />
-                  <Typography variant="caption">• Protocolo HTTP estável para visualização VLC</Typography><br />
-                  <Typography variant="caption">• Otimização de latência em HLS preview</Typography>
+                  <Typography variant="subtitle2" fontWeight="bold">🛡️ Estabilidade Crítica</Typography>
+                  <Typography variant="caption">• Fix: Upload Sequencial (White Screen)</Typography><br />
+                  <Typography variant="caption">• Fix: Delete Confirm Dialog (Chrome)</Typography><br />
+                  <Typography variant="caption">• Versão Sincronizada: v1.9.2-PRO</Typography>
                 </Box>
               </Grid>
               <Grid item xs={12} md={6}>
                 <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'secondary.main' }}>
-                  <Typography variant="subtitle2" fontWeight="bold">🛠️ Bugfixes Críticos</Typography>
-                  <Typography variant="caption">• Fix: "White Screen" no painel Settings</Typography><br />
-                  <Typography variant="caption">• Fix: Reset de Uptime no playout engine</Typography><br />
-                  <Typography variant="caption">• Fix: Estabilidade na persistência de caminhos</Typography>
+                  <Typography variant="subtitle2" fontWeight="bold">🔧 Performance</Typography>
+                  <Typography variant="caption">• Clean Build System (Docker Cache Reset)</Typography><br />
+                  <Typography variant="caption">• Otimização de renderização de listas</Typography><br />
+                  <Typography variant="caption">• Validação robusta de caminhos de arquivo</Typography>
                 </Box>
               </Grid>
             </Grid>
@@ -1643,6 +1691,43 @@ export default function Settings() {
               Definir como Padrão
             </Button>
           )}
+        </DialogActions>
+      </Dialog>
+      {/* Factory Reset Confirmation Dialog */}
+      <Dialog open={resetConfirmOpen} onClose={() => setResetConfirmOpen(false)}>
+        <DialogTitle sx={{ color: 'error.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <WarningIcon /> Confirmar Factory Reset
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" gutterBottom>
+            Tem a certeza que deseja eliminar <strong>TODOS</strong> os dados deste canal?
+          </Typography>
+          <Typography variant="body2" color="error" sx={{ fontWeight: 'bold' }}>
+            Esta ação irá apagar permanentemente todas as playlists, agendamentos do calendário e restaurar as definições padrão. Não há volta atrás!
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setResetConfirmOpen(false)}>Cancelar</Button>
+          <Button 
+            variant="contained" 
+            color="error" 
+            autoFocus
+            onClick={async () => {
+              try {
+                setSaving(true);
+                await settingsAPI.resetAll();
+                showSuccess('Canal resetado com sucesso!');
+                setResetConfirmOpen(false);
+                fetchSettings(); // Refresh to see defaults
+              } catch (error) {
+                showError('Erro ao realizar reset do canal');
+              } finally {
+                setSaving(false);
+              }
+            }}
+          >
+            Sim, Eliminar Tudo
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

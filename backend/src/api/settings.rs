@@ -8,12 +8,21 @@ use std::io::Write;
 use std::path::Path;
 
 async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
+    let assets_path = std::env::var("ASSETS_PATH")
+        .unwrap_or_else(|_| "/var/lib/onepa-playout/assets".to_string());
+    let protected_path = format!("{}/protected", assets_path);
+    let docs_path = std::env::var("DOCS_PATH").unwrap_or_else(|_| "/app/docs".to_string());
+
     let result = sqlx::query_as::<_, Settings>("SELECT * FROM settings WHERE id = TRUE")
         .fetch_optional(pool.get_ref())
         .await;
 
     match result {
-        Ok(Some(settings)) => HttpResponse::Ok().json(settings),
+        Ok(Some(mut settings)) => {
+            settings.protected_path = Some(protected_path.clone());
+            settings.docs_path = Some(docs_path.clone());
+            HttpResponse::Ok().json(settings)
+        }
         Ok(None) => {
             // Insert default settings
             let _ = sqlx::query(
@@ -54,8 +63,10 @@ async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
                 overlay_scale: Some(1.0),
                 srt_mode: Some("caller".to_string()),
                 updated_at: chrono::Utc::now(),
-                system_version: Some("1.9.1-PRO".to_string()),
-                release_date: Some("2026-01-12".to_string()),
+                system_version: Some("1.9.2-PRO".to_string()),
+                release_date: Some("2026-01-13".to_string()),
+                protected_path: Some(protected_path),
+                docs_path: Some(docs_path),
             })
         }
         Err(_) => HttpResponse::InternalServerError()
@@ -316,11 +327,57 @@ async fn get_logo(pool: web::Data<PgPool>, req: HttpRequest) -> impl Responder {
     }
 }
 
+async fn reset_all(pool: web::Data<PgPool>) -> impl Responder {
+    log::info!("Starting factory reset...");
+
+    // Truncate playlists and schedule
+    if let Err(e) = sqlx::query("TRUNCATE TABLE playlists CASCADE")
+        .execute(pool.get_ref())
+        .await
+    {
+        log::error!("Failed to truncate playlists: {}", e);
+    }
+    if let Err(e) = sqlx::query("TRUNCATE TABLE schedule CASCADE")
+        .execute(pool.get_ref())
+        .await
+    {
+        log::error!("Failed to truncate schedule: {}", e);
+    }
+
+    // Reset settings to defaults
+    let result = sqlx::query(
+        "UPDATE settings SET 
+        output_type = 'rtmp', 
+        output_url = 'rtmp://localhost:1935/live/stream', 
+        resolution = '1920x1080', 
+        fps = '25', 
+        video_bitrate = '5000k', 
+        audio_bitrate = '192k',
+        is_running = false,
+        overlay_enabled = true,
+        clips_played_today = 0,
+        updated_at = CURRENT_TIMESTAMP
+        WHERE id = TRUE",
+    )
+    .execute(pool.get_ref())
+    .await;
+
+    match result {
+        Ok(_) => HttpResponse::Ok().json(serde_json::json!({"message": "Factory reset complete"})),
+        Err(e) => {
+            log::error!("Failed to reset settings: {}", e);
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": "Failed to reset settings"}))
+        }
+    }
+}
+
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.route("", web::get().to(get_settings))
         .route("", web::put().to(update_settings))
         .route("/logo", web::get().to(get_logo))
         .route("/upload-logo", web::post().to(upload_logo))
         .route("/app-logo", web::get().to(get_app_logo))
-        .route("/upload-app-logo", web::post().to(upload_app_logo));
+        .route("/upload-app-logo", web::post().to(upload_app_logo))
+        .route("/reset-all", web::post().to(reset_all));
 }

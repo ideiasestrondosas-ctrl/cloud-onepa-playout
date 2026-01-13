@@ -1,7 +1,7 @@
 # Cloud Onepa Playout - User Manual
 
-**Versão 1.0.0**  
-**Data:** 2026-01-09
+**Versão 1.9.2-PRO**  
+**Data:** 2026-01-13
 
 ---
 

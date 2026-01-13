@@ -26,6 +26,8 @@ import {
   ListItemText,
   ListItemSecondaryAction,
   IconButton,
+  Checkbox,
+  ListItemButton,
 } from '@mui/material';
 import {
   CheckCircle as CheckCircleIcon,
@@ -60,31 +62,46 @@ export default function SetupWizard() {
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [externalOpen, setExternalOpen] = useState(false);
   const [libraryItems, setLibraryItems] = useState([]);
+  const [selectedLibraryItems, setSelectedLibraryItems] = useState([]);
   const [externalUrl, setExternalUrl] = useState('');
   const [externalDuration, setExternalDuration] = useState(3600); // 1 hour default
 
   const fetchLibrary = async () => {
     try {
-      const res = await mediaAPI.list();
-      setLibraryItems(res.data || []);
+      const res = await mediaAPI.list({ limit: 500 }); // Increase limit to see all media
+      setLibraryItems(res.data.media || []);
       setLibraryOpen(true);
     } catch (error) {
       showError('Erro ao carregar Media Library');
     }
   };
 
-  const addLibraryItem = (item) => {
-    setSetupData(prev => ({
-        ...prev,
-        playlistItems: [...prev.playlistItems, {
-            type: 'library',
-            id: item.id || item.filename,
-            path: item.path, // Assuming API returns path
-            source: item.path,
-            duration: item.duration || 10,
-            title: item.filename
-        }]
+  const toggleLibrarySelection = (item) => {
+    setSelectedLibraryItems(prev => {
+      const exists = prev.find(i => i.id === item.id);
+      if (exists) {
+        return prev.filter(i => i.id !== item.id);
+      }
+      return [...prev, item];
+    });
+  };
+
+  const addSelectedLibraryItems = () => {
+    const newItems = selectedLibraryItems.map(item => ({
+      type: 'library',
+      id: item.id || item.filename,
+      path: item.path,
+      source: item.path,
+      duration: item.duration || 10,
+      title: item.filename
     }));
+    
+    setSetupData(prev => ({
+      ...prev,
+      playlistItems: [...prev.playlistItems, ...newItems]
+    }));
+    
+    setSelectedLibraryItems([]);
     setLibraryOpen(false);
   };
 
@@ -112,7 +129,16 @@ export default function SetupWizard() {
 
   const handleNext = async () => {
     if (activeStep === steps.length - 1) {
-      navigate('/');
+      // Final step - ensure everything is set up and navigate
+      setLoading(true);
+      try {
+        showSuccess('Setup concluído! Redirecionando para o Dashboard...');
+        setTimeout(() => {
+          navigate('/');
+        }, 1500);
+      } finally {
+        setLoading(false);
+      }
       return;
     }
 
@@ -121,8 +147,8 @@ export default function SetupWizard() {
         setLoading(true);
         try {
             await settingsAPI.update({
+                channel_name: setupData.channelName,
                 logo_enabled: true,
-                // In a real app we'd update channel name here too if it existed in settings
             });
             showSuccess('Identidade configurada!');
         } catch (e) {
@@ -142,11 +168,24 @@ export default function SetupWizard() {
                 });
                 
                 if (playlistRes.data && playlistRes.data.id) {
-                     showSuccess('Playlist criada com sucesso!');
+                     // Create a schedule entry for the playlist
+                     try {
+                       await scheduleAPI.create({
+                         playlist_id: playlistRes.data.id,
+                         start_time: '00:00:00',
+                         end_time: '23:59:59',
+                         days_of_week: [0,1,2,3,4,5,6], // All days
+                       });
+                       showSuccess('Playlist e agendamento criados!');
+                     } catch (schedErr) {
+                       console.error('Schedule creation error:', schedErr);
+                       showSuccess('Playlist criada (agendamento manual necessário)');
+                     }
                 }
             } catch (e) {
                 console.error(e);
                 showError('Erro ao criar playlist.');
+                return; // Don't proceed if playlist creation fails
             } finally {
                 setLoading(false);
             }
@@ -261,23 +300,43 @@ export default function SetupWizard() {
             )}
 
             {/* Library Dialog */}
-            <Dialog open={libraryOpen} onClose={() => setLibraryOpen(false)} maxWidth="md" fullWidth>
-                <DialogTitle>Selecionar Mídia</DialogTitle>
+            <Dialog open={libraryOpen} onClose={() => { setLibraryOpen(false); setSelectedLibraryItems([]); }} maxWidth="md" fullWidth>
+                <DialogTitle>Selecionar Mídia (Multi-seleção)</DialogTitle>
                 <DialogContent dividers>
+                    {selectedLibraryItems.length > 0 && (
+                      <Alert severity="info" sx={{ mb: 2 }}>
+                        {selectedLibraryItems.length} ficheiro(s) selecionado(s)
+                      </Alert>
+                    )}
                     <List>
                         {Array.isArray(libraryItems) && libraryItems.length > 0 ? (
-                            libraryItems.map((item, idx) => (
-                                <ListItem button key={item.path || idx} onClick={() => addLibraryItem(item)}>
-                                    <ListItemText primary={item.filename} secondary={`${(item.size / 1024 / 1024).toFixed(2)} MB`} />
-                                </ListItem>
-                            ))
+                            libraryItems.map((item, idx) => {
+                                const isSelected = selectedLibraryItems.some(i => i.id === item.id);
+                                const sizeInMB = item.size ? (item.size / (1024 * 1024)).toFixed(2) : '0.00';
+                                return (
+                                  <ListItemButton key={item.id || idx} onClick={() => toggleLibrarySelection(item)}>
+                                      <Checkbox checked={isSelected} />
+                                      <ListItemText 
+                                        primary={item.filename} 
+                                        secondary={`${sizeInMB} MB | ${item.duration || 0}s`} 
+                                      />
+                                  </ListItemButton>
+                                );
+                            })
                         ) : (
                             <Typography sx={{ p: 2, textAlign: 'center' }}>Nenhuma mídia encontrada na biblioteca.</Typography>
                         )}
                     </List>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setLibraryOpen(false)}>Cancelar</Button>
+                    <Button onClick={() => { setLibraryOpen(false); setSelectedLibraryItems([]); }}>Cancelar</Button>
+                    <Button 
+                      onClick={addSelectedLibraryItems} 
+                      variant="contained" 
+                      disabled={selectedLibraryItems.length === 0}
+                    >
+                      Adicionar ({selectedLibraryItems.length})
+                    </Button>
                 </DialogActions>
             </Dialog>
 

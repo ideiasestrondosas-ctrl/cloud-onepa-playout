@@ -32,6 +32,10 @@ pub struct Settings {
     pub updated_at: DateTime<Utc>,
     pub system_version: Option<String>,
     pub release_date: Option<String>,
+    #[sqlx(default)]
+    pub protected_path: Option<String>,
+    #[sqlx(default)]
+    pub docs_path: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

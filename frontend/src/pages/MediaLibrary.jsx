@@ -44,8 +44,13 @@ import {
   CreateNewFolder as NewFolderIcon,
   NavigateNext as NextIcon,
   DriveFileMove as MoveIcon,
-  Extension as ExtensionIcon
+  Extension as ExtensionIcon,
+  CheckCircle as CheckCircleIcon,
+  Error as ErrorIcon,
+  HourglassEmpty as PendingIcon,
+  Info as InfoIcon,
 } from '@mui/icons-material';
+import { CircularProgress } from '@mui/material';
 import { useDropzone } from 'react-dropzone';
 import { mediaAPI } from '../services/api';
 
@@ -72,6 +77,9 @@ export default function MediaLibrary() {
   const [newFolderName, setNewFolderName] = useState('');
   const [mediaToMove, setMediaToMove] = useState(null);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, media: null, usage: null });
+  const [uploadFiles, setUploadFiles] = useState([]);
+  const [uploadProgressOpen, setUploadProgressOpen] = useState(false);
+  const [checkingDelete, setCheckingDelete] = useState(null); // ID of media being checked
 
   useEffect(() => {
     fetchMedia();
@@ -163,32 +171,90 @@ export default function MediaLibrary() {
     }
   };
 
+  // Sequential Upload Logic
+  useEffect(() => {
+    if (uploadProgressOpen && uploadFiles.some(f => f.status === 'pending' || f.status === 'uploading')) {
+       const processUploads = async () => {
+          // Check if we are already uploading someone
+          if (uploadFiles.some(f => f.status === 'uploading')) return;
+
+          const nextFile = uploadFiles.find(f => f.status === 'pending');
+          if (!nextFile) {
+             // All done? Check if we should close after delay
+             const allFinished = uploadFiles.every(f => f.status === 'success' || f.status === 'error');
+             if (allFinished) {
+                // Refresh media list ONCE after all uploads complete
+                fetchMedia();
+                setTimeout(() => {
+                   setUploadProgressOpen(false);
+                   setUploadFiles([]); // Clear upload queue
+                }, 3000);
+             }
+             return;
+          }
+
+          // Start uploading nextFile
+          setUploadFiles(prev => prev.map(f => f.id === nextFile.id ? { ...f, status: 'uploading' } : f));
+          
+          const formData = new FormData();
+          if (currentFolder) formData.append('folder_id', currentFolder.id);
+          formData.append('files', nextFile.file);
+
+          try {
+            await mediaAPI.upload(formData, (progressEvent) => {
+               const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+               setUploadFiles(prev => prev.map(f => f.id === nextFile.id ? { ...f, progress } : f));
+            });
+            
+            setUploadFiles(prev => prev.map(f => f.id === nextFile.id ? { ...f, status: 'success', progress: 100 } : f));
+            // DO NOT call fetchMedia here - it causes white screen and loop restart
+          } catch (error) {
+            console.error('Individual upload error:', error);
+            setUploadFiles(prev => prev.map(f => f.id === nextFile.id ? { ...f, status: 'error' } : f));
+          }
+       };
+
+       processUploads();
+    }
+  }, [uploadProgressOpen, uploadFiles, currentFolder]);
+
   // Smart deletion with usage checking
-  const handleSmartDelete = async (item) => {
+  const handleSmartDelete = async (event, item) => {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    
+    setCheckingDelete(item.id);
     try {
       // Check if media is used in playlists/schedule
       const usageRes = await mediaAPI.checkUsage(item.id);
       const usage = usageRes.data;
 
       if (!usage.in_use) {
-        // Simple delete - not in use
-        if (window.confirm(`Eliminar "${item.filename}"?`)) {
-          await mediaAPI.delete(item.id);
-          showSuccess('Ficheiro eliminado');
-          fetchMedia();
-        }
+        // Simple delete - not in use - show confirmation dialog
+        setDeleteDialog({
+          open: true,
+          media: item,
+          usage: { in_use: false, playlists: [], schedule_items: [] },
+          simpleDelete: true
+        });
+        setCheckingDelete(null);
         return;
       }
 
-      // Show smart dialog
+      // Show smart dialog for files in use
       setDeleteDialog({
         open: true,
         media: item,
-        usage: usage
+        usage: usage,
+        simpleDelete: false
       });
     } catch (error) {
       showError('Erro ao verificar uso do ficheiro');
       console.error('Usage check error:', error);
+    } finally {
+      setCheckingDelete(null);
     }
   };
 
@@ -196,7 +262,7 @@ export default function MediaLibrary() {
     try {
       await mediaAPI.delete(deleteDialog.media.id);
       showSuccess('Ficheiro eliminado');
-      setDeleteDialog({ open: false, media: null, usage: null });
+      setDeleteDialog({ open: false, media: null, usage: null, simpleDelete: false });
       fetchMedia();
     } catch (error) {
       showError('Erro ao eliminar: ' + (error.response?.data?.error || error.message));
@@ -221,24 +287,19 @@ export default function MediaLibrary() {
 
   const onDrop = useCallback(async (acceptedFiles) => {
     if (acceptedFiles.length === 0) return;
-    setUploading(true);
-    const formData = new FormData();
     
-    // CRITICAL: Add folder_id FIRST before files
-    if (currentFolder) formData.append('folder_id', currentFolder.id);
-    acceptedFiles.forEach((file) => formData.append('files', file));
+    const newFiles = acceptedFiles.map(file => ({
+        id: Math.random().toString(36).substr(2, 9),
+        name: file.name,
+        file,
+        progress: 0,
+        status: 'pending',
+        destination: currentFolder?.name || 'Raiz'
+    }));
 
-    try {
-      await mediaAPI.upload(formData);
-      showSuccess('Upload concluído');
-      fetchMedia();
-    } catch (error) {
-      showError('Erro no upload. Verifique o formato do ficheiro.');
-      console.error('Upload error:', error);
-    } finally {
-      setUploading(false);
-    }
-  }, [currentFolder, showSuccess, showError]);
+    setUploadFiles(newFiles);
+    setUploadProgressOpen(true);
+  }, [currentFolder]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -319,8 +380,10 @@ export default function MediaLibrary() {
                     <Typography variant="subtitle1">
                         {isDragActive ? 'Solte para Upload' : `Arraste ficheiros para ${currentFolder?.name || 'Raiz'}`}
                     </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                        Suporta múltiplos vídeos, áudios e imagens
+                    </Typography>
                 </Box>
-                {uploading && <LinearProgress sx={{ mt: 2 }} />}
             </Card>
 
             {/* Filters */}
@@ -379,7 +442,14 @@ export default function MediaLibrary() {
                                     <Stack direction="row" spacing={0.5}>
                                         <IconButton size="small" color="primary" onClick={() => { setSelectedMedia(item); setPreviewOpen(true); }}><PlayIcon /></IconButton>
                                         <IconButton size="small" color="info" onClick={() => { setMediaToMove(item); setMoveOpen(true); }}><MoveIcon /></IconButton>
-                                        <IconButton size="small" color="error" onClick={() => handleSmartDelete(item)}><DeleteIcon /></IconButton>
+                                        <IconButton 
+                                            size="small" 
+                                            color="error" 
+                                            disabled={checkingDelete === item.id}
+                                            onClick={(e) => handleSmartDelete(e, item)}
+                                        >
+                                            {checkingDelete === item.id ? <CircularProgress size={20} color="inherit" /> : <DeleteIcon />}
+                                        </IconButton>
                                     </Stack>
                                     <Button size="small" color="warning" variant={item.is_filler ? "contained" : "outlined"} onClick={async () => { await mediaAPI.setFiller(item.id, !item.is_filler); fetchMedia(); }}>Filler</Button>
                                 </Box>
@@ -413,57 +483,75 @@ export default function MediaLibrary() {
       </Dialog>
 
       {/* Smart Delete Dialog */}
-      <Dialog open={deleteDialog.open} onClose={() => setDeleteDialog({ open: false, media: null, usage: null })} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ color: 'warning.main', display: 'flex', alignItems: 'center', gap: 1 }}>
-          ⚠️ Ficheiro em Uso no Calendário
+      <Dialog open={deleteDialog.open} onClose={() => setDeleteDialog({ open: false, media: null, usage: null, simpleDelete: false })} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ color: deleteDialog.simpleDelete ? 'error.main' : 'warning.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+          {deleteDialog.simpleDelete ? '🗑️ Confirmar Eliminação' : '⚠️ Ficheiro em Uso no Calendário'}
         </DialogTitle>
         <DialogContent>
-          <Alert severity="warning" sx={{ mb: 2 }}>
-            "{deleteDialog.media?.filename}" está agendado em {deleteDialog.usage?.scheduled_count} evento(s).
-          </Alert>
-          
-          <Typography variant="body2" gutterBottom sx={{ mb: 2 }}>
-            Escolha uma opção:
-          </Typography>
-          
-          <Stack spacing={2}>
-            <Paper 
-              sx={{ 
-                p: 2, 
-                border: '1px solid', 
-                borderColor: 'error.main',
-                cursor: 'pointer',
-                '&:hover': { bgcolor: 'error.light', color: 'error.contrastText' }
-              }}
-              onClick={handleForceDelete}
-            >
-              <Typography variant="subtitle1" fontWeight="bold">Eliminar Mesmo Assim</Typography>
-              <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
-                ⚠️ Os agendamentos ficarão inválidos e podem causar erros no playout
+          {deleteDialog.simpleDelete ? (
+            <>
+              <Typography variant="body1" gutterBottom>
+                Tem a certeza que deseja eliminar "{deleteDialog.media?.filename}"?
               </Typography>
-            </Paper>
-            
-            <Paper 
-              sx={{ 
-                p: 2, 
-                border: '1px solid', 
-                borderColor: 'primary.main',
-                cursor: 'pointer',
-                '&:hover': { bgcolor: 'primary.light', color: 'primary.contrastText' }
-              }}
-              onClick={handleReplaceAndDelete}
-            >
-              <Typography variant="subtitle1" fontWeight="bold">Substituir por Filler e Eliminar</Typography>
-              <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
-                ✓ Seguro - Substitui automaticamente nos agendamentos antes de eliminar
+              <Alert severity="info" sx={{ mt: 2 }}>
+                Esta ação não pode ser desfeita.
+              </Alert>
+            </>
+          ) : (
+            <>
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                "{deleteDialog.media?.filename}" está agendado em {deleteDialog.usage?.scheduled_count} evento(s).
+              </Alert>
+              
+              <Typography variant="body2" gutterBottom sx={{ mb: 2 }}>
+                Escolha uma opção:
               </Typography>
-            </Paper>
-          </Stack>
+              
+              <Stack spacing={2}>
+                <Paper 
+                  sx={{ 
+                    p: 2, 
+                    border: '1px solid', 
+                    borderColor: 'error.main',
+                    cursor: 'pointer',
+                    '&:hover': { bgcolor: 'error.light', color: 'error.contrastText' }
+                  }}
+                  onClick={handleForceDelete}
+                >
+                  <Typography variant="subtitle1" fontWeight="bold">Eliminar Mesmo Assim</Typography>
+                  <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
+                    ⚠️ Os agendamentos ficarão inválidos e podem causar erros no playout
+                  </Typography>
+                </Paper>
+                
+                <Paper 
+                  sx={{ 
+                    p: 2, 
+                    border: '1px solid', 
+                    borderColor: 'primary.main',
+                    cursor: 'pointer',
+                    '&:hover': { bgcolor: 'primary.light', color: 'primary.contrastText' }
+                  }}
+                  onClick={handleReplaceAndDelete}
+                >
+                  <Typography variant="subtitle1" fontWeight="bold">Substituir por Filler e Eliminar</Typography>
+                  <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
+                    ✓ Seguro - Substitui automaticamente nos agendamentos antes de eliminar
+                  </Typography>
+                </Paper>
+              </Stack>
+            </>
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialog({ open: false, media: null, usage: null })}>
+          <Button onClick={() => setDeleteDialog({ open: false, media: null, usage: null, simpleDelete: false })}>
             Cancelar
           </Button>
+          {deleteDialog.simpleDelete && (
+            <Button variant="contained" color="error" onClick={handleForceDelete}>
+              Eliminar
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
 
@@ -508,6 +596,66 @@ export default function MediaLibrary() {
             {selectedMedia?.media_type === 'audio' && <Box sx={{ p: 4 }}><audio controls src={`/api/media/${selectedMedia.id}/stream`} /></Box>}
         </DialogContent>
         <DialogActions><Button onClick={() => setPreviewOpen(false)}>Fechar</Button></DialogActions>
+      </Dialog>
+      {/* Multi-file Upload Progress Dialog */}
+      <Dialog open={uploadProgressOpen} onClose={() => {
+          // Only allow closing if all finished
+          if (uploadFiles.every(f => f.status === 'success' || f.status === 'error')) {
+              setUploadProgressOpen(false);
+          }
+      }} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <UploadIcon color="primary" /> Gestor de Uploads
+        </DialogTitle>
+        <DialogContent dividers>
+          <List>
+            {uploadFiles.map((uf) => (
+              <ListItem key={uf.id} sx={{ px: 0, flexDirection: 'column', alignItems: 'stretch' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                  <Typography variant="body2" sx={{ fontWeight: uf.status === 'uploading' ? 'bold' : 'normal', maxWidth: '70%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {uf.name}
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {uf.status === 'pending' && <PendingIcon fontSize="small" color="action" />}
+                    {uf.status === 'uploading' && <CircularProgress size={16} />}
+                    {uf.status === 'success' && <SuccessIcon fontSize="small" color="success" />}
+                    {uf.status === 'error' && <ErrorIcon fontSize="small" color="error" />}
+                    <Typography variant="caption" color="text.secondary">
+                        {uf.status === 'pending' ? 'Pendente' : uf.status === 'uploading' ? 'Enviando...' : uf.status === 'success' ? 'Concluído' : 'Erro'}
+                    </Typography>
+                  </Box>
+                </Box>
+                <LinearProgress 
+                    variant="determinate" 
+                    value={uf.progress} 
+                    color={uf.status === 'error' ? 'error' : 'primary'}
+                    sx={{ height: 6, borderRadius: 3 }}
+                />
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <FolderIcon sx={{ fontSize: 12 }} /> {uf.destination}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                        {uf.progress}%
+                    </Typography>
+                </Box>
+              </ListItem>
+            ))}
+          </List>
+          {uploadFiles.every(f => f.status === 'success' || f.status === 'error') && (
+              <Alert severity="success" sx={{ mt: 2 }} icon={<CheckCircleIcon />}>
+                  Todos os carregamentos foram processados. Esta janela fechará em breve.
+              </Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            disabled={uploadFiles.some(f => f.status === 'uploading' || f.status === 'pending')} 
+            onClick={() => setUploadProgressOpen(false)}
+          >
+            Fechar
+          </Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );

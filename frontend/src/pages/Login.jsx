@@ -122,7 +122,7 @@ export default function Login() {
           
           <Box sx={{ mt: 3, textAlign: 'center' }}>
             <Typography variant="caption" color="text.secondary" display="block">
-              Versão: {version || 'v1.9.1-PRO'}
+              Versão: {version || 'v1.9.2-PRO'}
             </Typography>
             <Typography variant="caption" color="text.secondary" display="block">
               © 2026 Onepa Technologies

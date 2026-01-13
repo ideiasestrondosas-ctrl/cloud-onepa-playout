@@ -17,20 +17,14 @@
   - LUFS Meter v2 (Chrome/Safari)
   - Enhanced Media Library (Subfolders + Recursive Delete)
   - Docker Orchestration & Healthchecks
+  - **Setup Wizard v2** (Multi-select, Metadata)
+  - **Playlist Editor v2** (Unique Clips, Bulk Add)
+  - **VLC/SRT Diagnostics** (Launcher, Dynamic Config)
   - Bug Fixes & API Stabilization
 
-## 🧪 Phase 21: Experimental Stability (Current)
+## 🧪 Phase 22: Live Inputs & Advanced Protocol (Next)
 
-_Focus: Stabilizing v1.8.1-EXP features_
-
-- [ ] Validate Tee Muxer stability over 24h+ runs
-- [ ] Monitor CPU usage with dual-output
-- [ ] User feedback on new UI changes
-- [ ] Refine Protected Assets asset scanning mechanism
-
-## 🔮 Future Roadmap
-
-### 📡 Phase 22: Connectivity & Live Inputs
+_Focus: Expanding beyond file playback_
 
 _Focus: Expanding beyond file playback_
 

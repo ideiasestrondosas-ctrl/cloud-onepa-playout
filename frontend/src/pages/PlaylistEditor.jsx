@@ -18,6 +18,15 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Checkbox,
+  FormControlLabel,
+  RadioGroup,
+  Radio,
+  FormControl,
+  Paper,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -26,6 +35,10 @@ import {
   DragIndicator as DragIcon,
   CheckCircle as CheckIcon,
   Warning as WarningIcon,
+  AutoFixHigh as AutoFixIcon,
+  Layers as LoopIcon,
+  Shuffle as ShuffleIcon,
+  FormatListNumbered as SequentialIcon,
 } from '@mui/icons-material';
 import {
   DndContext,
@@ -45,7 +58,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { playlistAPI, mediaAPI } from '../services/api';
 
-function SortableClip({ clip, onRemove }) {
+function SortableClip({ clip, onRemove, isSelected, onToggleSelection }) {
   const {
     attributes,
     listeners,
@@ -70,6 +83,12 @@ function SortableClip({ clip, onRemove }) {
       }
       sx={{ bgcolor: 'background.paper', mb: 1, borderRadius: 1 }}
     >
+      <Checkbox 
+        checked={isSelected} 
+        onChange={() => onToggleSelection(clip.id)}
+        size="small"
+        sx={{ mr: 1 }}
+      />
       <Box {...attributes} {...listeners} sx={{ cursor: 'grab', mr: 2 }}>
         <DragIcon />
       </Box>
@@ -98,9 +117,16 @@ export default function PlaylistEditor() {
   const [playlistDate, setPlaylistDate] = useState('');
   const [validation, setValidation] = useState(null);
   const [mediaDialogOpen, setMediaDialogOpen] = useState(false);
+  const [selectedMediaIds, setSelectedMediaIds] = useState([]);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [saving, setSaving] = useState(false);
+  const [selectedClipIds, setSelectedClipIds] = useState([]);
+  const [automationDialogOpen, setAutomationDialogOpen] = useState(false);
+  const [automationType, setAutomationType] = useState('random'); // random, sequential, loop
+  const [folders, setFolders] = useState([]);
+  const [selectedFolder, setSelectedFolder] = useState('root');
+  const [useFillersOnly, setUseFillersOnly] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -112,7 +138,17 @@ export default function PlaylistEditor() {
   useEffect(() => {
     fetchPlaylists();
     fetchAvailableMedia();
+    fetchFolders();
   }, []);
+
+  const fetchFolders = async () => {
+    try {
+      const response = await mediaAPI.listFolders();
+      setFolders(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch folders:', error);
+    }
+  };
 
   useEffect(() => {
     if (clips.length > 0) {
@@ -171,12 +207,53 @@ export default function PlaylistEditor() {
   };
 
   const handleAddClip = (media) => {
-    setClips([...clips, media]);
+    // Create unique instance with UUID to allow same file multiple times
+    const uniqueClip = {
+      ...media,
+      id: `${media.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // Unique instance ID
+      media_id: media.id, // Original media ID for reference
+    };
+    setClips([...clips, uniqueClip]);
     setMediaDialogOpen(false);
+    setSelectedMediaIds([]);
+  };
+
+  const handleAddSelectedClips = () => {
+    const selectedMedia = availableMedia.filter(m => selectedMediaIds.includes(m.id));
+    const newClips = selectedMedia.map(media => ({
+      ...media,
+      id: `${media.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      media_id: media.id,
+    }));
+    setClips([...clips, ...newClips]);
+    setMediaDialogOpen(false);
+    setSelectedMediaIds([]);
+  };
+
+  const toggleMediaSelection = (mediaId) => {
+    setSelectedMediaIds(prev => 
+      prev.includes(mediaId) ? prev.filter(id => id !== mediaId) : [...prev, mediaId]
+    );
   };
 
   const handleRemoveClip = (id) => {
     setClips(clips.filter((clip) => clip.id !== id));
+    setSelectedClipIds(prev => prev.filter(i => i !== id));
+  };
+
+  const toggleSelection = (id) => {
+    setSelectedClipIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedClipIds.length === 0) return;
+    if (window.confirm(`Tem a certeza que deseja eliminar os ${selectedClipIds.length} clips selecionados?`)) {
+      setClips(clips.filter(c => !selectedClipIds.includes(c.id)));
+      setSelectedClipIds([]);
+      showSuccess(`${selectedClipIds.length} clips removidos`);
+    }
   };
 
   const handleSave = async () => {
@@ -248,57 +325,80 @@ export default function PlaylistEditor() {
     setCreateDialogOpen(true);
   };
 
-  const handleAutoFill = async () => {
+  const handleRunAutomation = async () => {
     const totalSecs = clips.reduce((sum, clip) => sum + (clip.duration || 0), 0);
-    const gap = 86400 - totalSecs;
+    const gap = targetDuration - totalSecs;
 
     if (gap <= 0) {
       showWarning('A playlist já atingiu ou excedeu as 24 horas.');
+      setAutomationDialogOpen(false);
       return;
     }
 
     try {
-      const response = await mediaAPI.list({ is_filler: true, limit: 100 });
-      const fillers = response.data.media;
-
-      if (fillers.length === 0) {
-        showError('Nenhum ficheiro marcado como filler disponível.');
-        return;
+      setSaving(true);
+      let candidates = [];
+      
+      if (automationType === 'loop') {
+          if (clips.length === 0) {
+              showError('Adicione pelo menos um clip como base para o loop.');
+              setSaving(false);
+              return;
+          }
+          candidates = [...clips];
+      } else {
+          const params = {
+              folder_id: selectedFolder,
+              limit: 500
+          };
+          if (useFillersOnly) params.is_filler = true;
+          
+          const response = await mediaAPI.list(params);
+          candidates = response.data.media || [];
+          
+          if (candidates.length === 0) {
+              showError(`Nenhum ficheiro encontrado na pasta selecionada${useFillersOnly ? ' com flag de filler' : ''}.`);
+              setSaving(false);
+              return;
+          }
       }
 
       let currentGap = gap;
-      const addedFillers = [];
+      const addedClips = [];
       
-      // Simple greedy fill
-      // We'll try to add fillers until we are close to 24h
-      // To make it more "random", we can shuffle
-      const shuffledFillers = [...fillers].sort(() => Math.random() - 0.5);
+      if (automationType === 'random') {
+          candidates = [...candidates].sort(() => Math.random() - 0.5);
+      }
       
       let index = 0;
-      while (currentGap > 10 && index < shuffledFillers.length * 2) { // Allow some reuse if needed
-        const filler = shuffledFillers[index % shuffledFillers.length];
-        if (filler.duration <= currentGap + 300) { // Allow slightly overshooting
-          addedFillers.push({
-            ...filler,
-            id: `filler-${Date.now()}-${addedFillers.length}` // Unique ID for DnD
-          });
-          currentGap -= filler.duration;
-        }
-        index++;
-        
-        // Safety break to prevent infinite loop if fillers are too long
-        if (index > 200) break;
+      // We loop until gap is filled or we tried many times
+      while (currentGap > 10 && index < 200) {
+          const item = candidates[index % candidates.length];
+          if (item.duration <= currentGap + 3600) { // Allow slight overshoot for final item
+             addedClips.push({
+                 ...item,
+                 id: `auto-${Date.now()}-${addedClips.length}`
+             });
+             currentGap -= item.duration;
+          }
+          index++;
+          
+          // Safety break if we are looping and items are too small
+          if (index > 1000) break;
       }
 
-      if (addedFillers.length > 0) {
-        setClips([...clips, ...addedFillers]);
-        showSuccess(`${addedFillers.length} fillers adicionados para preencher o tempo.`);
+      if (addedClips.length > 0) {
+        setClips([...clips, ...addedClips]);
+        showSuccess(`${addedClips.length} clips adicionados via automação (${automationType === 'random' ? 'Aleatório' : automationType === 'sequential' ? 'Sequencial' : 'Loop Content'}).`);
       } else {
-        showWarning('Não foi possível encontrar fillers adequados para o tempo restante.');
+        showWarning('Não foi possível encontrar ficheiros adequados para preencher o tempo.');
       }
     } catch (error) {
-      console.error('Auto-fill failed:', error);
-      showError('Erro ao carregar fillers');
+      console.error('Automation failed:', error);
+      showError('Erro ao executar automação');
+    } finally {
+      setSaving(false);
+      setAutomationDialogOpen(false);
     }
   };
 
@@ -335,8 +435,13 @@ export default function PlaylistEditor() {
           Playlist Editor
         </Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button variant="outlined" color="warning" onClick={handleAutoFill} disabled={clips.length === 0}>
-            Auto-preencher Fillers
+          {selectedClipIds.length > 0 && (
+            <Button variant="contained" color="error" startIcon={<DeleteIcon />} onClick={handleBulkDelete}>
+              Eliminar ({selectedClipIds.length})
+            </Button>
+          )}
+          <Button variant="outlined" color="warning" startIcon={<AutoFixIcon />} onClick={() => setAutomationDialogOpen(true)}>
+            Automação
           </Button>
           <Button variant="outlined" onClick={handleNewPlaylist}>
             Nova Playlist
@@ -464,6 +569,8 @@ export default function PlaylistEditor() {
                           key={clip.id}
                           clip={clip}
                           onRemove={handleRemoveClip}
+                          isSelected={selectedClipIds.includes(clip.id)}
+                          onToggleSelection={toggleSelection}
                         />
                       ))}
                     </List>
@@ -476,26 +583,42 @@ export default function PlaylistEditor() {
       </Grid>
 
       {/* Media Selection Dialog */}
-      <Dialog open={mediaDialogOpen} onClose={() => setMediaDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Selecionar Media</DialogTitle>
+      <Dialog open={mediaDialogOpen} onClose={() => { setMediaDialogOpen(false); setSelectedMediaIds([]); }} maxWidth="md" fullWidth>
+        <DialogTitle>Selecionar Media (Multi-seleção)</DialogTitle>
         <DialogContent>
+          {selectedMediaIds.length > 0 && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              {selectedMediaIds.length} ficheiro(s) selecionado(s)
+            </Alert>
+          )}
           <List>
-            {availableMedia.filter((m) => m.media_type === 'video' || m.media_type === 'audio').map((media) => (
-              <ListItem
-                key={media.id}
-                button
-                onClick={() => handleAddClip(media)}
-              >
-                <ListItemText
-                  primary={media.filename}
-                  secondary={`${media.media_type} • ${formatDuration(media.duration)}`}
-                />
-              </ListItem>
-            ))}
+            {availableMedia.filter((m) => m.media_type === 'video' || m.media_type === 'audio').map((media) => {
+              const isSelected = selectedMediaIds.includes(media.id);
+              return (
+                <ListItem
+                  key={media.id}
+                  button
+                  onClick={() => toggleMediaSelection(media.id)}
+                >
+                  <Checkbox checked={isSelected} sx={{ mr: 1 }} />
+                  <ListItemText
+                    primary={media.filename}
+                    secondary={`${media.media_type} • ${formatDuration(media.duration)}`}
+                  />
+                </ListItem>
+              );
+            })}
           </List>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setMediaDialogOpen(false)}>Cancelar</Button>
+          <Button onClick={() => { setMediaDialogOpen(false); setSelectedMediaIds([]); }}>Cancelar</Button>
+          <Button 
+            onClick={handleAddSelectedClips} 
+            variant="contained"
+            disabled={selectedMediaIds.length === 0}
+          >
+            Adicionar ({selectedMediaIds.length})
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -517,6 +640,85 @@ export default function PlaylistEditor() {
         <DialogActions>
           <Button onClick={() => setCreateDialogOpen(false)}>Cancelar</Button>
           <Button onClick={handleCreateNewPlaylist} variant="contained">Criar</Button>
+        </DialogActions>
+      </Dialog>
+      {/* Automation / Fill Dialog */}
+      <Dialog open={automationDialogOpen} onClose={() => setAutomationDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <AutoFixIcon color="warning" /> Automação de Preenchimento
+        </DialogTitle>
+        <DialogContent dividers>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+                Escolha como deseja preencher o tempo restante da sua playlist (até 24h).
+            </Typography>
+            
+            <FormControl component="fieldset" sx={{ mt: 2, width: '100%' }}>
+                <RadioGroup value={automationType} onChange={(e) => setAutomationType(e.target.value)}>
+                    <Paper variant="outlined" sx={{ p: 2, mb: 1, border: automationType === 'random' ? '2px solid' : '1px solid', borderColor: automationType === 'random' ? 'primary.main' : 'divider' }}>
+                        <FormControlLabel value="random" control={<Radio />} label={
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <ShuffleIcon /> 
+                                <Box>
+                                    <Typography variant="subtitle2">Aleatório da Pasta</Typography>
+                                    <Typography variant="caption" color="text.secondary">Escolhe ficheiros aleatórios da pasta selecionada</Typography>
+                                </Box>
+                            </Box>
+                        } />
+                    </Paper>
+
+                    <Paper variant="outlined" sx={{ p: 2, mb: 1, border: automationType === 'sequential' ? '2px solid' : '1px solid', borderColor: automationType === 'sequential' ? 'primary.main' : 'divider' }}>
+                        <FormControlLabel value="sequential" control={<Radio />} label={
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <SequentialIcon />
+                                <Box>
+                                    <Typography variant="subtitle2">Sequencial da Pasta</Typography>
+                                    <Typography variant="caption" color="text.secondary">Segue a ordem dos ficheiros na pasta selecionada</Typography>
+                                </Box>
+                            </Box>
+                        } />
+                    </Paper>
+
+                    <Paper variant="outlined" sx={{ p: 2, mb: 1, border: automationType === 'loop' ? '2px solid' : '1px solid', borderColor: automationType === 'loop' ? 'primary.main' : 'divider' }}>
+                        <FormControlLabel value="loop" control={<Radio />} label={
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <LoopIcon />
+                                <Box>
+                                    <Typography variant="subtitle2">Loop da Seleção Atual</Typography>
+                                    <Typography variant="caption" color="text.secondary">Repete os vídeos que já estão na playlist</Typography>
+                                </Box>
+                            </Box>
+                        } />
+                    </Paper>
+                </RadioGroup>
+            </FormControl>
+
+            {automationType !== 'loop' && (
+                <Box sx={{ mt: 2 }}>
+                    <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+                        <InputLabel>Pasta de Origem</InputLabel>
+                        <Select 
+                            value={selectedFolder} 
+                            label="Pasta de Origem"
+                            onChange={(e) => setSelectedFolder(e.target.value)}
+                        >
+                            <MenuItem value="root">Raiz (Todas as pastas)</MenuItem>
+                            {folders.map(f => (
+                                <MenuItem key={f.id} value={f.id}>{f.name}</MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                    <FormControlLabel 
+                        control={<Checkbox checked={useFillersOnly} onChange={(e) => setUseFillersOnly(e.target.checked)} />} 
+                        label="Usar apenas ficheiros marcados como Filler"
+                    />
+                </Box>
+            )}
+        </DialogContent>
+        <DialogActions>
+            <Button onClick={() => setAutomationDialogOpen(false)}>Cancelar</Button>
+            <Button variant="contained" color="warning" onClick={handleRunAutomation} disabled={saving}>
+                Executar Automação
+            </Button>
         </DialogActions>
       </Dialog>
     </Box>

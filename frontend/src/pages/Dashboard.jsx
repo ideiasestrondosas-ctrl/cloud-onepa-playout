@@ -13,7 +13,8 @@ import {
   Paper,
   IconButton,
   Tooltip,
-  Divider
+  Divider,
+  TextField,
 } from '@mui/material';
 import {
   Error as ErrorIcon,
@@ -108,9 +109,18 @@ export default function Dashboard() {
 
       // Important for Chrome/Safari: AudioContext must be resumed after user interaction
       if (audioCtxRef.current.state === 'suspended') {
-        audioCtxRef.current.resume().then(() => {
-            console.log('AudioContext resumed successfully');
-        }).catch(e => console.error('Failed to resume AudioContext:', e));
+        const resume = () => {
+          audioCtxRef.current.resume().then(() => {
+              console.log('AudioContext resumed successfully');
+              window.removeEventListener('click', resume);
+              window.removeEventListener('keydown', resume);
+          }).catch(e => console.error('Failed to resume AudioContext:', e));
+        };
+        window.addEventListener('click', resume);
+        window.addEventListener('keydown', resume);
+        
+        // Try immediately anyway
+        audioCtxRef.current.resume().catch(() => {});
       }
 
       if (!sourceNodeRef.current) {
@@ -253,23 +263,8 @@ export default function Dashboard() {
     <Box>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            {isPlaying && (
-                <Chip 
-                    label="ON AIR" 
-                    color="error" 
-                    sx={{ 
-                        fontWeight: 'bold', 
-                        animation: 'blink 1.5s infinite',
-                        '@keyframes blink': {
-                            '0%': { opacity: 1 },
-                            '50%': { opacity: 0.4 },
-                            '100%': { opacity: 1 }
-                        }
-                    }} 
-                />
-            )}
-            <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 'medium' }}>
-                Monitorização e Controlo Playout
+            <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+                {settings?.channel_name || 'Cloud Onepa'}
             </Typography>
             <Chip 
               label={settings?.system_version || 'v1.9.2-PRO'} 
@@ -277,6 +272,34 @@ export default function Dashboard() {
               variant="outlined" 
               sx={{ borderColor: 'primary.main', color: 'primary.main', fontWeight: 'bold', height: 20, fontSize: '0.65rem' }} 
             />
+        </Box>
+        
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {isPlaying && (
+                <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 1, 
+                    bgcolor: 'error.main', 
+                    color: '#fff', 
+                    px: 2, 
+                    py: 0.5, 
+                    borderRadius: 1,
+                    boxShadow: '0 0 10px rgba(211, 47, 47, 0.5)',
+                    animation: 'pulse 2s infinite',
+                    '@keyframes pulse': {
+                        '0%': { boxShadow: '0 0 0 0 rgba(211, 47, 47, 0.7)' },
+                        '70%': { boxShadow: '0 0 0 10px rgba(211, 47, 47, 0)' },
+                        '100%': { boxShadow: '0 0 0 0 rgba(211, 47, 47, 0)' }
+                    }
+                }}>
+                    <Box sx={{ width: 8, height: 8, bgcolor: '#fff', borderRadius: '50%', animation: 'blink 1s infinite' }} />
+                    <Typography variant="button" sx={{ fontWeight: '900', letterSpacing: 1 }}>ON AIR</Typography>
+                </Box>
+            )}
+            <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 'medium', display: { xs: 'none', md: 'block' } }}>
+                Monitorização e Controlo
+            </Typography>
         </Box>
       </Box>
 
@@ -287,8 +310,62 @@ export default function Dashboard() {
           <Card>
             <CardContent>
               <Typography color="text.secondary" gutterBottom>Status</Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2 }}>
-                {isPlaying ? <Chip label="ON AIR" color="success" icon={<CheckIcon />} /> : <Chip label="OFFLINE" color="error" />}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
+                {isPlaying ? (
+                  <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 1.5, 
+                    bgcolor: 'error.main', 
+                    color: '#fff', 
+                    px: 3, 
+                    py: 1.5, 
+                    borderRadius: 2,
+                    boxShadow: '0 0 20px rgba(211, 47, 47, 0.6)',
+                    animation: 'pulse 2s infinite',
+                    '@keyframes pulse': {
+                      '0%': { boxShadow: '0 0 0 0 rgba(211, 47, 47, 0.7)' },
+                      '70%': { boxShadow: '0 0 0 15px rgba(211, 47, 47, 0)' },
+                      '100%': { boxShadow: '0 0 0 0 rgba(211, 47, 47, 0)' }
+                    }
+                  }}>
+                    <PlayIcon sx={{ fontSize: 32, animation: 'blink 1.5s infinite' }} />
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: '900', letterSpacing: 1.5 }}>ON AIR</Typography>
+                      <Typography variant="caption" sx={{ opacity: 0.9 }}>Transmitindo</Typography>
+                    </Box>
+                    <Box sx={{ 
+                      width: 12, 
+                      height: 12, 
+                      bgcolor: '#fff', 
+                      borderRadius: '50%', 
+                      animation: 'blink 1s infinite',
+                      '@keyframes blink': {
+                        '0%, 100%': { opacity: 1 },
+                        '50%': { opacity: 0.2 }
+                      }
+                    }} />
+                  </Box>
+                ) : (
+                  <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 1.5, 
+                    bgcolor: 'grey.800', 
+                    color: 'grey.400', 
+                    px: 3, 
+                    py: 1.5, 
+                    borderRadius: 2,
+                    border: '2px solid',
+                    borderColor: 'grey.700'
+                  }}>
+                    <StopIcon sx={{ fontSize: 32 }} />
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: '700', letterSpacing: 1 }}>OFFLINE</Typography>
+                      <Typography variant="caption">Parado</Typography>
+                    </Box>
+                  </Box>
+                )}
               </Box>
             </CardContent>
           </Card>
@@ -335,19 +412,19 @@ export default function Dashboard() {
               muted={previewMuted}
               width="100%"
               height="100%"
+              onReady={setupAudioAnalysis}
               onPlay={setupAudioAnalysis}
               config={{ 
                 file: { 
                     forceHLS: true, 
-                    attributes: { crossOrigin: 'anonymous' },
+                    attributes: { 
+                        crossOrigin: 'anonymous',
+                        playsInline: true
+                    },
                     hlsOptions: {
                         enableWorker: true,
                         lowLatencyMode: true,
-                        backBufferLength: 90,
-                        liveBackBufferLength: 0,
-                        liveSyncDuration: 3,
-                        liveMaxLatencyDuration: 10,
-                        maxLiveSyncPlaybackRate: 2
+                        backBufferLength: 0,
                     }
                 } 
               }}
@@ -399,21 +476,116 @@ export default function Dashboard() {
         </Grid>
       </Grid>
 
-      <Dialog open={vlcDialogOpen} onClose={() => setVlcDialogOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>VLC Smart Launcher</DialogTitle>
-        <DialogContent dividers>
-          <Box sx={{ bgcolor: '#000', p: 1, color: '#0f0', mb: 2, fontFamily: 'monospace', fontSize: '0.8rem' }}>
-            {vlcLogs.map((l, i) => <div key={i}>{l.msg}</div>)}
+      <Dialog open={vlcDialogOpen} onClose={() => setVlcDialogOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ bgcolor: 'primary.main', color: '#fff', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <PlayIcon /> VLC Smart Launcher & Diagnóstico de Rede
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={7}>
+              <Typography variant="subtitle1" fontWeight="bold" color="primary" gutterBottom>
+                Como visualizar o seu canal externamente:
+              </Typography>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                O playout está a emitir em tempo real. Use as opções abaixo para monitorizar com detalhe total.
+              </Alert>
+              
+              <Box sx={{ bgcolor: 'action.hover', p: 2, borderRadius: 1, mb: 3 }}>
+                <Typography variant="body2" fontWeight="bold">Link RTMP / SRT (Baixa Latência):</Typography>
+                <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                  <TextField 
+                    fullWidth 
+                    size="small" 
+                    value={settings?.output_url || 'rtmp://localhost:1935/live/stream'} 
+                    disabled 
+                  />
+                  <Button 
+                    variant="contained" 
+                    onClick={() => {
+                      const url = settings?.output_url || 'rtmp://localhost:1935/live/stream';
+                      console.log('[VLC Launcher] Attempting to open:', url);
+                      setVlcLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] Tentando abrir: ${url}`]);
+                      try {
+                        window.location.href = `vlc://${url}`;
+                        setVlcLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] Comando vlc:// enviado ao sistema`]);
+                      } catch (err) {
+                        console.error('[VLC Launcher] Error:', err);
+                        setVlcLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ERRO: ${err.message}`]);
+                      }
+                    }}
+                  >
+                    Abrir no VLC
+                  </Button>
+                </Box>
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                  Nota: Se estiver fora da rede local, substitua 'localhost' pelo IP público do servidor.
+                </Typography>
+                <Button 
+                  size="small" 
+                  variant="text" 
+                  sx={{ mt: 1 }}
+                  onClick={() => window.location.href = '/settings?tab=0'}
+                >
+                  Configurar Output URL →
+                </Button>
+              </Box>
+
+              <Typography variant="subtitle2" gutterBottom fontWeight="bold">Passos de Diagnóstico:</Typography>
+              <List dense>
+                {startSteps.map((step, idx) => (
+                  <ListItem key={idx}>
+                    <ListItemIcon><CheckIcon color="success" sx={{ fontSize: 18 }} /></ListItemIcon>
+                    <ListItemText primary={step.msg} primaryTypographyProps={{ variant: 'body2' }} />
+                  </ListItem>
+                ))}
+              </List>
+            </Grid>
+
+            <Grid item xs={12} md={5}>
+              <Typography variant="subtitle2" fontWeight="bold" gutterBottom>Logs de Conexão em Tempo Real:</Typography>
+              <Paper sx={{ 
+                p: 1.5, 
+                bgcolor: '#1e1e1e', 
+                color: '#00ff00', 
+                fontFamily: 'monospace', 
+                fontSize: '0.75rem', 
+                height: 250, 
+                overflow: 'auto',
+                border: '1px solid #444'
+              }}>
+                {vlcLogs.length === 0 ? '> Aguardando conexões...' : vlcLogs.map((log, i) => (
+                  <div key={i}>{log.msg || log}</div>
+                ))}
+              </Paper>
+              <Button 
+                fullWidth 
+                variant="outlined" 
+                size="small" 
+                sx={{ mt: 1 }}
+                onClick={() => setVlcLogs([])}
+              >
+                Limpar Logs
+              </Button>
+            </Grid>
+          </Grid>
+
+          <Divider sx={{ my: 3 }} />
+          
+          <Box>
+            <Typography variant="subtitle2" color="error" fontWeight="bold">Erros Comuns (I/O Error):</Typography>
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              • <b>Porta 1935 BLOQUEADA:</b> Verifique se a porta 1935 (RTMP) ou 9000 (SRT) está aberta no Firewall/Router.<br/>
+              • <b>Stream não iniciado:</b> O player precisa que o Playout esteja em estado "START" para receber dados.<br/>
+              • <b>Latência:</b> No Safari, pode haver um delay de 2-5 segundos no HLS. Use SRT para latência sub-segundo.
+            </Typography>
           </Box>
-          <Typography variant="caption" color="text.secondary">Comando Manual:</Typography>
-          <Paper sx={{ p: 1.5, bgcolor: '#222', color: '#fff', mt: 1, display: 'flex', alignItems: 'center', border: '1px solid #444' }}>
-            <code style={{ flexGrow: 1, fontSize: '0.75rem', fontFamily: 'monospace' }}>{vlcCommand}</code>
-            <IconButton size="small" onClick={() => { navigator.clipboard.writeText(vlcCommand); showSuccess('Copiado!'); }} sx={{ color: '#aaa' }}>
-                <ContentCopyIcon fontSize="small" />
-            </IconButton>
-          </Paper>
         </DialogContent>
-        <DialogActions><Button onClick={() => setVlcDialogOpen(false)}>Fechar</Button></DialogActions>
+        <DialogActions>
+          <Button onClick={() => setVlcDialogOpen(false)}>Fechar</Button>
+          <Button variant="contained" onClick={() => window.open('/settings?tab=playout', '_blank')}>
+            Configurações de Saída
+          </Button>
+        </DialogActions>
       </Dialog>
 
       <Dialog open={debugDialogOpen} onClose={() => setDebugDialogOpen(false)} maxWidth="sm" fullWidth>
