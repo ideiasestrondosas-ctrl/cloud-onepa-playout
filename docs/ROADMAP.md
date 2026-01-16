@@ -11,7 +11,9 @@
   - Setup Wizard
   - Branding & Theming
 
-- [x] **Phase 19-21**: UI Refinement & Stability (v1.9.2-PRO)
+- [x] **Phase 19-21**: UI Refinement & Stability (v1.9.3-PRO)
+  - Security Hardening (SQLi & Path Traversal Fixes)
+  - Performance Optimization (DB Indexes + Search Debounce)
   - Header Clock (Real-time)
   - Dashboard Streamlining
   - LUFS Meter v2 (Chrome/Safari)

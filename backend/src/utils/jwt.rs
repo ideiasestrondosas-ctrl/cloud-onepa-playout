@@ -31,14 +31,14 @@ impl Claims {
 }
 
 pub fn generate_token(claims: &Claims) -> Result<String, jsonwebtoken::errors::Error> {
-    let secret = env::var("JWT_SECRET").unwrap_or_else(|_| "secret".to_string());
+    let secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set in production");
     let encoding_key = EncodingKey::from_secret(secret.as_bytes());
 
     encode(&Header::default(), claims, &encoding_key)
 }
 
 pub fn validate_token(token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
-    let secret = env::var("JWT_SECRET").unwrap_or_else(|_| "secret".to_string());
+    let secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set in production");
     let decoding_key = DecodingKey::from_secret(secret.as_bytes());
 
     let token_data = decode::<Claims>(token, &decoding_key, &Validation::default())?;

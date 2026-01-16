@@ -61,6 +61,7 @@ export default function MediaLibrary() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [currentFolder, setCurrentFolder] = useState(null); // null = root
+  const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     media_type: '',
     search: '',
@@ -80,6 +81,14 @@ export default function MediaLibrary() {
   const [uploadFiles, setUploadFiles] = useState([]);
   const [uploadProgressOpen, setUploadProgressOpen] = useState(false);
   const [checkingDelete, setCheckingDelete] = useState(null); // ID of media being checked
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFilters(prev => ({ ...prev, search: searchTerm, page: 1 }));
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   useEffect(() => {
     fetchMedia();
@@ -399,7 +408,14 @@ export default function MediaLibrary() {
             <Card sx={{ mb: 3, p: 2 }}>
                 <Grid container spacing={2}>
                     <Grid item xs={12} sm={6}>
-                        <TextField fullWidth size="small" placeholder="Pesquisar..." value={filters.search} onChange={e => setFilters({...filters, search: e.target.value, page: 1})} InputProps={{ startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} /> }} />
+                        <TextField 
+                            fullWidth 
+                            size="small" 
+                            placeholder="Pesquisar..." 
+                            value={searchTerm} 
+                            onChange={e => setSearchTerm(e.target.value)} 
+                            InputProps={{ startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} /> }} 
+                        />
                     </Grid>
                     <Grid item xs={12} sm={3}>
                         <FormControl fullWidth size="small">

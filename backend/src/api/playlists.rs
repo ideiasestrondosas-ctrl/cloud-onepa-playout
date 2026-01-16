@@ -15,19 +15,27 @@ async fn list_playlists(
     query: web::Query<PlaylistQuery>,
     pool: web::Data<PgPool>,
 ) -> impl Responder {
-    let mut sql = String::from("SELECT * FROM playlists WHERE 1=1");
+    let mut query_builder: sqlx::QueryBuilder<sqlx::Postgres> =
+        sqlx::QueryBuilder::new("SELECT * FROM playlists WHERE 1=1");
 
-    if let Some(ref date) = query.date {
-        sql.push_str(&format!(" AND date = '{}'", date));
+    if let Some(ref date_str) = query.date {
+        if let Ok(date) = chrono::NaiveDate::parse_from_str(date_str, "%Y-%m-%d") {
+            query_builder.push(" AND date = ");
+            query_builder.push_bind(date);
+        }
     }
 
     if let Some(ref search) = query.search {
-        sql.push_str(&format!(" AND name ILIKE '%{}%'", search));
+        if !search.is_empty() {
+            query_builder.push(" AND name ILIKE ");
+            query_builder.push_bind(format!("%{}%", search));
+        }
     }
 
-    sql.push_str(" ORDER BY created_at DESC");
+    query_builder.push(" ORDER BY created_at DESC");
 
-    let result = sqlx::query_as::<_, Playlist>(&sql)
+    let result = query_builder
+        .build_query_as::<Playlist>()
         .fetch_all(pool.get_ref())
         .await;
 
@@ -35,8 +43,11 @@ async fn list_playlists(
         Ok(playlists) => HttpResponse::Ok().json(serde_json::json!({
             "playlists": playlists
         })),
-        Err(_) => HttpResponse::InternalServerError()
-            .json(serde_json::json!({"error": "Failed to fetch playlists"})),
+        Err(e) => {
+            log::error!("Failed to fetch playlists: {}", e);
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": "Failed to fetch playlists"}))
+        }
     }
 }
 

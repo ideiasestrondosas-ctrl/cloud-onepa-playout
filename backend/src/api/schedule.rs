@@ -16,7 +16,7 @@ async fn list_schedule(
     query: web::Query<ScheduleQuery>,
     pool: web::Data<PgPool>,
 ) -> impl Responder {
-    let mut sql = String::from(
+    let mut query_builder: sqlx::QueryBuilder<sqlx::Postgres> = sqlx::QueryBuilder::new(
         "SELECT s.*, p.name as playlist_name 
          FROM schedule s 
          JOIN playlists p ON s.playlist_id = p.id 
@@ -24,16 +24,23 @@ async fn list_schedule(
     );
 
     if let Some(ref start_date) = query.start_date {
-        sql.push_str(&format!(" AND s.date >= '{}'", start_date));
+        if let Ok(date) = chrono::NaiveDate::parse_from_str(start_date, "%Y-%m-%d") {
+            query_builder.push(" AND s.date >= ");
+            query_builder.push_bind(date);
+        }
     }
 
     if let Some(ref end_date) = query.end_date {
-        sql.push_str(&format!(" AND s.date <= '{}'", end_date));
+        if let Ok(date) = chrono::NaiveDate::parse_from_str(end_date, "%Y-%m-%d") {
+            query_builder.push(" AND s.date <= ");
+            query_builder.push_bind(date);
+        }
     }
 
-    sql.push_str(" ORDER BY s.date ASC");
+    query_builder.push(" ORDER BY s.date ASC");
 
-    let result = sqlx::query_as::<_, Schedule>(&sql)
+    let result = query_builder
+        .build_query_as::<Schedule>()
         .fetch_all(pool.get_ref())
         .await;
 
@@ -41,8 +48,11 @@ async fn list_schedule(
         Ok(schedules) => HttpResponse::Ok().json(serde_json::json!({
             "schedules": schedules
         })),
-        Err(_) => HttpResponse::InternalServerError()
-            .json(serde_json::json!({"error": "Failed to fetch schedule"})),
+        Err(e) => {
+            log::error!("Failed to fetch schedule: {}", e);
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": "Failed to fetch schedule"}))
+        }
     }
 }
 

@@ -1,5 +1,13 @@
 # Release Notes v1.9.3-PRO (2026-01-16)
 
+## 🛡️ Security & Performance (v1.9.3)
+
+- **SQL Injection Prevention**: Full refactor of Media, Schedule, and Playlist APIs to use parameterized queries (`QueryBuilder`).
+- **Path Traversal Protection**: Implemented strict filename sanitization and boundary checks for all file-serving endpoints.
+- **Search Optimization**: Added 500ms debouncing to the Media Library search to reduce server load.
+- **Database Performance**: Added targeted indexes for scheduling and media lookups.
+- **Backend Healing**: Removed inefficient per-request metadata checks in favor of stable database state.
+
 ## 📡 SRT & Connectivity
 
 - **SRT Caller Mode v2**: Refined hostname mapping logic to better support Docker environments.

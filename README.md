@@ -173,12 +173,14 @@ Ver [RELEASE_NOTES.md](RELEASE_NOTES.md) para detalhes completos.
 
 **Principais Novidades:**
 
+- 🛡️ **Segurança Avançada**: Proteção contra SQL Injection em toda a API, parametrização de queries e sanitização de nomes de ficheiros para evitar path traversal.
+- ⚡ **Performance Otimizada**: Remoção de "healing" logic pesado na listagem de media, adição de índices de base de dados para agendamento e pesquisa.
 - 📡 **SRT Caller v2**: Refinamento do mapeamento de hostname e sugestões inteligentes de URL para modo Listener.
-- 📊 **Logs Integrados**: Nova janela de logs do backend diretamente na UI para diagnóstico rápido de problemas no SRT.
-- 🔄 **Retry Button**: Botão de reatentativa para o playout, facilitando a recuperação de falhas temporárias.
-- 🛠️ **Diagnostic Tools**: Novos scripts de diagnóstico (`diagnose_srt.sh`) para análise profunda de conectividade.
-- 🕒 **Header Clock**: Relógio e data em tempo real integrados na barra superior para monitorização precisa.
-- 🧪 **LUFS Meter v2**: Análise de áudio melhorada para Chrome/Safari com ativação automática.
+- 📊 **Logs Integrados**: Nova janela de logs do backend diretamente na UI para diagnóstico rápido.
+- 🔄 **Retry Button**: Sistema de reatentativa inteligente para o playout.
+- 🔍 **Search Debounce**: Pesquisa na biblioteca de media otimizada com debouncing (500ms).
+- 🕒 **Header Clock**: Relógio e data em tempo real na barra superior.
+- 🧪 **LUFS Meter v2**: Análise de áudio melhorada.
 
 **Correções:**
 

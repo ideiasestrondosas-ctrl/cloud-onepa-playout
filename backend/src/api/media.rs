@@ -25,124 +25,110 @@ async fn list_media(query: web::Query<MediaQuery>, pool: web::Data<PgPool>) -> i
     let limit = query.limit.unwrap_or(20);
     let offset = (page - 1) * limit;
 
-    let mut sql = String::from("SELECT * FROM media WHERE 1=1");
-    let mut count_sql = String::from("SELECT COUNT(*) FROM media WHERE 1=1");
+    let mut query_builder: sqlx::QueryBuilder<sqlx::Postgres> =
+        sqlx::QueryBuilder::new("SELECT * FROM media WHERE 1=1");
 
-    // Filter by media type
     if let Some(ref media_type) = query.media_type {
         if !media_type.is_empty() {
-            sql.push_str(&format!(" AND media_type = '{}'", media_type));
-            count_sql.push_str(&format!(" AND media_type = '{}'", media_type));
+            query_builder.push(" AND media_type = ");
+            query_builder.push_bind(media_type);
         }
     }
 
-    // Filter by is_filler
     if let Some(is_filler) = query.is_filler {
-        sql.push_str(&format!(" AND is_filler = {}", is_filler));
-        count_sql.push_str(&format!(" AND is_filler = {}", is_filler));
+        query_builder.push(" AND is_filler = ");
+        query_builder.push_bind(is_filler);
     }
 
-    // Search by filename
     if let Some(ref search) = query.search {
-        sql.push_str(&format!(" AND filename ILIKE '%{}%'", search));
-        count_sql.push_str(&format!(" AND filename ILIKE '%{}%'", search));
+        if !search.is_empty() {
+            query_builder.push(" AND filename ILIKE ");
+            query_builder.push_bind(format!("%{}%", search));
+        }
     }
-    // Filter by folder
+
     if let Some(ref folder_id) = query.folder_id {
         if folder_id == "root" || folder_id.is_empty() {
-            sql.push_str(" AND folder_id IS NULL");
-            count_sql.push_str(" AND folder_id IS NULL");
-        } else {
-            sql.push_str(&format!(" AND folder_id = '{}'", folder_id));
-            count_sql.push_str(&format!(" AND folder_id = '{}'", folder_id));
+            query_builder.push(" AND folder_id IS NULL");
+        } else if let Ok(uid) = Uuid::parse_str(folder_id) {
+            query_builder.push(" AND folder_id = ");
+            query_builder.push_bind(uid);
         }
     }
 
-    sql.push_str(" ORDER BY created_at DESC");
-    sql.push_str(&format!(" LIMIT {} OFFSET {}", limit, offset));
+    // Count is more complex with QueryBuilder for the same query.
+    // Usually we wrap it or just run a separate count query for simplicity if performance allows.
+    // For now, let's keep it simple and just run the list query.
 
-    let media_result = sqlx::query_as::<_, Media>(&sql)
+    let count_query = "SELECT COUNT(*) FROM media WHERE 1=1";
+    let mut count_builder: sqlx::QueryBuilder<sqlx::Postgres> =
+        sqlx::QueryBuilder::new(count_query);
+
+    if let Some(ref media_type) = query.media_type {
+        if !media_type.is_empty() {
+            count_builder.push(" AND media_type = ");
+            count_builder.push_bind(media_type);
+        }
+    }
+
+    if let Some(is_filler) = query.is_filler {
+        count_builder.push(" AND is_filler = ");
+        count_builder.push_bind(is_filler);
+    }
+
+    if let Some(ref search) = query.search {
+        if !search.is_empty() {
+            count_builder.push(" AND filename ILIKE ");
+            count_builder.push_bind(format!("%{}%", search));
+        }
+    }
+
+    if let Some(ref folder_id) = query.folder_id {
+        if folder_id == "root" || folder_id.is_empty() {
+            count_builder.push(" AND folder_id IS NULL");
+        } else if let Ok(uid) = Uuid::parse_str(folder_id) {
+            count_builder.push(" AND folder_id = ");
+            count_builder.push_bind(uid);
+        }
+    }
+
+    let total: (i64,) = match count_builder
+        .build_query_as::<(i64,)>()
+        .fetch_one(pool.get_ref())
+        .await
+    {
+        Ok(t) => t,
+        Err(e) => {
+            log::error!("Failed to count media: {}", e);
+            return HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": "Database error"}));
+        }
+    };
+
+    query_builder.push(" ORDER BY created_at DESC");
+    query_builder.push(" LIMIT ");
+    query_builder.push_bind(limit);
+    query_builder.push(" OFFSET ");
+    query_builder.push_bind(offset);
+
+    let media_result = query_builder
+        .build_query_as::<Media>()
         .fetch_all(pool.get_ref())
         .await;
 
-    let total_result: Result<(i64,), _> =
-        sqlx::query_as(&count_sql).fetch_one(pool.get_ref()).await;
-
-    match (media_result, total_result) {
-        (Ok(mut media), Ok((total,))) => {
-            // Background check for missing thumbnails and metadata
-            let ffmpeg = FFmpegService::new();
-            let thumbnails_path = std::env::var("THUMBNAILS_PATH")
-                .unwrap_or_else(|_| "/var/lib/onepa-playout/thumbnails".to_string());
-
-            for m in &mut media {
-                let mut needs_update = false;
-
-                // Heal Thumbnails
-                if m.media_type == "video" {
-                    let has_thumb = m.thumbnail_path.as_ref().map_or(false, |p| {
-                        let actual_path = if p.starts_with("/api/media") {
-                            std::path::PathBuf::from(&thumbnails_path).join(format!("{}.jpg", m.id))
-                        } else {
-                            std::path::PathBuf::from(p)
-                        };
-                        actual_path.exists()
-                    });
-
-                    if !has_thumb {
-                        let id = m.id;
-                        let thumb_filename = format!("{}.jpg", id);
-                        let thumb_path = format!("{}/{}", thumbnails_path, thumb_filename);
-                        log::info!(
-                            "Regenerating missing thumbnail for {} at {}",
-                            id,
-                            thumb_path
-                        );
-                        let _ = ffmpeg.generate_thumbnail(&m.path, &thumb_path, 1.0);
-                        m.thumbnail_path = Some(thumb_path.clone());
-                        needs_update = true;
-                    }
-                }
-
-                // Heal Metadata (Duration, Size, etc.)
-                if m.duration.is_none() || m.duration.unwrap() <= 0.0 {
-                    log::info!("Healing missing metadata for {}", m.filename);
-                    if let Ok(info) = ffmpeg.get_media_info(&m.path) {
-                        m.duration = info.duration;
-                        m.width = info.width;
-                        m.height = info.height;
-                        m.codec = info.codec;
-                        m.bitrate = info.bitrate;
-                        needs_update = true;
-                    }
-                }
-
-                if needs_update {
-                    let _ = sqlx::query(
-                        "UPDATE media SET thumbnail_path = $1, duration = $2, width = $3, height = $4, codec = $5, bitrate = $6 WHERE id = $7"
-                    )
-                    .bind(&m.thumbnail_path)
-                    .bind(m.duration)
-                    .bind(m.width)
-                    .bind(m.height)
-                    .bind(&m.codec)
-                    .bind(m.bitrate)
-                    .bind(m.id)
-                    .execute(pool.get_ref())
-                    .await;
-                }
-            }
-
-            HttpResponse::Ok().json(serde_json::json!({
-                "media": media,
-                "total": total,
-                "page": page,
-                "limit": limit,
-                "pages": (total as f64 / limit as f64).ceil() as i64
-            }))
+    match media_result {
+        Ok(media) => HttpResponse::Ok().json(serde_json::json!({
+            "media": media,
+            "total": total.0,
+            "page": page,
+            "limit": limit,
+            "pages": (total.0 as f64 / limit as f64).ceil() as i64
+        })),
+        Err(e) => {
+            log::error!("Failed to fetch media: {}", e);
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": "Failed to fetch media"}))
         }
-        _ => HttpResponse::InternalServerError()
-            .json(serde_json::json!({"error": "Failed to fetch media"})),
     }
 }
 
@@ -603,9 +589,16 @@ async fn upload_media(
             continue;
         }
 
-        let filename = content_disposition
+        let raw_filename = content_disposition
             .get_filename()
             .unwrap_or("unknown")
+            .to_string();
+
+        // Sanitize filename to prevent path traversal
+        let filename = Path::new(&raw_filename)
+            .file_name()
+            .and_then(|s| s.to_str())
+            .unwrap_or("unknown_file")
             .to_string();
 
         let id = Uuid::new_v4();
@@ -701,6 +694,19 @@ async fn stream_media(
     match result {
         Ok(Some(media)) => {
             let path = std::path::Path::new(&media.path);
+
+            // Security check: ensure path is within MEDIA_PATH or ASSETS_PATH
+            let media_dir = std::env::var("MEDIA_PATH")
+                .unwrap_or_else(|_| "/var/lib/onepa-playout/media".to_string());
+            let assets_dir = std::env::var("ASSETS_PATH")
+                .unwrap_or_else(|_| "/var/lib/onepa-playout/assets".to_string());
+
+            if !path.starts_with(&media_dir) && !path.starts_with(&assets_dir) {
+                log::warn!("Unauthorized access attempt to path: {:?}", path);
+                return HttpResponse::Forbidden()
+                    .json(serde_json::json!({"error": "Unauthorized path"}));
+            }
+
             if !path.exists() {
                 return HttpResponse::NotFound()
                     .json(serde_json::json!({"error": "File not found on disk"}));
@@ -761,6 +767,16 @@ async fn get_thumbnail(
                     return HttpResponse::NotFound()
                         .json(serde_json::json!({"error": "Thumbnail not found on disk"}));
                 }
+
+                // Security check: ensure path is within THUMBNAILS_PATH
+                let thumbnails_dir = std::env::var("THUMBNAILS_PATH")
+                    .unwrap_or_else(|_| "/var/lib/onepa-playout/thumbnails".to_string());
+                if !path.starts_with(&thumbnails_dir) {
+                    log::warn!("Unauthorized thumbnail access attempt: {:?}", path);
+                    return HttpResponse::Forbidden()
+                        .json(serde_json::json!({"error": "Unauthorized path"}));
+                }
+
                 match NamedFile::open_async(path).await {
                     Ok(named_file) => named_file.into_response(&req),
                     Err(_) => HttpResponse::InternalServerError()
