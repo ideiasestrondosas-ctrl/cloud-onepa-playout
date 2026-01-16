@@ -26,7 +26,7 @@ async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
         Ok(None) => {
             // Insert default settings
             let _ = sqlx::query(
-                "INSERT INTO settings (id, output_url) VALUES (TRUE, 'rtmp://localhost/live/stream')"
+                "INSERT INTO settings (id, output_url) VALUES (TRUE, 'rtmp://localhost:1935/stream')"
             )
             .execute(pool.get_ref())
             .await;
@@ -35,7 +35,7 @@ async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
             HttpResponse::Ok().json(Settings {
                 id: true,
                 output_type: "rtmp".to_string(),
-                output_url: "rtmp://localhost/live/stream".to_string(),
+                output_url: "rtmp://localhost:1935/stream".to_string(),
                 resolution: "1920x1080".to_string(),
                 fps: "30".to_string(),
                 video_bitrate: "5000".to_string(),
@@ -348,7 +348,7 @@ async fn reset_all(pool: web::Data<PgPool>) -> impl Responder {
     let result = sqlx::query(
         "UPDATE settings SET 
         output_type = 'rtmp', 
-        output_url = 'rtmp://localhost:1935/live/stream', 
+        output_url = 'rtmp://localhost:1935/stream', 
         resolution = '1920x1080', 
         fps = '25', 
         video_bitrate = '5000k', 

@@ -5,7 +5,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB.svg)](https://reactjs.org/)
-[![Version](https://img.shields.io/badge/Version-1.9.2--PRO-blue.svg)]()
+[![Version](https://img.shields.io/badge/Version-1.9.3--PRO-blue.svg)]()
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)]()
 
 ## 📖 Sobre
@@ -110,9 +110,9 @@ Este projeto representa um esforço significativo de engenharia para criar uma s
 
 | Métrica          | Detalhe                    | Valor                                |
 | ---------------- | -------------------------- | ------------------------------------ |
-| **Código Fonte** | Frontend (React/JSX)       | ~5,400 linhas                        |
-|                  | Backend (Rust)             | ~3,800 linhas                        |
-|                  | Total                      | **~9,200+ linhas**                   |
+| **Código Fonte** | Frontend (React/JSX)       | ~6,200 linhas                        |
+|                  | Backend (Rust)             | ~4,600 linhas                        |
+|                  | Total                      | **~10,800+ linhas**                  |
 | **Arquitetura**  | Módulos Backend (Rust)     | 29                                   |
 |                  | Componentes Visuais        | 18+                                  |
 |                  | Migrações de Base de Dados | 15                                   |
@@ -128,9 +128,8 @@ Este projeto representa um esforço significativo de engenharia para criar uma s
 
 _Focus: Expanding beyond file playback_
 
+- [x] **SRT Support**: Implementation of SRT (Secure Reliable Transport) for low-latency, reliable remote contribution. (Refining Caller Mode & Listener Support)
 - [ ] **Live Inputs Support**: Integration of WebRTC, NDI, and SDI inputs for live switching.
-- [ ] **Social Streaming**: Native API integration for YouTube Live & Facebook Live.
-- [ ] **SRT Support**: Implementation of SRT (Secure Reliable Transport) for low-latency, reliable remote contribution.
 
 ### 📅 Phase 23: EPG & Metadata Engine
 
@@ -170,23 +169,22 @@ _Focus: Innovation and High Availability_
 
 Ver [RELEASE_NOTES.md](RELEASE_NOTES.md) para detalhes completos.
 
-### Versão Atual: 1.9.2-PRO (2026-01-13)
+### Versão Atual: 1.9.3-PRO (2026-01-16)
 
 **Principais Novidades:**
 
+- 📡 **SRT Caller v2**: Refinamento do mapeamento de hostname e sugestões inteligentes de URL para modo Listener.
+- 📊 **Logs Integrados**: Nova janela de logs do backend diretamente na UI para diagnóstico rápido de problemas no SRT.
+- 🔄 **Retry Button**: Botão de reatentativa para o playout, facilitando a recuperação de falhas temporárias.
+- 🛠️ **Diagnostic Tools**: Novos scripts de diagnóstico (`diagnose_srt.sh`) para análise profunda de conectividade.
 - 🕒 **Header Clock**: Relógio e data em tempo real integrados na barra superior para monitorização precisa.
-- 🧹 **Dashboard Streamlined**: Interface limpa e profissional, removendo redundâncias e focada no essencial.
-- 🧪 **LUFS Meter v2**: Análise de áudio melhorada para Chrome/Safari com ativação automática ao reproduzir.
-- 📂 **Enhanced Media Library**: Suporte total a subpastas com exibição fiável de miniaturas e eliminação recursiva.
-- 🔗 **Smart Links**: Ícones de cópia rápida para todos os URLs de output (RTMP/HLS/SRT/UDP).
-- 🎬 **VLC Integration**: Botão de visualização externa direta via protocolo HTTP estável.
-- 🐳 **Docker Stability**: Healthchecks integrados e ordem de arranque garantida entre base de dados e serviços.
+- 🧪 **LUFS Meter v2**: Análise de áudio melhorada para Chrome/Safari com ativação automática.
 
 **Correções:**
 
 - ✅ Resolução de crash "White Screen" por falta de imports no painel de configurações.
-- ✅ Automação de miniaturas (Heal logic) para maior fiabilidade.
-- ✅ Fix no reset de uptime e persistência de definições standard.
+- ✅ Melhoria na persistência de definições de SRT e mapeamento Docker.
+- ✅ Otimização do arranque de serviços e sincronização com base de dados.
 
 ## 📄 Licença
 

@@ -76,9 +76,11 @@ async fn list_media(query: web::Query<MediaQuery>, pool: web::Data<PgPool>) -> i
                 .unwrap_or_else(|_| "/var/lib/onepa-playout/thumbnails".to_string());
 
             for m in &mut media {
+                let mut needs_update = false;
+
+                // Heal Thumbnails
                 if m.media_type == "video" {
                     let has_thumb = m.thumbnail_path.as_ref().map_or(false, |p| {
-                        // Check if it's a legacy URL or actual path
                         let actual_path = if p.starts_with("/api/media") {
                             std::path::PathBuf::from(&thumbnails_path).join(format!("{}.jpg", m.id))
                         } else {
@@ -97,15 +99,37 @@ async fn list_media(query: web::Query<MediaQuery>, pool: web::Data<PgPool>) -> i
                             thumb_path
                         );
                         let _ = ffmpeg.generate_thumbnail(&m.path, &thumb_path, 1.0);
-
-                        // Update DB record
-                        let _ = sqlx::query("UPDATE media SET thumbnail_path = $1 WHERE id = $2")
-                            .bind(&thumb_path)
-                            .bind(id)
-                            .execute(pool.get_ref())
-                            .await;
-                        m.thumbnail_path = Some(thumb_path);
+                        m.thumbnail_path = Some(thumb_path.clone());
+                        needs_update = true;
                     }
+                }
+
+                // Heal Metadata (Duration, Size, etc.)
+                if m.duration.is_none() || m.duration.unwrap() <= 0.0 {
+                    log::info!("Healing missing metadata for {}", m.filename);
+                    if let Ok(info) = ffmpeg.get_media_info(&m.path) {
+                        m.duration = info.duration;
+                        m.width = info.width;
+                        m.height = info.height;
+                        m.codec = info.codec;
+                        m.bitrate = info.bitrate;
+                        needs_update = true;
+                    }
+                }
+
+                if needs_update {
+                    let _ = sqlx::query(
+                        "UPDATE media SET thumbnail_path = $1, duration = $2, width = $3, height = $4, codec = $5, bitrate = $6 WHERE id = $7"
+                    )
+                    .bind(&m.thumbnail_path)
+                    .bind(m.duration)
+                    .bind(m.width)
+                    .bind(m.height)
+                    .bind(&m.codec)
+                    .bind(m.bitrate)
+                    .bind(m.id)
+                    .execute(pool.get_ref())
+                    .await;
                 }
             }
 

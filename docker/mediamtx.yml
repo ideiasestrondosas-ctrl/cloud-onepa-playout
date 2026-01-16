@@ -1,0 +1,26 @@
+# MediaMTX Configuration for ONEPA Playout PRO
+
+# Listeners
+rtmp: yes
+hls: yes
+webrtc: yes
+srt: yes
+
+# Listener ports
+rtmpAddress: :1935
+hlsAddress: :8888
+webrtcAddress: :8889
+srtAddress: :8890
+
+# HLS settings
+hlsVariant: lowLatency
+hlsSegmentCount: 5
+hlsSegmentDuration: 2s
+hlsPartDuration: 200ms
+
+# Path settings
+paths:
+  all:
+    # Allow all paths by default
+    # This allows 'live/stream' and others automatically
+    source: publisher

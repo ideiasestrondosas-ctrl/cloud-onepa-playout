@@ -44,7 +44,7 @@ const HOW_TO_BROADCAST = `
 4. **Dashboard**: Clique no botão **START**. 
    * A cor do indicador deve mudar para **ON AIR**.
    * O **Live Preview** começará a mostrar a emissão em alguns segundos.
-5. **VLC**: Para ver externamente, use o endereço RTMP configurado (ex: \`rtmp://localhost:1935/live/stream\`).
+5. **VLC**: Para ver externamente, use o endereço RTMP configurado (ex: \`rtmp://localhost:1935/stream\`).
 `;
 
 export default function HelpSystem() {

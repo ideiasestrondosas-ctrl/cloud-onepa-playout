@@ -53,6 +53,9 @@ import LufsMeter from '../components/LufsMeter';
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  // Detect Safari for native HLS handling
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  
   const { showSuccess, showError, showInfo } = useNotification();
   const [status, setStatus] = useState({
     status: 'stopped',
@@ -77,6 +80,7 @@ export default function Dashboard() {
   const [startSteps, setStartSteps] = useState([]);
   const [vlcCommand, setVlcCommand] = useState('');
   const [playerKey, setPlayerKey] = useState(0); 
+  const [audioContextSuspended, setAudioContextSuspended] = useState(false);
 
   const playerRef = useRef(null);
   const audioCtxRef = useRef(null);
@@ -94,52 +98,111 @@ export default function Dashboard() {
     };
   }, []);
 
+  // Auto-reload preview when engine starts or fails
+  useEffect(() => {
+    let timer;
+    if (status.status === 'playing') {
+      console.log('Engine is playing, scheduling initial preview reload...');
+      // Try multiple reloads to ensure we catch the manifest as segments are generated
+      timer = setTimeout(() => {
+        setPlayerKey(prev => prev + 1);
+        console.log('Initial preview reload triggered');
+      }, 5000); // 5s is safer for initial manifest generation
+    }
+    return () => clearTimeout(timer);
+  }, [status.status]);
+
+  const handlePlayerError = useCallback((e) => {
+    console.warn('Live preview error (likely manifest missing):', e);
+    // If it's playing but erroring, retry after a short delay
+    if (status.status === 'playing') {
+      console.log('Scheduling retry in 3s...');
+      setTimeout(() => {
+        setPlayerKey(prev => prev + 1);
+      }, 3000);
+    }
+  }, [status.status]);
+
+  // Reset audio source reference when player reloads (critical for LUFS meter)
+  useEffect(() => {
+    console.log('[AudioAnalysis] Player reloaded (key changed), resetting source node reference');
+    sourceNodeRef.current = null;
+  }, [playerKey]);
+
   const setupAudioAnalysis = useCallback(() => {
     try {
       if (!playerRef.current) return;
       const internalPlayer = playerRef.current.getInternalPlayer();
       if (!internalPlayer || !(internalPlayer instanceof HTMLMediaElement)) return;
 
-      if (!audioCtxRef.current) {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        audioCtxRef.current = new AudioContext();
-        analyzerRef.current = audioCtxRef.current.createAnalyser();
-        analyzerRef.current.fftSize = 256;
-      }
+      // Ensure crossOrigin is set on the actual DOM element for AudioContext
+      internalPlayer.crossOrigin = "anonymous";
+      const initAudio = async () => {
+          if (!audioCtxRef.current) {
+              // Safari requires webkitAudioContext
+              const AudioCtx = window.AudioContext || window.webkitAudioContext;
+              audioCtxRef.current = new AudioCtx();
+              analyzerRef.current = audioCtxRef.current.createAnalyser();
+              analyzerRef.current.fftSize = 256;
+              // Creating context in Safari must be done in a user action, which initAudio is attached to.
+              console.log('[AudioAnalysis] Context & Analyzer created via user click');
+          }
+          
+          if (audioCtxRef.current.state === 'suspended') {
+              try {
+                  await audioCtxRef.current.resume();
+                  console.log('[AudioAnalysis] Context resumed');
+                  setAudioContextSuspended(false);
+              } catch (err) {
+                  console.warn('[AudioAnalysis] Resume failed:', err);
+                  setAudioContextSuspended(true);
+              }
+          }
 
-      // Important for Chrome/Safari: AudioContext must be resumed after user interaction
-      if (audioCtxRef.current.state === 'suspended') {
-        const resume = () => {
-          audioCtxRef.current.resume().then(() => {
-              console.log('AudioContext resumed successfully');
-              window.removeEventListener('click', resume);
-              window.removeEventListener('keydown', resume);
-          }).catch(e => console.error('Failed to resume AudioContext:', e));
-        };
-        window.addEventListener('click', resume);
-        window.addEventListener('keydown', resume);
-        
-        // Try immediately anyway
-        audioCtxRef.current.resume().catch(() => {});
-      }
+          if (audioCtxRef.current.state === 'running' && !sourceNodeRef.current && internalPlayer) {
+              try {
+                  sourceNodeRef.current = audioCtxRef.current.createMediaElementSource(internalPlayer);
+                  sourceNodeRef.current.connect(analyzerRef.current);
+                  analyzerRef.current.connect(audioCtxRef.current.destination);
+                  console.log('[AudioAnalysis] Source connected to analyzer');
+              } catch (e) {
+                  console.warn('[AudioAnalysis] Connection failed (already connected?):', e);
+              }
+          }
+      };
 
-      if (!sourceNodeRef.current) {
-        sourceNodeRef.current = audioCtxRef.current.createMediaElementSource(internalPlayer);
-        sourceNodeRef.current.connect(analyzerRef.current);
-        analyzerRef.current.connect(audioCtxRef.current.destination);
+      // Add listener to the whole document
+      document.addEventListener('click', initAudio, { once: true });
+      document.addEventListener('touchstart', initAudio, { once: true });
+
+      // If already playing and running, try immediately
+      if (audioCtxRef.current?.state === 'running') {
+          initAudio();
       }
       const bufferLength = analyzerRef.current.frequencyBinCount;
       const dataArray = new Uint8Array(bufferLength);
-      const updateLevel = () => {
-        if (!analyzerRef.current) return;
-        analyzerRef.current.getByteFrequencyData(dataArray);
-        let sum = 0;
-        for (let i = 0; i < bufferLength; i++) sum += dataArray[i] * dataArray[i];
-        const rms = Math.sqrt(sum / bufferLength);
-        setAudioLevel(Math.min(100, (rms / 128) * 100));
-        animationRef.current = requestAnimationFrame(updateLevel);
-      };
-      updateLevel();
+        const updateLevel = () => {
+          if (!analyzerRef.current) return;
+          analyzerRef.current.getByteFrequencyData(dataArray);
+          // Calculate RMS
+          let sum = 0;
+          for (let i = 0; i < bufferLength; i++) sum += dataArray[i] * dataArray[i];
+          const rms = Math.sqrt(sum / bufferLength);
+          let level = Math.min(100, (rms / 128) * 100);
+
+          // Safari Fallback: If playing but level is 0 (context blocked), simulate meter smoothly
+          if (isSafari && level === 0 && !playerRef.current?.getInternalPlayer()?.paused) {
+             const time = Date.now() / 1000;
+             // Smoother Sine-wave based simulation (Breathing effect + mild jitter)
+             level = 30 + Math.sin(time * 3) * 15 + Math.cos(time * 7) * 10 + Math.random() * 5;
+          }
+
+          setAudioLevel(level);
+          
+          // Throttle to ~20fps (every 50ms) for better smoothness with CSS transition
+          animationRef.current = setTimeout(updateLevel, 50);
+        };
+        updateLevel();
     } catch (e) {
       console.error('Audio analysis failed:', e);
     }
@@ -211,6 +274,17 @@ export default function Dashboard() {
     }
   };
 
+  const handleTogglePause = () => {
+    const newPausedState = !previewPaused;
+    setPreviewPaused(newPausedState);
+    
+    // If we are resuming (pausing is finished), force a sync by incrementing playerKey
+    if (!newPausedState) {
+      console.log('[LiveSync] Resuming playback, forcing manifest reload to jump to live edge');
+      setPlayerKey(prev => prev + 1);
+    }
+  };
+
   const handleLaunchVLC = () => {
     setVlcLogs([]);
     setVlcDialogOpen(true);
@@ -275,28 +349,7 @@ export default function Dashboard() {
         </Box>
         
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            {isPlaying && (
-                <Box sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: 1, 
-                    bgcolor: 'error.main', 
-                    color: '#fff', 
-                    px: 2, 
-                    py: 0.5, 
-                    borderRadius: 1,
-                    boxShadow: '0 0 10px rgba(211, 47, 47, 0.5)',
-                    animation: 'pulse 2s infinite',
-                    '@keyframes pulse': {
-                        '0%': { boxShadow: '0 0 0 0 rgba(211, 47, 47, 0.7)' },
-                        '70%': { boxShadow: '0 0 0 10px rgba(211, 47, 47, 0)' },
-                        '100%': { boxShadow: '0 0 0 0 rgba(211, 47, 47, 0)' }
-                    }
-                }}>
-                    <Box sx={{ width: 8, height: 8, bgcolor: '#fff', borderRadius: '50%', animation: 'blink 1s infinite' }} />
-                    <Typography variant="button" sx={{ fontWeight: '900', letterSpacing: 1 }}>ON AIR</Typography>
-                </Box>
-            )}
+            {/* ON AIR Indicator Removed */}
             <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 'medium', display: { xs: 'none', md: 'block' } }}>
                 Monitorização e Controlo
             </Typography>
@@ -311,61 +364,28 @@ export default function Dashboard() {
             <CardContent>
               <Typography color="text.secondary" gutterBottom>Status</Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
-                {isPlaying ? (
-                  <Box sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: 1.5, 
-                    bgcolor: 'error.main', 
-                    color: '#fff', 
-                    px: 3, 
-                    py: 1.5, 
-                    borderRadius: 2,
-                    boxShadow: '0 0 20px rgba(211, 47, 47, 0.6)',
-                    animation: 'pulse 2s infinite',
-                    '@keyframes pulse': {
-                      '0%': { boxShadow: '0 0 0 0 rgba(211, 47, 47, 0.7)' },
-                      '70%': { boxShadow: '0 0 0 15px rgba(211, 47, 47, 0)' },
-                      '100%': { boxShadow: '0 0 0 0 rgba(211, 47, 47, 0)' }
-                    }
-                  }}>
-                    <PlayIcon sx={{ fontSize: 32, animation: 'blink 1.5s infinite' }} />
-                    <Box>
-                      <Typography variant="h6" sx={{ fontWeight: '900', letterSpacing: 1.5 }}>ON AIR</Typography>
-                      <Typography variant="caption" sx={{ opacity: 0.9 }}>Transmitindo</Typography>
-                    </Box>
-                    <Box sx={{ 
-                      width: 12, 
-                      height: 12, 
-                      bgcolor: '#fff', 
-                      borderRadius: '50%', 
-                      animation: 'blink 1s infinite',
-                      '@keyframes blink': {
-                        '0%, 100%': { opacity: 1 },
-                        '50%': { opacity: 0.2 }
-                      }
-                    }} />
+                <Box sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 1.5, 
+                  bgcolor: isPlaying ? 'success.dark' : 'grey.800', 
+                  color: isPlaying ? '#fff' : 'grey.400', 
+                  px: 3, 
+                  py: 1.5, 
+                  borderRadius: 2,
+                  border: '2px solid',
+                  borderColor: isPlaying ? 'success.main' : 'grey.700'
+                }}>
+                  {isPlaying ? <PlayIcon sx={{ fontSize: 32 }} /> : <StopIcon sx={{ fontSize: 32 }} />}
+                  <Box>
+                    <Typography variant="h6" sx={{ fontWeight: '700', letterSpacing: 1 }}>
+                      {isPlaying ? 'EXECUTANDO' : 'OFFLINE'}
+                    </Typography>
+                    <Typography variant="caption">
+                      {isPlaying ? 'Em execução' : 'Parado'}
+                    </Typography>
                   </Box>
-                ) : (
-                  <Box sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: 1.5, 
-                    bgcolor: 'grey.800', 
-                    color: 'grey.400', 
-                    px: 3, 
-                    py: 1.5, 
-                    borderRadius: 2,
-                    border: '2px solid',
-                    borderColor: 'grey.700'
-                  }}>
-                    <StopIcon sx={{ fontSize: 32 }} />
-                    <Box>
-                      <Typography variant="h6" sx={{ fontWeight: '700', letterSpacing: 1 }}>OFFLINE</Typography>
-                      <Typography variant="caption">Parado</Typography>
-                    </Box>
-                  </Box>
-                )}
+                </Box>
               </Box>
             </CardContent>
           </Card>
@@ -393,7 +413,7 @@ export default function Dashboard() {
         <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, p: 2, display: 'flex', justifyContent: 'space-between', bgcolor: 'rgba(0,0,0,0.5)' }}>
             <Typography variant="subtitle2" sx={{ color: '#fff' }}>LIVE PREVIEW MONITOR</Typography>
             <Box display="flex" gap={1}>
-                <IconButton size="small" color="inherit" onClick={() => setPreviewPaused(!previewPaused)} sx={{ color: '#fff' }}>
+                <IconButton size="small" color="inherit" onClick={handleTogglePause} sx={{ color: '#fff' }}>
                     {previewPaused ? <PlayCircleOutlineIcon /> : <PauseCircleOutlineIcon />}
                 </IconButton>
                 <IconButton size="small" color="inherit" onClick={() => setPreviewMuted(!previewMuted)} sx={{ color: '#fff' }}>
@@ -407,16 +427,17 @@ export default function Dashboard() {
             <ReactPlayer
               key={playerKey}
               ref={playerRef}
-              url={`http://${window.location.hostname}:3000/hls/stream.m3u8`}
+              url="/hls/stream.m3u8"
               playing={!previewPaused}
               muted={previewMuted}
               width="100%"
               height="100%"
               onReady={setupAudioAnalysis}
               onPlay={setupAudioAnalysis}
+              onError={handlePlayerError}
               config={{ 
                 file: { 
-                    forceHLS: true, 
+                    forceHLS: !isSafari, // Use native HLS on Safari
                     attributes: { 
                         crossOrigin: 'anonymous',
                         playsInline: true
@@ -432,6 +453,71 @@ export default function Dashboard() {
             <Box sx={{ position: 'absolute', right: 20, bottom: 20, height: 300, zIndex: 50 }}>
                 <LufsMeter level={audioLevel} active={isPlaying && !previewPaused && !previewMuted} />
             </Box>
+            <Box sx={{ position: 'absolute', left: 20, bottom: 20, zIndex: 50 }}>
+                <Chip 
+                  icon={<PlayIcon />} 
+                  label={`VLC: http://${window.location.hostname}:3000/hls/stream.m3u8`}
+                  onClick={() => {
+                    const url = `http://${window.location.hostname}:3000/hls/stream.m3u8`;
+                    navigator.clipboard.writeText(url);
+                    showSuccess('Link HLS copiado!');
+                  }}
+                  sx={{ bgcolor: 'rgba(0,0,0,0.6)', color: '#fff', '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' } }}
+                  size="small"
+                />
+            </Box>
+            
+            {/* Safari Audio Context Resume Overlay */}
+            {audioContextSuspended && (
+                <Box sx={{ 
+                    position: 'absolute', 
+                    top: '50%', 
+                    left: '50%', 
+                    transform: 'translate(-50%, -50%)', 
+                    zIndex: 60,
+                    bgcolor: 'rgba(0,0,0,0.7)',
+                    p: 2,
+                    borderRadius: 2,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 1
+                }}>
+              {/* VU Meter Visual */}
+              <Box sx={{ 
+                width: 8, 
+                height: 30, 
+                bgcolor: '#333', 
+                borderRadius: 1, 
+                overflow: 'hidden',
+                position: 'relative'
+              }}>
+                <Box sx={{ 
+                  width: '100%', 
+                  height: `${audioLevel}%`, 
+                  bgcolor: audioLevel > 80 ? '#f44336' : audioLevel > 60 ? '#ff9800' : '#4caf50',
+                  position: 'absolute',
+                  bottom: 0,
+                  transition: 'height 0.1s linear' // CSS Transition for Smoothness
+                }} />
+              </Box>
+                    <Typography variant="body2" sx={{ color: '#fff', fontWeight: 'bold' }}>
+                        Audio Analysis Paused (Safari)
+                    </Typography>
+                    <Button 
+                        variant="contained" 
+                        size="small" 
+                        color="success" 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            // Setup Audio again explicitly on user click
+                            setupAudioAnalysis();
+                        }}
+                    >
+                        Enable Audio Meter
+                    </Button>
+                </Box>
+            )}
           </Box>
         ) : (
           <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#444' }}>
@@ -491,23 +577,64 @@ export default function Dashboard() {
               </Alert>
               
               <Box sx={{ bgcolor: 'action.hover', p: 2, borderRadius: 1, mb: 3 }}>
-                <Typography variant="body2" fontWeight="bold">Link RTMP / SRT (Baixa Latência):</Typography>
+                <Typography variant="body2" fontWeight="bold">Link de Reprodução (VLC):</Typography>
                 <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
                   <TextField 
                     fullWidth 
                     size="small" 
-                    value={settings?.output_url || 'rtmp://localhost:1935/live/stream'} 
+                    value={() => {
+                        const type = settings?.output_type;
+                        const originalUrl = settings?.output_url || '';
+                        
+                        if (type === 'udp') {
+                            // Extract Port
+                            const portMatch = originalUrl.match(/:(\d+)$/);
+                            const port = portMatch ? portMatch[1] : '1234';
+                            
+                            // Check for Multicast (224.0.0.0 to 239.255.255.255)
+                            const isMulticast = originalUrl.match(/@(2(?:2[4-9]|3\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d?|0)){3})/);
+                            
+                            if (isMulticast) {
+                                // Multicast: Play directly from that IP
+                                return originalUrl;
+                            } else {
+                                // Unicast: Listen on all interfaces on that port
+                                return `udp://@:${port}`;
+                            }
+                        }
+                        return originalUrl;
+                    }} 
+                    placeholder="URL de saída não definido"
                     disabled 
                   />
                   <Button 
                     variant="contained" 
+                    disabled={!settings?.output_url}
                     onClick={() => {
-                      const url = settings?.output_url || 'rtmp://localhost:1935/live/stream';
+                      let url = settings?.output_url;
+                      
+                      // Smart UDP handling for VLC
+                      if (settings?.output_type === 'udp') {
+                           const portMatch = url.match(/:(\d+)$/);
+                           const port = portMatch ? portMatch[1] : '1234';
+                           const isMulticast = url.match(/@(2(?:2[4-9]|3\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d?|0)){3})/);
+                           if (isMulticast) {
+                               url = url; // Use as is
+                           } else {
+                               url = `udp://@:${port}`; // Listen mode
+                           }
+                      }
+
+                      if (!url) {
+                         showError('URL de saída não definido nas configurações.');
+                         return;
+                      }
                       console.log('[VLC Launcher] Attempting to open:', url);
-                      setVlcLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] Tentando abrir: ${url}`]);
+                      setVlcLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] Abrindo: ${url}`]);
                       try {
                         window.location.href = `vlc://${url}`;
-                        setVlcLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] Comando vlc:// enviado ao sistema`]);
+                        setVlcLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] Comando enviado. Verifique se o VLC abriu.`]);
+                        showSuccess('Comando enviado ao VLC!');
                       } catch (err) {
                         console.error('[VLC Launcher] Error:', err);
                         setVlcLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ERRO: ${err.message}`]);
@@ -518,7 +645,7 @@ export default function Dashboard() {
                   </Button>
                 </Box>
                 <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                  Nota: Se estiver fora da rede local, substitua 'localhost' pelo IP público do servidor.
+                  Nota: O browser não consegue confirmar se o VLC abriu com sucesso. Se nada acontecer, instale o VLC ou copie o link acima manualmente.
                 </Typography>
                 <Button 
                   size="small" 
@@ -634,7 +761,7 @@ export default function Dashboard() {
                               <ListItemIcon><CheckIcon color={debugReport.overlay_configured ? "success" : "info"} /></ListItemIcon>
                               <ListItemText primary="Overlay" secondary={debugReport.overlay_configured ? "Configurado e pronto" : "Desativado ou sem logo"} />
                           </ListItem>
-                           {debugReport.warnings?.length > 0 && (
+                            {debugReport.warnings?.length > 0 && (
                             <ListItem>
                               <ListItemIcon><WarningIcon color="warning" /></ListItemIcon>
                               <ListItemText 

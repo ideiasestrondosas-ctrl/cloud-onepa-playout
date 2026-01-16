@@ -97,6 +97,7 @@ export const playoutAPI = {
   skip: () => api.post('/playout/skip'),
   diagnose: () => api.get('/playout/diagnose'),
   openMonitor: () => api.post('/playout/open-monitor'),
+  getLogs: () => api.get('/playout/logs'),
 };
 
 // Settings endpoints

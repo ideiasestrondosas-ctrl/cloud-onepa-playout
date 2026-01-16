@@ -1,4 +1,22 @@
-# Release Notes v1.9.2-PRO (2026-01-13)
+# Release Notes v1.9.3-PRO (2026-01-16)
+
+## 📡 SRT & Connectivity
+
+- **SRT Caller Mode v2**: Refined hostname mapping logic to better support Docker environments.
+- **Smart Listener Suggestions**: The UI now suggests the correct listener URL (`srt://@:9900?mode=listener`) when in Caller mode.
+- **Diagnostics Window**: Integrated backend log viewing directly into the SRT configuration panel for real-time troubleshooting.
+
+## 🔄 Playout & UX
+
+- **Playout Retry**: Added a dedicated "Retry" button to quickly restart the playout engine without manual command resets.
+- **Interactive Logs**: Guidance on error resolution is now provided alongside logs (e.g., VLC connection steps).
+
+## 🛠️ Internal Tools
+
+- **SRT Diagnostics Suite**: Added several scripts (`diagnose_srt.sh`, `test_srt_v*.sh`) for deep analysis of network and SRT packets.
+- **Automation Scripts**: New `install.sh` and `update.sh` scripts for simplified environment setup.
+
+---
 
 ## 🕒 Top Bar & Header
 

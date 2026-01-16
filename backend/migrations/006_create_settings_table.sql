@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS settings (
     id BOOLEAN PRIMARY KEY DEFAULT TRUE,
     output_type VARCHAR(50) NOT NULL DEFAULT 'rtmp',
-    output_url VARCHAR(500) NOT NULL DEFAULT 'rtmp://localhost:1935/live/stream',
+    output_url VARCHAR(500) NOT NULL DEFAULT 'rtmp://localhost:1935/stream',
     resolution VARCHAR(50) NOT NULL DEFAULT '1920x1080',
     fps VARCHAR(10) NOT NULL DEFAULT '25',
     video_bitrate VARCHAR(50) NOT NULL DEFAULT '5000k',

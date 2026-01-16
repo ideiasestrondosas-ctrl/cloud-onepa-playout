@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import ReactPlayer from 'react-player';
 import { useNotification } from '../contexts/NotificationContext';
-import { authAPI, settingsAPI, protectedAPI } from '../services/api';
+import { authAPI, settingsAPI, protectedAPI, playoutAPI } from '../services/api';
 import {
   Box,
   Typography,
@@ -36,6 +36,9 @@ import {
   ListItemIcon,
   Paper,
   Slider,
+  RadioGroup,
+  Radio,
+  FormControlLabel,
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -54,6 +57,8 @@ import {
   Close as CloseIcon,
   ContentCopy as ContentCopyIcon,
   Warning as WarningIcon,
+  History as HistoryIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 
 function TabPanel({ children, value, index }) {
@@ -96,6 +101,9 @@ export default function Settings() {
     system_version: '',
     release_date: ''
   });
+  const [logs, setLogs] = useState([]);
+  const [showLogsDialog, setShowLogsDialog] = useState(false);
+  const [isRefreshingLogs, setIsRefreshingLogs] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [protectedAssets, setProtectedAssets] = useState([]);
@@ -140,10 +148,37 @@ export default function Settings() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (tabValue === 4) {
-      fetchUsers();
+    if (showLogsDialog) {
+      fetchLogs();
+      const interval = setInterval(fetchLogs, 2000);
+      return () => clearInterval(interval);
     }
-  }, [tabValue]);
+  }, [showLogsDialog]);
+
+  const fetchLogs = async () => {
+    try {
+      setIsRefreshingLogs(true);
+      const response = await playoutAPI.getLogs();
+      setLogs(response.data.logs || []);
+    } catch (error) {
+      console.error('Failed to fetch logs:', error);
+    } finally {
+      setIsRefreshingLogs(false);
+    }
+  };
+
+  const handleRetryPlayout = async () => {
+    try {
+      showWarning('Reiniciando transmissão...');
+      await playoutAPI.stop();
+      await new Promise(r => setTimeout(r, 1000));
+      await playoutAPI.start();
+      showSuccess('Transmissão reiniciada!');
+      if (showLogsDialog) fetchLogs();
+    } catch (error) {
+      showError('Erro ao reiniciar!');
+    }
+  };
 
   const fetchSettings = async () => {
     try {
@@ -225,7 +260,7 @@ export default function Settings() {
   const OUTPUT_DEFAULTS = {
     rtmp: { url: 'rtmp://localhost:1935/live/stream', resolution: '1280x720', bitrate: '2500k' },
     hls: { url: '/hls/stream.m3u8', resolution: '1920x1080', bitrate: '4000k' },
-    srt: { url: 'srt://localhost:9000', resolution: '1920x1080', bitrate: '5000k' },
+    srt: { url: 'srt://localhost:9900?mode=caller', resolution: '1920x1080', bitrate: '5000k' },
     udp: { url: 'udp://239.0.0.1:1234', resolution: '1280x720', bitrate: '3000k' },
     desktop: { url: 'local', resolution: '1920x1080', bitrate: '0' }
   };
@@ -237,9 +272,27 @@ export default function Settings() {
       outputType: type,
       outputUrl: defaults.url,
       resolution: defaults.resolution,
-      videoBitrate: defaults.bitrate
+      videoBitrate: defaults.bitrate,
+      // Reset mode for UDP/SRT to defaults
+      udpMode: type === 'udp' ? 'unicast' : undefined,
+      srtMode: type === 'srt' ? 'caller' : undefined
     }));
     showSuccess(`Configuração atualizada para ${type.toUpperCase()}`);
+  };
+
+  const handleUdpModeChange = (mode) => {
+      const type = settings.outputType;
+      // Define defaults based on protocol and mode
+      let newUrl = '';
+      if (type === 'udp') {
+          newUrl = mode === 'multicast' ? 'udp://239.0.0.1:1234?ttl=2' : 'udp://127.0.0.1:1234';
+      }
+
+      setSettings(prev => ({
+          ...prev,
+          outputUrl: newUrl,
+          udpMode: mode
+      }));
   };
 
   const fetchUsers = async () => {
@@ -277,7 +330,16 @@ export default function Settings() {
         system_version: settings.version,
         release_date: settings.releaseDate
       });
-      showSuccess('Configurações salvas com sucesso!');
+      showSuccess('Configurações salvas! Reiniciando transmissão...');
+      
+      // Auto-start engine with new settings
+      try {
+        await playoutAPI.start();
+        showSuccess('Transmissão reiniciada com sucesso!');
+      } catch (startErr) {
+        console.warn('Auto-start failed/already running:', startErr);
+      }
+
     } catch (error) {
       console.error('Failed to save settings:', error);
       showError('Erro ao salvar configurações');
@@ -415,128 +477,284 @@ export default function Settings() {
                     </Select>
                   </FormControl>
 
-                  {settings.outputType === 'srt' && (
-                     <FormControl fullWidth sx={{ mt: 2 }}>
-                        <InputLabel>Modo SRT</InputLabel>
-                        <Select
-                           value={settings.srtMode || 'caller'}
-                           label="Modo SRT"
-                           onChange={(e) => {
-                             const mode = e.target.value;
-                             setSettings({ 
-                               ...settings, 
-                               srtMode: mode,
-                               outputUrl: mode === 'listener' 
-                                 ? 'srt://0.0.0.0:9000?mode=listener'
-                                 : 'srt://localhost:9000?mode=caller'
-                             });
-                           }}
-                        >
-                           <MenuItem value="caller">Caller (Envia para servidor)</MenuItem>
-                           <MenuItem value="listener">Listener (Aguarda conexão)</MenuItem>
-                        </Select>
-                     </FormControl>
+                   {settings.outputType === 'srt' && (
+                     <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+                        <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>Modo de Operação SRT</Typography>
+                        <FormControl fullWidth sx={{ mt: 1 }}>
+                          <Select
+                             value={settings.srtMode || 'caller'}
+                             onChange={(e) => {
+                               const mode = e.target.value;
+                               setSettings({ 
+                                 ...settings, 
+                                 srtMode: mode,
+                                 outputUrl: mode === 'listener' 
+                                   ? 'srt://0.0.0.0:9900?mode=listener'
+                                   : 'srt://localhost:9900?mode=caller'
+                               });
+                             }}
+                          >
+                             <MenuItem value="caller">Caller (Playout conecta ao receptor)</MenuItem>
+                             <MenuItem value="listener">Listener (Playout aguarda conexão)</MenuItem>
+                          </Select>
+                        </FormControl>
+                        <Box sx={{ mt: 1, display: 'flex', gap: 1 }}>
+                           <Button 
+                              size="small" 
+                              variant="outlined" 
+                              startIcon={<HistoryIcon />}
+                              onClick={() => setShowLogsDialog(true)}
+                           >
+                              Ver Logs SRT
+                           </Button>
+                           <Button 
+                              size="small" 
+                              variant="outlined" 
+                              color="warning"
+                              startIcon={<RefreshIcon />}
+                              onClick={handleRetryPlayout}
+                           >
+                              Tentar Novamente
+                           </Button>
+                        </Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                          Escolha <strong>Listener</strong> para o Playout servir o sinal, ou <strong>Caller</strong> para enviar a um servidor.
+                        </Typography>
+                     </Box>
+                   )}
+
+                  {/* UDP Mode Selection (Multicast/Unicast) - Only for UDP */}
+                  {settings.outputType === 'udp' && (
+                    <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+                       <Typography variant="subtitle2" gutterBottom>Modo de Transmissão UDP</Typography>
+                       <RadioGroup 
+                          row 
+                          value={settings.udpMode || (settings.outputUrl.includes('239.') || settings.outputUrl.includes('224.') ? 'multicast' : 'unicast')}
+                          onChange={(e) => handleUdpModeChange(e.target.value)}
+                       >
+                          <FormControlLabel value="unicast" control={<Radio size="small" />} label="Unicast (Local/Direct)" />
+                          <FormControlLabel value="multicast" control={<Radio size="small" />} label="Multicast (Rede Local)" />
+                       </RadioGroup>
+                       <Typography variant="caption" color="text.secondary">
+                          {settings.udpMode === 'multicast' || (settings.outputUrl.includes('239.') || settings.outputUrl.includes('224.'))
+                             ? (
+                               <Box component="span" sx={{ display: 'block', mt: 1 }}>
+                                  <strong style={{ color: '#ff9800' }}>⚠️ Configuração Multicast (Sender):</strong> {settings.outputUrl}<br/>
+                                  <strong style={{ color: '#4caf50' }}>✅ Abrir no VLC (Receiver):</strong> <code>udp://@239.0.0.1:1234</code>
+                               </Box>
+                             )
+                             : (
+                               <Box component="span" sx={{ display: 'block', mt: 1 }}>
+                                  <strong style={{ color: '#2196f3' }}>ℹ️ Configuração Unicast (Sender):</strong> {settings.outputUrl}<br/>
+                                  <strong style={{ color: '#4caf50' }}>✅ Abrir no VLC (Receiver):</strong> <code>udp://@:1234</code>
+                               </Box>
+                             )
+                          }
+                       </Typography>
+                    </Box>
                   )}
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="URL de Output"
-                    value={settings.outputUrl}
-                    onChange={(e) => setSettings({ ...settings, outputUrl: e.target.value })}
-                    placeholder="rtmp://localhost:1935/live/stream"
-                  />
+                <Grid item xs={12}>
+                  <Grid container spacing={2} sx={{ mt: 1 }}>
+                    <Grid item xs={12} md={8}>
+                      <TextField
+                        fullWidth
+                        label="URL de Saída"
+                        value={settings.outputUrl}
+                        onChange={(e) => setSettings({ ...settings, outputUrl: e.target.value })}
+                        placeholder="rtmp://localhost:1935/stream"
+                      />
                   
-                  {/* RTMP Guidance */}
-                  {settings.outputType === 'rtmp' && (
-                    <Alert severity="info" sx={{ mt: 2 }}>
-                      <Typography variant="subtitle2" fontWeight="bold">Servidor RTMP (VLC/OBS)</Typography>
-                      <Typography variant="caption" display="block">
-                        O Playout atua como <strong>Publisher</strong>. Para ver no VLC:
-                      </Typography>
-                      <Paper sx={{ mt: 1, p: 0.5, bgcolor: 'rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>rtmp://{window.location.hostname}:1935/live/stream</code>
-                        <IconButton size="small" onClick={() => { navigator.clipboard.writeText(`rtmp://${window.location.hostname}:1935/live/stream`); showSuccess('Copiado!'); }}>
-                            <ContentCopyIcon fontSize="small" />
-                        </IconButton>
-                      </Paper>
-                      <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                        💡 <strong>Dica VLC:</strong> Se der erro de I/O, verifique se o container 'mediamtx' está rodando (porta 1935).
-                      </Typography>
-                    </Alert>
-                  )}
-
-                   {/* SRT Guidance */}
-                  {settings.outputType === 'srt' && (
-                    <Alert severity={settings.srtMode === 'listener' ? "success" : "info"} sx={{ mt: 2 }}>
-                      <Typography variant="subtitle2" fontWeight="bold">Conexão SRT ({settings.srtMode === 'listener' ? 'Listener' : 'Caller'})</Typography>
-                      {settings.srtMode === 'listener' ? (
-                        <>
-                          <Typography variant="caption" display="block">O Playout está em modo <strong>Listener</strong>. Configure o VLC como <strong>Caller</strong>:</Typography>
+                      {/* RTMP Guidance */}
+                      {settings.outputType === 'rtmp' && (
+                        <Alert severity="info" sx={{ mt: 2 }}>
+                          <Typography variant="subtitle2" fontWeight="bold">Servidor RTMP (VLC/OBS)</Typography>
+                          <Typography variant="caption" display="block">
+                            O Playout atua como <strong>Publisher</strong>. Para ver no VLC:
+                          </Typography>
                           <Paper sx={{ mt: 1, p: 0.5, bgcolor: 'rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>srt://{window.location.hostname}:9000?mode=caller</code>
-                            <IconButton size="small" onClick={() => { navigator.clipboard.writeText(`srt://${window.location.hostname}:9000?mode=caller`); showSuccess('Copiado!'); }}>
+                            <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>rtmp://{window.location.hostname}:1935/live/stream</code>
+                            <IconButton size="small" onClick={() => { navigator.clipboard.writeText(`rtmp://${window.location.hostname}:1935/live/stream`); showSuccess('Copiado!'); }}>
                                 <ContentCopyIcon fontSize="small" />
                             </IconButton>
                           </Paper>
-                          <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>
-                            Nota: Certifique-se que o Firewall permite tráfego UDP na porta 9000.
+                          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                            💡 <strong>Dica VLC:</strong> Se der erro de I/O, verifique se o container 'mediamtx' está rodando (porta 1935).
                           </Typography>
-                        </>
-                      ) : (
-                        <>
-                          <Typography variant="caption" display="block">O Playout está em modo <strong>Caller</strong>. Ele tentará conectar ao servidor abaixo:</Typography>
-                          <Paper sx={{ mt: 1, p: 0.5, bgcolor: 'rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                             <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>srt://{settings.outputUrl.split('//')[1] || 'DESTINO:9000'}?mode=listener</code>
-                             <IconButton size="small" onClick={() => { navigator.clipboard.writeText(`srt://${settings.outputUrl.split('//')[1] || 'DESTINO:9000'}?mode=listener`); showSuccess('Copiado!'); }}>
-                                <ContentCopyIcon fontSize="small" />
-                             </IconButton>
-                          </Paper>
-                          <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                            No receptor (VLC/OBS), configure como <strong>Listener</strong> na porta 9000 do servidor de destino.
-                          </Typography>
-                        </>
+                        </Alert>
                       )}
-                    </Alert>
-                  )}
 
-                  {/* UDP Guidance */}
-                  {settings.outputType === 'udp' && (
-                    <Alert severity="info" sx={{ mt: 2 }}>
-                      <Typography variant="subtitle2" fontWeight="bold">Configuração UDP</Typography>
-                      <Typography variant="caption" display="block">Para Multicast use o prefixo @:</Typography>
-                      <Paper sx={{ mt: 0.5, p: 0.5, bgcolor: 'rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>udp://@239.0.0.1:1234</code>
-                        <IconButton size="small" onClick={() => { navigator.clipboard.writeText('udp://@239.0.0.1:1234'); showSuccess('Copiado!'); }}>
-                            <ContentCopyIcon fontSize="small" />
-                        </IconButton>
-                      </Paper>
-                      <Typography variant="caption" display="block" sx={{ mt: 1 }}>Para Unicast (VLC):</Typography>
-                      <Paper sx={{ mt: 0.5, p: 0.5, bgcolor: 'rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                         <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>udp://[IP_DESTINO]:1234</code>
-                      </Paper>
-                    </Alert>
-                  )}
+                       {/* SRT Guidance */}
+                       {settings.outputType === 'srt' && (
+                         <Alert severity={settings.srtMode === 'listener' ? "success" : "info"} sx={{ mt: 2 }}>
+                           <Typography variant="subtitle2" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                             🛰️ Conexão SRT: {settings.srtMode === 'listener' ? 'Playout como LISTENER' : 'Playout como CALLER'}
+                           </Typography>
+                           <Typography variant="caption" sx={{ color: 'success.main', display: 'block', mt: 0.5, fontWeight: 'bold' }}>
+                             ✅ Live Preview e SRT funcionam simultaneamente agora.
+                           </Typography>
+                           {settings.srtMode === 'listener' ? (
+                             <>
+                               <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+                                 <strong>Modo Listener:</strong> O Playout está aguardando uma conexão. <br/>
+                                 Configure o <strong>VLC</strong> no seu Mac como <strong>Caller</strong>:
+                               </Typography>
+                               <Paper sx={{ mt: 1, p: 0.5, bgcolor: 'rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                 <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>srt://{window.location.hostname}:9900?mode=caller</code>
+                                 <IconButton size="small" onClick={() => { navigator.clipboard.writeText(`srt://${window.location.hostname}:9900?mode=caller`); showSuccess('Copiado!'); }}>
+                                     <ContentCopyIcon fontSize="small" />
+                                 </IconButton>
+                               </Paper>
+                               <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'text.secondary' }}>
+                                 💡 No VLC Mac use: <strong>Mídia &gt; Abrir Fluxo de Rede</strong>.
+                               </Typography>
+                             </>
+                           ) : (
+                             <>
+                                <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+                                  <strong>Modo Caller:</strong> O Playout tentará conectar-se a um servidor SRT.<br/>
+                                  Configure o seu receptor (ex: OBS ou VLC) como <strong>Listener</strong>:
+                                </Typography>
+                                <Paper sx={{ mt: 1, p: 0.5, bgcolor: 'rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                   <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>srt://@:9900?mode=listener</code>
+                                   <IconButton size="small" onClick={() => { navigator.clipboard.writeText(`srt://@:9900?mode=listener`); showSuccess('Copiado!'); }}>
+                                      <ContentCopyIcon fontSize="small" />
+                                   </IconButton>
+                                </Paper>
+                                <Typography variant="caption" display="block" sx={{ mt: 1, color: 'text.secondary' }}>
+                                  💡 No OBS/VLC use: <code>srt://@:9900?mode=listener</code>. (O Playout enviará o sinal para o destino configurado acima).
+                                </Typography>
+                              </>
+                            )}
+                         </Alert>
+                       )}
+ 
+                        {/* Logs Dialog */}
+                        <Dialog 
+                          open={showLogsDialog} 
+                          onClose={() => setShowLogsDialog(false)}
+                          maxWidth="md"
+                          fullWidth
+                        >
+                          <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            Logs de Transmissão (FFmpeg/SRT)
+                            <IconButton onClick={() => setShowLogsDialog(false)} size="small">
+                              <CloseIcon />
+                            </IconButton>
+                          </DialogTitle>
+                          <DialogContent dividers>
+                            <Box 
+                              sx={{ 
+                                bgcolor: '#1e1e1e', 
+                                color: '#d4d4d4', 
+                                p: 2, 
+                                borderRadius: 1,
+                                fontFamily: 'monospace',
+                                fontSize: '0.85rem',
+                                minHeight: '300px',
+                                maxHeight: '500px',
+                                overflow: 'auto',
+                                whiteSpace: 'pre-wrap'
+                              }}
+                            >
+                              {logs.length > 0 ? (
+                                logs.map((log, i) => (
+                                  <div key={i} style={{ 
+                                    borderBottom: '1px solid #333', 
+                                    padding: '2px 0',
+                                    color: log.includes('error') || log.includes('failed') ? '#f44336' : 
+                                           log.includes('warn') ? '#ff9800' : 'inherit'
+                                  }}>
+                                    {log}
+                                  </div>
+                                ))
+                              ) : (
+                                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+                                  Nenhum log disponível no momento.
+                                </Box>
+                              )}
+                            </Box>
+                          </DialogContent>
+                          <DialogActions>
+                            <Button onClick={fetchLogs} disabled={isRefreshingLogs}>
+                              Atualizar Logs
+                            </Button>
+                            <Button onClick={handleRetryPlayout} color="warning">
+                              Reiniciar SRT
+                            </Button>
+                            <Button onClick={() => setShowLogsDialog(false)}>
+                              Fechar
+                            </Button>
+                          </DialogActions>
+                        </Dialog>
 
-                  {/* Desktop Preview Guidance */}
-                  {settings.outputType === 'desktop' && (
-                    <Alert severity="warning" sx={{ mt: 2 }}>
-                      <Typography variant="subtitle2" fontWeight="bold">Desktop Preview</Typography>
-                      <Typography variant="caption">
-                        Esta opção abre uma janela SDL direta no servidor. 
-                        <strong> Pode não funcionar em ambientes Docker ou Cloud sem X11/Display.</strong>
-                      </Typography>
-                    </Alert>
-                  )}
+                      {/* UDP Guidance */}
+                      {settings.outputType === 'udp' && (
+                        <Alert severity="info" sx={{ mt: 2 }}>
+                          <Typography variant="subtitle2" fontWeight="bold">Configuração UDP</Typography>
+                          <Typography variant="caption" display="block">Para Multicast use o prefixo @:</Typography>
+                          <Paper sx={{ mt: 0.5, p: 0.5, bgcolor: 'rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>udp://@239.0.0.1:1234</code>
+                            <IconButton size="small" onClick={() => { navigator.clipboard.writeText('udp://@239.0.0.1:1234'); showSuccess('Copiado!'); }}>
+                                <ContentCopyIcon fontSize="small" />
+                            </IconButton>
+                          </Paper>
+                          <Typography variant="caption" display="block" sx={{ mt: 1 }}>Para Unicast (VLC):</Typography>
+                          <Paper sx={{ mt: 0.5, p: 0.5, bgcolor: 'rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                             <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>udp://[IP_DESTINO]:1234</code>
+                          </Paper>
+                        </Alert>
+                      )}
 
-                  <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'primary.main', cursor: 'pointer' }} onClick={() => {
-                        const hlsUrl = `${window.location.origin}/hls/stream.m3u8`;
-                        navigator.clipboard.writeText(hlsUrl);
-                        showSuccess(`Link HLS copiado: ${hlsUrl}`);
-                    }}>
-                    Link HLS de Baixa Latência: {window.location.origin}/hls/stream.m3u8
-                  </Typography>
+                      {/* Desktop Preview Guidance */}
+                      {settings.outputType === 'desktop' && (
+                        <Alert severity="warning" sx={{ mt: 2 }}>
+                          <Typography variant="subtitle2" fontWeight="bold">Desktop Preview</Typography>
+                          <Typography variant="caption">
+                            Esta opção abre uma janela SDL direta no servidor. 
+                            <strong> Pode não funcionar em ambientes Docker ou Cloud sem X11/Display.</strong>
+                          </Typography>
+                        </Alert>
+                      )}
+
+                      {settings.outputType === 'rtmp' && (
+                        <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'primary.main', cursor: 'pointer' }} onClick={() => {
+                              const rtmpUrl = `rtmp://${window.location.hostname}:1935/live/stream`;
+                              navigator.clipboard.writeText(rtmpUrl);
+                              showSuccess(`Link RTMP copiado: ${rtmpUrl}`);
+                          }}>
+                          Link RTMP (VLC): rtmp://{window.location.hostname}:1935/live/stream
+                        </Typography>
+                      )}
+
+                      {settings.outputType === 'srt' && (
+                        <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'primary.main', cursor: 'pointer' }} onClick={() => {
+                              const srtUrl = `srt://${window.location.hostname}:8890?mode=caller`;
+                              navigator.clipboard.writeText(srtUrl);
+                              showSuccess(`Link SRT copiado: ${srtUrl}`);
+                          }}>
+                          Link SRT (VLC Caller): srt://{window.location.hostname}:8890?mode=caller
+                        </Typography>
+                      )}
+
+                      {settings.outputType === 'udp' && (
+                        <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'primary.main' }}>
+                          Link UDP: {settings.outputUrl}
+                        </Typography>
+                      )}
+
+                      {settings.outputType === 'hls' && (
+                        <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'primary.main', cursor: 'pointer' }} onClick={() => {
+                              const hlsUrl = `${window.location.origin}/hls/stream.m3u8`;
+                              navigator.clipboard.writeText(hlsUrl);
+                              showSuccess(`Link HLS copiado: ${hlsUrl}`);
+                          }}>
+                          Link HLS de Baixa Latência: {window.location.origin}/hls/stream.m3u8
+                        </Typography>
+                      )}
+                    </Grid>
+                  </Grid>
                 </Grid>
 
                 <Grid item xs={12}>
@@ -786,7 +1004,7 @@ export default function Settings() {
                   <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1 }}>
                     <TextField
                       fullWidth
-                      label="Caminho Completo do Logo"
+                      label="Caminho Absoluto do Logo"
                       value={settings.logoPath}
                       onChange={(e) => setSettings({ ...settings, logoPath: e.target.value })}
                       placeholder="/path/to/logo.png"
@@ -942,9 +1160,10 @@ export default function Settings() {
                                 style={{ maxHeight: '100%', maxWidth: '100%' }}
                               />
                           )}
-                       </Box>
-                    </Grid>
-                    <Grid item xs={12} md={6}>
+                        </Box>
+                     </Grid>
+
+                     <Grid item xs={12} md={6}>
                        <Typography variant="subtitle2" gutterBottom>Modo de Exibição</Typography>
                        <ToggleButtonGroup
                           value={settings.branding_type || 'static'}
@@ -1045,7 +1264,7 @@ export default function Settings() {
               {/* Enhanced Media Selector Dialog with Preview */}
               <Dialog 
                 open={mediaSelectorOpen} 
-                onClose={() => { setMediaSelectorOpen(false); setSelectedAssetForPreview(null); }} 
+                onClose={() => { setMediaSelectorOpen(false); setPreviewAsset(null); }} 
                 maxWidth="md" 
                 fullWidth
               >

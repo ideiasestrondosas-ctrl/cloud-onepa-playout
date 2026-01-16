@@ -10,7 +10,7 @@ services:
       POSTGRES_USER: onepa
       POSTGRES_PASSWORD: onepa
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./data/postgres:/var/lib/postgresql/data
     ports:
       - "5433:5432"
     networks:
@@ -26,6 +26,8 @@ services:
     build:
       context: ./backend
       dockerfile: ../docker/Dockerfile.backend
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     container_name: onepa-backend
     environment:
       DATABASE_URL: postgresql://onepa:onepa@postgres:5432/onepa_playout
@@ -35,12 +37,13 @@ services:
       JWT_SECRET: onepa-secret-key-change-in-production
       JWT_EXPIRATION: "86400"
     volumes:
-      - media_storage:/var/lib/onepa-playout/media
-      - thumbnails_storage:/var/lib/onepa-playout/thumbnails
-      - playlists_storage:/var/lib/onepa-playout/playlists
+      - ./data/media:/var/lib/onepa-playout/media
+      - ./data/thumbnails:/var/lib/onepa-playout/thumbnails
+      - ./data/playlists:/var/lib/onepa-playout/playlists
       - ./backend/assets:/var/lib/onepa-playout/assets
     ports:
       - "8081:8081"
+      - "9900:9900/udp" # SRT Listener port (using 9900 to avoid common host conflicts)
     networks:
       - onepa-network
     depends_on:
@@ -57,9 +60,9 @@ services:
       - "1935:1935" # RTMP
       - "8888:8888" # HLS
       - "8889:8889" # WebRTC
-    environment:
-      - MTX_PROTOCOLS=tcp
-      - MTX_WEBRTC_ADDITIONAL_HOSTS=127.0.0.1
+      - "8890:8890/udp" # SRT (fixed mapping)
+    volumes:
+      - ./docker/mediamtx.yml:/mediamtx.yml:ro
     networks:
       - onepa-network
     depends_on:
@@ -88,8 +91,4 @@ networks:
   onepa-network:
     driver: bridge
 
-volumes:
-  postgres_data:
-  media_storage:
-  thumbnails_storage:
-  playlists_storage:
+# Volumes are now local bind mounts in ./data

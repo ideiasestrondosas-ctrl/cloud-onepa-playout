@@ -5,6 +5,8 @@ use crate::services::ffmpeg::FFmpegService;
 use chrono::{Datelike, Local, NaiveTime};
 use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, Row};
+use std::collections::VecDeque;
+use std::io::{BufRead, BufReader};
 use std::process::Child;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -17,6 +19,7 @@ pub struct PlayoutStatus {
     pub next_clips: Vec<ClipInfo>,
     pub uptime: i64,
     pub clips_played_today: i32,
+    pub logs: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -37,6 +40,13 @@ pub struct PlayoutEngine {
     skip_requested: Arc<Mutex<bool>>,
     last_overlay_opacity: Arc<Mutex<f32>>,
     last_overlay_scale: Arc<Mutex<f32>>,
+    last_output_url: Arc<Mutex<String>>,
+    last_resolution: Arc<Mutex<String>>,
+    last_video_bitrate: Arc<Mutex<String>>,
+    last_audio_bitrate: Arc<Mutex<String>>,
+    // Gapless Playout: Track the list of clip IDs currently in the running concat sequence
+    current_sequence: Arc<Mutex<Vec<String>>>,
+    pub logs: Arc<Mutex<VecDeque<String>>>,
 }
 
 impl PlayoutEngine {
@@ -53,11 +63,18 @@ impl PlayoutEngine {
                 next_clips: Vec::new(),
                 uptime: 0,
                 clips_played_today: 0,
+                logs: Vec::new(),
             })),
             engine_start_time: Arc::new(Mutex::new(None)),
             skip_requested: Arc::new(Mutex::new(false)),
             last_overlay_opacity: Arc::new(Mutex::new(1.0)),
             last_overlay_scale: Arc::new(Mutex::new(1.0)),
+            last_output_url: Arc::new(Mutex::new(String::new())),
+            last_resolution: Arc::new(Mutex::new(String::new())),
+            last_video_bitrate: Arc::new(Mutex::new(String::new())),
+            last_audio_bitrate: Arc::new(Mutex::new(String::new())),
+            current_sequence: Arc::new(Mutex::new(Vec::new())),
+            logs: Arc::new(Mutex::new(VecDeque::with_capacity(100))),
         }
     }
 
@@ -97,6 +114,10 @@ impl PlayoutEngine {
             let _ = sqlx::query("UPDATE settings SET last_error = NULL WHERE id = TRUE")
                 .execute(&self.pool)
                 .await;
+
+            // Clear logs when starting
+            let mut logs = self.logs.lock().await;
+            logs.clear();
         }
     }
 
@@ -205,6 +226,9 @@ impl PlayoutEngine {
                 if let Some(start) = *self.engine_start_time.lock().await {
                     status.uptime = (Local::now() - start).num_seconds();
                 }
+                // Update logs in status
+                let logs_buffer = self.logs.lock().await;
+                status.logs = logs_buffer.iter().cloned().collect();
             }
         }
 
@@ -439,42 +463,108 @@ impl PlayoutEngine {
             let mut proc_lock = self.current_process.lock().await;
             let mut last_opacity = self.last_overlay_opacity.lock().await;
             let mut last_scale = self.last_overlay_scale.lock().await;
+            let mut last_url = self.last_output_url.lock().await;
+            let mut last_res = self.last_resolution.lock().await;
+            let mut last_vb = self.last_video_bitrate.lock().await;
+            let mut last_ab = self.last_audio_bitrate.lock().await;
 
             let current_opacity = settings.overlay_opacity.unwrap_or(1.0);
             let current_scale = settings.overlay_scale.unwrap_or(1.0);
 
-            // Detect overlay changes to force restart
+            // Detect overlay changes
             let overlay_changed = settings.overlay_enabled
                 && ((current_opacity - *last_opacity).abs() > 0.01
                     || (current_scale - *last_scale).abs() > 0.01);
 
-            if overlay_changed {
+            // Detect output settings changes (Restart required)
+            let settings_changed = settings.output_url != *last_url
+                || settings.resolution != *last_res
+                || settings.video_bitrate != *last_vb
+                || settings.audio_bitrate != *last_ab;
+
+            if overlay_changed || settings_changed {
                 log::info!(
-                    "Overlay settings changed (Opacity: {}->{}, Scale: {}->{}). Restarting stream.",
-                    *last_opacity,
-                    current_opacity,
-                    *last_scale,
-                    current_scale
+                    "Stream settings changed (URL: {}->{}, Res: {}->{}, Bitrate: {}/{}->{}/{}). Restarting stream.",
+                    *last_url, settings.output_url,
+                    *last_res, settings.resolution,
+                    *last_vb, *last_ab, settings.video_bitrate, settings.audio_bitrate
                 );
                 *last_opacity = current_opacity;
                 *last_scale = current_scale;
+                *last_url = settings.output_url.clone();
+                *last_res = settings.resolution.clone();
+                *last_vb = settings.video_bitrate.clone();
+                *last_ab = settings.audio_bitrate.clone();
             }
 
             let is_running = if let Some(ref mut child) = *proc_lock {
                 match child.try_wait() {
-                    Ok(None) => !overlay_changed, // If overlay changed, treat as not running to force restart
+                    Ok(None) => !overlay_changed && !settings_changed, // Force restart if settings changed
                     _ => false,
                 }
             } else {
                 false
             };
 
-            if !is_running || current_id.as_ref() != Some(&clip_id.to_string()) {
-                log::info!("Switching/Starting clip: {} at offset {}", clip_id, offset);
+            // ---------------------------------------------------------
+            // GAPLESS PLAYOUT LOGIC (Replace single-clip with sequence)
+            // ---------------------------------------------------------
+
+            // 1. Determine if we are "covered" by the current sequence
+            let mut seq = self.current_sequence.lock().await;
+            let current_clip_id_str = clip_id.to_string();
+
+            // If the process is healthy AND the target clip is inside the currently running sequence...
+            // We assume FFmpeg is handling the transition internally.
+            let in_sequence = is_running && seq.contains(&current_clip_id_str);
+
+            if !in_sequence {
+                log::info!(
+                    "Starting NEW sequence starting with: {} (offset {:.2}s)",
+                    clip_id,
+                    offset
+                );
 
                 if let Some(mut child) = proc_lock.take() {
                     child.kill().ok();
                 }
+
+                // 2. Build the Concat Playlist (Current + Next 5 items)
+                let mut sequence_ids = Vec::new();
+                use std::io::Write;
+
+                // Temp file for playlist
+                let playlist_filename = format!("playlist_{}.txt", Local::now().timestamp_millis());
+                let playlist_path = std::env::temp_dir().join(&playlist_filename);
+                let mut playlist_file =
+                    std::fs::File::create(&playlist_path).map_err(|e| e.to_string())?;
+
+                // Add Current Item
+                writeln!(playlist_file, "file '{}'", clip_path).map_err(|e| e.to_string())?;
+                sequence_ids.push(current_clip_id_str.clone());
+
+                // Add Next Items (Limit to 10 to avoid huge restart times ?)
+                for next_item in items.iter().skip(target_index + 1).take(10) {
+                    let next_path = next_item["source"]
+                        .as_str()
+                        .or_else(|| next_item["path"].as_str())
+                        .unwrap_or("");
+
+                    if !next_path.is_empty() {
+                        writeln!(playlist_file, "file '{}'", next_path)
+                            .map_err(|e| e.to_string())?;
+                        let next_id = next_item["id"].as_str().unwrap_or(next_path).to_string();
+                        sequence_ids.push(next_id);
+                    }
+                }
+
+                // Update Sequence State
+                *seq = sequence_ids;
+                log::info!(
+                    "Generated gapless sequence with {} items at {:?}",
+                    seq.len(),
+                    playlist_path
+                );
 
                 let ffmpeg = FFmpegService::new();
                 let hls_preview_path_str = std::env::var("HLS_PATH")
@@ -482,12 +572,15 @@ impl PlayoutEngine {
                 let hls_preview_path = hls_preview_path_str.as_str();
                 std::fs::create_dir_all(hls_preview_path).ok();
 
-                let mut output_url = settings.output_url.clone();
-                if output_url.contains("localhost") || output_url.contains("127.0.0.1") {
-                    output_url = output_url
-                        .replace("localhost", "host.docker.internal")
-                        .replace("127.0.0.1", "host.docker.internal");
-                }
+                // Protocol-specific URL routing
+                let output_url = if settings.output_type == "rtmp" {
+                    // RTMP uses internal mediamtx server
+                    "rtmp://mediamtx:1935/live/stream".to_string()
+                } else {
+                    // For SRT, UDP, and others: use the database URL
+                    // The ffmpeg service will handle hostname mapping (localhost → 0.0.0.0 for Listener, etc.)
+                    settings.output_url.clone()
+                };
 
                 let logo_path = if settings.overlay_enabled {
                     settings
@@ -511,8 +604,9 @@ impl PlayoutEngine {
                     None
                 };
 
-                let child = ffmpeg.start_stream(
-                    clip_path,
+                // START FFmpeg with the PLAYLIST file, NOT the single clip
+                let mut child = ffmpeg.start_stream(
+                    playlist_path.to_str().unwrap(),
                     &output_url,
                     offset,
                     &settings.resolution,
@@ -525,16 +619,33 @@ impl PlayoutEngine {
                     settings.overlay_scale,
                 )?;
 
+                // Capture logs from FFmpeg stderr
+                if let Some(stderr) = child.stderr.take() {
+                    let logs_clone = self.logs.clone();
+                    std::thread::spawn(move || {
+                        let reader = BufReader::new(stderr);
+                        for line in reader.lines() {
+                            if let Ok(line) = line {
+                                let mut logs = logs_clone.blocking_lock();
+                                if logs.len() >= 100 {
+                                    logs.pop_front();
+                                }
+                                logs.push_back(line);
+                            }
+                        }
+                    });
+                }
+
                 *proc_lock = Some(child);
                 *current_id = Some(clip_id.to_string());
-                log::info!("FFmpeg process started successfully for clip: {}", filename);
+                log::info!("FFmpeg GAPLESS process started for sequence.");
 
-                // ONLY increment clips played today if it's a NEW clip ID (not a restart on failure)
+                // Clips Played Today Counter
+                // logic here is tricky in gapless. We'll count "starts" for now.
                 if current_id.as_ref() != Some(&clip_id.to_string()) {
                     let mut status = self.status.lock().await;
                     status.clips_played_today += 1;
                     let new_count = status.clips_played_today;
-
                     let pool = self.pool.clone();
                     tokio::spawn(async move {
                         let _ = sqlx::query(
@@ -546,7 +657,27 @@ impl PlayoutEngine {
                     });
                 }
                 *current_id = Some(clip_id.to_string());
-                log::info!("FFmpeg process started successfully for clip: {}", filename);
+            } else {
+                // We are IN SEQUENCE. Just update metadata (clips played) if ID changed
+                if current_id.as_ref() != Some(&clip_id.to_string()) {
+                    log::info!(
+                        "Gapless Transition: Detected crossing into next clip: {}",
+                        filename
+                    );
+                    let mut status = self.status.lock().await;
+                    status.clips_played_today += 1;
+                    let new_count = status.clips_played_today;
+                    let pool = self.pool.clone();
+                    tokio::spawn(async move {
+                        let _ = sqlx::query(
+                            "UPDATE settings SET clips_played_today = $1 WHERE id = TRUE",
+                        )
+                        .bind(new_count)
+                        .execute(&pool)
+                        .await;
+                    });
+                    *current_id = Some(clip_id.to_string());
+                }
             }
         } else {
             // Playlist finished or gap

@@ -24,6 +24,7 @@ async fn get_status(engine: web::Data<Arc<PlayoutEngine>>) -> impl Responder {
 }
 
 async fn start_playout(engine: web::Data<Arc<PlayoutEngine>>) -> impl Responder {
+    log::info!("API: Starting playout engine...");
     engine.set_running(true).await;
     let state = engine.status.lock().await;
 
@@ -34,6 +35,7 @@ async fn start_playout(engine: web::Data<Arc<PlayoutEngine>>) -> impl Responder 
 }
 
 async fn stop_playout(engine: web::Data<Arc<PlayoutEngine>>) -> impl Responder {
+    log::info!("API: Stopping playout engine...");
     engine.set_running(false).await;
 
     HttpResponse::Ok().json(serde_json::json!({
@@ -59,6 +61,14 @@ async fn resume_playout(_engine: web::Data<Arc<PlayoutEngine>>) -> impl Responde
     // TODO: Implement resume in PlayoutEngine
     HttpResponse::Ok().json(serde_json::json!({
         "message": "Resume requested (not implemented yet)"
+    }))
+}
+
+async fn get_logs(engine: web::Data<Arc<PlayoutEngine>>) -> impl Responder {
+    let logs = engine.logs.lock().await;
+    let logs_vec: Vec<String> = logs.iter().cloned().collect();
+    HttpResponse::Ok().json(serde_json::json!({
+        "logs": logs_vec
     }))
 }
 
@@ -205,5 +215,6 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         .route("/skip", web::post().to(skip_clip))
         .route("/pause", web::post().to(pause_playout))
         .route("/resume", web::post().to(resume_playout))
-        .route("/diagnose", web::get().to(diagnose_playout));
+        .route("/diagnose", web::get().to(diagnose_playout))
+        .route("/logs", web::get().to(get_logs));
 }

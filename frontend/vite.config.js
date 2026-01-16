@@ -13,8 +13,9 @@ export default defineConfig({
         changeOrigin: true,
       },
       "/hls": {
-        target: "http://localhost:8081",
+        target: "http://mediamtx:8888",
         changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/hls/, ""),
       },
       "/assets": {
         target: "http://localhost:8081",

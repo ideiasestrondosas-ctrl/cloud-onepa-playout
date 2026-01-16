@@ -173,50 +173,59 @@ export default function MediaLibrary() {
 
   // Sequential Upload Logic
   useEffect(() => {
-    if (uploadProgressOpen && uploadFiles.some(f => f.status === 'pending' || f.status === 'uploading')) {
-       const processUploads = async () => {
-          // Check if we are already uploading someone
-          if (uploadFiles.some(f => f.status === 'uploading')) return;
+    if (uploadProgressOpen && uploadFiles.length > 0) {
+       const hasActiveUploads = uploadFiles.some(f => f.status === 'uploading');
+       const pendingFiles = uploadFiles.filter(f => f.status === 'pending');
+       const allCompleted = uploadFiles.length > 0 && uploadFiles.every(f => f.status === 'success' || f.status === 'error');
 
-          const nextFile = uploadFiles.find(f => f.status === 'pending');
-          if (!nextFile) {
-             // All done? Check if we should close after delay
-             const allFinished = uploadFiles.every(f => f.status === 'success' || f.status === 'error');
-             if (allFinished) {
-                // Refresh media list ONCE after all uploads complete
-                fetchMedia();
-                setTimeout(() => {
-                   setUploadProgressOpen(false);
-                   setUploadFiles([]); // Clear upload queue
-                }, 3000);
+       // If all finished, close and refresh after a small delay
+       if (allCompleted && !uploading) {
+           const finalizeUploads = async () => {
+              try {
+                 await fetchMedia(); 
+                 // Small delay to let user see the "Success" status
+                 setTimeout(() => {
+                    setUploadProgressOpen(false);
+                    setUploadFiles([]); 
+                 }, 1500);
+              } catch (e) {
+                 console.error("Post-upload fetch failed", e);
+                 setUploadProgressOpen(false);
+              }
+           };
+           finalizeUploads();
+           return;
+       }
+
+       // Start next file if nothing is uploading
+       if (!hasActiveUploads && pendingFiles.length > 0 && !uploading) {
+           const nextFile = pendingFiles[0];
+           const processUpload = async () => {
+             setUploading(true);
+             // Mark as uploading immediately to prevent double processing
+             setUploadFiles(prev => prev.map(f => f.id === nextFile.id ? { ...f, status: 'uploading' } : f));
+             
+             const formData = new FormData();
+             if (currentFolder) formData.append('folder_id', currentFolder.id);
+             formData.append('files', nextFile.file);
+
+             try {
+               await mediaAPI.upload(formData, (progressEvent) => {
+                  const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                  setUploadFiles(prev => prev.map(f => f.id === nextFile.id ? { ...f, progress } : f));
+               });
+               setUploadFiles(prev => prev.map(f => f.id === nextFile.id ? { ...f, status: 'success', progress: 100 } : f));
+             } catch (error) {
+               console.error('Individual upload error:', error);
+               setUploadFiles(prev => prev.map(f => f.id === nextFile.id ? { ...f, status: 'error' } : f));
+             } finally {
+               setUploading(false);
              }
-             return;
-          }
-
-          // Start uploading nextFile
-          setUploadFiles(prev => prev.map(f => f.id === nextFile.id ? { ...f, status: 'uploading' } : f));
-          
-          const formData = new FormData();
-          if (currentFolder) formData.append('folder_id', currentFolder.id);
-          formData.append('files', nextFile.file);
-
-          try {
-            await mediaAPI.upload(formData, (progressEvent) => {
-               const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-               setUploadFiles(prev => prev.map(f => f.id === nextFile.id ? { ...f, progress } : f));
-            });
-            
-            setUploadFiles(prev => prev.map(f => f.id === nextFile.id ? { ...f, status: 'success', progress: 100 } : f));
-            // DO NOT call fetchMedia here - it causes white screen and loop restart
-          } catch (error) {
-            console.error('Individual upload error:', error);
-            setUploadFiles(prev => prev.map(f => f.id === nextFile.id ? { ...f, status: 'error' } : f));
-          }
-       };
-
-       processUploads();
+           };
+           processUpload();
+       }
     }
-  }, [uploadProgressOpen, uploadFiles, currentFolder]);
+  }, [uploadProgressOpen, uploadFiles, currentFolder, uploading]);
 
   // Smart deletion with usage checking
   const handleSmartDelete = async (event, item) => {
@@ -618,7 +627,7 @@ export default function MediaLibrary() {
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     {uf.status === 'pending' && <PendingIcon fontSize="small" color="action" />}
                     {uf.status === 'uploading' && <CircularProgress size={16} />}
-                    {uf.status === 'success' && <SuccessIcon fontSize="small" color="success" />}
+                    {uf.status === 'success' && <CheckCircleIcon fontSize="small" color="success" />}
                     {uf.status === 'error' && <ErrorIcon fontSize="small" color="error" />}
                     <Typography variant="caption" color="text.secondary">
                         {uf.status === 'pending' ? 'Pendente' : uf.status === 'uploading' ? 'Enviando...' : uf.status === 'success' ? 'Concluído' : 'Erro'}

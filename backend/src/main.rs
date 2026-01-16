@@ -35,6 +35,11 @@ async fn main() -> std::io::Result<()> {
 
     log::info!("Migrations completed");
 
+    // Ensure default assets are correctly paths and processed
+    if let Err(e) = services::startup::ensure_default_assets(&pool).await {
+        log::error!("❌ Startup check failed: {}", e);
+    }
+
     // Server configuration
     let host = env::var("SERVER_HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
     let port = env::var("SERVER_PORT").unwrap_or_else(|_| "8081".to_string());
@@ -82,6 +87,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(engine.clone()))
             .wrap(cors)
             .wrap(middleware::Logger::default())
+            //.wrap(middleware::DefaultHeaders::new().add(("Access-Control-Allow-Origin", "*"))) // Removed to avoid duplicate headers with Cors middleware
             .configure(api::routes::configure)
             .service(actix_files::Files::new("/hls", &hls_serve_path).show_files_listing())
             .service(actix_files::Files::new("/assets", &assets_serve_path).show_files_listing())
