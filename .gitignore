@@ -5,6 +5,7 @@
 /frontend/node_modules
 /.env
 /dist
+/frontend/dist
 /build
 *.log
 .DS_Store
@@ -19,3 +20,6 @@
 frontend/build_log*.txt
 *.zip
 /backups/
+/data/
+/exports/
+/backend/assets/protected/big_buck_bunny_1080p_h264.mov

@@ -1,1 +1,0 @@
-cargo:rustc-env=MIME_TYPES_GENERATED_PATH=/Users/arnaldoesilva/Documents/Cloud Onepa Playout/backend/target/debug/build/mime_guess-4e393a26ba5ccf25/out/mime_types_generated.rs
