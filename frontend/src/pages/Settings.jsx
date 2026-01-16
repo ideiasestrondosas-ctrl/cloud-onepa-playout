@@ -260,7 +260,7 @@ export default function Settings() {
   const OUTPUT_DEFAULTS = {
     rtmp: { url: 'rtmp://localhost:1935/live/stream', resolution: '1280x720', bitrate: '2500k' },
     hls: { url: '/hls/stream.m3u8', resolution: '1920x1080', bitrate: '4000k' },
-    srt: { url: 'srt://localhost:9900?mode=caller', resolution: '1920x1080', bitrate: '5000k' },
+    srt: { url: 'srt://mediamtx:8890?mode=caller&streamid=publish:live/stream', resolution: '1920x1080', bitrate: '5000k' },
     udp: { url: 'udp://239.0.0.1:1234', resolution: '1280x720', bitrate: '3000k' },
     desktop: { url: 'local', resolution: '1920x1080', bitrate: '0' }
   };
@@ -490,7 +490,7 @@ export default function Settings() {
                                  srtMode: mode,
                                  outputUrl: mode === 'listener' 
                                    ? 'srt://0.0.0.0:9900?mode=listener'
-                                   : 'srt://localhost:9900?mode=caller'
+                                   : 'srt://mediamtx:8890?mode=caller&streamid=publish:live/stream'
                                });
                              }}
                           >
@@ -585,50 +585,56 @@ export default function Settings() {
                         </Alert>
                       )}
 
-                       {/* SRT Guidance */}
-                       {settings.outputType === 'srt' && (
-                         <Alert severity={settings.srtMode === 'listener' ? "success" : "info"} sx={{ mt: 2 }}>
-                           <Typography variant="subtitle2" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                             🛰️ Conexão SRT: {settings.srtMode === 'listener' ? 'Playout como LISTENER' : 'Playout como CALLER'}
-                           </Typography>
-                           <Typography variant="caption" sx={{ color: 'success.main', display: 'block', mt: 0.5, fontWeight: 'bold' }}>
-                             ✅ Live Preview e SRT funcionam simultaneamente agora.
-                           </Typography>
-                           {settings.srtMode === 'listener' ? (
-                             <>
-                               <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                                 <strong>Modo Listener:</strong> O Playout está aguardando uma conexão. <br/>
-                                 Configure o <strong>VLC</strong> no seu Mac como <strong>Caller</strong>:
-                               </Typography>
-                               <Paper sx={{ mt: 1, p: 0.5, bgcolor: 'rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                 <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>srt://{window.location.hostname}:9900?mode=caller</code>
-                                 <IconButton size="small" onClick={() => { navigator.clipboard.writeText(`srt://${window.location.hostname}:9900?mode=caller`); showSuccess('Copiado!'); }}>
-                                     <ContentCopyIcon fontSize="small" />
-                                 </IconButton>
-                               </Paper>
-                               <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'text.secondary' }}>
-                                 💡 No VLC Mac use: <strong>Mídia &gt; Abrir Fluxo de Rede</strong>.
-                               </Typography>
-                             </>
-                           ) : (
-                             <>
-                                <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                                  <strong>Modo Caller:</strong> O Playout tentará conectar-se a um servidor SRT.<br/>
-                                  Configure o seu receptor (ex: OBS ou VLC) como <strong>Listener</strong>:
+                        {/* SRT Guidance */}
+                        {settings.outputType === 'srt' && (
+                          <Alert severity={settings.srtMode === 'listener' ? "success" : "info"} sx={{ mt: 2 }}>
+                            <Typography variant="subtitle2" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              🛰️ Conexão SRT: {settings.srtMode === 'listener' ? 'Conexão Direta (Playout Listener)' : 'Ponte MediaMTX (Recomendado)'}
+                            </Typography>
+                            
+                            {settings.srtMode === 'caller' ? (
+                              <Box sx={{ mt: 1 }}>
+                                <Typography variant="caption" display="block">
+                                  <strong>Solução de Ponte:</strong> O Playout envia para o MediaMTX interno e você puxa de lá. 
+                                  Isso evita problemas de Firewall no seu Mac.
                                 </Typography>
-                                <Paper sx={{ mt: 1, p: 0.5, bgcolor: 'rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                   <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>srt://@:9900?mode=listener</code>
-                                   <IconButton size="small" onClick={() => { navigator.clipboard.writeText(`srt://@:9900?mode=listener`); showSuccess('Copiado!'); }}>
+                                <Paper sx={{ mt: 1, p: 1, bgcolor: 'rgba(0,0,0,0.1)' }}>
+                                  <Typography variant="caption" display="block" sx={{ fontWeight: 'bold', color: 'primary.main' }}>Passo 1: No Playout (Output URL)</Typography>
+                                  <code>srt://mediamtx:8890?mode=caller&streamid=publish:live/stream</code>
+                                  
+                                  <Typography variant="caption" display="block" sx={{ mt: 1, fontWeight: 'bold', color: 'success.main' }}>Passo 2: No VLC (Fluxo de Rede)</Typography>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <code>srt://localhost:8890?mode=caller&streamid=read:live/stream</code>
+                                    <IconButton size="small" onClick={() => { navigator.clipboard.writeText(`srt://localhost:8890?mode=caller&streamid=read:live/stream`); showSuccess('Copiado!'); }}>
                                       <ContentCopyIcon fontSize="small" />
-                                   </IconButton>
+                                    </IconButton>
+                                  </Box>
                                 </Paper>
-                                <Typography variant="caption" display="block" sx={{ mt: 1, color: 'text.secondary' }}>
-                                  💡 No OBS/VLC use: <code>srt://@:9900?mode=listener</code>. (O Playout enviará o sinal para o destino configurado acima).
+                              </Box>
+                            ) : (
+                              <Box sx={{ mt: 1 }}>
+                                <Typography variant="caption" display="block">
+                                  <strong>Modo Listener Direto:</strong> O Playout aguarda conexão na porta 9900.
                                 </Typography>
-                              </>
+                                <Paper sx={{ mt: 1, p: 1, bgcolor: 'rgba(0,0,0,0.1)' }}>
+                                  <Typography variant="caption" display="block" sx={{ fontWeight: 'bold', color: 'primary.main' }}>Passo 1: No Playout (Output URL)</Typography>
+                                  <code>srt://0.0.0.0:9900?mode=listener</code>
+                                  
+                                  <Typography variant="caption" display="block" sx={{ mt: 1, fontWeight: 'bold', color: 'success.main' }}>Passo 2: No VLC (Fluxo de Rede como Caller)</Typography>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <code>srt://{window.location.hostname}:9900?mode=caller</code>
+                                    <IconButton size="small" onClick={() => { navigator.clipboard.writeText(`srt://${window.location.hostname}:9900?mode=caller`); showSuccess('Copiado!'); }}>
+                                      <ContentCopyIcon fontSize="small" />
+                                    </IconButton>
+                                  </Box>
+                                </Paper>
+                                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                                  💡 <strong>Dica:</strong> Certifique-se que o VLC está no modo <strong>Caller</strong> para conectar ao Playout.
+                                </Typography>
+                              </Box>
                             )}
-                         </Alert>
-                       )}
+                          </Alert>
+                        )}
  
                         {/* Logs Dialog */}
                         <Dialog 
