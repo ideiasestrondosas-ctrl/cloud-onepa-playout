@@ -2,6 +2,7 @@ use crate::utils::jwt;
 use actix_web::{dev::ServiceRequest, Error, HttpMessage};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 
+#[allow(dead_code)]
 pub async fn validator(
     req: ServiceRequest,
     credentials: BearerAuth,

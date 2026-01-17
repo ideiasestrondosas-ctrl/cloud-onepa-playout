@@ -63,10 +63,34 @@ async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
                 overlay_scale: Some(1.0),
                 srt_mode: Some("caller".to_string()),
                 updated_at: chrono::Utc::now(),
-                system_version: Some("1.9.2-PRO".to_string()),
-                release_date: Some("2026-01-13".to_string()),
+                system_version: Some("1.9.4-PRO".to_string()),
+                release_date: Some("2026-01-16".to_string()),
                 protected_path: Some(protected_path),
                 docs_path: Some(docs_path),
+                rtmp_enabled: false,
+                hls_enabled: false,
+                srt_enabled: false,
+                udp_enabled: false,
+                rtmp_output_url: Some("rtmp://mediamtx:1935/live/stream".to_string()),
+                srt_output_url: Some(
+                    "srt://mediamtx:8890?mode=caller&streamid=publish:live/stream".to_string(),
+                ),
+                udp_output_url: Some("udp://@239.0.0.1:1234".to_string()),
+                udp_mode: Some("multicast".to_string()),
+                auto_start_protocols: true,
+                video_codec: "copy".to_string(),
+                audio_codec: "copy".to_string(),
+                dash_enabled: false,
+                mss_enabled: false,
+                rist_enabled: false,
+                rtsp_enabled: false,
+                webrtc_enabled: false,
+                llhls_enabled: false,
+                dash_output_url: Some("/var/lib/onepa-playout/hls/dash.mpd".to_string()),
+                mss_output_url: Some("/var/lib/onepa-playout/hls/stream.ism".to_string()),
+                rist_output_url: Some("rist://127.0.0.1:1234".to_string()),
+                rtsp_output_url: Some("rtsp://localhost:8554/live/stream".to_string()),
+                webrtc_output_url: Some("http://localhost:8889/live/stream".to_string()),
             })
         }
         Err(_) => HttpResponse::InternalServerError()
@@ -153,6 +177,74 @@ async fn update_settings(
     }
     if let Some(ref release_date) = req.release_date {
         sql.push_str(&format!(", release_date = '{}'", release_date));
+    }
+
+    // Multi-protocol settings
+    if let Some(enabled) = req.rtmp_enabled {
+        sql.push_str(&format!(", rtmp_enabled = {}", enabled));
+    }
+    if let Some(enabled) = req.hls_enabled {
+        sql.push_str(&format!(", hls_enabled = {}", enabled));
+    }
+    if let Some(enabled) = req.srt_enabled {
+        sql.push_str(&format!(", srt_enabled = {}", enabled));
+    }
+    if let Some(enabled) = req.udp_enabled {
+        sql.push_str(&format!(", udp_enabled = {}", enabled));
+    }
+    if let Some(ref url) = req.rtmp_output_url {
+        sql.push_str(&format!(", rtmp_output_url = '{}'", url));
+    }
+    if let Some(ref url) = req.srt_output_url {
+        sql.push_str(&format!(", srt_output_url = '{}'", url));
+    }
+    if let Some(ref url) = req.udp_output_url {
+        sql.push_str(&format!(", udp_output_url = '{}'", url));
+    }
+    if let Some(ref mode) = req.udp_mode {
+        sql.push_str(&format!(", udp_mode = '{}'", mode));
+    }
+    if let Some(auto_start) = req.auto_start_protocols {
+        sql.push_str(&format!(", auto_start_protocols = {}", auto_start));
+    }
+    if let Some(ref vc) = req.video_codec {
+        sql.push_str(&format!(", video_codec = '{}'", vc));
+    }
+    if let Some(ref ac) = req.audio_codec {
+        sql.push_str(&format!(", audio_codec = '{}'", ac));
+    }
+    if let Some(enabled) = req.dash_enabled {
+        sql.push_str(&format!(", dash_enabled = {}", enabled));
+    }
+    if let Some(enabled) = req.mss_enabled {
+        sql.push_str(&format!(", mss_enabled = {}", enabled));
+    }
+    if let Some(enabled) = req.rist_enabled {
+        sql.push_str(&format!(", rist_enabled = {}", enabled));
+    }
+    if let Some(enabled) = req.rtsp_enabled {
+        sql.push_str(&format!(", rtsp_enabled = {}", enabled));
+    }
+    if let Some(enabled) = req.webrtc_enabled {
+        sql.push_str(&format!(", webrtc_enabled = {}", enabled));
+    }
+    if let Some(enabled) = req.llhls_enabled {
+        sql.push_str(&format!(", llhls_enabled = {}", enabled));
+    }
+    if let Some(ref url) = req.dash_output_url {
+        sql.push_str(&format!(", dash_output_url = '{}'", url));
+    }
+    if let Some(ref url) = req.mss_output_url {
+        sql.push_str(&format!(", mss_output_url = '{}'", url));
+    }
+    if let Some(ref url) = req.rist_output_url {
+        sql.push_str(&format!(", rist_output_url = '{}'", url));
+    }
+    if let Some(ref url) = req.rtsp_output_url {
+        sql.push_str(&format!(", rtsp_output_url = '{}'", url));
+    }
+    if let Some(ref url) = req.webrtc_output_url {
+        sql.push_str(&format!(", webrtc_output_url = '{}'", url));
     }
 
     sql.push_str(" WHERE id = TRUE");
@@ -271,6 +363,64 @@ async fn upload_app_logo(mut payload: Multipart, pool: web::Data<PgPool>) -> imp
     }
 }
 
+async fn upload_overlay_pair(mut payload: Multipart, pool: web::Data<PgPool>) -> impl Responder {
+    let mut original_path = String::new();
+    let mut converted_path = String::new();
+    let upload_dir = "/var/lib/onepa-playout/media";
+    let timestamp = chrono::Utc::now().timestamp();
+
+    while let Ok(Some(mut field)) = payload.try_next().await {
+        let content_disposition = field.content_disposition();
+        let name = content_disposition.get_name().unwrap_or("");
+        let filename = content_disposition.get_filename().unwrap_or("image.png");
+
+        let dest_path = if name == "original" {
+            let path = format!("{}/{}_orig_{}", upload_dir, timestamp, filename);
+            original_path = path.clone();
+            path
+        } else if name == "converted" {
+            let path = format!("{}/{}_conv_{}", upload_dir, timestamp, filename);
+            converted_path = path.clone();
+            path
+        } else {
+            continue;
+        };
+
+        let mut f = match std::fs::File::create(&dest_path) {
+            Ok(f) => f,
+            Err(e) => {
+                return HttpResponse::InternalServerError()
+                    .json(serde_json::json!({"error": format!("Failed to create file: {}", e)}))
+            }
+        };
+
+        while let Ok(Some(chunk)) = field.try_next().await {
+            f.write_all(&chunk).unwrap();
+        }
+    }
+
+    if converted_path.is_empty() {
+        return HttpResponse::BadRequest()
+            .json(serde_json::json!({"error": "Converted file is missing"}));
+    }
+
+    // Update settings with the converted path
+    let result = sqlx::query("UPDATE settings SET logo_path = $1 WHERE id = TRUE")
+        .bind(&converted_path)
+        .execute(pool.get_ref())
+        .await;
+
+    match result {
+        Ok(_) => HttpResponse::Ok().json(serde_json::json!({
+            "message": "Overlay pair uploaded successfully",
+            "original_path": original_path,
+            "converted_path": converted_path
+        })),
+        Err(_) => HttpResponse::InternalServerError()
+            .json(serde_json::json!({"error": "Failed to update logo path in settings"})),
+    }
+}
+
 async fn get_app_logo(pool: web::Data<PgPool>, req: HttpRequest) -> impl Responder {
     let result = sqlx::query("SELECT app_logo_path FROM settings WHERE id = TRUE")
         .fetch_one(pool.get_ref())
@@ -379,5 +529,6 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         .route("/upload-logo", web::post().to(upload_logo))
         .route("/app-logo", web::get().to(get_app_logo))
         .route("/upload-app-logo", web::post().to(upload_app_logo))
+        .route("/upload-overlay-pair", web::post().to(upload_overlay_pair))
         .route("/reset-all", web::post().to(reset_all));
 }

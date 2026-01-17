@@ -15,6 +15,7 @@ pub struct Playlist {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct CreatePlaylist {
     pub name: String,
     pub date: Option<chrono::NaiveDate>,

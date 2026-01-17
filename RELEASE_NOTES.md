@@ -1,3 +1,20 @@
+# Release Notes v1.9.4-PRO (2026-01-18)
+
+## 📡 Advanced Protocols & Distribution (v1.9.4)
+
+- **Multi-Protocol Distribution Engine**: Implemented support for **MPEG-DASH**, **Microsoft Smooth Streaming (MSS)**, and **RIST** via FFmpeg's `tee` muxer.
+- **Native Streaming Connectors**: Enabled **RTSP**, **WebRTC (WHIP/WHEP)**, and **Low-Latency HLS (LL-HLS)** natively via MediaMTX integration.
+- **Intelligent Transcoding**: Added logic to automatically force `libx264/aac` transcoding when filters (logo/overlays) are active, even if "Copy" mode is selected, ensuring 100% stability in distribution.
+- **Enhanced UI Monitoring**: New real-time protocol monitor in the Dashboard and persistent configuration panel in Settings for all advanced distribution methods.
+
+## 🛠️ Performance & Stability
+
+- **UDP Reliability**: Resolved Master Feed initialization errors that caused cascading failures in UDP relays.
+- **UI Fixes**: Corrected a critical "White Screen" error in the Settings panel due to missing component imports.
+- **Database Schema**: Added dedicated columns for extended protocol management and link persistence.
+
+---
+
 # Release Notes v1.9.3-PRO (2026-01-16)
 
 ## 🛡️ Security & Performance (v1.9.3)

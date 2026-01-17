@@ -1,3 +1,4 @@
+use crate::models::settings::Settings;
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::process::Command;
@@ -133,6 +134,7 @@ impl FFmpegService {
     }
 
     /// Validate media file
+    #[allow(dead_code)]
     pub fn validate_media(&self, file_path: &str) -> Result<bool, String> {
         let info = self.get_media_info(file_path)?;
 
@@ -154,6 +156,7 @@ impl FFmpegService {
     }
 
     /// Check if audio is muted (silent)
+    #[allow(dead_code)]
     pub fn check_audio_muted(&self, file_path: &str) -> Result<bool, String> {
         let output = Command::new(&self.ffmpeg_path)
             .args(&["-i", file_path, "-af", "volumedetect", "-f", "null", "-"])
@@ -171,6 +174,7 @@ impl FFmpegService {
     }
 
     /// Convert media to standard format
+    #[allow(dead_code)]
     pub fn normalize_media(
         &self,
         input_path: &str,
@@ -246,42 +250,16 @@ impl FFmpegService {
         Ok(())
     }
 
-    /// Start a live stream from a file with HLS preview
-    pub fn start_stream(
-        &self,
-        input_path: &str,
-        output_url: &str,
-        offset: f64,
-        resolution: &str,
-        video_bitrate: &str,
-        audio_bitrate: &str,
-        hls_preview_path: Option<&str>,
-        logo_path: Option<&str>,
-        logo_position: Option<&str>,
-        overlay_opacity: Option<f32>,
-        overlay_scale: Option<f32>,
-    ) -> Result<std::process::Child, String> {
-        // Automatic Docker Network Fix
-        // Use 'mediamtx' hostname for internal push when in Docker for RTMP.
-        // For SRT/UDP: Different logic for Listener vs Caller modes
-
-        // Log the original URL for debugging
-        log::info!("🔍 Processing output URL: {}", output_url);
-
-        let effective_output_url = if output_url.contains("localhost")
-            || output_url.contains("127.0.0.1")
-        {
+    fn map_output_url(&self, output_url: &str) -> String {
+        if output_url.contains("localhost") || output_url.contains("127.0.0.1") {
             if output_url.starts_with("rtmp://") {
                 log::info!("📡 RTMP: Mapping localhost to mediamtx for RTMP streaming");
                 output_url
                     .replace("localhost", "mediamtx")
                     .replace("127.0.0.1", "mediamtx")
             } else if output_url.starts_with("srt://") {
-                // SRT Listener mode: FFmpeg binds to 0.0.0.0 inside container
-                // SRT Caller mode: FFmpeg connects to host.docker.internal
                 if output_url.contains("mode=listener") || output_url.contains("listen=1") {
                     log::info!("🎧 SRT LISTENER: Binding to all interfaces (empty host)");
-                    // Using empty host for SRT listener is more robust than 0.0.0.0 in some Docker/libsrt setups
                     output_url
                         .replace("localhost", "")
                         .replace("127.0.0.1", "")
@@ -302,7 +280,29 @@ impl FFmpegService {
             }
         } else {
             output_url.to_string()
-        };
+        }
+    }
+
+    /// Start a live stream from a file with HLS preview
+    pub fn start_stream(
+        &self,
+        input_path: &str,
+        output_url: &str,
+        offset: f64,
+        settings: &Settings,
+        hls_preview_path: Option<&str>,
+        logo_path: Option<&str>,
+    ) -> Result<std::process::Child, String> {
+        let resolution = &settings.resolution;
+        let video_bitrate = &settings.video_bitrate;
+        let audio_bitrate = &settings.audio_bitrate;
+        let logo_position = settings.logo_position.as_deref();
+        let overlay_opacity = settings.overlay_opacity;
+        let overlay_scale = settings.overlay_scale;
+        let fps = &settings.fps;
+
+        // Automatic Docker Network Fix
+        let effective_output_url = self.map_output_url(output_url);
 
         // Log the final URL
         log::info!("✅ Final output URL: {}", effective_output_url);
@@ -382,50 +382,160 @@ impl FFmpegService {
         // Audio Chain (Standardize to EBU R128)
         filter_complex.push_str("[0:a]volume=0.8[a_out]");
 
+        // 3. CODEC SELECTION LOGIC
+        // Force transcoding if logo/overlay is enabled, even if "copy" was selected.
+        // Filters require re-encoding.
+        let v_codec = if has_logo && settings.video_codec == "copy" {
+            log::info!("[FFmpeg] Logo enabled, forcing libx264 transcoding instead of 'copy'");
+            "h264"
+        } else {
+            &settings.video_codec
+        };
+
+        let a_codec = if has_logo && settings.audio_codec == "copy" {
+            log::info!("[FFmpeg] Logo/Filters enabled, forcing aac transcoding instead of 'copy'");
+            "aac"
+        } else {
+            &settings.audio_codec
+        };
+
         args.extend(vec!["-filter_complex".to_string(), filter_complex]);
 
-        // 3. OUTPUT CODECS & OPTIONS (Applied to mapped streams)
-        args.extend(vec![
-            "-c:v".to_string(),
-            "libx264".to_string(),
-            "-tune".to_string(),
-            "zerolatency".to_string(),
-            "-flags".to_string(),
-            "+global_header".to_string(), // REQUIRED for RTMP/FLV extradata
-            "-profile:v".to_string(),
-            "high".to_string(), // High profile for broadcast standard
-            "-level".to_string(),
-            "4.1".to_string(), // Level 4.1 for 1080p compatibility
-            "-x264-params".to_string(),
-            "nal-hrd=cbr:force-cfr=1:keyint_min=25:sc_threshold=0".to_string(), // Strict GOP and NAL units
-            "-bsf:v".to_string(),
-            "h264_metadata=aud=insert".to_string(), // Insert access unit delimiters
-            "-preset".to_string(),
-            "ultrafast".to_string(), // Maximum CPU efficiency
-            "-bf".to_string(),
-            "0".to_string(), // Disable B-frames for stability and lower CPU
-            "-maxrate".to_string(),
-            video_bitrate.to_string(),
-            "-bufsize".to_string(),
-            format!(
-                "{}k",
-                video_bitrate
-                    .replace("k", "")
-                    .parse::<i32>()
-                    .unwrap_or(5000)
-                    * 2
-            ),
-            "-pix_fmt".to_string(),
-            "yuv420p".to_string(),
-            "-g".to_string(),
-            "50".to_string(), // 2 sec gop for 25fps
-            "-c:a".to_string(),
-            "aac".to_string(),
-            "-b:a".to_string(),
-            audio_bitrate.to_string(),
-            "-ar".to_string(),
-            "44100".to_string(),
-        ]);
+        // 4. OUTPUT CODECS & OPTIONS (Applied to mapped streams)
+        // FPS for GOP calculation
+        let fps_val = fps.parse::<i32>().unwrap_or(30);
+        let gop = fps_val * 2;
+
+        match v_codec {
+            "h264" => args.extend(vec![
+                "-c:v".to_string(),
+                "libx264".to_string(),
+                "-tune".to_string(),
+                "zerolatency".to_string(),
+                "-flags".to_string(),
+                "+global_header".to_string(),
+                "-profile:v".to_string(),
+                "high".to_string(),
+                "-level".to_string(),
+                "4.1".to_string(),
+                "-preset".to_string(),
+                "veryfast".to_string(),
+                "-bf".to_string(),
+                "0".to_string(),
+                "-b:v".to_string(),
+                video_bitrate.to_string(),
+                "-maxrate".to_string(),
+                video_bitrate.to_string(),
+                "-bufsize".to_string(),
+                format!(
+                    "{}k",
+                    video_bitrate
+                        .replace("k", "")
+                        .parse::<i32>()
+                        .unwrap_or(5000)
+                        * 2
+                ),
+                "-pix_fmt".to_string(),
+                "yuv420p".to_string(),
+                "-g".to_string(),
+                format!("{}", gop),
+            ]),
+            "hevc" => args.extend(vec![
+                "-c:v".to_string(),
+                "libx265".to_string(),
+                "-tune".to_string(),
+                "zerolatency".to_string(),
+                "-flags".to_string(),
+                "+global_header".to_string(),
+                "-preset".to_string(),
+                "ultrafast".to_string(),
+                "-b:v".to_string(),
+                video_bitrate.to_string(),
+                "-maxrate".to_string(),
+                video_bitrate.to_string(),
+                "-bufsize".to_string(),
+                format!(
+                    "{}k",
+                    video_bitrate
+                        .replace("k", "")
+                        .parse::<i32>()
+                        .unwrap_or(5000)
+                        * 2
+                ),
+                "-pix_fmt".to_string(),
+                "yuv420p".to_string(),
+                "-g".to_string(),
+                format!("{}", gop),
+            ]),
+            "vp8" => args.extend(vec![
+                "-c:v".to_string(),
+                "libvpx".to_string(),
+                "-b:v".to_string(),
+                video_bitrate.to_string(),
+                "-g".to_string(),
+                format!("{}", gop),
+            ]),
+            "vp9" => args.extend(vec![
+                "-c:v".to_string(),
+                "libvpx-vp9".to_string(),
+                "-b:v".to_string(),
+                video_bitrate.to_string(),
+                "-g".to_string(),
+                format!("{}", gop),
+            ]),
+            "av1" => args.extend(vec![
+                "-c:v".to_string(),
+                "libaom-av1".to_string(),
+                "-b:v".to_string(),
+                video_bitrate.to_string(),
+                "-g".to_string(),
+                format!("{}", gop),
+            ]),
+            _ => {
+                if v_codec == "copy" {
+                    args.extend(vec!["-c:v".to_string(), "copy".to_string()]);
+                } else {
+                    args.extend(vec![
+                        "-c:v".to_string(),
+                        "libx264".to_string(),
+                        "-preset".to_string(),
+                        "veryfast".to_string(),
+                        "-b:v".to_string(),
+                        video_bitrate.to_string(),
+                    ]);
+                }
+            }
+        }
+
+        // Audio Codec Configuration
+        match a_codec {
+            "aac" => args.extend(vec![
+                "-c:a".to_string(),
+                "aac".to_string(),
+                "-b:a".to_string(),
+                audio_bitrate.to_string(),
+                "-ar".to_string(),
+                "44100".to_string(),
+            ]),
+            "opus" => args.extend(vec![
+                "-c:a".to_string(),
+                "libopus".to_string(),
+                "-b:a".to_string(),
+                audio_bitrate.to_string(),
+            ]),
+            _ => {
+                if a_codec == "copy" {
+                    args.extend(vec!["-c:a".to_string(), "copy".to_string()]);
+                } else {
+                    args.extend(vec![
+                        "-c:a".to_string(),
+                        "aac".to_string(),
+                        "-b:a".to_string(),
+                        audio_bitrate.to_string(),
+                    ]);
+                }
+            }
+        }
 
         // Determine output format based on protocol and apply packet size limits for UDP/SRT
         let mut final_output_url = effective_output_url.clone();
@@ -542,18 +652,55 @@ impl FFmpegService {
 
             let slave_url = if final_output_url.starts_with("srt://") {
                 // SRT NEEDS fifo + onfail=ignore to prevents blocking the whole pipeline
-                // restart_with_keyframe=1: Ensures we only send complete GOPs after a drop/connect, critical for valid playback.
+                // restart_with_keyframe=1: Ensures we only send complete GOPs after a drop/connect
                 format!(
-                    "[f=fifo:fifo_format=mpegts:onfail=ignore:drop_pkts_on_overflow=1:restart_with_keyframe=1:queue_size=6000]'{}'",
+                    "[f=fifo:fifo_format=mpegts:onfail=ignore:drop_pkts_on_overflow=1:restart_with_keyframe=1:queue_size=60000]'{}'",
                     escaped_url
                 )
             } else if final_output_url.starts_with("rtmp://") {
-                // RTMP standard mapping (no fifo needed, usually stable)
-                format!("[f=flv:flvflags=no_duration_filesize]'{}'", escaped_url)
+                // RTMP with FIFO for robustness against network blips (MediaMTX restarts)
+                // Using onfail=ignore so HLS preview keeps working even if distribution drops
+                format!(
+                    "[f=fifo:fifo_format=flv:onfail=ignore:drop_pkts_on_overflow=1:attempt_recovery=1:recovery_wait_time=1:queue_size=60000]'{}'",
+                    escaped_url
+                )
             } else {
                 // UDP and others (Standard direct mapping)
                 format!("[f={}]'{}'", output_format, escaped_url)
             };
+
+            // 1. Primary Distribution Output (RTMP/SRT)
+            let mut tee_outputs = vec![slave_url];
+
+            // 2. Mandatory HLS Output (for internal preview)
+            tee_outputs.push(format!(
+                "[f=hls:hls_time=2:hls_list_size=10:hls_flags=delete_segments+independent_segments]{}/stream.m3u8",
+                hls_path
+            ));
+
+            // 3. Optional DASH Output
+            if settings.dash_enabled {
+                if let Some(ref url) = settings.dash_output_url {
+                    tee_outputs.push(format!(
+                        "[f=dash:window_size=5:extra_window_size=5:remove_at_exit=1:dash_segment_type=webm]'{}'",
+                        url
+                    ));
+                }
+            }
+
+            // 4. Optional MSS Output (Smooth Streaming)
+            if settings.mss_enabled {
+                if let Some(ref url) = settings.mss_output_url {
+                    tee_outputs.push(format!("[f=ismv]'{}'", url));
+                }
+            }
+
+            // 5. Optional RIST Output (Reliable Transport)
+            if settings.rist_enabled {
+                if let Some(ref url) = settings.rist_output_url {
+                    tee_outputs.push(format!("[f=rist:pkt_size=1316]'{}'", url));
+                }
+            }
 
             args.extend(vec![
                 "-f".to_string(),
@@ -562,10 +709,7 @@ impl FFmpegService {
                 "[v_out]".to_string(),
                 "-map".to_string(),
                 "[a_out]".to_string(),
-                format!(
-                    "{}|[f=hls:hls_time=2:hls_list_size=10:hls_flags=delete_segments+independent_segments]{}/stream.m3u8",
-                    slave_url, hls_path
-                ),
+                tee_outputs.join("|"),
             ]);
         } else {
             // Single output
@@ -590,6 +734,146 @@ impl FFmpegService {
             .map_err(|e| format!("Failed to spawn ffmpeg: {}", e))?;
 
         Ok(child)
+    }
+
+    /// Start a relay process that copies a stream to a destination
+    pub fn start_relay(
+        &self,
+        input_url: &str,
+        output_url: &str,
+    ) -> Result<std::process::Child, String> {
+        let mut final_output_url = self.map_output_url(output_url);
+        let mut args = vec![
+            "-thread_queue_size".to_string(),
+            "1024".to_string(),
+            "-fflags".to_string(),
+            "+genpts".to_string(),
+        ];
+
+        args.extend(vec![
+            "-i".to_string(),
+            input_url.to_string(),
+            "-map".to_string(),
+            "0".to_string(),
+            "-c".to_string(),
+            "copy".to_string(),
+        ]);
+
+        // Format specific adjustments
+        // Format specific adjustments with FIFO robustness
+        // We use the FIFO muxer to prevent the relay process from crashing if the destination is temporarily unavailable
+        if final_output_url.starts_with("rtmp://") {
+            // RTMP FIFO
+            args.extend(vec![
+                "-f".to_string(),
+                "fifo".to_string(),
+                "-fifo_format".to_string(),
+                "flv".to_string(),
+                "-queue_size".to_string(),
+                "60000".to_string(),
+                "-attempt_recovery".to_string(),
+                "1".to_string(),
+                "-recover_any_error".to_string(),
+                "1".to_string(),
+                "-recovery_wait_time".to_string(),
+                "1".to_string(),
+                final_output_url.to_string(),
+            ]);
+        } else if final_output_url.starts_with("srt://") {
+            // SRT FIFO
+            // Add robust SRT parameters first
+            let separator = if final_output_url.contains('?') {
+                "&"
+            } else {
+                "?"
+            };
+            if !final_output_url.contains("transtype=") {
+                final_output_url = format!("{}{}transtype=live", final_output_url, separator);
+            }
+            let separator2 = if final_output_url.contains('?') {
+                "&"
+            } else {
+                "?"
+            };
+            if !final_output_url.contains("latency=") {
+                final_output_url = format!("{}{}latency=200ms", final_output_url, separator2);
+            }
+            if !final_output_url.contains("pkt_size=") {
+                let separator3 = if final_output_url.contains('?') {
+                    "&"
+                } else {
+                    "?"
+                };
+                final_output_url = format!("{}{}pkt_size=1316", final_output_url, separator3);
+            }
+
+            args.extend(vec![
+                "-f".to_string(),
+                "fifo".to_string(),
+                "-fifo_format".to_string(),
+                "mpegts".to_string(),
+                "-queue_size".to_string(),
+                "60000".to_string(),
+                "-attempt_recovery".to_string(),
+                "1".to_string(),
+                "-recover_any_error".to_string(),
+                "1".to_string(),
+                "-recovery_wait_time".to_string(),
+                "1".to_string(),
+                final_output_url.to_string(),
+            ]);
+        } else if final_output_url.starts_with("udp://") {
+            // UDP FIFO
+            if !final_output_url.contains("pkt_size=") {
+                let separator = if final_output_url.contains('?') {
+                    "&"
+                } else {
+                    "?"
+                };
+                final_output_url = format!("{}{}pkt_size=1316", final_output_url, separator);
+            }
+
+            args.extend(vec![
+                "-f".to_string(),
+                "fifo".to_string(),
+                "-fifo_format".to_string(),
+                "mpegts".to_string(),
+                "-queue_size".to_string(),
+                "60000".to_string(),
+                "-attempt_recovery".to_string(),
+                "1".to_string(),
+                "-recover_any_error".to_string(),
+                "1".to_string(),
+                "-recovery_wait_time".to_string(),
+                "1".to_string(),
+                final_output_url.to_string(),
+            ]);
+        } else {
+            args.push(final_output_url);
+        }
+
+        let cmd_str = format!("{} {}", self.ffmpeg_path, args.join(" "));
+        log::info!("FFmpeg Relay command: {}", cmd_str);
+
+        match Command::new(&self.ffmpeg_path)
+            .args(&args)
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .spawn()
+        {
+            Ok(child) => {
+                log::info!(
+                    "✓ Relay process started successfully (PID: {:?})",
+                    child.id()
+                );
+                Ok(child)
+            }
+            Err(e) => {
+                let error_msg = format!("Failed to spawn FFmpeg relay: {}", e);
+                log::error!("✗ {}", error_msg);
+                Err(error_msg)
+            }
+        }
     }
 }
 

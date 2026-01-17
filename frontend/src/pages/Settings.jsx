@@ -39,6 +39,7 @@ import {
   RadioGroup,
   Radio,
   FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -59,6 +60,10 @@ import {
   Warning as WarningIcon,
   History as HistoryIcon,
   Refresh as RefreshIcon,
+  AutoFixHigh as MagicIcon,
+  AspectRatio as AspectRatioIcon,
+  Crop as CropIcon,
+  CloudUpload as UploadIcon,
 } from '@mui/icons-material';
 
 function TabPanel({ children, value, index }) {
@@ -66,6 +71,163 @@ function TabPanel({ children, value, index }) {
     <div hidden={value !== index}>
       {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
     </div>
+  );
+}
+
+function OverlayConverterDialog({ open, onClose, onSave }) {
+  const [file, setFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [dimensions, setDimensions] = useState({ width: 400, height: 200 });
+  const [maintainAspect, setMaintainAspect] = useState(true);
+  const [autoTrim, setAutoTrim] = useState(true);
+  const [processing, setProcessing] = useState(false);
+  const [aspectRatio, setAspectRatio] = useState(1);
+
+  const handleFile = (selectedFile) => {
+    if (selectedFile && selectedFile.type.startsWith('image/')) {
+      setFile(selectedFile);
+      const url = URL.createObjectURL(selectedFile);
+      setPreviewUrl(url);
+      
+      const img = new Image();
+      img.onload = () => {
+        setAspectRatio(img.width / img.height);
+        setDimensions({ width: img.width, height: img.height });
+      };
+      img.src = url;
+    }
+  };
+
+  const handleFileSelect = (e) => {
+    handleFile(e.target.files[0]);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleWidthChange = (val) => {
+    const w = parseInt(val) || 0;
+    if (maintainAspect && aspectRatio) {
+      setDimensions({ width: w, height: Math.round(w / aspectRatio) });
+    } else {
+      setDimensions(prev => ({ ...prev, width: w }));
+    }
+  };
+
+  const handleHeightChange = (val) => {
+    const h = parseInt(val) || 0;
+    if (maintainAspect && aspectRatio) {
+      setDimensions({ width: Math.round(h * aspectRatio), height: h });
+    } else {
+      setDimensions(prev => ({ ...prev, height: h }));
+    }
+  };
+
+  const processAndSave = async () => {
+    setProcessing(true);
+    try {
+      const img = new Image();
+      img.src = previewUrl;
+      await new Promise(resolve => img.onload = resolve);
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d', { alpha: true });
+      canvas.width = dimensions.width;
+      canvas.height = dimensions.height;
+      
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      let finalBlob;
+      if (autoTrim) {
+        finalBlob = await new Promise((resolve) => {
+          const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = pixels.data;
+          let top = canvas.height, bottom = 0, left = canvas.width, right = 0;
+          for (let y = 0; y < canvas.height; y++) {
+            for (let x = 0; x < canvas.width; x++) {
+              if (data[(y * canvas.width + x) * 4 + 3] > 0) {
+                if (y < top) top = y;
+                if (y > bottom) bottom = y;
+                if (x < left) left = x;
+                if (x > right) right = x;
+              }
+            }
+          }
+          const trimW = right - left + 1, trimH = bottom - top + 1;
+          if (trimW > 0 && trimH > 0) {
+            const tCanvas = document.createElement('canvas');
+            tCanvas.width = trimW; tCanvas.height = trimH;
+            tCanvas.getContext('2d').drawImage(canvas, left, top, trimW, trimH, 0, 0, trimW, trimH);
+            tCanvas.toBlob(resolve, 'image/png');
+          } else {
+            canvas.toBlob(resolve, 'image/png');
+          }
+        });
+      } else {
+        finalBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+      }
+
+      const convertedFile = new File([finalBlob], file.name.replace(/\.[^/.]+$/, "") + ".png", { type: 'image/png' });
+      await onSave(file, convertedFile);
+      onClose();
+    } catch (error) {
+      console.error('Processing failed:', error);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>Otimizador de Overlay Pro</DialogTitle>
+      <DialogContent onDragOver={handleDragOver} onDrop={handleDrop}>
+        <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {!file ? (
+            <Button variant="outlined" component="label" startIcon={<UploadIcon />} sx={{ height: 150, borderStyle: 'dashed' }}>
+              Selecionar Imagem Original
+              <input type="file" hidden accept="image/*" onChange={handleFileSelect} />
+            </Button>
+          ) : (
+            <>
+              <Box sx={{ textAlign: 'center', bgcolor: '#f5f5f5', p: 2, borderRadius: 1 }}>
+                <img src={previewUrl} alt="Preview" style={{ maxWidth: '100%', maxHeight: 200, objectFit: 'contain' }} />
+              </Box>
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <TextField fullWidth label="Largura" type="number" value={dimensions.width} onChange={(e) => handleWidthChange(e.target.value)} size="small" />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField fullWidth label="Altura" type="number" value={dimensions.height} onChange={(e) => handleHeightChange(e.target.value)} size="small" />
+                </Grid>
+              </Grid>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <FormControlLabel control={<Radio checked={maintainAspect} onClick={() => setMaintainAspect(!maintainAspect)} />} label="Manter Aspecto" />
+                <FormControlLabel control={<Radio checked={autoTrim} onClick={() => setAutoTrim(!autoTrim)} />} label="Auto-Trim" />
+              </Box>
+              <Button variant="outlined" component="label" size="small">Trocar Imagem<input type="file" hidden accept="image/*" onChange={handleFileSelect} /></Button>
+            </>
+          )}
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancelar</Button>
+        <Button onClick={processAndSave} variant="contained" disabled={!file || processing} startIcon={processing ? <RefreshIcon className="spin" /> : <MagicIcon />}>
+          {processing ? 'A Processar...' : 'Aplicar e Salvar'}
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 }
 
@@ -87,6 +249,13 @@ export default function Settings() {
     fillersPath: '',
     logoPath: '',
     logoPosition: 'top-right',
+    rtmpOutputUrl: '',
+    srtOutputUrl: '',
+    udpOutputUrl: '',
+    rtmpEnabled: false,
+    srtEnabled: false,
+    udpEnabled: false,
+    hlsEnabled: false,
     dayStart: '06:00',
     defaultImagePath: '',
     defaultVideoPath: '',
@@ -98,8 +267,11 @@ export default function Settings() {
     overlayOpacity: 1.0,
     overlayScale: 1.0,
     srtMode: 'caller',
-    system_version: '',
-    release_date: ''
+    release_date: '',
+    autoStartProtocols: true,
+    udpMode: 'multicast',
+    videoCodec: 'copy',
+    audioCodec: 'copy',
   });
   const [logs, setLogs] = useState([]);
   const [showLogsDialog, setShowLogsDialog] = useState(false);
@@ -120,6 +292,16 @@ export default function Settings() {
   const [mediaSelectorOpen, setMediaSelectorOpen] = useState(false);
   const [mediaTypeSelector, setMediaTypeSelector] = useState('image'); // 'image' or 'video'
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const [converterOpen, setConverterOpen] = useState(false);
+  const [converterData, setConverterData] = useState({
+    file: null,
+    previewUrl: null,
+    width: 400,
+    height: 200,
+    maintainAspect: true,
+    autoTrim: true,
+    processing: false
+  });
 
   useEffect(() => {
     fetchSettings();
@@ -214,8 +396,19 @@ export default function Settings() {
         srtMode: data.srt_mode || 'caller',
         protectedPath: data.protected_path || '/var/lib/onepa-playout/assets/protected',
         docsPath: data.docs_path || '/app/docs',
-        system_version: data.system_version || '1.9.2-PRO',
-        release_date: data.release_date || '2026-01-13'
+        system_version: data.system_version || '1.9.4-PRO',
+        release_date: data.release_date || '2026-01-16',
+        rtmpOutputUrl: data.rtmp_output_url || '',
+        srtOutputUrl: data.srt_output_url || '',
+        udpOutputUrl: data.udp_output_url || '',
+        rtmpEnabled: data.rtmp_enabled || false,
+        srtEnabled: data.srt_enabled || false,
+        udpEnabled: data.udp_enabled || false,
+        hlsEnabled: data.hls_enabled || false,
+        autoStartProtocols: data.auto_start_protocols ?? true,
+        udpMode: data.udp_mode || 'multicast',
+        videoCodec: data.video_codec || 'copy',
+        audioCodec: data.audio_codec || 'copy',
       });
     } catch (error) {
       console.error('Failed to fetch settings:', error);
@@ -273,24 +466,23 @@ export default function Settings() {
       outputUrl: defaults.url,
       resolution: defaults.resolution,
       videoBitrate: defaults.bitrate,
-      // Reset mode for UDP/SRT to defaults
-      udpMode: type === 'udp' ? 'unicast' : undefined,
-      srtMode: type === 'srt' ? 'caller' : undefined
+      // Sync specific protocol URLs
+      rtmpOutputUrl: type === 'rtmp' ? defaults.url : prev.rtmpOutputUrl,
+      srtOutputUrl: type === 'srt' ? defaults.url : prev.srtOutputUrl,
+      udpOutputUrl: type === 'udp' ? defaults.url : prev.udpOutputUrl,
+      srtMode: type === 'srt' ? 'caller' : prev.srtMode
     }));
     showSuccess(`Configuração atualizada para ${type.toUpperCase()}`);
   };
 
   const handleUdpModeChange = (mode) => {
-      const type = settings.outputType;
       // Define defaults based on protocol and mode
-      let newUrl = '';
-      if (type === 'udp') {
-          newUrl = mode === 'multicast' ? 'udp://239.0.0.1:1234?ttl=2' : 'udp://127.0.0.1:1234';
-      }
+      let newUrl = mode === 'multicast' ? 'udp://239.0.0.1:1234?ttl=2' : 'udp://127.0.0.1:1234';
 
       setSettings(prev => ({
           ...prev,
           outputUrl: newUrl,
+          udpOutputUrl: newUrl,
           udpMode: mode
       }));
   };
@@ -327,8 +519,19 @@ export default function Settings() {
         overlay_opacity: settings.overlayOpacity,
         overlay_scale: settings.overlayScale,
         srt_mode: settings.srtMode,
+        rtmp_output_url: settings.rtmpOutputUrl,
+        srt_output_url: settings.srtOutputUrl,
+        udp_output_url: settings.udpOutputUrl,
+        udp_mode: settings.udpMode,
+        rtmp_enabled: settings.rtmpEnabled,
+        srt_enabled: settings.srtEnabled,
+        udp_enabled: settings.udpEnabled,
+        hls_enabled: settings.hlsEnabled,
         system_version: settings.version,
-        release_date: settings.releaseDate
+        release_date: settings.releaseDate,
+        auto_start_protocols: settings.autoStartProtocols,
+        video_codec: settings.videoCodec,
+        audio_codec: settings.audioCodec,
       });
       showSuccess('Configurações salvas! Reiniciando transmissão...');
       
@@ -361,6 +564,22 @@ export default function Settings() {
       showSuccess('Logo carregado com sucesso!');
     } catch (error) {
       showError('Erro ao carregar logo');
+    }
+  };
+
+  const handleConverterSave = async (originalFile, convertedFile) => {
+    const formData = new FormData();
+    formData.append('original', originalFile);
+    formData.append('converted', convertedFile);
+
+    try {
+      const response = await settingsAPI.uploadOverlayPair(formData);
+      setSettings({ ...settings, logoPath: response.data.converted_path });
+      showSuccess('Overlay otimizado e salvo com sucesso!');
+      return true;
+    } catch (error) {
+      showError('Erro ao salvar overlay otimizado');
+      return false;
     }
   };
 
@@ -485,12 +704,14 @@ export default function Settings() {
                              value={settings.srtMode || 'caller'}
                              onChange={(e) => {
                                const mode = e.target.value;
+                               const newUrl = mode === 'listener' 
+                                 ? 'srt://0.0.0.0:9900?mode=listener'
+                                 : 'srt://mediamtx:8890?mode=caller&streamid=publish:live/stream';
                                setSettings({ 
                                  ...settings, 
                                  srtMode: mode,
-                                 outputUrl: mode === 'listener' 
-                                   ? 'srt://0.0.0.0:9900?mode=listener'
-                                   : 'srt://mediamtx:8890?mode=caller&streamid=publish:live/stream'
+                                 outputUrl: newUrl,
+                                 srtOutputUrl: newUrl
                                });
                              }}
                           >
@@ -556,15 +777,146 @@ export default function Settings() {
                 </Grid>
 
                 <Grid item xs={12}>
-                  <Grid container spacing={2} sx={{ mt: 1 }}>
-                    <Grid item xs={12} md={8}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    🚀 TRANSMISSÃO MULTI-PROTOCOLO (SIMULTÂNEA)
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} md={4}>
                       <TextField
                         fullWidth
-                        label="URL de Saída"
-                        value={settings.outputUrl}
-                        onChange={(e) => setSettings({ ...settings, outputUrl: e.target.value })}
-                        placeholder="rtmp://localhost:1935/stream"
+                        label="URL RTMP"
+                        value={settings.rtmpOutputUrl || ''}
+                        onChange={(e) => setSettings({ ...settings, rtmp_output_url: e.target.value, rtmpOutputUrl: e.target.value })}
+                        placeholder="rtmp://localhost:1935/live/stream"
+                        variant="outlined"
+                        size="small"
+                        helperText="Destino RTMP (Ex: YouTube, Facebook)"
                       />
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <TextField
+                        fullWidth
+                        label="URL SRT"
+                        value={settings.srtOutputUrl || ''}
+                        onChange={(e) => setSettings({ ...settings, srt_output_url: e.target.value, srtOutputUrl: e.target.value })}
+                        placeholder="srt://mediamtx:8890?mode=caller"
+                        variant="outlined"
+                        size="small"
+                        helperText="Destino SRT (Caller ou Listener)"
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <TextField
+                        fullWidth
+                        label="URL UDP"
+                        value={settings.udpOutputUrl || ''}
+                        onChange={(e) => setSettings({ ...settings, udp_output_url: e.target.value, udpOutputUrl: e.target.value })}
+                        placeholder="udp://239.0.0.1:1234"
+                        variant="outlined"
+                        size="small"
+                        helperText="Destino UDP (Multicast ou Unicast)"
+                      />
+                    </Grid>
+                  </Grid>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mt: 1, mb: 2, color: 'primary.main' }}>
+                    🌐 PROTOCOLOS AVANÇADOS (DISTRIBUIÇÃO)
+                  </Typography>
+                  <Grid container spacing={2}>
+                    {/* DASH */}
+                    <Grid item xs={12} md={6}>
+                       <Box sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                          <FormControlLabel
+                            control={<Checkbox checked={settings.dashEnabled || false} onChange={(e) => setSettings({...settings, dash_enabled: e.target.checked, dashEnabled: e.target.checked})} />}
+                            label={<Typography variant="body2" sx={{ fontWeight: 'bold' }}>MPEG-DASH</Typography>}
+                          />
+                          <TextField
+                            fullWidth
+                            label="DASH Output Path"
+                            value={settings.dashOutputUrl || ''}
+                            onChange={(e) => setSettings({ ...settings, dash_output_url: e.target.value, dashOutputUrl: e.target.value })}
+                            placeholder="/var/lib/onepa-playout/hls/dash.mpd"
+                            variant="outlined"
+                            size="small"
+                            disabled={!settings.dashEnabled}
+                            sx={{ mt: 1 }}
+                          />
+                       </Box>
+                    </Grid>
+                    
+                    {/* MSS */}
+                    <Grid item xs={12} md={6}>
+                       <Box sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                          <FormControlLabel
+                            control={<Checkbox checked={settings.mssEnabled || false} onChange={(e) => setSettings({...settings, mss_enabled: e.target.checked, mssEnabled: e.target.checked})} />}
+                            label={<Typography variant="body2" sx={{ fontWeight: 'bold' }}>Microsoft Smooth Streaming (MSS)</Typography>}
+                          />
+                          <TextField
+                            fullWidth
+                            label="MSS Output Path"
+                            value={settings.mssOutputUrl || ''}
+                            onChange={(e) => setSettings({ ...settings, mss_output_url: e.target.value, mssOutputUrl: e.target.value })}
+                            placeholder="/var/lib/onepa-playout/hls/stream.ism"
+                            variant="outlined"
+                            size="small"
+                            disabled={!settings.mssEnabled}
+                            sx={{ mt: 1 }}
+                          />
+                       </Box>
+                    </Grid>
+
+                    {/* RIST */}
+                    <Grid item xs={12} md={6}>
+                       <Box sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                          <FormControlLabel
+                            control={<Checkbox checked={settings.ristEnabled || false} onChange={(e) => setSettings({...settings, rist_enabled: e.target.checked, ristEnabled: e.target.checked})} />}
+                            label={<Typography variant="body2" sx={{ fontWeight: 'bold' }}>RIST (Reliable Internet Stream Transport)</Typography>}
+                          />
+                          <TextField
+                            fullWidth
+                            label="RIST URL"
+                            value={settings.ristOutputUrl || ''}
+                            onChange={(e) => setSettings({ ...settings, rist_output_url: e.target.value, ristOutputUrl: e.target.value })}
+                            placeholder="rist://127.0.0.1:1234"
+                            variant="outlined"
+                            size="small"
+                            disabled={!settings.ristEnabled}
+                            sx={{ mt: 1 }}
+                          />
+                       </Box>
+                    </Grid>
+
+                    {/* RTSP / WebRTC (Served by MediaMTX) */}
+                    <Grid item xs={12} md={6}>
+                       <Box sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1, height: '100%' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>MediaMTX Services</Typography>
+                          <FormControlLabel
+                            control={<Checkbox checked={settings.rtspEnabled || false} onChange={(e) => setSettings({...settings, rtsp_enabled: e.target.checked, rtspEnabled: e.target.checked})} />}
+                            label="RTSP Server"
+                          />
+                          <FormControlLabel
+                            control={<Checkbox checked={settings.webrtcEnabled || false} onChange={(e) => setSettings({...settings, webrtc_enabled: e.target.checked, webrtcEnabled: e.target.checked})} />}
+                            label="WebRTC (WHIP/WHEP)"
+                          />
+                          <FormControlLabel
+                            control={<Checkbox checked={settings.llhlsEnabled || false} onChange={(e) => setSettings({...settings, llhls_enabled: e.target.checked, llhlsEnabled: e.target.checked})} />}
+                            label="Low-Latency HLS"
+                          />
+                       </Box>
+                    </Grid>
+                  </Grid>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Grid container spacing={2} sx={{ mt: 1 }}>
+                    <Grid item xs={12} md={12}>
+                      <Alert severity="info" sx={{ mb: 2 }}>
+                        <Typography variant="caption" display="block">
+                          💡 <strong>Dica:</strong> Ative ou desative cada protocolo em tempo real diretamente no <strong>Dashboard</strong> sem precisar reiniciar o playout.
+                        </Typography>
+                      </Alert>
                   
                       {/* RTMP Guidance */}
                       {settings.outputType === 'rtmp' && (
@@ -664,8 +1016,8 @@ export default function Settings() {
                                 whiteSpace: 'pre-wrap'
                               }}
                             >
-                              {logs.length > 0 ? (
-                                logs.map((log, i) => (
+                                {logs.length > 0 ? (
+                                  logs.slice().reverse().map((log, i) => (
                                   <div key={i} style={{ 
                                     borderBottom: '1px solid #333', 
                                     padding: '2px 0',
@@ -717,9 +1069,9 @@ export default function Settings() {
                       {settings.outputType === 'desktop' && (
                         <Alert severity="warning" sx={{ mt: 2 }}>
                           <Typography variant="subtitle2" fontWeight="bold">Desktop Preview</Typography>
-                          <Typography variant="caption">
-                            Esta opção abre uma janela SDL direta no servidor. 
-                            <strong> Pode não funcionar em ambientes Docker ou Cloud sem X11/Display.</strong>
+                          <Typography variant="caption" display="block">
+                            Esta opção abre uma janela SDL direta no servidor.
+                            <strong> Pode não funcionar em ambientes Docker ou Cloud sem X11 / Display.</strong>
                           </Typography>
                         </Alert>
                       )}
@@ -751,13 +1103,21 @@ export default function Settings() {
                       )}
 
                       {settings.outputType === 'hls' && (
-                        <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'primary.main', cursor: 'pointer' }} onClick={() => {
-                              const hlsUrl = `${window.location.origin}/hls/stream.m3u8`;
-                              navigator.clipboard.writeText(hlsUrl);
-                              showSuccess(`Link HLS copiado: ${hlsUrl}`);
-                          }}>
-                          Link HLS de Baixa Latência: {window.location.origin}/hls/stream.m3u8
-                        </Typography>
+                        <Box sx={{ mt: 1 }}>
+                          <Typography variant="caption" sx={{ display: 'block', color: 'primary.main', cursor: 'pointer' }} onClick={() => {
+                                const hlsUrl = `${window.location.origin}/hls/stream.m3u8`;
+                                navigator.clipboard.writeText(hlsUrl);
+                                showSuccess(`Link HLS copiado: ${hlsUrl}`);
+                            }}>
+                            Link HLS para Distribuição Externa: {window.location.origin}/hls/stream.m3u8
+                          </Typography>
+                          <Alert severity="warning" size="small" sx={{ mt: 1, py: 0, '& .MuiAlert-message': { p: 0.5 } }}>
+                             <Typography variant="caption" sx={{ fontSize: '0.65rem' }}>
+                              <strong>Nota:</strong> Este link HLS é destinado a visualização externa (CDN, Players Externos). 
+                              Não tem relação com o HLS interno do Dashboard.
+                             </Typography>
+                          </Alert>
+                        </Box>
                       )}
                     </Grid>
                   </Grid>
@@ -802,6 +1162,39 @@ export default function Settings() {
                 </Grid>
 
                 <Grid item xs={12} sm={4}>
+                  <FormControl fullWidth>
+                    <InputLabel>Codec de Vídeo</InputLabel>
+                    <Select
+                      value={settings.videoCodec}
+                      label="Codec de Vídeo"
+                      onChange={(e) => setSettings({ ...settings, videoCodec: e.target.value })}
+                    >
+                      <MenuItem value="copy">Original (Copy)</MenuItem>
+                      <MenuItem value="h264">H.264 (AVC)</MenuItem>
+                      <MenuItem value="hevc">H.265 (HEVC)</MenuItem>
+                      <MenuItem value="vp8">VP8</MenuItem>
+                      <MenuItem value="vp9">VP9</MenuItem>
+                      <MenuItem value="av1">AV1</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} sm={4}>
+                  <FormControl fullWidth>
+                    <InputLabel>Codec de Áudio</InputLabel>
+                    <Select
+                      value={settings.audioCodec}
+                      label="Codec de Áudio"
+                      onChange={(e) => setSettings({ ...settings, audioCodec: e.target.value })}
+                    >
+                      <MenuItem value="copy">Original (Copy)</MenuItem>
+                      <MenuItem value="aac">AAC</MenuItem>
+                      <MenuItem value="opus">Opus</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} sm={4}>
                   <TextField
                     fullWidth
                     label="Bitrate de Vídeo"
@@ -811,7 +1204,7 @@ export default function Settings() {
                   />
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} sm={4}>
                   <TextField
                     fullWidth
                     label="Bitrate de Áudio"
@@ -819,6 +1212,23 @@ export default function Settings() {
                     onChange={(e) => setSettings({ ...settings, audioBitrate: e.target.value })}
                     placeholder="192k"
                   />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Divider sx={{ my: 2 }} />
+                  <Typography variant="h6" gutterBottom>Comportamento de Inicialização</Typography>
+                  <FormControlLabel
+                    control={
+                        <Radio 
+                            checked={settings.autoStartProtocols} 
+                            onClick={() => setSettings({ ...settings, autoStartProtocols: !settings.autoStartProtocols })} 
+                        />
+                    }
+                    label="Iniciar Protocolos de Distribuição (RTMP/SRT/UDP) automaticamente ao iniciar o Playout"
+                  />
+                  <Typography variant="caption" color="text.secondary" display="block" sx={{ ml: 4 }}>
+                    Se desativado, os protocolos marcados como ativos só iniciarão após serem alternados manualmente no Dashboard.
+                  </Typography>
                 </Grid>
               </Grid>
             </TabPanel>
@@ -1028,6 +1438,14 @@ export default function Settings() {
                         Upload
                       </Button>
                     </label>
+                    <IconButton 
+                      color="primary" 
+                      onClick={() => setConverterOpen(true)}
+                      title="Otimizador de Overlay Pro"
+                      sx={{ bgcolor: 'rgba(25, 118, 210, 0.1)', '&:hover': { bgcolor: 'rgba(25, 118, 210, 0.2)' } }}
+                    >
+                      <MagicIcon />
+                    </IconButton>
                   </Box>
                 </Grid>
 
@@ -1955,6 +2373,11 @@ export default function Settings() {
           </Button>
         </DialogActions>
       </Dialog>
+      <OverlayConverterDialog 
+        open={converterOpen} 
+        onClose={() => setConverterOpen(false)} 
+        onSave={handleConverterSave} 
+      />
     </Box>
   );
 }

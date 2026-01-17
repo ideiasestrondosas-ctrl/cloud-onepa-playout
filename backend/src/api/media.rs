@@ -619,7 +619,6 @@ async fn upload_media(
         // Generate thumbnail
         let thumbnail_filename = format!("{}.jpg", id);
         let thumbnail_path = format!("{}/{}", thumbnails_path, thumbnail_filename);
-        let thumb_url = format!("/api/media/{}/thumbnail", id);
 
         if info.has_video {
             let _ = ffmpeg.generate_thumbnail(&file_path, &thumbnail_path, 1.0);

@@ -2,6 +2,7 @@ use actix_web::{error::ResponseError, http::StatusCode, HttpResponse};
 use std::fmt;
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum AppError {
     InternalError,
     NotFound,

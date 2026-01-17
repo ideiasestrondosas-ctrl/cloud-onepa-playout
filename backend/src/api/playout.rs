@@ -208,6 +208,24 @@ async fn diagnose_playout(pool: web::Data<PgPool>) -> impl Responder {
     HttpResponse::Ok().json(report)
 }
 
+#[derive(Debug, serde::Deserialize)]
+pub struct ProtocolToggleRequest {
+    pub protocol: String,
+    pub enabled: bool,
+}
+
+async fn toggle_protocol(
+    engine: web::Data<Arc<PlayoutEngine>>,
+    req: web::Json<ProtocolToggleRequest>,
+) -> impl Responder {
+    match engine.toggle_protocol(&req.protocol, req.enabled).await {
+        Ok(_) => HttpResponse::Ok().json(serde_json::json!({
+            "message": format!("Protocol {} {}", req.protocol, if req.enabled { "enabled" } else { "disabled" })
+        })),
+        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({ "error": e })),
+    }
+}
+
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.route("/status", web::get().to(get_status))
         .route("/start", web::post().to(start_playout))
@@ -216,5 +234,6 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         .route("/pause", web::post().to(pause_playout))
         .route("/resume", web::post().to(resume_playout))
         .route("/diagnose", web::get().to(diagnose_playout))
+        .route("/protocol/toggle", web::post().to(toggle_protocol))
         .route("/logs", web::get().to(get_logs));
 }

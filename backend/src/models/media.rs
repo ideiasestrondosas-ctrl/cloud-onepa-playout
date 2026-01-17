@@ -35,6 +35,7 @@ pub struct CreateFolder {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct CreateMedia {
     pub filename: String,
     pub path: String,

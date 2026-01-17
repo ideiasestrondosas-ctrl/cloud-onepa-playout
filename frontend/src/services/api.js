@@ -98,6 +98,7 @@ export const playoutAPI = {
   diagnose: () => api.get('/playout/diagnose'),
   openMonitor: () => api.post('/playout/open-monitor'),
   getLogs: () => api.get('/playout/logs'),
+  toggleProtocol: (protocol, enabled) => api.post('/playout/protocol/toggle', { protocol, enabled }),
 };
 
 // Settings endpoints
@@ -108,6 +109,9 @@ export const settingsAPI = {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
   uploadAppLogo: (formData) => api.post('/settings/upload-app-logo', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  uploadOverlayPair: (formData) => api.post('/settings/upload-overlay-pair', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
   resetAll: () => api.post('/settings/reset-all'),

@@ -5,7 +5,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB.svg)](https://reactjs.org/)
-[![Version](https://img.shields.io/badge/Version-1.9.3--PRO-blue.svg)]()
+[![Version](https://img.shields.io/badge/Version-1.9.4--PRO-blue.svg)]()
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)]()
 
 ## 📖 Sobre
@@ -104,7 +104,7 @@ Ver [docs/INSTALL.md](docs/INSTALL.md) para instruções detalhadas.
 - **Container**: Docker + Docker Compose
 - **Auth**: JWT
 
-## 📊 Estatísticas de Desenvolvimento (v1.9.2-PRO)
+## 📊 Estatísticas de Desenvolvimento (v1.9.4-PRO)
 
 Este projeto representa um esforço significativo de engenharia para criar uma solução de playout robusta e moderna.
 
@@ -120,7 +120,7 @@ Este projeto representa um esforço significativo de engenharia para criar uma s
 |                  | Tecnologias Core           | Tokio (Async), FFmpeg 7.2+, React 18 |
 |                  | Containers                 | 3 (Backend, Frontend, Postgres)      |
 
-> _Dados aproximados baseados na versão v1.9.2-PRO_
+> _Dados aproximados baseados na versão v1.9.4-PRO_
 
 ## 🎯 Roadmap & Future
 
@@ -169,9 +169,16 @@ _Focus: Innovation and High Availability_
 
 Ver [RELEASE_NOTES.md](RELEASE_NOTES.md) para detalhes completos.
 
-### Versão Atual: 1.9.3-PRO (2026-01-16)
+### Versão Atual: 1.9.4-PRO (2026-01-18)
 
 **Principais Novidades:**
+
+- 📡 **Distribuição Multi-Protocolo**: Suporte para DASH, MSS, RIST, RTSP e WebRTC (WHIP/WHEP).
+- 🧠 **Transcoding Inteligente**: Deteção automática de filtros para garantir estabilidade do stream em modo "Copy".
+- 🛡️ **Estabilidade Corrigida**: Resolução de falhas no Master Feed e erros de UI no painel de Definições.
+- 📊 **Monitorização Expandida**: Novo painel de controlo de protocolos avançados no Dashboard.
+
+### Versão Anterior: 1.9.3-PRO (2026-01-16)
 
 - 🛡️ **Segurança Avançada**: Proteção contra SQL Injection em toda a API, parametrização de queries e sanitização de nomes de ficheiros para evitar path traversal.
 - ⚡ **Performance Otimizada**: Remoção de "healing" logic pesado na listagem de media, adição de índices de base de dados para agendamento e pesquisa.

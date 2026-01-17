@@ -37,6 +37,7 @@ pub fn generate_token(claims: &Claims) -> Result<String, jsonwebtoken::errors::E
     encode(&Header::default(), claims, &encoding_key)
 }
 
+#[allow(dead_code)]
 pub fn validate_token(token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
     let secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set in production");
     let decoding_key = DecodingKey::from_secret(secret.as_bytes());

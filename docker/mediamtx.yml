@@ -5,6 +5,7 @@ rtmp: yes
 hls: yes
 webrtc: yes
 srt: yes
+rtsp: yes
 
 # Listener ports
 rtmpAddress: :1935
@@ -17,6 +18,10 @@ hlsVariant: lowLatency
 hlsSegmentCount: 5
 hlsSegmentDuration: 2s
 hlsPartDuration: 200ms
+
+# API settings
+api: yes
+apiAddress: :9997
 
 # Path settings
 paths:

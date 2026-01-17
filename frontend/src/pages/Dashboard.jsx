@@ -39,7 +39,11 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogContentText,
   DialogActions,
+  FormControlLabel,
+  Switch,
+  Checkbox,
   List,
   ListItem,
   ListItemIcon,
@@ -63,9 +67,9 @@ export default function Dashboard() {
     next_clips: [],
     uptime: 0,
     clips_played_today: 0,
-    output_url: '',
     protocol: '',
     last_error: null,
+    logs: [],
   });
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -81,6 +85,13 @@ export default function Dashboard() {
   const [vlcCommand, setVlcCommand] = useState('');
   const [playerKey, setPlayerKey] = useState(0); 
   const [audioContextSuspended, setAudioContextSuspended] = useState(false);
+  const [restartDialogOpen, setRestartDialogOpen] = useState(false);
+  const [restartOptions, setRestartOptions] = useState({
+      auto_start: true,
+      rtmp: true,
+      srt: true,
+      udp: true
+  });
 
   const playerRef = useRef(null);
   const audioCtxRef = useRef(null);
@@ -266,11 +277,22 @@ export default function Dashboard() {
 
   const handleSkip = async () => {
     try {
-      await playoutAPI.skip();
-      showInfo('Pular clip solicitado');
-      setTimeout(fetchStatus, 1200);
+      await playoutAPI.skipClip();
+      showSuccess('Clip pulado com sucesso!');
+      setTimeout(fetchStatus, 1000);
     } catch (error) {
       showError('Erro ao pular clip');
+    }
+  };
+
+  const handleToggleProtocol = async (protocol, currentStatus) => {
+    try {
+      const enabled = currentStatus !== 'active';
+      await playoutAPI.toggleProtocol(protocol.toLowerCase(), enabled);
+      fetchStatus();
+      showSuccess(`Protocolo ${protocol} ${enabled ? 'ativado' : 'desativado'} com sucesso!`);
+    } catch (error) {
+      showError('Erro ao alternar protocolo');
     }
   };
 
@@ -399,15 +421,118 @@ export default function Dashboard() {
         <Grid item xs={12} md={6} lg={3}>
           <Card><CardContent>
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-              <Button variant="contained" color="success" onClick={handleStart} disabled={isPlaying} size="small">Start</Button>
+              <Button 
+                variant="contained" 
+                color="success" 
+                onClick={() => {
+                    // Pre-fill options from current settings
+                    if (settings) {
+                        setRestartOptions({
+                            auto_start: settings.auto_start_protocols,
+                            rtmp: settings.rtmp_enabled,
+                            srt: settings.srt_enabled,
+                            udp: settings.udp_enabled
+                        });
+                    }
+                    setRestartDialogOpen(true);
+                }} 
+                disabled={isPlaying} 
+                size="small"
+              >
+                  Start (Opções)
+              </Button>
               <Button variant="contained" color="error" onClick={handleStop} disabled={!isPlaying} size="small">Stop</Button>
               <Button variant="outlined" onClick={handleSkip} disabled={!isPlaying} size="small" startIcon={<SkipIcon />}>Skip</Button>
               <Button variant="outlined" color="info" onClick={handleDiagnose} size="small">Diagnóstico</Button>
               <Button variant="contained" color="primary" onClick={handleLaunchVLC} size="small" fullWidth sx={{ mt: 1 }}>OPEN VLC</Button>
+              <Button 
+                variant="outlined" 
+                color="secondary" 
+                onClick={async () => {
+                    if (confirm('Iniciar todos os protocolos de distribuição (RTMP, SRT, UDP)?')) {
+                        try {
+                             const response = await fetch('/api/settings', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ ...settings, rtmp_enabled: true, srt_enabled: true, udp_enabled: true })
+                            });
+                             if (response.ok) {
+                                 setSettings(prev => ({ ...prev, rtmp_enabled: true, srt_enabled: true, udp_enabled: true }));
+                                 showSuccess('Protocolos iniciados!');
+                             } else {
+                                 showError('Erro ao iniciar protocolos');
+                             }
+                        } catch (e) {
+                            showError('Erro ao conectar ao servidor');
+                        }
+                    }
+                }}
+                size="small" 
+                fullWidth 
+                sx={{ mt: 1 }}
+              >
+                Inicar Distribuição
+              </Button>
             </Box>
           </CardContent></Card>
         </Grid>
       </Grid>
+
+      {status.active_streams?.length > 0 && (
+        <Box sx={{ mt: 3 }}>
+          <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontWeight: 'bold', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <LaunchIcon sx={{ fontSize: 16 }} /> PROTOCOLOS DE TRANSMISSÃO EM TEMPO REAL
+          </Typography>
+          <Grid container spacing={2}>
+            {status.active_streams.map((stream, idx) => (
+              <Grid item xs={6} md={3} key={idx}>
+                <Paper sx={{ 
+                  p: 1.5, 
+                  bgcolor: stream.status === 'active' ? 'rgba(211, 47, 47, 0.05)' : 'rgba(0,0,0,0.02)', 
+                  border: '1px solid',
+                  borderColor: stream.status === 'active' ? 'error.main' : 'divider',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <Box>
+                    <Typography variant="caption" sx={{ color: stream.status === 'active' ? 'error.main' : 'text.disabled', fontWeight: 'bold' }}>
+                      {stream.protocol}
+                    </Typography>
+                    <Typography variant="body2" sx={{ 
+                      fontWeight: 'bold', 
+                      color: stream.status === 'active' ? 'error.main' : stream.status === 'error' ? 'warning.main' : 'text.secondary' 
+                    }}>
+                      {stream.status === 'active' ? '● EMISSÃO ATIVA' : stream.status === 'error' ? '⚠️ ERRO' : 'IDLE'}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem', display: 'block' }}>
+                      {stream.details}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ textAlign: 'right' }}>
+                    <Typography variant="h5" sx={{ color: stream.status === 'active' ? 'error.main' : 'text.disabled', fontWeight: 'bold' }}>
+                      {stream.sessions}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.6rem', display: 'block' }}>
+                      SESSÕES
+                    </Typography>
+                    <Button 
+                      size="small" 
+                      variant={stream.status === 'active' ? "outlined" : "contained"}
+                      color={stream.status === 'active' ? "error" : "primary"}
+                      onClick={() => handleToggleProtocol(stream.protocol, stream.status)}
+                      sx={{ mt: 1, py: 0, fontSize: '0.65rem', minWidth: '80px' }}
+                      disabled={stream.protocol === 'MASTER' || stream.protocol === 'HLS'}
+                    >
+                      {stream.status === 'active' ? 'DESATIVAR' : 'ATIVAR'}
+                    </Button>
+                  </Box>
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      )}
 
       <Paper sx={{ mt: 3, p: 0, height: 450, position: 'relative', bgcolor: '#000', borderRadius: 2, overflow: 'hidden', border: '2px solid', borderColor: isPlaying ? 'primary.main' : '#333' }}>
         <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, p: 2, display: 'flex', justifyContent: 'space-between', bgcolor: 'rgba(0,0,0,0.5)' }}>
@@ -531,21 +656,33 @@ export default function Dashboard() {
           <Card sx={{ height: '100%' }}>
             <CardContent>
               <Typography variant="h6" gutterBottom color="primary">Logs de Inicialização / Ações</Typography>
-              <Box sx={{ bgcolor: '#1a1a1a', p: 1.5, borderRadius: 1, minHeight: 120, maxHeight: 200, overflowY: 'auto', fontFamily: 'monospace', fontSize: '0.85rem' }}>
-                {startSteps.length > 0 ? startSteps.map((s, i) => (
-                    <Box key={i} sx={{ color: s.type === 'success' ? '#4caf50' : s.type === 'error' ? '#f44336' : '#bbb', mb: 0.5 }}>
-                        [{s.time.toLocaleTimeString()}] {s.msg}
+              <Box sx={{ bgcolor: '#1a1a1a', p: 1.5, borderRadius: 1, minHeight: 180, maxHeight: 300, overflowY: 'auto', fontFamily: 'monospace', fontSize: '0.85rem' }}>
+                {status.logs && status.logs.length > 0 ? status.logs.slice().reverse().map((log, i) => (
+                    <Box key={`backend-${i}`} sx={{ color: log.includes('✓') ? '#4caf50' : log.includes('✗') ? '#f44336' : '#bbb', mb: 0.5 }}>
+                        {log}
                     </Box>
-                )) : <Typography variant="caption" color="text.secondary">Aguardando ações...</Typography>}
+                )) : startSteps.slice().reverse().map((s, i) => (
+                    <Box key={i} sx={{ color: s.type === 'success' ? '#4caf50' : s.type === 'error' ? '#f44336' : '#bbb', mb: 0.5 }}>
+                        {s.msg}
+                    </Box>
+                ))}
+                {(!status.logs || status.logs.length === 0) && startSteps.length === 0 && (
+                    <Typography variant="caption" color="text.secondary">Aguardando ações...</Typography>
+                )}
               </Box>
               <Typography variant="h6" gutterBottom color="primary" sx={{ mt: 3 }}>Clip Atual</Typography>
               {status.current_clip ? (
                 <Box>
                   <Typography variant="body1" fontWeight="bold">{status.current_clip.filename}</Typography>
-                  <LinearProgress variant="determinate" value={(status.current_clip.position / status.current_clip.duration) * 100} sx={{ i: 1 }} />
+                  {status.schedule_source && (
+                    <Typography variant="caption" display="block" color="secondary" sx={{ fontStyle: 'italic', mb: 1 }}>
+                      Fonte: {status.schedule_source}
+                    </Typography>
+                  )}
+                  <LinearProgress variant="determinate" value={(status.current_clip.position / status.current_clip.duration) * 100} sx={{ mt: 1, mb: 0.5 }} />
                   <Typography variant="caption">{formatTime(status.current_clip.position)} / {formatTime(status.current_clip.duration)}</Typography>
                 </Box>
-              ) : <Typography color="text.secondary">Nenhum clip</Typography>}
+              ) : <Typography color="text.secondary">Nenhum clip em reprodução</Typography>}
             </CardContent>
           </Card>
         </Grid>
@@ -778,6 +915,54 @@ export default function Dashboard() {
             )}
         </DialogContent>
         <DialogActions><Button onClick={() => setDebugDialogOpen(false)}>Fechar</Button></DialogActions>
+      </Dialog>
+
+      <Dialog open={restartDialogOpen} onClose={() => setRestartDialogOpen(false)}>
+        <DialogTitle>Opções de Inicialização</DialogTitle>
+        <DialogContent>
+            <DialogContentText sx={{ mb: 2 }}>
+                Selecione os protocolos que devem ser iniciados automaticamente ao ligar o Backend.
+            </DialogContentText>
+            <FormControlLabel
+                control={<Switch checked={restartOptions.auto_start} onChange={(e) => setRestartOptions({...restartOptions, auto_start: e.target.checked})} />}
+                label="Auto-start Protocols (Master Switch)"
+            />
+            <Box sx={{ ml: 3, display: 'flex', flexDirection: 'column' }}>
+                <FormControlLabel
+                    control={<Checkbox checked={restartOptions.rtmp} onChange={(e) => setRestartOptions({...restartOptions, rtmp: e.target.checked})} disabled={!restartOptions.auto_start} />}
+                    label="RTMP Relay"
+                />
+                <FormControlLabel
+                    control={<Checkbox checked={restartOptions.srt} onChange={(e) => setRestartOptions({...restartOptions, srt: e.target.checked})} disabled={!restartOptions.auto_start} />}
+                    label="SRT Relay"
+                />
+                <FormControlLabel
+                    control={<Checkbox checked={restartOptions.udp} onChange={(e) => setRestartOptions({...restartOptions, udp: e.target.checked})} disabled={!restartOptions.auto_start} />}
+                    label="UDP Relay"
+                />
+            </Box>
+        </DialogContent>
+        <DialogActions>
+            <Button onClick={() => setRestartDialogOpen(false)}>Cancelar</Button>
+            <Button variant="contained" color="success" onClick={async () => {
+                try {
+                    // Update settings first
+                    await settingsAPI.update({
+                        auto_start_protocols: restartOptions.auto_start,
+                        rtmp_enabled: restartOptions.rtmp,
+                        srt_enabled: restartOptions.srt,
+                        udp_enabled: restartOptions.udp
+                    });
+                    // Then start
+                    handleStart();
+                    setRestartDialogOpen(false);
+                } catch (e) {
+                    showError('Erro ao atualizar configurações');
+                }
+            }}>
+                Iniciar Engine
+            </Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );
