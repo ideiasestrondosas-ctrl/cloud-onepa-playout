@@ -207,6 +207,8 @@ impl PlayoutEngine {
         }
 
         loop {
+            let is_running = *self.is_running.lock().await;
+            log::debug!("Engine tick loop active (is_running: {})", is_running);
             if let Err(e) = self.tick().await {
                 log::error!("Engine tick error: {}", e);
                 let mut err = self.last_error.lock().await;
@@ -342,14 +344,41 @@ impl PlayoutEngine {
         // Sort all by start_time descending to find the most recent one that started
         schedule.sort_by(|a, b| b.start_time.cmp(&a.start_time));
 
+        log::debug!("ALL retrieved schedules: {:?}", schedule);
+
         let mut active_playlist_id = None;
         let mut playlist_start_time = None;
+
+        log::debug!("Evaluating {} schedules for today", schedule.len());
 
         for s in schedule {
             if let Some(st) = s.start_time {
                 if current_time >= st {
+                    // For direct schedules (not repeating), ensure we're on the correct date
+                    let is_valid_date = match s.repeat_pattern.as_deref() {
+                        Some("daily") | Some("weekly") => true, // Repeating schedules are always valid
+                        _ => s.date == current_date, // Direct schedules must match the date exactly
+                    };
+
+                    if !is_valid_date {
+                        log::debug!(
+                            "⏩ Skipping direct schedule from {} (ID: {}) - today is {}",
+                            s.date.format("%Y-%m-%d"),
+                            s.id,
+                            current_date.format("%Y-%m-%d")
+                        );
+                        continue;
+                    }
+
                     active_playlist_id = Some(s.playlist_id);
                     playlist_start_time = Some(st);
+
+                    log::info!(
+                        "📅 Match found! Schedule {} (Playlist ID: {}) starting at {}",
+                        s.id,
+                        s.playlist_id,
+                        st
+                    );
 
                     let source_desc = match s.repeat_pattern.as_deref() {
                         Some("daily") => format!("Daily (from {})", s.date.format("%Y-%m-%d")),
@@ -365,13 +394,14 @@ impl PlayoutEngine {
                         let mut status = self.status.lock().await;
                         status.schedule_source = Some(source_desc);
                     }
-
-                    log::info!(
-                        "Found active schedule starting at {} for playlist ID: {}",
-                        st,
-                        s.playlist_id
-                    );
                     break;
+                } else {
+                    log::debug!(
+                        "⌛ Schedule {} starts at {} (too early, now: {})",
+                        s.id,
+                        st,
+                        current_time
+                    );
                 }
             }
         }
@@ -822,7 +852,13 @@ impl PlayoutEngine {
                 };
 
                 if proc_alive {
-                    if let Ok(resp) = reqwest::get("http://mediamtx:9997/v2/paths/list").await {
+                    let client = reqwest::Client::new();
+                    if let Ok(resp) = client
+                        .get("http://mediamtx:9997/v3/paths/list")
+                        .basic_auth("backend", Some("backend"))
+                        .send()
+                        .await
+                    {
                         if let Ok(json) = resp.json::<serde_json::Value>().await {
                             if let Some(items) = json.get("items") {
                                 if let Some(path_obj) = items.get("live/stream") {
@@ -846,7 +882,13 @@ impl PlayoutEngine {
 
             // 2. HLS Status
             let mut hls_sessions = 0;
-            if let Ok(resp) = reqwest::get("http://mediamtx:9997/v2/paths/list").await {
+            let client = reqwest::Client::new();
+            if let Ok(resp) = client
+                .get("http://mediamtx:9997/v3/paths/list")
+                .basic_auth("backend", Some("backend"))
+                .send()
+                .await
+            {
                 if let Ok(json) = resp.json::<serde_json::Value>().await {
                     if let Some(items) = json.get("items") {
                         if let Some(path_obj) = items.get("live/stream") {
@@ -901,7 +943,13 @@ impl PlayoutEngine {
 
                 if proc_alive {
                     if srt_details == "caller" {
-                        if let Ok(resp) = reqwest::get("http://mediamtx:9997/v2/paths/list").await {
+                        let client = reqwest::Client::new();
+                        if let Ok(resp) = client
+                            .get("http://mediamtx:9997/v3/paths/list")
+                            .basic_auth("backend", Some("backend"))
+                            .send()
+                            .await
+                        {
                             if let Ok(json) = resp.json::<serde_json::Value>().await {
                                 if let Some(items) = json.get("items") {
                                     if let Some(path_obj) = items.get("live/stream") {
@@ -929,7 +977,7 @@ impl PlayoutEngine {
 
             // 4. UDP Status
             let udp_active = settings.udp_enabled || settings.output_type == "udp";
-            let mut udp_sessions = 0;
+            let udp_sessions = 0;
             let mut udp_status = if udp_active {
                 "active".to_string()
             } else {
@@ -957,9 +1005,9 @@ impl PlayoutEngine {
                 if let Some(child) = procs.get_mut("udp") {
                     if !matches!(child.try_wait(), Ok(None)) {
                         udp_status = "error".to_string();
-                    } else {
-                        udp_sessions = 1;
                     }
+                    // UDP is connectionless - no way to track sessions
+                    // Set to 0 to indicate it's active but we can't count receivers
                 } else {
                     if settings.output_type == "udp" || settings.udp_enabled {
                         udp_status = "error".to_string();
@@ -981,6 +1029,31 @@ impl PlayoutEngine {
                 matches!(proc_lock.as_mut().map(|c| c.try_wait()), Some(Ok(None)))
             };
 
+            // Fetch all MediaMTX paths for session counting
+            let mut mediamtx_sessions = std::collections::HashMap::new();
+            if master_running {
+                let client = reqwest::Client::new();
+                if let Ok(resp) = client
+                    .get("http://mediamtx:9997/v3/paths/list")
+                    .basic_auth("backend", Some("backend"))
+                    .send()
+                    .await
+                {
+                    if let Ok(json) = resp.json::<serde_json::Value>().await {
+                        if let Some(items) = json.get("items").and_then(|v| v.as_object()) {
+                            for (path_name, path_data) in items {
+                                let reader_count = path_data
+                                    .get("readerCount")
+                                    .and_then(|v| v.as_i64())
+                                    .unwrap_or(0)
+                                    as i32;
+                                mediamtx_sessions.insert(path_name.clone(), reader_count);
+                            }
+                        }
+                    }
+                }
+            }
+
             if settings.dash_enabled {
                 streams.push(ActiveStream {
                     protocol: "DASH".to_string(),
@@ -989,7 +1062,7 @@ impl PlayoutEngine {
                     } else {
                         "idle".to_string()
                     },
-                    sessions: 0,
+                    sessions: *mediamtx_sessions.get("live/stream").unwrap_or(&0),
                     details: "Manifest-based".to_string(),
                 });
             }
@@ -1002,7 +1075,7 @@ impl PlayoutEngine {
                     } else {
                         "idle".to_string()
                     },
-                    sessions: 0,
+                    sessions: *mediamtx_sessions.get("live/stream").unwrap_or(&0),
                     details: "Smooth Streaming".to_string(),
                 });
             }
@@ -1015,7 +1088,7 @@ impl PlayoutEngine {
                     } else {
                         "idle".to_string()
                     },
-                    sessions: 0,
+                    sessions: if master_running { 1 } else { 0 },
                     details: "Reliable UDP".to_string(),
                 });
             }
@@ -1030,7 +1103,7 @@ impl PlayoutEngine {
                     } else {
                         "idle".to_string()
                     },
-                    sessions: 0,
+                    sessions: *mediamtx_sessions.get("live/stream").unwrap_or(&0),
                     details: "Port 8554".to_string(),
                 });
             }
@@ -1043,7 +1116,7 @@ impl PlayoutEngine {
                     } else {
                         "idle".to_string()
                     },
-                    sessions: 0,
+                    sessions: *mediamtx_sessions.get("live/stream").unwrap_or(&0),
                     details: "Low Latency".to_string(),
                 });
             }
@@ -1119,7 +1192,7 @@ impl PlayoutEngine {
 
         let mut procs = self.distribution_processes.lock().await;
         let ffmpeg = FFmpegService::new();
-        let master_url = "rtmp://mediamtx:1935/live/master";
+        let master_url = "rtmp://mediamtx:1935/live/master?user=backend&pass=backend";
 
         // 1. RTMP
         let rtmp_enabled = settings.rtmp_enabled || settings.output_type == "rtmp";
@@ -1285,9 +1358,16 @@ impl PlayoutEngine {
         let v3_url = "http://mediamtx:9997/v3/paths/list";
         let v2_url = "http://mediamtx:9997/v2/paths/list";
 
+        let client = reqwest::Client::new();
         for api_url in &[v3_url, v2_url] {
-            if let Ok(Ok(resp)) =
-                tokio::time::timeout(Duration::from_secs(1), reqwest::get(*api_url)).await
+            if let Ok(Ok(resp)) = tokio::time::timeout(
+                Duration::from_secs(1),
+                client
+                    .get(*api_url)
+                    .basic_auth("backend", Some("backend"))
+                    .send(),
+            )
+            .await
             {
                 if resp.status().is_success() {
                     if let Ok(json) = resp.json::<serde_json::Value>().await {

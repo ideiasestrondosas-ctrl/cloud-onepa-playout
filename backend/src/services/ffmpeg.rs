@@ -251,12 +251,24 @@ impl FFmpegService {
     }
 
     fn map_output_url(&self, output_url: &str) -> String {
-        if output_url.contains("localhost") || output_url.contains("127.0.0.1") {
+        if output_url.contains("localhost")
+            || output_url.contains("127.0.0.1")
+            || output_url.contains("mediamtx")
+        {
             if output_url.starts_with("rtmp://") {
-                log::info!("📡 RTMP: Mapping localhost to mediamtx for RTMP streaming");
-                output_url
-                    .replace("localhost", "mediamtx")
-                    .replace("127.0.0.1", "mediamtx")
+                log::info!("📡 RTMP: Mapping host to mediamtx with query auth");
+                if !output_url.contains("@") && !output_url.contains("user=") {
+                    let separator = if output_url.contains('?') { "&" } else { "?" };
+                    output_url
+                        .replace("localhost", "mediamtx")
+                        .replace("127.0.0.1", "mediamtx")
+                        + separator
+                        + "user=backend&pass=backend"
+                } else {
+                    output_url
+                        .replace("localhost", "mediamtx")
+                        .replace("127.0.0.1", "mediamtx")
+                }
             } else if output_url.starts_with("srt://") {
                 if output_url.contains("mode=listener") || output_url.contains("listen=1") {
                     log::info!("🎧 SRT LISTENER: Binding to all interfaces (empty host)");
@@ -265,10 +277,29 @@ impl FFmpegService {
                         .replace("127.0.0.1", "")
                         .replace("0.0.0.0", "")
                 } else {
-                    log::info!("📞 SRT CALLER: Mapping localhost to host.docker.internal for Mac/Host access");
-                    output_url
-                        .replace("localhost", "host.docker.internal")
-                        .replace("127.0.0.1", "host.docker.internal")
+                    log::info!("📞 SRT CALLER: Mapping host to mediamtx with logic");
+                    let mut final_url = output_url
+                        .replace("localhost", "mediamtx")
+                        .replace("127.0.0.1", "mediamtx");
+
+                    if final_url.contains("mediamtx") && !final_url.contains("user=") {
+                        let separator = if final_url.contains(';') || final_url.contains('?') {
+                            ";"
+                        } else {
+                            ";"
+                        }; // Always use ; for streamid suffix if possible
+                           // However, streamid is usually srt://host:port?streamid=...
+                           // If it already has streamid, we append ;user=...
+                        if final_url.contains("streamid=") {
+                            final_url = final_url.replace("streamid=", "streamid=");
+                            // Append to the end of streamid or end of string
+                            final_url = format!("{};user=backend;pass=backend", final_url);
+                        } else {
+                            let q_sep = if final_url.contains('?') { "&" } else { "?" };
+                            final_url = format!("{}{}user=backend&pass=backend", final_url, q_sep);
+                        }
+                    }
+                    final_url
                 }
             } else if output_url.starts_with("udp://") {
                 log::info!("📡 UDP: Mapping localhost to host.docker.internal");
@@ -660,8 +691,9 @@ impl FFmpegService {
             } else if final_output_url.starts_with("rtmp://") {
                 // RTMP with FIFO for robustness against network blips (MediaMTX restarts)
                 // Using onfail=ignore so HLS preview keeps working even if distribution drops
+                // restart_with_keyframe=1: Ensures we only send complete GOPs after a drop/connect
                 format!(
-                    "[f=fifo:fifo_format=flv:onfail=ignore:drop_pkts_on_overflow=1:attempt_recovery=1:recovery_wait_time=1:queue_size=60000]'{}'",
+                    "[f=fifo:fifo_format=flv:onfail=ignore:drop_pkts_on_overflow=1:attempt_recovery=1:recovery_wait_time=3:restart_with_keyframe=1:queue_size=60000]'{}'",
                     escaped_url
                 )
             } else {
@@ -742,6 +774,7 @@ impl FFmpegService {
         input_url: &str,
         output_url: &str,
     ) -> Result<std::process::Child, String> {
+        let final_input_url = self.map_output_url(input_url);
         let mut final_output_url = self.map_output_url(output_url);
         let mut args = vec![
             "-thread_queue_size".to_string(),
@@ -752,7 +785,7 @@ impl FFmpegService {
 
         args.extend(vec![
             "-i".to_string(),
-            input_url.to_string(),
+            final_input_url.to_string(),
             "-map".to_string(),
             "0".to_string(),
             "-c".to_string(),

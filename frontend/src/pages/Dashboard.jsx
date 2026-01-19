@@ -675,9 +675,29 @@ export default function Dashboard() {
                 <Box>
                   <Typography variant="body1" fontWeight="bold">{status.current_clip.filename}</Typography>
                   {status.schedule_source && (
-                    <Typography variant="caption" display="block" color="secondary" sx={{ fontStyle: 'italic', mb: 1 }}>
-                      Fonte: {status.schedule_source}
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <Typography variant="caption" color="secondary" sx={{ fontStyle: 'italic' }}>
+                          Fonte: {status.schedule_source}
+                        </Typography>
+                        {(status.schedule_source.includes('Daily') || status.schedule_source.includes('Weekly')) && (
+                             <Box 
+                                sx={{ 
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    bgcolor: 'warning.main',
+                                    color: 'warning.contrastText',
+                                    px: 0.8,
+                                    py: 0.2,
+                                    borderRadius: 1,
+                                    fontSize: '0.65rem',
+                                    fontWeight: 'bold',
+                                    textTransform: 'uppercase'
+                                }}
+                            >
+                                Repetição
+                            </Box>
+                        )}
+                    </Box>
                   )}
                   <LinearProgress variant="determinate" value={(status.current_clip.position / status.current_clip.duration) * 100} sx={{ mt: 1, mb: 0.5 }} />
                   <Typography variant="caption">{formatTime(status.current_clip.position)} / {formatTime(status.current_clip.duration)}</Typography>

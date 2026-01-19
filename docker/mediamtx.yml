@@ -1,5 +1,18 @@
 # MediaMTX Configuration for ONEPA Playout PRO
 
+# Global authentication
+authMethod: internal
+authInternalUsers:
+  - user: backend
+    pass: backend
+    permissions:
+      - action: api
+      - action: read
+      - action: publish
+  - user: any
+    permissions:
+      - action: read
+
 # Listeners
 rtmp: yes
 hls: yes
@@ -27,5 +40,4 @@ apiAddress: :9997
 paths:
   all:
     # Allow all paths by default
-    # This allows 'live/stream' and others automatically
     source: publisher

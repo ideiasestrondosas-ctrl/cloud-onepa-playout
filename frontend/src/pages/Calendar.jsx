@@ -235,6 +235,11 @@ export default function Calendar() {
       }}>
         <Typography variant="caption" noWrap sx={{ flexGrow: 1, fontWeight: 'bold' }}>
           {eventInfo.timeText} {eventInfo.event.title}
+          {eventInfo.event.extendedProps.repeatPattern && (
+            <Box component="span" sx={{ ml: 0.5, opacity: 0.8, color: '#90caf9' }}>
+               (R)
+            </Box>
+          )}
         </Typography>
         {eventInfo.event.extendedProps.repeatPattern && <HistoryIcon sx={{ fontSize: 12, ml: 0.5, opacity: 0.8 }} />}
       </Box>
