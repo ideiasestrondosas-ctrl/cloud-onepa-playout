@@ -108,19 +108,19 @@ Ver [docs/INSTALL.md](docs/INSTALL.md) para instruções detalhadas.
 
 Este projeto representa um esforço significativo de engenharia para criar uma solução de playout robusta e moderna.
 
-| Métrica          | Detalhe                    | Valor                                |
-| ---------------- | -------------------------- | ------------------------------------ |
-| **Código Fonte** | Frontend (React/JSX)       | ~6,200 linhas                        |
-|                  | Backend (Rust)             | ~4,600 linhas                        |
-|                  | Total                      | **~10,800+ linhas**                  |
-| **Arquitetura**  | Módulos Backend (Rust)     | 29                                   |
-|                  | Componentes Visuais        | 18+                                  |
-|                  | Migrações de Base de Dados | 15                                   |
-| **Complexidade** | Linguagens Principais      | Rust, JavaScript, SQL                |
-|                  | Tecnologias Core           | Tokio (Async), FFmpeg 7.2+, React 18 |
-|                  | Containers                 | 3 (Backend, Frontend, Postgres)      |
+| Métrica          | Detalhe                    | Valor                                     |
+| ---------------- | -------------------------- | ----------------------------------------- |
+| **Código Fonte** | Frontend (React/JSX)       | ~7,200 linhas                             |
+|                  | Backend (Rust)             | ~5,600 linhas                             |
+|                  | Total                      | **~12,800+ linhas**                       |
+| **Arquitetura**  | Módulos Backend (Rust)     | 30                                        |
+|                  | Componentes Visuais        | 22+                                       |
+|                  | Migrações de Base de Dados | 15                                        |
+| **Complexidade** | Linguagens Principais      | Rust, JavaScript, SQL                     |
+|                  | Tecnologias Core           | Tokio (Async), FFmpeg 7.2+, React 18      |
+|                  | Containers                 | 4 (Backend, Frontend, Postgres, MediaMTX) |
 
-> _Dados aproximados baseados na versão v1.9.4-PRO_
+> _Dados aproximados baseados na versão v1.9.5-PRO_
 
 ## 🎯 Roadmap & Future
 
