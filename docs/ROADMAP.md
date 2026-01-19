@@ -3,7 +3,6 @@
 ## 🏁 Completed Milestones
 
 - [x] **Phase 1-18**: Core System & Beta Release (v1.0 - v1.8.0-PRO)
-
   - Full Playout Engine setup
   - React/Material-UI Frontend
   - Scheduling & Calendar
@@ -11,18 +10,8 @@
   - Setup Wizard
   - Branding & Theming
 
-- [x] **Phase 19-21**: UI Refinement & Stability (v1.9.3-PRO)
-  - Security Hardening (SQLi & Path Traversal Fixes)
-  - Performance Optimization (DB Indexes + Search Debounce)
-  - Header Clock (Real-time)
-  - Dashboard Streamlining
-  - LUFS Meter v2 (Chrome/Safari)
-  - Enhanced Media Library (Subfolders + Recursive Delete)
-  - Docker Orchestration & Healthchecks
-  - **Setup Wizard v2** (Multi-select, Metadata)
-  - **Playlist Editor v2** (Unique Clips, Bulk Add)
-  - **VLC/SRT Diagnostics** (Launcher, Dynamic Config)
-  - Bug Fixes & API Stabilization
+- [x] **Phase 19-21**: UI Refinement & Security (v1.9.3-PRO)
+- [x] **Phase 22**: SRT caller v2, Master Feed Auth & Repeat Indicators (v1.9.5-PRO)
 
 ## 🧪 Phase 22: Live Inputs & Advanced Protocol (Next)
 
