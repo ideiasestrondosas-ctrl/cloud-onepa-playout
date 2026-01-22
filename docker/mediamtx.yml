@@ -39,5 +39,5 @@ apiAddress: :9997
 # Path settings
 paths:
   all:
-    # Allow all paths by default
+    # Global default: source is publisher
     source: publisher

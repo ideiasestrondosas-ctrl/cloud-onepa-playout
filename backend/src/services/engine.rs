@@ -10,6 +10,7 @@ use std::process::Child;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::time::{sleep, Duration};
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlayoutStatus {
@@ -21,6 +22,8 @@ pub struct PlayoutStatus {
     pub logs: Vec<String>,
     pub active_streams: Vec<ActiveStream>,
     pub schedule_source: Option<String>,
+    pub current_playlist_id: Option<Uuid>,
+    pub current_playlist_name: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -77,6 +80,8 @@ impl PlayoutEngine {
                 logs: Vec::new(),
                 active_streams: Vec::new(),
                 schedule_source: None,
+                current_playlist_id: None,
+                current_playlist_name: None,
             })),
             engine_start_time: Arc::new(Mutex::new(None)),
             skip_requested: Arc::new(Mutex::new(false)),
@@ -115,11 +120,17 @@ impl PlayoutEngine {
         let mut r = self.is_running.lock().await;
         *r = running;
 
-        // Persist to DB
-        let _ = sqlx::query("UPDATE settings SET is_running = $1 WHERE id = TRUE")
-            .bind(running)
-            .execute(&self.pool)
-            .await;
+        if !running {
+            let _ = sqlx::query("UPDATE settings SET is_running = $1, rtmp_enabled = FALSE, srt_enabled = FALSE, udp_enabled = FALSE WHERE id = TRUE")
+                .bind(running)
+                .execute(&self.pool)
+                .await;
+        } else {
+            let _ = sqlx::query("UPDATE settings SET is_running = $1 WHERE id = TRUE")
+                .bind(running)
+                .execute(&self.pool)
+                .await;
+        }
 
         let mut status = self.status.lock().await;
         let mut start_time = self.engine_start_time.lock().await;
@@ -270,8 +281,16 @@ impl PlayoutEngine {
         }
         Ok(())
     }
-
     async fn tick(&self) -> Result<(), String> {
+        // Update Stream Stats and Distribution (even if engine stopped so protocols show)
+        let settings = sqlx::query_as::<_, Settings>("SELECT * FROM settings WHERE id = TRUE")
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        self.manage_distribution(&settings).await;
+        self.update_stream_stats(&settings).await;
+
         // Check if engine is enabled
         if !*self.is_running.lock().await {
             return Ok(());
@@ -285,19 +304,9 @@ impl PlayoutEngine {
                     status.uptime = (Local::now() - start).num_seconds();
                 }
             }
-            // Update logs in status (All modes)
             let logs_buffer = self.logs.lock().await;
             status.logs = logs_buffer.iter().cloned().collect();
         }
-
-        // 0. Update Stream Stats
-        let settings = sqlx::query_as::<_, Settings>("SELECT * FROM settings WHERE id = TRUE")
-            .fetch_one(&self.pool)
-            .await
-            .map_err(|e| e.to_string())?;
-
-        self.update_stream_stats(&settings).await;
-        self.manage_distribution(&settings).await;
 
         let now = Local::now();
         let current_date = now.date_naive();
@@ -312,7 +321,15 @@ impl PlayoutEngine {
         // 2. Find scheduled playlist (Better logic)
         // a. Today's direct schedule
         let mut schedule = sqlx::query_as::<_, Schedule>(
-            "SELECT * FROM schedule WHERE date = $1 ORDER BY start_time DESC",
+            "SELECT s.*, p.name as playlist_name 
+             FROM schedule s 
+             JOIN playlists p ON s.playlist_id = p.id 
+             WHERE s.date = $1 AND s.repeat_pattern IS NULL
+             AND NOT EXISTS (
+                 SELECT 1 FROM schedule_exceptions se 
+                 WHERE se.schedule_id = s.id AND se.exception_date = $1
+             )
+             ORDER BY s.start_time ASC LIMIT 1",
         )
         .bind(current_date)
         .fetch_all(&self.pool)
@@ -321,7 +338,15 @@ impl PlayoutEngine {
 
         // b. Daily repeats
         let daily = sqlx::query_as::<_, Schedule>(
-            "SELECT * FROM schedule WHERE repeat_pattern = 'daily' AND date <= $1 ORDER BY start_time DESC"
+            "SELECT s.*, p.name as playlist_name 
+             FROM schedule s 
+             JOIN playlists p ON s.playlist_id = p.id 
+             WHERE s.repeat_pattern = 'daily' AND s.date <= $1
+             AND NOT EXISTS (
+                 SELECT 1 FROM schedule_exceptions se 
+                 WHERE se.schedule_id = s.id AND se.exception_date = $1
+             )
+             ORDER BY s.date DESC LIMIT 1",
         )
         .bind(current_date)
         .fetch_all(&self.pool)
@@ -332,7 +357,16 @@ impl PlayoutEngine {
         // c. Weekly repeats
         let day_of_week = current_date.weekday().num_days_from_monday();
         let weekly = sqlx::query_as::<_, Schedule>(
-            "SELECT * FROM schedule WHERE repeat_pattern = 'weekly' AND EXTRACT(DOW FROM date) = $1 AND date <= $2 ORDER BY start_time DESC"
+            "SELECT s.*, p.name as playlist_name 
+             FROM schedule s 
+             JOIN playlists p ON s.playlist_id = p.id 
+             WHERE s.repeat_pattern = 'weekly' 
+             AND EXTRACT(DOW FROM s.date) = $1 AND s.date <= $2
+             AND NOT EXISTS (
+                 SELECT 1 FROM schedule_exceptions se 
+                 WHERE se.schedule_id = s.id AND se.exception_date = $2
+             )
+             ORDER BY s.date DESC LIMIT 1",
         )
         .bind(day_of_week as i32)
         .bind(current_date)
@@ -393,6 +427,8 @@ impl PlayoutEngine {
                     {
                         let mut status = self.status.lock().await;
                         status.schedule_source = Some(source_desc);
+                        status.current_playlist_id = Some(s.playlist_id);
+                        status.current_playlist_name = s.playlist_name.clone();
                     }
                     break;
                 } else {
@@ -421,6 +457,8 @@ impl PlayoutEngine {
             {
                 let mut status = self.status.lock().await;
                 status.schedule_source = None;
+                status.current_playlist_id = None;
+                status.current_playlist_name = None;
                 if status.status != "stopped" && status.status != "idle" {
                     log::info!("No active schedule found. Stopping playout.");
                 }
@@ -816,318 +854,283 @@ impl PlayoutEngine {
         let mut streams = Vec::new();
         let engine_running = *self.is_running.lock().await;
 
+        #[derive(Default, Clone)]
+        struct PathInfo {
+            rtmp: i32,
+            hls: i32,
+            srt: i32,
+            webrtc: i32,
+            rtsp: i32,
+            ready: bool,
+        }
+        let mut mediamtx_paths = std::collections::HashMap::new();
+
         if engine_running {
-            // 0. Master Feed Status
-            streams.push(ActiveStream {
-                protocol: "MASTER".to_string(),
-                status: "active".to_string(),
-                sessions: 0,
-                details: "Internal Feed".to_string(),
-            });
-
-            // 1. RTMP Status
-            let rtmp_active = settings.rtmp_enabled || settings.output_type == "rtmp";
-            let mut rtmp_sessions = 0;
-            let mut rtmp_status = if rtmp_active {
-                "active".to_string()
-            } else {
-                "idle".to_string()
-            };
-
-            if rtmp_active {
-                let mut procs = self.distribution_processes.lock().await;
-                let proc_alive = if let Some(child) = procs.get_mut("rtmp") {
-                    match child.try_wait() {
-                        Ok(None) => true,
-                        _ => {
-                            rtmp_status = "error".to_string();
-                            false
-                        }
-                    }
-                } else {
-                    if settings.output_type == "rtmp" || settings.rtmp_enabled {
-                        rtmp_status = "error".to_string();
-                    }
-                    false
-                };
-
-                if proc_alive {
-                    let client = reqwest::Client::new();
-                    if let Ok(resp) = client
-                        .get("http://mediamtx:9997/v3/paths/list")
-                        .basic_auth("backend", Some("backend"))
-                        .send()
-                        .await
-                    {
-                        if let Ok(json) = resp.json::<serde_json::Value>().await {
-                            if let Some(items) = json.get("items") {
-                                if let Some(path_obj) = items.get("live/stream") {
-                                    rtmp_sessions = path_obj
-                                        .get("readerCount")
-                                        .and_then(|v| v.as_i64())
-                                        .unwrap_or(0)
-                                        as i32;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            streams.push(ActiveStream {
-                protocol: "RTMP".to_string(),
-                status: rtmp_status,
-                sessions: rtmp_sessions,
-                details: "MediaMTX".to_string(),
-            });
-
-            // 2. HLS Status
-            let mut hls_sessions = 0;
+            let mediamtx_host =
+                std::env::var("MEDIAMTX_HOST").unwrap_or_else(|_| "localhost".to_string());
             let client = reqwest::Client::new();
             if let Ok(resp) = client
-                .get("http://mediamtx:9997/v3/paths/list")
+                .get(format!("http://{}:9997/v3/paths/list", mediamtx_host)) // Always use localhost for backend-to-mediamtx on host
                 .basic_auth("backend", Some("backend"))
                 .send()
                 .await
             {
                 if let Ok(json) = resp.json::<serde_json::Value>().await {
                     if let Some(items) = json.get("items") {
-                        if let Some(path_obj) = items.get("live/stream") {
-                            hls_sessions = path_obj
-                                .get("readerCount")
-                                .and_then(|v| v.as_i64())
-                                .unwrap_or(0) as i32;
-                        }
-                    }
-                }
-            }
-            streams.push(ActiveStream {
-                protocol: "HLS".to_string(),
-                status: "active".to_string(),
-                sessions: hls_sessions,
-                details: "Public/Preview".to_string(),
-            });
+                        let process_item = |data: &serde_json::Value| -> PathInfo {
+                            let mut info = PathInfo::default();
+                            info.ready =
+                                data.get("ready").and_then(|v| v.as_bool()).unwrap_or(false);
 
-            // 3. SRT Status
-            let srt_active = settings.srt_enabled || settings.output_type == "srt";
-            let mut srt_sessions = 0;
-            let mut srt_status = if srt_active {
-                "active".to_string()
-            } else {
-                "idle".to_string()
-            };
-            let srt_details = if settings.output_type == "srt" {
-                settings
-                    .srt_mode
-                    .clone()
-                    .unwrap_or_else(|| "caller".to_string())
-            } else {
-                "caller".to_string()
-            };
-
-            if srt_active {
-                let mut procs = self.distribution_processes.lock().await;
-                let proc_alive = if let Some(child) = procs.get_mut("srt") {
-                    match child.try_wait() {
-                        Ok(None) => true,
-                        _ => {
-                            srt_status = "error".to_string();
-                            false
-                        }
-                    }
-                } else {
-                    if settings.output_type == "srt" || settings.srt_enabled {
-                        srt_status = "error".to_string();
-                    }
-                    false
-                };
-
-                if proc_alive {
-                    if srt_details == "caller" {
-                        let client = reqwest::Client::new();
-                        if let Ok(resp) = client
-                            .get("http://mediamtx:9997/v3/paths/list")
-                            .basic_auth("backend", Some("backend"))
-                            .send()
-                            .await
-                        {
-                            if let Ok(json) = resp.json::<serde_json::Value>().await {
-                                if let Some(items) = json.get("items") {
-                                    if let Some(path_obj) = items.get("live/stream") {
-                                        srt_sessions = path_obj
-                                            .get("readerCount")
-                                            .and_then(|v| v.as_i64())
-                                            .unwrap_or(0)
-                                            as i32;
+                            if let Some(readers) = data.get("readers").and_then(|v| v.as_array()) {
+                                for r in readers {
+                                    if let Some(rtype) = r.get("type").and_then(|v| v.as_str()) {
+                                        match rtype {
+                                            "rtmpConn" => info.rtmp += 1,
+                                            "hlsConn" | "hlsSession" | "hlsMuxer" | "hlsSource" => {
+                                                info.hls += 1
+                                            }
+                                            "srtConn" => info.srt += 1,
+                                            "webrtcConn" | "webrtcSession" => info.webrtc += 1,
+                                            "rtspConn" | "rtspSession" => info.rtsp += 1,
+                                            _ => {}
+                                        }
                                     }
+                                }
+                            } else if let Some(count) =
+                                data.get("readerCount").and_then(|v| v.as_i64())
+                            {
+                                // Fallback if readers array is not present but count is
+                                if let Some(path_name) = data.get("name").and_then(|v| v.as_str()) {
+                                    if path_name.contains("hls") || path_name.ends_with("m3u8") {
+                                        info.hls = count as i32;
+                                    } else {
+                                        info.rtmp = count as i32;
+                                    }
+                                } else {
+                                    info.rtmp = count as i32;
+                                }
+                            }
+                            info
+                        };
+
+                        if let Some(obj) = items.as_object() {
+                            for (name, data) in obj {
+                                let mut data_with_name = data.clone();
+                                if data_with_name.get("name").is_none() {
+                                    if let Some(obj_mut) = data_with_name.as_object_mut() {
+                                        obj_mut.insert(
+                                            "name".to_string(),
+                                            serde_json::Value::String(name.clone()),
+                                        );
+                                    }
+                                }
+                                mediamtx_paths.insert(name.clone(), process_item(&data_with_name));
+                            }
+                        } else if let Some(arr) = items.as_array() {
+                            for item in arr {
+                                if let Some(name) = item.get("name").and_then(|v| v.as_str()) {
+                                    mediamtx_paths.insert(name.to_string(), process_item(item));
                                 }
                             }
                         }
-                    } else {
-                        srt_sessions = 1;
                     }
                 }
-            }
-
-            streams.push(ActiveStream {
-                protocol: "SRT".to_string(),
-                status: srt_status,
-                sessions: srt_sessions,
-                details: srt_details,
-            });
-
-            // 4. UDP Status
-            let udp_active = settings.udp_enabled || settings.output_type == "udp";
-            let udp_sessions = 0;
-            let mut udp_status = if udp_active {
-                "active".to_string()
-            } else {
-                "idle".to_string()
-            };
-
-            let udp_url = if settings.output_type == "udp" {
-                &settings.output_url
-            } else {
-                settings.udp_output_url.as_deref().unwrap_or("")
-            };
-
-            let udp_mode = if let Some(mode) = &settings.udp_mode {
-                mode.clone()
-            } else {
-                if udp_url.contains("239.") || udp_url.contains("224.") {
-                    "multicast".to_string()
-                } else {
-                    "unicast".to_string()
-                }
-            };
-
-            if udp_active {
-                let mut procs = self.distribution_processes.lock().await;
-                if let Some(child) = procs.get_mut("udp") {
-                    if !matches!(child.try_wait(), Ok(None)) {
-                        udp_status = "error".to_string();
-                    }
-                    // UDP is connectionless - no way to track sessions
-                    // Set to 0 to indicate it's active but we can't count receivers
-                } else {
-                    if settings.output_type == "udp" || settings.udp_enabled {
-                        udp_status = "error".to_string();
-                    }
-                }
-            }
-
-            streams.push(ActiveStream {
-                protocol: "UDP".to_string(),
-                status: udp_status,
-                sessions: udp_sessions,
-                details: udp_mode.to_string(),
-            });
-
-            // 5. Extended Multi-output Status (DASH, MSS, RIST)
-            // These are tied to the main playout process (tee muxer)
-            let master_running = {
-                let mut proc_lock = self.current_process.lock().await;
-                matches!(proc_lock.as_mut().map(|c| c.try_wait()), Some(Ok(None)))
-            };
-
-            // Fetch all MediaMTX paths for session counting
-            let mut mediamtx_sessions = std::collections::HashMap::new();
-            if master_running {
-                let client = reqwest::Client::new();
-                if let Ok(resp) = client
-                    .get("http://mediamtx:9997/v3/paths/list")
-                    .basic_auth("backend", Some("backend"))
-                    .send()
-                    .await
-                {
-                    if let Ok(json) = resp.json::<serde_json::Value>().await {
-                        if let Some(items) = json.get("items").and_then(|v| v.as_object()) {
-                            for (path_name, path_data) in items {
-                                let reader_count = path_data
-                                    .get("readerCount")
-                                    .and_then(|v| v.as_i64())
-                                    .unwrap_or(0)
-                                    as i32;
-                                mediamtx_sessions.insert(path_name.clone(), reader_count);
-                            }
-                        }
-                    }
-                }
-            }
-
-            if settings.dash_enabled {
-                streams.push(ActiveStream {
-                    protocol: "DASH".to_string(),
-                    status: if master_running {
-                        "active".to_string()
-                    } else {
-                        "idle".to_string()
-                    },
-                    sessions: *mediamtx_sessions.get("live/stream").unwrap_or(&0),
-                    details: "Manifest-based".to_string(),
-                });
-            }
-
-            if settings.mss_enabled {
-                streams.push(ActiveStream {
-                    protocol: "MSS".to_string(),
-                    status: if master_running {
-                        "active".to_string()
-                    } else {
-                        "idle".to_string()
-                    },
-                    sessions: *mediamtx_sessions.get("live/stream").unwrap_or(&0),
-                    details: "Smooth Streaming".to_string(),
-                });
-            }
-
-            if settings.rist_enabled {
-                streams.push(ActiveStream {
-                    protocol: "RIST".to_string(),
-                    status: if master_running {
-                        "active".to_string()
-                    } else {
-                        "idle".to_string()
-                    },
-                    sessions: if master_running { 1 } else { 0 },
-                    details: "Reliable UDP".to_string(),
-                });
-            }
-
-            // 6. MediaMTX Served Protocols (RTSP, WebRTC, LL-HLS)
-            // These are always available if the master feed is pushing to MediaMTX
-            if settings.rtsp_enabled {
-                streams.push(ActiveStream {
-                    protocol: "RTSP".to_string(),
-                    status: if master_running {
-                        "active".to_string()
-                    } else {
-                        "idle".to_string()
-                    },
-                    sessions: *mediamtx_sessions.get("live/stream").unwrap_or(&0),
-                    details: "Port 8554".to_string(),
-                });
-            }
-
-            if settings.webrtc_enabled {
-                streams.push(ActiveStream {
-                    protocol: "WebRTC".to_string(),
-                    status: if master_running {
-                        "active".to_string()
-                    } else {
-                        "idle".to_string()
-                    },
-                    sessions: *mediamtx_sessions.get("live/stream").unwrap_or(&0),
-                    details: "Low Latency".to_string(),
-                });
             }
         }
 
-        let mut status = self.status.lock().await;
+        // 0. Master Feed Status
+        let master_info = mediamtx_paths.get("live/master");
+        streams.push(ActiveStream {
+            protocol: "MASTER".to_string(),
+            status: if master_info.map(|i| i.ready).unwrap_or(false) {
+                "active".to_string()
+            } else {
+                "idle".to_string()
+            },
+            sessions: master_info
+                .map(|i| i.rtmp + i.hls + i.srt + i.webrtc + i.rtsp)
+                .unwrap_or(0),
+            details: "Internal Feed".to_string(),
+        });
 
-        // Sync logs to status for frontend display
+        // 1. RTMP Status
+        let rtmp_active = settings.rtmp_enabled || settings.output_type == "rtmp";
+        let rtmp_path_info = mediamtx_paths.get("live_stream");
+        let mut rtmp_status = if rtmp_active {
+            if rtmp_path_info.map(|i| i.ready).unwrap_or(false) {
+                "active".to_string()
+            } else {
+                "starting".to_string()
+            }
+        } else {
+            "idle".to_string()
+        };
+
+        if rtmp_active {
+            let mut procs = self.distribution_processes.lock().await;
+            if let Some(child) = procs.get_mut("rtmp") {
+                if !matches!(child.try_wait(), Ok(None)) {
+                    rtmp_status = "error".to_string();
+                }
+            }
+        }
+
+        streams.push(ActiveStream {
+            protocol: "RTMP".to_string(),
+            status: rtmp_status,
+            sessions: rtmp_path_info.map(|i| i.rtmp).unwrap_or(0),
+            details: format!(
+                "Relay: {}",
+                settings
+                    .rtmp_output_url
+                    .as_deref()
+                    .unwrap_or("rtmp://localhost:1935/live_stream")
+                    .replace("mediamtx", "localhost")
+            ),
+        });
+
+        // 2. HLS Status
+        let hls_path_info = mediamtx_paths.get("live_stream");
+
+        // HLS is tied to ffmpeg process - if engine is running, HLS is available
+        streams.push(ActiveStream {
+            protocol: "HLS".to_string(),
+            status: if engine_running {
+                "active".to_string()
+            } else {
+                "idle".to_string()
+            },
+            // HLS readers + RTSP/RTMP readers (total downstream reach)
+            sessions: hls_path_info.map(|i| i.hls + i.rtsp + i.rtmp).unwrap_or(0),
+            details: "http://localhost:8888/live_stream/".to_string(),
+        });
+
+        // 3. SRT Status
+        let srt_active = settings.srt_enabled || settings.output_type == "srt";
+        let srt_path_info = mediamtx_paths.get("live_stream_srt");
+        let mut srt_status = if srt_active {
+            if srt_path_info.map(|i| i.ready).unwrap_or(false) {
+                "active".to_string()
+            } else {
+                "starting".to_string()
+            }
+        } else {
+            "idle".to_string()
+        };
+
+        if srt_active {
+            let mut procs = self.distribution_processes.lock().await;
+            if let Some(child) = procs.get_mut("srt") {
+                if !matches!(child.try_wait(), Ok(None)) {
+                    srt_status = "error".to_string();
+                }
+            }
+        }
+
+        streams.push(ActiveStream {
+            protocol: "SRT".to_string(),
+            status: srt_status,
+            sessions: srt_path_info.map(|i| i.srt).unwrap_or(0),
+            details: format!(
+                "Relay: {}",
+                settings
+                    .srt_output_url
+                    .as_deref()
+                    .unwrap_or("srt://localhost:8890?mode=caller&streamid=read:live_stream_srt")
+                    .replace("mediamtx", "localhost")
+            ),
+        });
+
+        // 4. UDP Status
+        let udp_enabled_in_settings = settings.udp_enabled || settings.output_type == "udp";
+        let mut udp_status = "idle".to_string();
+        let mut udp_sessions = 0;
+
+        if udp_enabled_in_settings {
+            let mut procs = self.distribution_processes.lock().await;
+            if let Some(child) = procs.get_mut("udp") {
+                match child.try_wait() {
+                    Ok(None) => {
+                        udp_status = "active".to_string();
+                        udp_sessions = 1;
+                    }
+                    Ok(Some(_)) => {
+                        udp_status = "error".to_string();
+                    }
+                    Err(_) => {
+                        udp_status = "error".to_string();
+                    }
+                }
+            }
+        }
+
+        streams.push(ActiveStream {
+            protocol: "UDP".to_string(),
+            status: udp_status,
+            sessions: udp_sessions,
+            details: format!(
+                "Relay: {}",
+                settings
+                    .udp_output_url
+                    .as_deref()
+                    .unwrap_or("udp://@:1234")
+                    .replace("127.0.0.1", "@")
+                    .replace("localhost", "@")
+            ),
+        });
+
+        // 5. Extended
+        let default_path_info = mediamtx_paths.get("live_stream");
+        let default_ready = default_path_info.map(|i| i.ready).unwrap_or(false);
+
+        streams.push(ActiveStream {
+            protocol: "DASH".to_string(),
+            status: if settings.dash_enabled && default_ready {
+                "active".to_string()
+            } else {
+                "idle".to_string()
+            },
+            sessions: default_path_info.map(|i| i.hls).unwrap_or(0),
+            details: "Manifest-based".to_string(),
+        });
+
+        streams.push(ActiveStream {
+            protocol: "MSS".to_string(),
+            status: if settings.mss_enabled && default_ready {
+                "active".to_string()
+            } else {
+                "idle".to_string()
+            },
+            sessions: default_path_info.map(|i| i.hls).unwrap_or(0),
+            details: "Smooth Streaming".to_string(),
+        });
+
+        streams.push(ActiveStream {
+            protocol: "RTSP".to_string(),
+            status: if settings.rtsp_enabled && default_ready {
+                "active".to_string()
+            } else {
+                "idle".to_string()
+            },
+            sessions: default_path_info.map(|i| i.rtsp).unwrap_or(0),
+            details: "Port 8554".to_string(),
+        });
+
+        streams.push(ActiveStream {
+            protocol: "WebRTC".to_string(),
+            status: if settings.webrtc_enabled && default_ready {
+                "active".to_string()
+            } else {
+                "idle".to_string()
+            },
+            sessions: default_path_info.map(|i| i.webrtc).unwrap_or(0),
+            details: "Low Latency".to_string(),
+        });
+
+        let mut status = self.status.lock().await;
         let logs_lock = self.logs.lock().await;
         status.logs = logs_lock.iter().cloned().collect();
-
         status.active_streams = streams;
     }
 
@@ -1158,11 +1161,22 @@ impl PlayoutEngine {
             _ => return Err(format!("Unknown protocol: {}", protocol)),
         };
 
+        log::info!("API: Toggling protocol {} to {}", protocol, enabled);
         sqlx::query(query)
             .bind(enabled)
             .execute(&self.pool)
             .await
             .map_err(|e| e.to_string())?;
+
+        // If disabling, stop the process immediately to prevent flicker
+        if !enabled {
+            let mut procs = self.distribution_processes.lock().await;
+            if let Some(mut child) = procs.remove(protocol) {
+                let _ = child.kill();
+                let _ = child.wait();
+                log::info!("Immediate stop for protocol {}", protocol);
+            }
+        }
 
         // The tick() loop will pick up the change and manage processes via manage_distribution
         Ok(())
@@ -1172,18 +1186,21 @@ impl PlayoutEngine {
         let engine_running = *self.is_running.lock().await;
 
         if !engine_running {
-            let mut procs = self.distribution_processes.lock().await;
-            for child in procs.values_mut() {
-                child.kill().ok();
-            }
-            procs.clear();
-            return;
+            log::debug!("Engine not running, but will manage distribution based on DB flags");
         }
 
         // Check if master feed is available before starting relays
         let master_feed_active = self.check_master_feed_active().await;
         if !master_feed_active {
-            // Master feed not ready yet, skip this cycle
+            // If master feed is not active, we must ensure all relays are stopped
+            let mut procs = self.distribution_processes.lock().await;
+            if !procs.is_empty() {
+                log::info!("Master feed inactive. Stopping all distribution relays.");
+                for child in procs.values_mut() {
+                    child.kill().ok();
+                }
+                procs.clear();
+            }
             return;
         }
 
@@ -1192,23 +1209,26 @@ impl PlayoutEngine {
 
         let mut procs = self.distribution_processes.lock().await;
         let ffmpeg = FFmpegService::new();
-        let master_url = "rtmp://mediamtx:1935/live/master?user=backend&pass=backend";
+        let mediamtx_host =
+            std::env::var("MEDIAMTX_HOST").unwrap_or_else(|_| "localhost".to_string());
+        let master_url = format!("rtmp://{}:1935/live/master", mediamtx_host);
 
         // 1. RTMP
         let rtmp_enabled = settings.rtmp_enabled || settings.output_type == "rtmp";
+        let rtmp_fallback = format!("rtmp://{}:1935/live_stream", mediamtx_host);
         let rtmp_url = if settings.output_type == "rtmp" {
             &settings.output_url
         } else {
             settings
                 .rtmp_output_url
                 .as_deref()
-                .unwrap_or("rtmp://mediamtx:1935/live/stream")
+                .unwrap_or(&rtmp_fallback)
         };
         self.handle_relay(
             "rtmp",
             rtmp_enabled,
             rtmp_url,
-            master_url,
+            &master_url,
             &mut procs,
             &ffmpeg,
         )
@@ -1216,16 +1236,24 @@ impl PlayoutEngine {
 
         // 2. SRT
         let srt_enabled = settings.srt_enabled || settings.output_type == "srt";
+        let srt_fallback = format!(
+            "srt://{}:8890?mode=caller&streamid=publish:live_stream_srt",
+            mediamtx_host
+        );
         let srt_url = if settings.output_type == "srt" {
             &settings.output_url
         } else {
-            settings
-                .srt_output_url
-                .as_deref()
-                .unwrap_or("srt://mediamtx:8890?mode=caller&streamid=publish:live/stream")
+            settings.srt_output_url.as_deref().unwrap_or(&srt_fallback)
         };
-        self.handle_relay("srt", srt_enabled, srt_url, master_url, &mut procs, &ffmpeg)
-            .await;
+        self.handle_relay(
+            "srt",
+            srt_enabled,
+            srt_url,
+            &master_url,
+            &mut procs,
+            &ffmpeg,
+        )
+        .await;
 
         // 3. UDP
         let udp_enabled = settings.udp_enabled || settings.output_type == "udp";
@@ -1237,8 +1265,15 @@ impl PlayoutEngine {
                 .as_deref()
                 .unwrap_or("udp://@239.0.0.1:1234")
         };
-        self.handle_relay("udp", udp_enabled, udp_url, master_url, &mut procs, &ffmpeg)
-            .await;
+        self.handle_relay(
+            "udp",
+            udp_enabled,
+            udp_url,
+            &master_url,
+            &mut procs,
+            &ffmpeg,
+        )
+        .await;
     }
 
     async fn handle_relay(
@@ -1343,7 +1378,9 @@ impl PlayoutEngine {
         } else if !enabled && is_running {
             log::info!("Stopping relay for {}", key);
             if let Some(mut child) = procs.remove(key) {
-                child.kill().ok();
+                // Force kill the child process immediately
+                let _ = child.kill();
+                let _ = child.wait(); // Ensure it's reaped
 
                 // Log to system logs
                 self.add_log(format!("Protocol {} relay stopped", key.to_uppercase()))
@@ -1352,18 +1389,19 @@ impl PlayoutEngine {
         }
     }
 
-    /// Check if the master feed is active in MediaMTX
     async fn check_master_feed_active(&self) -> bool {
+        let mediamtx_host =
+            std::env::var("MEDIAMTX_HOST").unwrap_or_else(|_| "localhost".to_string());
         // Try API first (v3 is standard for latest MediaMTX)
-        let v3_url = "http://mediamtx:9997/v3/paths/list";
-        let v2_url = "http://mediamtx:9997/v2/paths/list";
+        let v3_url = format!("http://{}:9997/v3/paths/list", mediamtx_host);
+        let v2_url = format!("http://{}:9997/v2/paths/list", mediamtx_host);
 
         let client = reqwest::Client::new();
         for api_url in &[v3_url, v2_url] {
             if let Ok(Ok(resp)) = tokio::time::timeout(
                 Duration::from_secs(1),
                 client
-                    .get(*api_url)
+                    .get(api_url)
                     .basic_auth("backend", Some("backend"))
                     .send(),
             )
@@ -1397,20 +1435,11 @@ impl PlayoutEngine {
                             }
                         }
                     }
-                } else if resp.status() == reqwest::StatusCode::UNAUTHORIZED {
-                    log::warn!("MediaMTX API requires authentication. Check mediamtx.yml.");
                 }
             }
         }
 
-        // If API fails or unreachable, fallback to a small delay after engine start
-        if let Some(start_time) = *self.engine_start_time.lock().await {
-            let uptime = (Local::now() - start_time).num_seconds();
-            return uptime > 10; // Give 10s for MediaMTX to stabilize if API fails
-        }
-
-        // Fallback: If API fails, check if the engine process itself is running
-        // Since the engine process ALWAYS outputs to the master feed, if it's running, the feed should be there soon
+        // Fallback: Check if the engine process itself is running
         *self.is_running.lock().await
     }
 }

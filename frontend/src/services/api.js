@@ -60,6 +60,7 @@ export const mediaAPI = {
     onUploadProgress: onProgress
   }),
   delete: (id) => api.delete(`/media/${id}`),
+  update: (id, data) => api.put(`/media/${id}`, data),
   setFiller: (id, isFiller) => api.put(`/media/${id}/filler`, { is_filler: isFiller }),
   makeTransparent: (id, color) => api.post(`/media/${id}/transparent`, { color }),
   listFolders: () => api.get('/media/folders'),
@@ -87,6 +88,7 @@ export const scheduleAPI = {
   update: (id, data) => api.put(`/schedule/${id}`, data),
   delete: (id) => api.delete(`/schedule/${id}`),
   deleteBulk: (startDate, endDate) => api.post('/schedule/bulk', { start_date: startDate, end_date: endDate }),
+  addException: (scheduleId, date) => api.post('/schedule/exception', { schedule_id: scheduleId, date }),
 };
 
 // Playout endpoints

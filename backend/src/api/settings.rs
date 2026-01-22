@@ -71,10 +71,14 @@ async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
                 hls_enabled: false,
                 srt_enabled: false,
                 udp_enabled: false,
-                rtmp_output_url: Some("rtmp://mediamtx:1935/live/stream".to_string()),
-                srt_output_url: Some(
-                    "srt://mediamtx:8890?mode=caller&streamid=publish:live/stream".to_string(),
-                ),
+                rtmp_output_url: Some(format!(
+                    "rtmp://{}:1935/live/stream",
+                    std::env::var("MEDIAMTX_HOST").unwrap_or_else(|_| "localhost".to_string())
+                )),
+                srt_output_url: Some(format!(
+                    "srt://{}:8890?mode=caller&streamid=publish:live/stream",
+                    std::env::var("MEDIAMTX_HOST").unwrap_or_else(|_| "localhost".to_string())
+                )),
                 udp_output_url: Some("udp://@239.0.0.1:1234".to_string()),
                 udp_mode: Some("multicast".to_string()),
                 auto_start_protocols: true,
@@ -91,6 +95,7 @@ async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
                 rist_output_url: Some("rist://127.0.0.1:1234".to_string()),
                 rtsp_output_url: Some("rtsp://localhost:8554/live/stream".to_string()),
                 webrtc_output_url: Some("http://localhost:8889/live/stream".to_string()),
+                epg_days: Some(7),
             })
         }
         Err(_) => HttpResponse::InternalServerError()
@@ -178,6 +183,12 @@ async fn update_settings(
     if let Some(ref release_date) = req.release_date {
         sql.push_str(&format!(", release_date = '{}'", release_date));
     }
+    if let Some(overlay_enabled) = req.overlay_enabled {
+        sql.push_str(&format!(", overlay_enabled = {}", overlay_enabled));
+    }
+    if let Some(ref app_logo_path) = req.app_logo_path {
+        sql.push_str(&format!(", app_logo_path = '{}'", app_logo_path));
+    }
 
     // Multi-protocol settings
     if let Some(enabled) = req.rtmp_enabled {
@@ -245,6 +256,9 @@ async fn update_settings(
     }
     if let Some(ref url) = req.webrtc_output_url {
         sql.push_str(&format!(", webrtc_output_url = '{}'", url));
+    }
+    if let Some(epg_days) = req.epg_days {
+        sql.push_str(&format!(", epg_days = {}", epg_days));
     }
 
     sql.push_str(" WHERE id = TRUE");

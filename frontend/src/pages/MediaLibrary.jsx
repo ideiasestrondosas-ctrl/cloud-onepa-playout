@@ -49,6 +49,7 @@ import {
   Error as ErrorIcon,
   HourglassEmpty as PendingIcon,
   Info as InfoIcon,
+  Edit as EditIcon,
 } from '@mui/icons-material';
 import { CircularProgress } from '@mui/material';
 import { useDropzone } from 'react-dropzone';
@@ -81,6 +82,9 @@ export default function MediaLibrary() {
   const [uploadFiles, setUploadFiles] = useState([]);
   const [uploadProgressOpen, setUploadProgressOpen] = useState(false);
   const [checkingDelete, setCheckingDelete] = useState(null); // ID of media being checked
+  const [metadataOpen, setMetadataOpen] = useState(false);
+  const [metadataForm, setMetadataForm] = useState({ title: '', description: '', episode: '', season: '' });
+  const [editingMedia, setEditingMedia] = useState(null);
 
   // Debounce search
   useEffect(() => {
@@ -177,6 +181,40 @@ export default function MediaLibrary() {
       fetchMedia();
     } catch (error) {
       showError('Erro ao copiar ficheiro');
+    }
+  };
+
+  const handleEditMetadata = (item) => {
+    setEditingMedia(item);
+    setMetadataForm({
+      title: item.metadata?.title || '',
+      description: item.metadata?.description || '',
+      episode: item.metadata?.episode || '',
+      season: item.metadata?.season || '',
+      genre: item.metadata?.genre || '',
+      keywords: item.metadata?.keywords || '',
+      rating: item.metadata?.rating || '',
+      cast: item.metadata?.cast || '',
+      director: item.metadata?.director || '',
+      resolution: item.metadata?.resolution || `${item.width || 0}x${item.height || 0}`,
+      fps: item.metadata?.fps || '',
+      videoCodec: item.metadata?.videoCodec || item.codec || '',
+      audioCodec: item.metadata?.audioCodec || '',
+      subtitles: item.metadata?.subtitles || '',
+    });
+    setMetadataOpen(true);
+  };
+
+  const handleSaveMetadata = async () => {
+    try {
+      await mediaAPI.update(editingMedia.id, {
+        metadata: metadataForm
+      });
+      showSuccess('Metadados atualizados');
+      setMetadataOpen(false);
+      fetchMedia();
+    } catch (error) {
+      showError('Erro ao atualizar metadados');
     }
   };
 
@@ -466,6 +504,7 @@ export default function MediaLibrary() {
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
                                     <Stack direction="row" spacing={0.5}>
                                         <IconButton size="small" color="primary" onClick={() => { setSelectedMedia(item); setPreviewOpen(true); }}><PlayIcon /></IconButton>
+                                        <IconButton size="small" onClick={() => handleEditMetadata(item)}><EditIcon /></IconButton>
                                         <IconButton size="small" color="info" onClick={() => { setMediaToMove(item); setMoveOpen(true); }}><MoveIcon /></IconButton>
                                         <IconButton 
                                             size="small" 
@@ -610,6 +649,148 @@ export default function MediaLibrary() {
             </List>
         </DialogContent>
         <DialogActions><Button onClick={() => setMoveOpen(false)}>Cancelar</Button></DialogActions>
+      </Dialog>
+
+      {/* Metadata Editor Dialog */}
+      <Dialog open={metadataOpen} onClose={() => setMetadataOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Editar Metadados EPG: {editingMedia?.filename}</DialogTitle>
+        <DialogContent>
+            <Stack spacing={2} sx={{ mt: 1 }}>
+                <TextField 
+                    label="Título (EPG)" 
+                    fullWidth 
+                    value={metadataForm.title} 
+                    onChange={e => setMetadataForm({...metadataForm, title: e.target.value})} 
+                    placeholder={editingMedia?.filename}
+                    helperText="Deixe vazio para usar o nome do ficheiro"
+                />
+                <TextField 
+                    label="Descrição / Sinopse" 
+                    fullWidth 
+                    multiline
+                    rows={3}
+                    value={metadataForm.description} 
+                    onChange={e => setMetadataForm({...metadataForm, description: e.target.value})} 
+                />
+                <Stack direction="row" spacing={2}>
+                    <TextField 
+                        select
+                        label="Género" 
+                        fullWidth 
+                        value={metadataForm.genre} 
+                        onChange={e => setMetadataForm({...metadataForm, genre: e.target.value})} 
+                    >
+                        <MenuItem value="">Nenhum</MenuItem>
+                        <MenuItem value="Comedy">Comédia</MenuItem>
+                        <MenuItem value="Drama">Drama</MenuItem>
+                        <MenuItem value="News">Notícias</MenuItem>
+                        <MenuItem value="Sports">Desporto</MenuItem>
+                        <MenuItem value="Documentary">Documentário</MenuItem>
+                        <MenuItem value="Action">Ação</MenuItem>
+                        <MenuItem value="Animation">Animação</MenuItem>
+                        <MenuItem value="Music">Música</MenuItem>
+                        <MenuItem value="Other">Outro</MenuItem>
+                    </TextField>
+                    <TextField 
+                        select
+                        label="Classificação Etária" 
+                        fullWidth 
+                        value={metadataForm.rating} 
+                        onChange={e => setMetadataForm({...metadataForm, rating: e.target.value})} 
+                    >
+                        <MenuItem value="">Nenhuma</MenuItem>
+                        <MenuItem value="General">Livre</MenuItem>
+                        <MenuItem value="10">10 anos</MenuItem>
+                        <MenuItem value="12">12 anos</MenuItem>
+                        <MenuItem value="14">14 anos</MenuItem>
+                        <MenuItem value="16">16 anos</MenuItem>
+                        <MenuItem value="18">18 anos</MenuItem>
+                    </TextField>
+                </Stack>
+                <TextField 
+                    label="Palavras-chave / Tags" 
+                    fullWidth 
+                    value={metadataForm.keywords} 
+                    onChange={e => setMetadataForm({...metadataForm, keywords: e.target.value})} 
+                    placeholder="ficção científica, comédia romântica"
+                    helperText="Separadas por vírgula"
+                />
+                <Stack direction="row" spacing={2}>
+                    <TextField 
+                        label="Temporada" 
+                        fullWidth 
+                        value={metadataForm.season} 
+                        onChange={e => setMetadataForm({...metadataForm, season: e.target.value})} 
+                    />
+                    <TextField 
+                        label="Episódio" 
+                        fullWidth 
+                        value={metadataForm.episode} 
+                        onChange={e => setMetadataForm({...metadataForm, episode: e.target.value})} 
+                    />
+                </Stack>
+                <TextField 
+                    label="Elenco / Atores Principais" 
+                    fullWidth 
+                    value={metadataForm.cast} 
+                    onChange={e => setMetadataForm({...metadataForm, cast: e.target.value})} 
+                    placeholder="Nome1, Nome2, Nome3"
+                    helperText="Separados por vírgula"
+                />
+                <TextField 
+                    label="Realizador / Produtor" 
+                    fullWidth 
+                    value={metadataForm.director} 
+                    onChange={e => setMetadataForm({...metadataForm, director: e.target.value})} 
+                />
+                <Divider><Chip label="Dados Técnicos" size="small" /></Divider>
+                <Stack direction="row" spacing={2}>
+                    <TextField 
+                        label="Resolução" 
+                        fullWidth 
+                        value={metadataForm.resolution} 
+                        onChange={e => setMetadataForm({...metadataForm, resolution: e.target.value})} 
+                        placeholder="1920x1080"
+                        helperText="Detetado automaticamente"
+                    />
+                    <TextField 
+                        label="FPS" 
+                        fullWidth 
+                        value={metadataForm.fps} 
+                        onChange={e => setMetadataForm({...metadataForm, fps: e.target.value})} 
+                        placeholder="25, 30, 60"
+                    />
+                </Stack>
+                <Stack direction="row" spacing={2}>
+                    <TextField 
+                        label="Codec Vídeo" 
+                        fullWidth 
+                        value={metadataForm.videoCodec} 
+                        onChange={e => setMetadataForm({...metadataForm, videoCodec: e.target.value})} 
+                        placeholder="h264, h265, vp9"
+                    />
+                    <TextField 
+                        label="Codec Áudio" 
+                        fullWidth 
+                        value={metadataForm.audioCodec} 
+                        onChange={e => setMetadataForm({...metadataForm, audioCodec: e.target.value})} 
+                        placeholder="aac, mp3, opus"
+                    />
+                </Stack>
+                <TextField 
+                    label="Legendas / Idiomas" 
+                    fullWidth 
+                    value={metadataForm.subtitles} 
+                    onChange={e => setMetadataForm({...metadataForm, subtitles: e.target.value})} 
+                    placeholder="PT, EN, ES"
+                    helperText="Idiomas disponíveis separados por vírgula"
+                />
+            </Stack>
+        </DialogContent>
+        <DialogActions>
+            <Button onClick={() => setMetadataOpen(false)}>Cancelar</Button>
+            <Button variant="contained" onClick={handleSaveMetadata}>Guardar</Button>
+        </DialogActions>
       </Dialog>
 
       {/* Preview Dialog */}

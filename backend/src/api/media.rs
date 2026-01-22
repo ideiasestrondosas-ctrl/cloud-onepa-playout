@@ -158,6 +158,54 @@ async fn update_filler(
         }
     }
 }
+
+#[derive(serde::Deserialize)]
+pub struct UpdateMediaRequest {
+    pub filename: Option<String>,
+    pub metadata: Option<serde_json::Value>,
+}
+
+async fn update_media(
+    media_id: web::Path<Uuid>,
+    req: web::Json<UpdateMediaRequest>,
+    pool: web::Data<PgPool>,
+) -> impl Responder {
+    // If no fields to update, just return OK
+    if req.filename.is_none() && req.metadata.is_none() {
+        return HttpResponse::Ok().json(serde_json::json!({"message": "Nothing to update"}));
+    }
+
+    let mut query_builder: sqlx::QueryBuilder<sqlx::Postgres> =
+        sqlx::QueryBuilder::new("UPDATE media SET ");
+    let mut separated = query_builder.separated(", ");
+
+    if let Some(ref filename) = req.filename {
+        separated.push("filename = ");
+        separated.push_bind_unseparated(filename);
+    }
+
+    if let Some(ref metadata) = req.metadata {
+        separated.push("metadata = ");
+        separated.push_bind_unseparated(metadata);
+    }
+
+    query_builder.push(" WHERE id = ");
+    query_builder.push_bind(media_id.into_inner());
+
+    let result = query_builder.build().execute(pool.get_ref()).await;
+
+    match result {
+        Ok(res) if res.rows_affected() > 0 => HttpResponse::Ok().json(serde_json::json!({
+            "message": "Media updated successfully"
+        })),
+        Ok(_) => HttpResponse::NotFound().json(serde_json::json!({"error": "Media not found"})),
+        Err(e) => {
+            log::error!("Failed to update media: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({"error": e.to_string()}))
+        }
+    }
+}
+
 async fn list_folders(pool: web::Data<PgPool>) -> impl Responder {
     let result = sqlx::query_as::<_, Folder>("SELECT * FROM folders ORDER BY name ASC")
         .fetch_all(pool.get_ref())
@@ -811,5 +859,6 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         .route("/{id}/filler", web::put().to(update_filler))
         .route("/{id}/transparent", web::post().to(make_transparent))
         .route("/upload", web::post().to(upload_media))
+        .route("/{id}", web::put().to(update_media))
         .route("/{id}", web::delete().to(delete_media));
 }

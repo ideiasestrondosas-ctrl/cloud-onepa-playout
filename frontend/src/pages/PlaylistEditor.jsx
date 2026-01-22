@@ -94,16 +94,40 @@ function SortableClip({ clip, onRemove, isSelected, onToggleSelection }) {
       </Box>
       <ListItemText
         primary={clip.filename}
-        secondary={`Duração: ${formatDuration(clip.duration)}`}
+        secondary={
+          <Box component="span" sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            <Chip 
+              icon={<Box sx={{ width: 8, height: 8, bgcolor: 'primary.main', borderRadius: '50%' }} />}
+              label={clip.start_time || '00:00:00'} 
+              size="small" 
+              variant="outlined" 
+            />
+            <Typography variant="caption" color="text.secondary">
+              Duração: {formatShortDuration(clip.duration)}
+            </Typography>
+          </Box>
+        }
       />
     </ListItem>
   );
 }
 
 function formatDuration(seconds) {
-  if (!seconds) return '0:00';
-  const mins = Math.floor(seconds / 60);
+  if (!seconds) return '00:00:00';
+  const hrs = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
   const secs = Math.floor(seconds % 60);
+  return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+function formatShortDuration(seconds) {
+  if (!seconds) return '0:00';
+  const hrs = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+  if (hrs > 0) {
+    return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
@@ -111,7 +135,31 @@ export default function PlaylistEditor() {
   const { showSuccess, showError, showWarning } = useNotification();
   const [playlists, setPlaylists] = useState([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
-  const [clips, setClips] = useState([]);
+  const [clips, setClipsState] = useState([]);
+  
+  const setClips = (newClips) => {
+    if (typeof newClips === 'function') {
+      setClipsState(prev => calculateTimings(newClips(prev)));
+    } else {
+      setClipsState(calculateTimings(newClips));
+    }
+  };
+
+  const calculateTimings = (clipsList) => {
+    let offset = 0;
+    return clipsList.map(clip => {
+      const duration = Number(clip.duration) || 0;
+      const start = offset;
+      const end = offset + duration;
+      offset = end;
+      return {
+        ...clip,
+        duration: duration,
+        start_time: formatDuration(start),
+        end_time: formatDuration(end)
+      };
+    });
+  };
   const [availableMedia, setAvailableMedia] = useState([]);
   const [playlistName, setPlaylistName] = useState('');
   const [playlistDate, setPlaylistDate] = useState('');
@@ -272,6 +320,11 @@ export default function PlaylistEditor() {
         out: clip.duration,
         duration: clip.duration,
         source: clip.path,
+        filename: clip.filename,
+        metadata: clip.metadata || null,
+        is_filler: clip.is_filler || false,
+        start_time: clip.start_time,
+        end_time: clip.end_time,
       })),
     };
 
@@ -284,11 +337,12 @@ export default function PlaylistEditor() {
         });
         showSuccess('Playlist atualizada com sucesso!');
       } else {
-        await playlistAPI.create({
+        const response = await playlistAPI.create({
           name: playlistName,
           date: playlistDate,
           content,
         });
+        setSelectedPlaylist(response.data);
         showSuccess('Playlist criada com sucesso!');
       }
       await fetchPlaylists();
@@ -301,6 +355,11 @@ export default function PlaylistEditor() {
   };
 
   const handleLoadPlaylist = async (playlist) => {
+    // Reset state first to ensure clean switch
+    setClips([]);
+    setSelectedClipIds([]);
+    setValidation(null);
+    
     setSelectedPlaylist(playlist);
     setPlaylistName(playlist.name);
     setPlaylistDate(playlist.date || '');
@@ -312,12 +371,19 @@ export default function PlaylistEditor() {
         const media = availableMedia.find(m => m.path === item.source);
         return {
           id: `clip-${index}`,
-          filename: media ? media.filename : item.source.split('/').pop(),
+          filename: item.filename || (media ? media.filename : item.source.split('/').pop()),
           path: item.source,
           duration: item.duration,
+          start_time: item.start_time,
+          end_time: item.end_time,
+          metadata: item.metadata || null,
+          is_filler: item.is_filler || false,
+          media_type: item.media_type || (media ? media.media_type : 'video'),
         };
       });
       setClips(loadedClips);
+    } else {
+      setClips([]);
     }
   };
 
@@ -402,31 +468,67 @@ export default function PlaylistEditor() {
     }
   };
 
-  const handleCreateNewPlaylist = () => {
+  const handleCreateNewPlaylist = async () => {
     if (!newPlaylistName.trim()) {
       showWarning('Por favor, insira um nome para a nova playlist');
       return;
     }
-    setSelectedPlaylist(null);
-    setPlaylistName(newPlaylistName);
-    setPlaylistDate(new Date().toISOString().split('T')[0]);
-    setClips([]);
-    setValidation(null);
-    setCreateDialogOpen(false);
-    setNewPlaylistName('');
-    showSuccess('Nova playlist criada! Adicione clips e salve.');
+    
+    try {
+      setSaving(true);
+      const content = {
+        channel: 'Cloud Onepa',
+        date: new Date().toISOString().split('T')[0],
+        program: [],
+      };
+      
+      const response = await playlistAPI.create({
+        name: newPlaylistName,
+        date: content.date,
+        content,
+      });
+      
+      await fetchPlaylists();
+      // Auto-load and select the newly created playlist
+      handleLoadPlaylist(response.data);
+      
+      setCreateDialogOpen(false);
+      setNewPlaylistName('');
+      showSuccess('Playlist criada com sucesso! Adicione clips e salve as alterações.');
+    } catch (error) {
+      console.error('Failed to create playlist:', error);
+      showError('Erro ao criar playlist');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeletePlaylist = async (playlist) => {
+    if (window.confirm(`Tem a certeza que deseja eliminar a playlist "${playlist.name}"?`)) {
+      try {
+        await playlistAPI.delete(playlist.id);
+        showSuccess('Playlist eliminada com sucesso');
+        await fetchPlaylists();
+        // If we deleted the currently selected playlist, reset
+        if (selectedPlaylist?.id === playlist.id) {
+          setSelectedPlaylist(null);
+          setPlaylistName('');
+          setPlaylistDate('');
+          setClips([]);
+        }
+      } catch (error) {
+        if (error.response?.status === 409) {
+          showError('Esta playlist está a ser usada no calendário e não pode ser eliminada.');
+        } else {
+          showError('Erro ao eliminar playlist');
+        }
+      }
+    }
   };
 
   const totalDuration = clips.reduce((sum, clip) => sum + (clip.duration || 0), 0);
   const targetDuration = 24 * 3600; // 24 hours
 
-  const formatTotalDuration = (seconds) => {
-    if (!seconds) return '00:00:00';
-    const hrs = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
 
   return (
     <Box>
@@ -472,6 +574,17 @@ export default function PlaylistEditor() {
                     button
                     selected={selectedPlaylist?.id === playlist.id}
                     onClick={() => handleLoadPlaylist(playlist)}
+                    secondaryAction={
+                      <IconButton 
+                        edge="end" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeletePlaylist(playlist);
+                        }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    }
                   >
                     <ListItemText
                       primary={playlist.name}
@@ -518,7 +631,7 @@ export default function PlaylistEditor() {
             sx={{ mb: 2 }}
           >
             <Typography variant="body2">
-              <strong>Duração Total: {formatTotalDuration(totalDuration)} / 24:00:00</strong>
+              <strong>Duração Total: {formatDuration(totalDuration)} / 24:00:00</strong>
             </Typography>
             {Math.abs(totalDuration - 86400) <= 86400 * 0.05 ? (
               <Typography variant="body2">
@@ -527,8 +640,8 @@ export default function PlaylistEditor() {
             ) : (
               <Typography variant="body2">
                 {totalDuration < 86400 
-                  ? `Faltam ${formatTotalDuration(86400 - totalDuration)} - Adicione mais clips. Dica: Use fillers para completar tempo restante.`
-                  : `Excede em ${formatTotalDuration(totalDuration - 86400)} - Remova clips.`}
+                  ? `Faltam ${formatDuration(86400 - totalDuration)} - Adicione mais clips. Dica: Use fillers para completar tempo restante.`
+                  : `Excede em ${formatDuration(totalDuration - 86400)} - Remova clips.`}
               </Typography>
             )}
           </Alert>

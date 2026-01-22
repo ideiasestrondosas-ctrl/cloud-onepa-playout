@@ -58,6 +58,7 @@ pub struct Settings {
     pub rist_output_url: Option<String>,
     pub rtsp_output_url: Option<String>,
     pub webrtc_output_url: Option<String>,
+    pub epg_days: Option<i32>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -108,4 +109,5 @@ pub struct UpdateSettingsRequest {
     pub rist_output_url: Option<String>,
     pub rtsp_output_url: Option<String>,
     pub webrtc_output_url: Option<String>,
+    pub epg_days: Option<i32>,
 }

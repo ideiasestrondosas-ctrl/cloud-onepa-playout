@@ -283,18 +283,32 @@ impl FFmpegService {
                         .replace("127.0.0.1", "mediamtx");
 
                     if final_url.contains("mediamtx") && !final_url.contains("user=") {
-                        let separator = if final_url.contains(';') || final_url.contains('?') {
-                            ";"
-                        } else {
-                            ";"
-                        }; // Always use ; for streamid suffix if possible
-                           // However, streamid is usually srt://host:port?streamid=...
-                           // If it already has streamid, we append ;user=...
+                        // However, streamid is usually srt://host:port?streamid=...
+                        // If it already has streamid, we append ;user=...
                         if final_url.contains("streamid=") {
-                            final_url = final_url.replace("streamid=", "streamid=");
-                            // Append to the end of streamid or end of string
-                            final_url = format!("{};user=backend;pass=backend", final_url);
+                            // MediaMTX SRT authentication format (v1.x):
+                            // action:pathname:user:pass[:query]
+                            // We generically inject :user:pass after the pathname part
+                            if let Some(pos) = final_url.find("publish:") {
+                                let after_publish = &final_url[pos + 8..];
+                                // The pathname ends at the first '?' or '&' or end of string
+                                let end_pos = after_publish
+                                    .find(|c| c == '?' || c == '&')
+                                    .unwrap_or(after_publish.len());
+                                let pathname = &after_publish[..end_pos];
+
+                                if !pathname.contains(":backend:backend") {
+                                    let new_streamid_val = format!("{}:backend:backend", pathname);
+                                    let mut new_url = final_url.clone();
+                                    new_url.replace_range(
+                                        pos + 8..pos + 8 + end_pos,
+                                        &new_streamid_val,
+                                    );
+                                    final_url = new_url;
+                                }
+                            }
                         } else {
+                            // Fallback if streamid is missing (unlikely in our engine)
                             let q_sep = if final_url.contains('?') { "&" } else { "?" };
                             final_url = format!("{}{}user=backend&pass=backend", final_url, q_sep);
                         }

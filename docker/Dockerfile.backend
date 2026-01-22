@@ -37,7 +37,8 @@ RUN apk add --no-cache \
     libpq \
     ffmpeg \
     libssl3 \
-    ca-certificates
+    ca-certificates \
+    curl
 
 # Create storage directories
 RUN mkdir -p /var/lib/onepa-playout/media /var/lib/onepa-playout/thumbnails /var/lib/onepa-playout/playlists

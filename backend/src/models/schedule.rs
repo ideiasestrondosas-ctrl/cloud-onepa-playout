@@ -10,6 +10,7 @@ pub struct Schedule {
     pub date: NaiveDate,
     pub start_time: Option<chrono::NaiveTime>,
     pub repeat_pattern: Option<String>, // daily, weekly, monthly
+    pub playlist_name: Option<String>,
     pub created_at: DateTime<Utc>,
 }
 

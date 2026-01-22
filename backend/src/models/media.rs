@@ -17,6 +17,7 @@ pub struct Media {
     pub thumbnail_path: Option<String>,
     pub is_filler: bool,
     pub folder_id: Option<Uuid>,
+    pub metadata: Option<serde_json::Value>,
     pub created_at: DateTime<Utc>,
 }
 

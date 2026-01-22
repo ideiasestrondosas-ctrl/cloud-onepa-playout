@@ -33,7 +33,13 @@ import {
   VolumeOff as VolumeOffIcon,
   ContentCopy as ContentCopyIcon,
   Launch as LaunchIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
+  Sensors as SensorsIcon,
+  Hub as HubIcon,
+  Language as LanguageIcon,
+  Podcasts as PodcastsIcon,
+  Router as RouterIcon,
+  Wifi as WifiIcon
 } from '@mui/icons-material';
 import {
   Dialog,
@@ -70,6 +76,7 @@ export default function Dashboard() {
     protocol: '',
     last_error: null,
     logs: [],
+    active_streams: [],
   });
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -98,6 +105,7 @@ export default function Dashboard() {
   const analyzerRef = useRef(null);
   const animationRef = useRef(null);
   const sourceNodeRef = useRef(null);
+
 
   useEffect(() => {
     fetchStatus();
@@ -232,6 +240,22 @@ export default function Dashboard() {
     }
   };
 
+  const handleToggleAllDistribution = async (enabled) => {
+    try {
+      const protocols = ['rtmp', 'srt', 'udp'];
+      for (const p of protocols) {
+          await playoutAPI.toggleProtocol(p, enabled);
+      }
+      // Update settings to keep sync
+      await settingsAPI.update({ ...settings, rtmp_enabled: enabled, srt_enabled: enabled, udp_enabled: enabled });
+      setSettings(prev => ({ ...prev, rtmp_enabled: enabled, srt_enabled: enabled, udp_enabled: enabled }));
+      showSuccess(`Distribuição ${enabled ? 'iniciada' : 'desactivada'}!`);
+      setTimeout(fetchStatus, 1500); 
+    } catch (e) {
+      showError('Erro ao alternar distribuição');
+    }
+  };
+
   const handleStart = async () => {
     try {
       setStartSteps([]);
@@ -269,6 +293,8 @@ export default function Dashboard() {
   const handleStop = async () => {
     try {
       await playoutAPI.stop();
+      // Also deactivate all protocols visually and in settings as per user request
+      setSettings(prev => prev ? ({ ...prev, rtmp_enabled: false, srt_enabled: false, udp_enabled: false }) : prev);
       fetchStatus();
     } catch (error) {
       console.error('Failed to stop:', error);
@@ -288,11 +314,20 @@ export default function Dashboard() {
   const handleToggleProtocol = async (protocol, currentStatus) => {
     try {
       const enabled = currentStatus !== 'active';
+      // Optimistic update
+      setStatus(prev => ({
+        ...prev,
+        active_streams: prev.active_streams.map(s => 
+          s.protocol === protocol ? { ...s, status: enabled ? 'active' : 'idle' } : s
+        )
+      }));
+      
       await playoutAPI.toggleProtocol(protocol.toLowerCase(), enabled);
-      fetchStatus();
-      showSuccess(`Protocolo ${protocol} ${enabled ? 'ativado' : 'desativado'} com sucesso!`);
+      setTimeout(fetchStatus, 3000); // Wait longer for backend to stabilize
+      showSuccess(`Protocolo ${protocol} ${enabled ? 'ativado' : 'desativado'}!`);
     } catch (error) {
       showError('Erro ao alternar protocolo');
+      fetchStatus(); // Revert on error
     }
   };
 
@@ -336,6 +371,9 @@ export default function Dashboard() {
   };
 
   const isPlaying = status.status === 'playing';
+  const isDistributionActive = status.active_streams?.some(s => 
+      ['RTMP', 'SRT', 'UDP'].includes(s.protocol) && s.status === 'active'
+  );
 
   useEffect(() => {
     if (isPlaying && !previewPaused && !previewMuted) {
@@ -420,58 +458,55 @@ export default function Dashboard() {
         </Grid>
         <Grid item xs={12} md={6} lg={3}>
           <Card><CardContent>
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, width: '100%' }}>
               <Button 
-                variant="contained" 
-                color="success" 
+                variant={isPlaying ? "outlined" : "contained"}
+                color={isPlaying ? "error" : "success"}
                 onClick={() => {
-                    // Pre-fill options from current settings
+                  if (isPlaying) {
+                    handleStop();
+                  } else {
                     if (settings) {
-                        setRestartOptions({
-                            auto_start: settings.auto_start_protocols,
-                            rtmp: settings.rtmp_enabled,
-                            srt: settings.srt_enabled,
-                            udp: settings.udp_enabled
-                        });
+                      setRestartOptions({
+                          auto_start: settings.auto_start_protocols,
+                          rtmp: settings.rtmp_enabled,
+                          srt: settings.srt_enabled,
+                          udp: settings.udp_enabled
+                      });
                     }
                     setRestartDialogOpen(true);
+                  }
                 }} 
-                disabled={isPlaying} 
-                size="small"
+                size="large"
+                fullWidth
+                startIcon={isPlaying ? <StopIcon /> : <PlayIcon />}
+                sx={{ fontWeight: 'bold', py: 2, fontSize: '1.1rem' }}
               >
-                  Start (Opções)
+                  {isPlaying ? 'PARAR EMISSÃO' : 'INICIAR EMISSÃO'}
               </Button>
-              <Button variant="contained" color="error" onClick={handleStop} disabled={!isPlaying} size="small">Stop</Button>
-              <Button variant="outlined" onClick={handleSkip} disabled={!isPlaying} size="small" startIcon={<SkipIcon />}>Skip</Button>
-              <Button variant="outlined" color="info" onClick={handleDiagnose} size="small">Diagnóstico</Button>
-              <Button variant="contained" color="primary" onClick={handleLaunchVLC} size="small" fullWidth sx={{ mt: 1 }}>OPEN VLC</Button>
+              <Box sx={{ width: '100%', display: 'flex', gap: 1, mt: 1 }}>
+                <Button variant="outlined" onClick={handleSkip} disabled={!isPlaying} size="small" sx={{ flexGrow: 1 }} startIcon={<SkipIcon />}>PULAR CLIP</Button>
+                <Button variant="outlined" color="info" onClick={handleDiagnose} size="small" sx={{ flexGrow: 1 }}>DIAGNÓSTICO</Button>
+              </Box>
+              <Button variant="contained" color="primary" onClick={handleLaunchVLC} size="small" fullWidth sx={{ mt: 1, fontWeight: 'bold' }}>ABRIR NO VLC PLAYER</Button>
               <Button 
-                variant="outlined" 
-                color="secondary" 
-                onClick={async () => {
-                    if (confirm('Iniciar todos os protocolos de distribuição (RTMP, SRT, UDP)?')) {
-                        try {
-                             const response = await fetch('/api/settings', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ ...settings, rtmp_enabled: true, srt_enabled: true, udp_enabled: true })
-                            });
-                             if (response.ok) {
-                                 setSettings(prev => ({ ...prev, rtmp_enabled: true, srt_enabled: true, udp_enabled: true }));
-                                 showSuccess('Protocolos iniciados!');
-                             } else {
-                                 showError('Erro ao iniciar protocolos');
-                             }
-                        } catch (e) {
-                            showError('Erro ao conectar ao servidor');
-                        }
-                    }
-                }}
-                size="small" 
+                variant="contained" 
                 fullWidth 
-                sx={{ mt: 1 }}
+                size="large"
+                color={isDistributionActive ? "error" : "success"}
+                className={isDistributionActive ? 'flash-active' : ''}
+                sx={{ 
+                  bgcolor: isDistributionActive ? 'error.main !important' : 'success.main !important',
+                  color: '#fff !important',
+                  fontWeight: 'bold',
+                  py: 1.5,
+                  fontSize: '1rem',
+                  mt: 1,
+                  display: isPlaying ? 'inline-flex' : 'none'
+                }}
+                onClick={() => handleToggleAllDistribution(!isDistributionActive)}
               >
-                Inicar Distribuição
+                {isDistributionActive ? 'DESACTIVAR DISTRIBUIÇÃO' : 'INICIAR DISTRIBUIÇÃO'}
               </Button>
             </Box>
           </CardContent></Card>
@@ -495,19 +530,50 @@ export default function Dashboard() {
                   justifyContent: 'space-between',
                   alignItems: 'center'
                 }}>
-                  <Box>
-                    <Typography variant="caption" sx={{ color: stream.status === 'active' ? 'error.main' : 'text.disabled', fontWeight: 'bold' }}>
-                      {stream.protocol}
-                    </Typography>
-                    <Typography variant="body2" sx={{ 
-                      fontWeight: 'bold', 
-                      color: stream.status === 'active' ? 'error.main' : stream.status === 'error' ? 'warning.main' : 'text.secondary' 
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Box sx={{ 
+                      p: 1, 
+                      borderRadius: 1.5, 
+                      bgcolor: stream.status === 'active' ? 'error.main' : 'grey.200',
+                      color: stream.status === 'active' ? '#fff' : 'text.secondary',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
                     }}>
-                      {stream.status === 'active' ? '● EMISSÃO ATIVA' : stream.status === 'error' ? '⚠️ ERRO' : 'IDLE'}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem', display: 'block' }}>
-                      {stream.details}
-                    </Typography>
+                      {stream.protocol === 'HLS' && <TvIcon fontSize="small" sx={{ color: '#fff !important' }} />}
+                      {stream.protocol === 'RTMP' && <RouterIcon fontSize="small" sx={{ color: '#fff !important' }} />}
+                      {stream.protocol === 'SRT' && <SensorsIcon fontSize="small" sx={{ color: '#fff !important' }} />}
+                      {stream.protocol === 'UDP' && <HubIcon fontSize="small" sx={{ color: '#fff !important' }} />}
+                      {stream.protocol === 'MASTER' && <PodcastsIcon fontSize="small" sx={{ color: '#fff !important' }} />}
+                      {!['HLS', 'RTMP', 'SRT', 'UDP', 'MASTER'].includes(stream.protocol) && <WifiIcon fontSize="small" sx={{ color: '#fff !important' }} />}
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" sx={{ color: stream.status === 'active' ? 'error.main' : 'text.disabled', fontWeight: 'bold' }}>
+                        {stream.protocol}
+                      </Typography>
+                      <Typography variant="body2" sx={{ 
+                        fontWeight: 'bold', 
+                        fontSize: '0.75rem',
+                        color: stream.status === 'active' ? 'error.main' : stream.status === 'error' ? 'warning.main' : 'text.secondary' 
+                      }}>
+                        {stream.status === 'active' ? 'ATIVA' : stream.status === 'error' ? 'ERRO' : 'IDLE'}
+                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      {(stream.protocol === 'RTMP' || stream.protocol === 'SRT' || stream.protocol === 'UDP' || stream.protocol === 'HLS') && (
+                          <IconButton 
+                            size="small" 
+                            sx={{ p: 0, opacity: 0.6 }}
+                            onClick={() => {
+                              const textToCopy = stream.details.replace('Relay: ', '');
+                              navigator.clipboard.writeText(textToCopy);
+                              showInfo('URL copiada!');
+                            }}
+                          >
+                            <ContentCopyIcon sx={{ fontSize: 12 }} />
+                          </IconButton>
+                        )}
+                      </Box>
+                    </Box>
                   </Box>
                   <Box sx={{ textAlign: 'right' }}>
                     <Typography variant="h5" sx={{ color: stream.status === 'active' ? 'error.main' : 'text.disabled', fontWeight: 'bold' }}>

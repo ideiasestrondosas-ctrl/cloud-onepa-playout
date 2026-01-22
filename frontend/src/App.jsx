@@ -12,6 +12,7 @@ import Templates from './pages/Templates';
 import Login from './pages/Login';
 import useAuthStore from './stores/authStore';
 import SetupWizard from './pages/Setup/Wizard';
+import EPGView from './pages/EPGView';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { HelpProvider } from './context/HelpContext';
 import HelpSystem from './components/HelpSystem';
@@ -95,6 +96,16 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <Settings />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/epg"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <EPGView />
                 </Layout>
               </ProtectedRoute>
             }

@@ -31,12 +31,13 @@ import {
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { scheduleAPI, playlistAPI } from '../services/api';
+import { scheduleAPI, playlistAPI, playoutAPI } from '../services/api';
 import { useNotification } from '../contexts/NotificationContext';
 
 export default function Calendar() {
   const { showSuccess, showError, showInfo } = useNotification();
   const [events, setEvents] = useState([]);
+  const [playoutStatus, setPlayoutStatus] = useState(null);
   const [playlists, setPlaylists] = useState([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -52,24 +53,93 @@ export default function Calendar() {
   useEffect(() => {
     fetchSchedule();
     fetchPlaylists();
+    fetchPlayoutStatus();
+    // Poll status every 10 seconds to keep calendar synced with playout
+    const interval = setInterval(fetchPlayoutStatus, 10000);
+    return () => clearInterval(interval);
   }, []);
+
+  const fetchPlayoutStatus = async () => {
+    try {
+      const response = await playoutAPI.status();
+      setPlayoutStatus(response.data);
+    } catch (error) {
+      console.error('Failed to fetch playout status:', error);
+    }
+  };
 
   const fetchSchedule = async () => {
     try {
       const response = await scheduleAPI.list();
-      const calendarEvents = response.data.schedules.map((schedule) => ({
-        id: schedule.id,
-        title: schedule.playlist_name || 'Playlist',
-        start: schedule.date + (schedule.start_time ? `T${schedule.start_time}` : ''),
-        backgroundColor: schedule.repeat_pattern ? '#1976d2' : '#dc004e',
-        extendedProps: {
-          playlistId: schedule.playlist_id,
-          startTime: schedule.start_time,
-          repeatPattern: schedule.repeat_pattern,
-        },
-      }));
+      const rawSchedules = response.data.schedules;
+      const calendarEvents = [];
+      
+      const today = new Date();
+      const threeMonthsAgo = new Date();
+      threeMonthsAgo.setMonth(today.getMonth() - 3);
+      const nineMonthsAhead = new Date();
+      nineMonthsAhead.setMonth(today.getMonth() + 9);
+
+      rawSchedules.forEach((schedule) => {
+        const originalDate = new Date(schedule.date + (schedule.start_time ? `T${schedule.start_time}` : ''));
+        
+        // Add the original event
+        calendarEvents.push({
+          id: schedule.id,
+          title: schedule.playlist_name || 'Playlist',
+          start: schedule.date + (schedule.start_time ? `T${schedule.start_time}` : ''),
+          backgroundColor: schedule.repeat_pattern ? '#1976d2' : '#dc004e',
+          extendedProps: {
+            playlistId: schedule.playlist_id,
+            startTime: schedule.start_time,
+            repeatPattern: schedule.repeat_pattern,
+            isOriginal: true,
+            originalDate: schedule.date
+          },
+        });
+
+        // Expand recurring events
+        if (schedule.repeat_pattern) {
+          let current = new Date(originalDate);
+          
+          while (current < nineMonthsAhead) {
+            // Increment based on pattern
+            if (schedule.repeat_pattern === 'daily') {
+              current.setDate(current.getDate() + 1);
+            } else if (schedule.repeat_pattern === 'weekly') {
+              current.setDate(current.getDate() + 7);
+            } else if (schedule.repeat_pattern === 'monthly') {
+              current.setMonth(current.getMonth() + 1);
+            } else {
+              break; 
+            }
+
+            if (current > nineMonthsAhead) break;
+
+            const dateStr = current.toISOString().split('T')[0];
+            const timeStr = schedule.start_time || '00:00:00';
+
+            calendarEvents.push({
+              id: `${schedule.id}-${dateStr}`,
+              title: schedule.playlist_name || 'Playlist',
+              start: `${dateStr}T${timeStr}`,
+              backgroundColor: '#1976d2', // Same color as original
+              opacity: 0.6, // Will be used in renderEventContent
+              extendedProps: {
+                playlistId: schedule.playlist_id,
+                startTime: schedule.start_time,
+                repeatPattern: schedule.repeat_pattern,
+                isOriginal: false,
+                originalId: schedule.id,
+                originalDate: schedule.date
+              },
+            });
+          }
+        }
+      });
+
       setEvents(calendarEvents);
-      console.log('Schedule fetched:', calendarEvents.length, 'items');
+      console.log('Schedule fetched and expanded:', calendarEvents.length, 'items');
     } catch (error) {
       console.error('Failed to fetch schedule:', error);
       showError('Erro ao carregar agenda');
@@ -122,19 +192,36 @@ export default function Calendar() {
     }
   };
 
-  const handleDeleteSchedule = async (id) => {
+  const handleDeleteSchedule = async (idOrOccurrence) => {
+    // Parse ID if it's an occurrence (UUID-YYYY-MM-DD)
+    const id = idOrOccurrence.toString().split('-')[0];
+
     if (!id) {
       showError('Erro: ID do agendamento não encontrado');
       return;
     }
     try {
       await scheduleAPI.delete(id);
-      showSuccess('Agendamento removido com sucesso');
+      showSuccess('Agendamento removido');
       await fetchSchedule();
     } catch (error) {
-      console.error('Delete error:', error);
-      const errorMsg = error.response?.data?.error || error.message;
-      showError('Erro ao eliminar agendamento: ' + errorMsg);
+      showError('Erro ao eliminar agendamento');
+    }
+  };
+
+  const handleDeleteOnlyToday = async (idOrOccurrence, date) => {
+    const id = idOrOccurrence.toString().split('-')[0];
+    if (!id || !date) {
+        showError('Erro: Dados insuficientes para remover ocorrência');
+        return;
+    }
+
+    try {
+        await scheduleAPI.addException(id, date);
+        showSuccess('Ocorrência de hoje removida');
+        await fetchSchedule();
+    } catch (error) {
+        showError('Erro ao remover ocorrência');
     }
   };
 
@@ -203,16 +290,25 @@ export default function Calendar() {
   };
 
   const renderEventContent = (eventInfo) => {
+    const isOriginal = eventInfo.event.extendedProps.isOriginal;
+    const isPlayingCurrent = playoutStatus?.current_playlist_id === eventInfo.event.extendedProps.playlistId;
+    
     return (
       <Tooltip title={
         <Box sx={{ p: 0.5, textAlign: 'center' }}>
           <Typography variant="subtitle2">{eventInfo.event.title}</Typography>
           <Typography variant="caption" display="block">Hora: {eventInfo.timeText}</Typography>
+          {isPlayingCurrent && (
+            <Typography variant="caption" sx={{ color: '#4caf50', fontWeight: 'bold' }} display="block">
+                ● EM REPRODUÇÃO
+            </Typography>
+          )}
           {eventInfo.event.extendedProps.repeatPattern && (
             <Typography variant="caption" sx={{ color: '#90caf9' }} display="block">
                 Recorrente ({eventInfo.event.extendedProps.repeatPattern === 'daily' ? 'Diário' : 
                              eventInfo.event.extendedProps.repeatPattern === 'weekly' ? 'Semanal' : 
                              eventInfo.event.extendedProps.repeatPattern === 'monthly' ? 'Mensal' : ''})
+                {!isOriginal && ' (Ocorrência)'}
             </Typography>
           )}
         </Box>
@@ -227,11 +323,14 @@ export default function Calendar() {
         p: 0.5,
         color: 'white',
         bgcolor: eventInfo.backgroundColor,
+        opacity: isOriginal ? 1 : 0.6, // Faded for other days
         borderRadius: 1,
         borderLeft: eventInfo.event.extendedProps.repeatPattern ? '3px solid #64b5f6' : '3px solid #ff8a80',
+        border: isPlayingCurrent ? '2px solid #fff' : 'none',
+        boxShadow: isPlayingCurrent ? '0 0 10px rgba(255,255,255,0.5)' : 'none',
         cursor: 'pointer',
         transition: 'transform 0.1s',
-        '&:hover': { transform: 'scale(1.02)', opacity: 0.9 }
+        '&:hover': { transform: 'scale(1.02)', opacity: isOriginal ? 0.9 : 0.8 }
       }}>
         <Typography variant="caption" noWrap sx={{ flexGrow: 1, fontWeight: 'bold' }}>
           {eventInfo.timeText} {eventInfo.event.title}
@@ -253,6 +352,34 @@ export default function Calendar() {
         <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
           Calendário de Agendamento
         </Typography>
+
+        {playoutStatus?.current_playlist_id && (
+            <Paper sx={{ 
+                px: 2, 
+                py: 1, 
+                bgcolor: 'success.dark', 
+                color: 'white', 
+                display: 'flex', 
+                alignItems: 'center', 
+                borderRadius: 2,
+                boxShadow: 2,
+                animation: 'pulse 2s infinite'
+            }}>
+                <PlayIcon sx={{ mr: 1, fontSize: 20 }} />
+                <Box>
+                    <Typography variant="caption" sx={{ opacity: 0.8, display: 'block', lineHeight: 1 }}>EM REPRODUÇÃO</Typography>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{playoutStatus.current_playlist_name || 'Playlist Ativa'}</Typography>
+                </Box>
+                <style>{`
+                    @keyframes pulse {
+                        0% { opacity: 1; }
+                        50% { opacity: 0.8; }
+                        100% { opacity: 1; }
+                    }
+                `}</style>
+            </Paper>
+        )}
+
         <Stack direction="row" spacing={2}>
             <Button 
                 variant="outlined" 
@@ -327,17 +454,37 @@ export default function Calendar() {
             )}
         </DialogContent>
         <DialogActions sx={{ flexDirection: 'column', gap: 1, p: 2 }}>
-            <Button variant="contained" fullWidth startIcon={<PlayIcon />} onClick={() => { handleEditSchedule(selectedEvent); setActionDialogOpen(false); }}>
-                Editar
+            <Button variant="contained" color="primary" fullWidth startIcon={<PlayIcon />} onClick={() => { 
+                // If it's an occurrence, we edit the series
+                handleEditSchedule(selectedEvent); 
+                setActionDialogOpen(false); 
+            }}>
+                Editar Série / Evento
             </Button>
+
+            {selectedEvent?.extendedProps.repeatPattern && (
+                <Button variant="outlined" color="warning" fullWidth startIcon={<DeleteIcon />} onClick={() => { 
+                    if (window.confirm(`Remover apenas a ocorrência de ${selectedEvent.startStr.split('T')[0]}?`)) { 
+                        handleDeleteOnlyToday(selectedEvent.id, selectedEvent.startStr.split('T')[0]); 
+                    } 
+                    setActionDialogOpen(false); 
+                }}>
+                    Ignorar APENAS hoje
+                </Button>
+            )}
+
             <Button variant="outlined" color="error" fullWidth startIcon={<DeleteIcon />} onClick={() => { 
-                if (window.confirm(`Remover definitivamente "${selectedEvent?.title}"?`)) { 
+                const msg = selectedEvent?.extendedProps.repeatPattern 
+                    ? `Deseja parar toda a série de "${selectedEvent?.title}" definitivamente?`
+                    : `Remover definitivamente "${selectedEvent?.title}"?`;
+                if (window.confirm(msg)) { 
                     handleDeleteSchedule(selectedEvent.id); 
                 } 
                 setActionDialogOpen(false); 
             }}>
-                Eliminar
+                {selectedEvent?.extendedProps.repeatPattern ? 'Parar Série de Repetição' : 'Eliminar'}
             </Button>
+            
             <Button onClick={() => setActionDialogOpen(false)} fullWidth>Cancelar</Button>
         </DialogActions>
       </Dialog>

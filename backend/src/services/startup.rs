@@ -2,6 +2,7 @@ use crate::models::media::Media;
 use crate::services::ffmpeg::FFmpegService;
 use sqlx::PgPool;
 use std::env;
+use std::io::Write;
 use std::path::Path;
 use uuid::Uuid;
 
@@ -19,6 +20,39 @@ pub async fn ensure_default_assets(pool: &PgPool) -> Result<(), String> {
     // 1. ENSURE DEFAULT VIDEO
     let video_filename = "big_buck_bunny_1080p_h264.mov";
     let video_path = format!("{}/{}", protected_dir, video_filename);
+    let video_url =
+        "https://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_1080p_h264.mov";
+
+    if !Path::new(&video_path).exists() {
+        log::info!(
+            "📥 Default video missing. Downloading from {}...",
+            video_url
+        );
+        log::info!("(c) copyright 2008, Blender Foundation / www.bigbuckbunny.org");
+
+        // Ensure protected directory exists
+        std::fs::create_dir_all(&protected_dir).ok();
+
+        let client = reqwest::Client::new();
+        let mut response = client
+            .get(video_url)
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
+
+        if response.status().is_success() {
+            let mut file = std::fs::File::create(&video_path).map_err(|e| e.to_string())?;
+            while let Some(chunk) = response.chunk().await.map_err(|e| e.to_string())? {
+                file.write_all(&chunk).map_err(|e| e.to_string())?;
+            }
+            log::info!("✅ Default video downloaded successfully to {}", video_path);
+        } else {
+            log::error!(
+                "❌ Failed to download default video: Status {}",
+                response.status()
+            );
+        }
+    }
 
     if Path::new(&video_path).exists() {
         log::info!("✅ Default video found at {}", video_path);

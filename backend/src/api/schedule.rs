@@ -293,10 +293,49 @@ async fn get_playlist_for_date(
     }))
 }
 
+#[derive(Deserialize)]
+pub struct CreateExceptionRequest {
+    pub schedule_id: Uuid,
+    pub date: String,
+}
+
+async fn add_exception(
+    req: web::Json<CreateExceptionRequest>,
+    pool: web::Data<PgPool>,
+) -> impl Responder {
+    let date = match chrono::NaiveDate::parse_from_str(&req.date, "%Y-%m-%d") {
+        Ok(d) => d,
+        Err(_) => {
+            return HttpResponse::BadRequest()
+                .json(serde_json::json!({"error": "Invalid date format. Use YYYY-MM-DD"}))
+        }
+    };
+
+    let result = sqlx::query(
+        "INSERT INTO schedule_exceptions (schedule_id, exception_date) 
+         VALUES ($1, $2) 
+         ON CONFLICT (schedule_id, exception_date) DO NOTHING",
+    )
+    .bind(&req.schedule_id)
+    .bind(date)
+    .execute(pool.get_ref())
+    .await;
+
+    match result {
+        Ok(_) => HttpResponse::Created().json(serde_json::json!({"message": "Exception added"})),
+        Err(e) => {
+            log::error!("Failed to add schedule exception: {}", e);
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": "Failed to add exception"}))
+        }
+    }
+}
+
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.route("", web::get().to(list_schedule))
         .route("", web::post().to(create_schedule))
         .route("/bulk", web::post().to(delete_bulk))
+        .route("/exception", web::post().to(add_exception))
         .route("/{id}", web::delete().to(delete_schedule))
         .route("/{id}", web::put().to(update_schedule))
         .route("/playlist", web::get().to(get_playlist_for_date));

@@ -249,6 +249,7 @@ export default function Settings() {
     fillersPath: '',
     logoPath: '',
     logoPosition: 'top-right',
+    epgUrl: '',
     rtmpOutputUrl: '',
     srtOutputUrl: '',
     udpOutputUrl: '',
@@ -272,6 +273,7 @@ export default function Settings() {
     udpMode: 'multicast',
     videoCodec: 'copy',
     audioCodec: 'copy',
+    epgDays: 7,
   });
   const [logs, setLogs] = useState([]);
   const [showLogsDialog, setShowLogsDialog] = useState(false);
@@ -383,6 +385,7 @@ export default function Settings() {
         fillersPath: data.fillers_path || '',
         logoPath: data.logo_path || '',
         logoPosition: data.logo_position || 'top-right',
+        epgUrl: data.epg_url || '',
         dayStart: data.day_start || '06:00',
         defaultImagePath: data.default_image_path || '',
         defaultVideoPath: data.default_video_path || '',
@@ -409,6 +412,7 @@ export default function Settings() {
         udpMode: data.udp_mode || 'multicast',
         videoCodec: data.video_codec || 'copy',
         audioCodec: data.audio_codec || 'copy',
+        epgDays: data.epg_days || 7,
       });
     } catch (error) {
       console.error('Failed to fetch settings:', error);
@@ -451,9 +455,9 @@ export default function Settings() {
 
   // Output Defaults Configuration
   const OUTPUT_DEFAULTS = {
-    rtmp: { url: 'rtmp://localhost:1935/live/stream', resolution: '1280x720', bitrate: '2500k' },
+    rtmp: { url: 'rtmp://localhost:1935/live_stream', resolution: '1280x720', bitrate: '2500k' },
     hls: { url: '/hls/stream.m3u8', resolution: '1920x1080', bitrate: '4000k' },
-    srt: { url: 'srt://mediamtx:8890?mode=caller&streamid=publish:live/stream', resolution: '1920x1080', bitrate: '5000k' },
+    srt: { url: 'srt://mediamtx:8890?mode=caller&streamid=publish:live_stream_srt', resolution: '1920x1080', bitrate: '5000k' },
     udp: { url: 'udp://239.0.0.1:1234', resolution: '1280x720', bitrate: '3000k' },
     desktop: { url: 'local', resolution: '1920x1080', bitrate: '0' }
   };
@@ -513,6 +517,7 @@ export default function Settings() {
         fillers_path: settings.fillersPath,
         logo_path: settings.logoPath,
         logo_position: settings.logoPosition,
+        epg_url: settings.epgUrl,
         day_start: settings.dayStart,
         overlay_enabled: settings.overlay_enabled,
         channel_name: settings.channelName,
@@ -532,6 +537,7 @@ export default function Settings() {
         auto_start_protocols: settings.autoStartProtocols,
         video_codec: settings.videoCodec,
         audio_codec: settings.audioCodec,
+        epg_days: settings.epgDays,
       });
       showSuccess('Configurações salvas! Reiniciando transmissão...');
       
@@ -706,7 +712,7 @@ export default function Settings() {
                                const mode = e.target.value;
                                const newUrl = mode === 'listener' 
                                  ? 'srt://0.0.0.0:9900?mode=listener'
-                                 : 'srt://mediamtx:8890?mode=caller&streamid=publish:live/stream';
+                                 : 'srt://mediamtx:8890?mode=caller&streamid=publish:live_stream_srt';
                                setSettings({ 
                                  ...settings, 
                                  srtMode: mode,
@@ -787,7 +793,7 @@ export default function Settings() {
                         label="URL RTMP"
                         value={settings.rtmpOutputUrl || ''}
                         onChange={(e) => setSettings({ ...settings, rtmp_output_url: e.target.value, rtmpOutputUrl: e.target.value })}
-                        placeholder="rtmp://localhost:1935/live/stream"
+                        placeholder="rtmp://localhost:1935/live_stream"
                         variant="outlined"
                         size="small"
                         helperText="Destino RTMP (Ex: YouTube, Facebook)"
@@ -799,7 +805,7 @@ export default function Settings() {
                         label="URL SRT"
                         value={settings.srtOutputUrl || ''}
                         onChange={(e) => setSettings({ ...settings, srt_output_url: e.target.value, srtOutputUrl: e.target.value })}
-                        placeholder="srt://mediamtx:8890?mode=caller"
+                        placeholder="srt://mediamtx:8890?mode=caller&streamid=publish:live_stream_srt"
                         variant="outlined"
                         size="small"
                         helperText="Destino SRT (Caller ou Listener)"
@@ -926,8 +932,8 @@ export default function Settings() {
                             O Playout atua como <strong>Publisher</strong>. Para ver no VLC:
                           </Typography>
                           <Paper sx={{ mt: 1, p: 0.5, bgcolor: 'rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>rtmp://{window.location.hostname}:1935/live/stream</code>
-                            <IconButton size="small" onClick={() => { navigator.clipboard.writeText(`rtmp://${window.location.hostname}:1935/live/stream`); showSuccess('Copiado!'); }}>
+                            <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>rtmp://{window.location.hostname}:1935/live_stream</code>
+                            <IconButton size="small" onClick={() => { navigator.clipboard.writeText(`rtmp://${window.location.hostname}:1935/live_stream`); showSuccess('Copiado!'); }}>
                                 <ContentCopyIcon fontSize="small" />
                             </IconButton>
                           </Paper>
@@ -952,12 +958,12 @@ export default function Settings() {
                                 </Typography>
                                 <Paper sx={{ mt: 1, p: 1, bgcolor: 'rgba(0,0,0,0.1)' }}>
                                   <Typography variant="caption" display="block" sx={{ fontWeight: 'bold', color: 'primary.main' }}>Passo 1: No Playout (Output URL)</Typography>
-                                  <code>srt://mediamtx:8890?mode=caller&streamid=publish:live/stream</code>
+                                  <code>srt://mediamtx:8890?mode=caller&streamid=publish:live_stream_srt</code>
                                   
                                   <Typography variant="caption" display="block" sx={{ mt: 1, fontWeight: 'bold', color: 'success.main' }}>Passo 2: No VLC (Fluxo de Rede)</Typography>
                                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <code>srt://localhost:8890?mode=caller&streamid=read:live/stream</code>
-                                    <IconButton size="small" onClick={() => { navigator.clipboard.writeText(`srt://localhost:8890?mode=caller&streamid=read:live/stream`); showSuccess('Copiado!'); }}>
+                                    <code>srt://localhost:8890?mode=caller&streamid=read:live_stream_srt</code>
+                                    <IconButton size="small" onClick={() => { navigator.clipboard.writeText(`srt://localhost:8890?mode=caller&streamid=read:live_stream_srt`); showSuccess('Copiado!'); }}>
                                       <ContentCopyIcon fontSize="small" />
                                     </IconButton>
                                   </Box>
@@ -1282,6 +1288,38 @@ export default function Settings() {
                     value={settings.fillersPath}
                     onChange={(e) => setSettings({ ...settings, fillersPath: e.target.value })}
                     helperText="Diretório com vídeos para preencher espaços vazios"
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="URL EPG Externo (Importação)"
+                    value={settings.epgUrl}
+                    onChange={(e) => setSettings({ ...settings, epgUrl: e.target.value })}
+                    helperText="URL para importar guia de programação externo (opcional)"
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="EPG Days Ahead"
+                    type="number"
+                    value={settings.epgDays}
+                    onChange={(e) => setSettings({ ...settings, epgDays: parseInt(e.target.value) || 7 })}
+                    helperText="Número de dias de programação a gerar no guia XMLTV"
+                    InputProps={{ inputProps: { min: 1, max: 30 } }}
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="URL Exportação EPG (Para Operadores)"
+                    value={`${window.location.origin}/api/playlists/epg.xml`}
+                    InputProps={{ readOnly: true }}
+                    helperText="URL do guia XMLTV gerado por este playout (Forneça este link aos seus transmissores)"
                   />
                 </Grid>
 
@@ -2029,6 +2067,21 @@ export default function Settings() {
                     Histórico de Versões
                   </Typography>
                   <List>
+                    <ListItem>
+                      <ListItemText
+                        primary={<Typography variant="subtitle1"><strong>v1.9.3-PRO</strong> - 2026-01-20</Typography>}
+                        secondary={
+                          <Box component="span">
+                            • EPG Expansion: Support for Genre, Rating, Keywords, Cast, and Director<br />
+                            • Fix: UDP/HLS Session Counting and Master Feed sync<br />
+                            • Fix: Metadata saving error in Media Library<br />
+                            • Fix: Playlist deletion using database schedule check<br />
+                            • Added: External EPG XML Export URL in Settings
+                          </Box>
+                        }
+                      />
+                    </ListItem>
+                    <Divider />
                     <ListItem>
                       <ListItemText
                         primary={<Typography variant="subtitle1"><strong>v1.9.2-PRO</strong> - 2026-01-12</Typography>}

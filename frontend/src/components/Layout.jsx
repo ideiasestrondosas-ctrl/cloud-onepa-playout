@@ -26,6 +26,7 @@ import {
   Logout as LogoutIcon,
   ViewModule as TemplatesIcon,
   Help as HelpIcon,
+  LiveTv as LiveTvIcon,
 } from '@mui/icons-material';
 import { useHelp } from '../context/HelpContext';
 import ConnectivityStatus from './ConnectivityStatus';
@@ -59,6 +60,7 @@ const menuItems = [
   { text: 'Media Library', icon: <VideoLibraryIcon />, path: '/media' },
   { text: 'Playlists', icon: <PlaylistPlayIcon />, path: '/playlists' },
   { text: 'Calendário', icon: <CalendarIcon />, path: '/calendar' },
+  { text: 'EPG', icon: <LiveTvIcon />, path: '/epg' },
   { text: 'Templates', icon: <TemplatesIcon />, path: '/templates' },
   { text: 'Configurações', icon: <SettingsIcon />, path: '/settings' },
 ];
