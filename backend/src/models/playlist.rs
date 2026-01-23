@@ -7,8 +7,8 @@ use uuid::Uuid;
 pub struct PlaylistItem {
     pub id: Option<String>, // Can be string or uuid from frontend
     pub filename: Option<String>,
-    #[serde(alias = "source")]
-    pub path: String,
+    pub path: Option<String>,
+    pub source: Option<String>,
     pub duration: f64,
     #[serde(default)]
     pub r#in: f64,
@@ -19,6 +19,15 @@ pub struct PlaylistItem {
     pub media_type: Option<String>,
     pub metadata: Option<serde_json::Value>, // EPG metadata
     pub is_filler: Option<bool>,
+}
+
+impl PlaylistItem {
+    pub fn get_path(&self) -> String {
+        self.path
+            .clone()
+            .or_else(|| self.source.clone())
+            .unwrap_or_default()
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

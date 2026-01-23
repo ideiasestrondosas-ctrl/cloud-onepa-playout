@@ -887,9 +887,7 @@ impl PlayoutEngine {
                                     if let Some(rtype) = r.get("type").and_then(|v| v.as_str()) {
                                         match rtype {
                                             "rtmpConn" => info.rtmp += 1,
-                                            "hlsConn" | "hlsSession" | "hlsMuxer" | "hlsSource" => {
-                                                info.hls += 1
-                                            }
+                                            "hlsConn" | "hlsSession" => info.hls += 1,
                                             "srtConn" => info.srt += 1,
                                             "webrtcConn" | "webrtcSession" => info.webrtc += 1,
                                             "rtspConn" | "rtspSession" => info.rtsp += 1,
@@ -1001,9 +999,9 @@ impl PlayoutEngine {
             } else {
                 "idle".to_string()
             },
-            // HLS readers + RTSP/RTMP readers (total downstream reach)
-            sessions: hls_path_info.map(|i| i.hls + i.rtsp + i.rtmp).unwrap_or(0),
-            details: "http://localhost:8888/live_stream/".to_string(),
+            // HLS readers only (not RTSP/RTMP which are separate protocols)
+            sessions: hls_path_info.map(|i| i.hls).unwrap_or(0),
+            details: "http://localhost:3000/hls/stream.m3u8".to_string(),
         });
 
         // 3. SRT Status
@@ -1062,6 +1060,9 @@ impl PlayoutEngine {
                         udp_status = "error".to_string();
                     }
                 }
+            } else {
+                // Process not in map but UDP is enabled - check if it should be starting
+                udp_status = "starting".to_string();
             }
         }
 

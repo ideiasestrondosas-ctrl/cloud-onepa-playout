@@ -43,6 +43,10 @@ export default function EPGView() {
     try {
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
       const response = await playlistAPI.list({ date: dateStr });
+      console.log('[EPG] Fetched playlists for', dateStr, ':', response.data.playlists);
+      response.data.playlists.forEach(p => {
+        console.log(`[EPG] Playlist "${p.name}":`, p.content?.program?.length || 0, 'clips');
+      });
       setPlaylists(response.data.playlists);
     } catch (error) {
       console.error("Failed to fetch EPG:", error);

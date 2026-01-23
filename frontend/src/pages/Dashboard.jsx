@@ -41,6 +41,7 @@ import {
   Router as RouterIcon,
   Wifi as WifiIcon
 } from '@mui/icons-material';
+import ProtocolIcon from '../components/ProtocolIcon';
 import {
   Dialog,
   DialogTitle,
@@ -311,23 +312,32 @@ export default function Dashboard() {
     }
   };
 
+  const [toggleLoading, setToggleLoading] = useState({});
+
   const handleToggleProtocol = async (protocol, currentStatus) => {
+    // Prevent double-clicks
+    if (toggleLoading[protocol]) return;
+    
     try {
       const enabled = currentStatus !== 'active';
-      // Optimistic update
-      setStatus(prev => ({
-        ...prev,
-        active_streams: prev.active_streams.map(s => 
-          s.protocol === protocol ? { ...s, status: enabled ? 'active' : 'idle' } : s
-        )
-      }));
       
+      // Set loading state for this protocol
+      setToggleLoading(prev => ({ ...prev, [protocol]: true }));
+      
+      // Call backend first (no optimistic update to prevent flickering)
       await playoutAPI.toggleProtocol(protocol.toLowerCase(), enabled);
-      setTimeout(fetchStatus, 3000); // Wait longer for backend to stabilize
+      
+      // Wait longer for backend to process and update status
+      setTimeout(() => {
+        fetchStatus();
+        setToggleLoading(prev => ({ ...prev, [protocol]: false }));
+      }, 2500);
+      
       showSuccess(`Protocolo ${protocol} ${enabled ? 'ativado' : 'desativado'}!`);
     } catch (error) {
       showError('Erro ao alternar protocolo');
-      fetchStatus(); // Revert on error
+      setToggleLoading(prev => ({ ...prev, [protocol]: false }));
+      fetchStatus(); // Refresh on error
     }
   };
 
@@ -535,17 +545,11 @@ export default function Dashboard() {
                       p: 1, 
                       borderRadius: 1.5, 
                       bgcolor: stream.status === 'active' ? 'error.main' : 'grey.200',
-                      color: stream.status === 'active' ? '#fff' : 'text.secondary',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center'
                     }}>
-                      {stream.protocol === 'HLS' && <TvIcon fontSize="small" sx={{ color: '#fff !important' }} />}
-                      {stream.protocol === 'RTMP' && <RouterIcon fontSize="small" sx={{ color: '#fff !important' }} />}
-                      {stream.protocol === 'SRT' && <SensorsIcon fontSize="small" sx={{ color: '#fff !important' }} />}
-                      {stream.protocol === 'UDP' && <HubIcon fontSize="small" sx={{ color: '#fff !important' }} />}
-                      {stream.protocol === 'MASTER' && <PodcastsIcon fontSize="small" sx={{ color: '#fff !important' }} />}
-                      {!['HLS', 'RTMP', 'SRT', 'UDP', 'MASTER'].includes(stream.protocol) && <WifiIcon fontSize="small" sx={{ color: '#fff !important' }} />}
+                      <ProtocolIcon protocol={stream.protocol} size={40} active={stream.status === 'active'} />
                     </Box>
                     <Box>
                       <Typography variant="caption" sx={{ color: stream.status === 'active' ? 'error.main' : 'text.disabled', fontWeight: 'bold' }}>
@@ -564,7 +568,11 @@ export default function Dashboard() {
                             size="small" 
                             sx={{ p: 0, opacity: 0.6 }}
                             onClick={() => {
-                              const textToCopy = stream.details.replace('Relay: ', '');
+                              let textToCopy = stream.details.replace('Relay: ', '');
+                              // Fix for SRT: Use read mode for playback
+                              if (stream.protocol === 'SRT' && textToCopy.includes('mode=caller')) {
+                                textToCopy = textToCopy.replace('streamid=publish', 'streamid=read');
+                              }
                               navigator.clipboard.writeText(textToCopy);
                               showInfo('URL copiada!');
                             }}
@@ -588,9 +596,9 @@ export default function Dashboard() {
                       color={stream.status === 'active' ? "error" : "primary"}
                       onClick={() => handleToggleProtocol(stream.protocol, stream.status)}
                       sx={{ mt: 1, py: 0, fontSize: '0.65rem', minWidth: '80px' }}
-                      disabled={stream.protocol === 'MASTER' || stream.protocol === 'HLS'}
+                      disabled={stream.protocol === 'MASTER' || stream.protocol === 'HLS' || toggleLoading[stream.protocol]}
                     >
-                      {stream.status === 'active' ? 'DESATIVAR' : 'ATIVAR'}
+                      {toggleLoading[stream.protocol] ? 'AGUARDE...' : (stream.status === 'active' ? 'DESATIVAR' : 'ATIVAR')}
                     </Button>
                   </Box>
                 </Paper>
