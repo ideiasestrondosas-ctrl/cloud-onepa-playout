@@ -212,6 +212,7 @@ GPL v3 - Ver [LICENSE](LICENSE) para detalhes.
 We would like to express our sincere gratitude to the following for their inspiration, tools, and platforms that made this project possible:
 
 - **ffplayout:** For the initial inspiration and concepts in playout automation.
+- **Big Buck Bunny:** (c) copyright 2008, Blender Foundation / www.bigbuckbunny.org, for the use of Big Buck Bunny.
 - **Claude Code & Anthropic:** For the advanced AI assistant capabilities.
 - **Gemini & Google DeepMind:** For the powerful language models and reasoning.
 - **ChatGPT & OpenAI:** For the pioneering work in AI assistance.

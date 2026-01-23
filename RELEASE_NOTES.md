@@ -18,6 +18,11 @@
 - **Auto-Recovery**: Improved process monitor to detect and restart stalled relays automatically.
 - **Clean Rebuild Suite**: Standardized cleanup and repair scripts for rapid environment recovery.
 
+## 📜 Credits & Copyright
+
+- **Big Buck Bunny**: (c) copyright 2008, Blender Foundation / www.bigbuckbunny.org, for the use of Big Buck Bunny.
+- **Project Baseline**: Cloud Onepa Playout is a professional evolution of the ffplayout concept.
+
 ---
 
 # Release Notes v1.9.5-PRO (2026-01-19)
