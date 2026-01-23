@@ -12,25 +12,15 @@
 
 - [x] **Phase 19-21**: UI Refinement & Security (v1.9.3-PRO)
 - [x] **Phase 22**: SRT caller v2, Master Feed Auth & Repeat Indicators (v1.9.5-PRO)
+- [x] **Phase 23**: EPG Generator, Timeline & Session Accuracy (v2.0.0-PRO)
 
-## 🧪 Phase 22: Live Inputs & Advanced Protocol (Next)
-
-_Focus: Expanding beyond file playback_
+### 🧪 Phase 24: Live Inputs & Advanced Protocol (Next)
 
 _Focus: Expanding beyond file playback_
 
 - [ ] **Live Inputs Support**: Integration of WebRTC, NDI, and SDI inputs for live switching.
 - [ ] **Social Streaming**: Native API integration for YouTube Live & Facebook Live.
-- [ ] **SRT Support**: Implementation of SRT (Secure Reliable Transport) for low-latency, reliable remote contribution.
-
-### 📅 Phase 23: EPG & Metadata Engine
-
-_Focus: Professional program guide and discoverability_
-
-- [ ] **EPG Generator**: Internal creation of Electronic Program Guides.
-- [ ] **Web EPG Export**: Public JSON/XML API for external entities.
-- [ ] **Standard Compliance**: XMLTV and DVB-EIT format support.
-- [ ] **External Sync**: Link EPG with international databases (TMDB/TVDB) and internal databases.
+- [ ] **Advanced SRT**: Multi-caller support and bonding.
 
 ### 🎨 Phase 24: Graphics & Visual Experience
 

@@ -5,7 +5,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB.svg)](https://reactjs.org/)
-[![Version](https://img.shields.io/badge/Version-1.9.5--PRO-blue.svg)]()
+[![Version](https://img.shields.io/badge/Version-2.0.0--PRO-blue.svg)]()
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)]()
 
 ## 📖 Sobre
@@ -110,9 +110,9 @@ Este projeto representa um esforço significativo de engenharia para criar uma s
 
 | Métrica          | Detalhe                    | Valor                                     |
 | ---------------- | -------------------------- | ----------------------------------------- |
-| **Código Fonte** | Frontend (React/JSX)       | ~7,200 linhas                             |
-|                  | Backend (Rust)             | ~5,600 linhas                             |
-|                  | Total                      | **~12,800+ linhas**                       |
+| **Código Fonte** | Frontend (React/JSX)       | ~7,500 linhas                             |
+|                  | Backend (Rust)             | ~5,800 linhas                             |
+|                  | Total                      | **~13,300+ linhas**                       |
 | **Arquitetura**  | Módulos Backend (Rust)     | 30                                        |
 |                  | Componentes Visuais        | 22+                                       |
 |                  | Migrações de Base de Dados | 15                                        |
@@ -135,10 +135,10 @@ _Focus: Expanding beyond file playback_
 
 _Focus: Professional program guide and discoverability_
 
-- [ ] **EPG Generator**: Internal creation of Electronic Program Guides.
-- [ ] **Web EPG Export**: Public JSON/XML API for external entities.
-- [ ] **Standard Compliance**: XMLTV and DVB-EIT format support.
-- [ ] **External Sync**: Link EPG with international databases (TMDB/TVDB) and internal databases.
+- [x] **EPG Generator**: Internal creation of Electronic Program Guides.
+- [x] **Web EPG Export**: Public JSON/XML API for external entities.
+- [x] **Standard Compliance**: XMLTV and DVB-EIT format support.
+- [x] **External Sync**: Link EPG with internal schedules and recurring events.
 
 ### 🎨 Phase 24: Graphics & Visual Experience
 
@@ -169,14 +169,17 @@ _Focus: Innovation and High Availability_
 
 Ver [RELEASE_NOTES.md](RELEASE_NOTES.md) para detalhes completos.
 
-### Versão Atual: 1.9.5-PRO (2026-01-19)
+### Versão Atual: 2.0.0-PRO (2026-01-23)
 
 **Principais Novidades:**
 
-- 📡 **Segurança Protocolar**: Autenticar relays RTMP/SRT com MediaMTX via query parameters.
-- 🔓 **Acesso Simplificado**: Permissão de leitura anónima para visualização direta em VLC/Players.
-- 🟡 **Indicadores Visuais**: Novo badge "REPETIÇÃO" no Dashboard e marcador "(R)" no Calendário para agendamentos recorrentes.
-- 🚀 **Build Otimizado**: Limpeza de processos de build pendentes e refresh completo do frontend.
+- 📅 **EPG Intelligence**: Geração automática de guias de programação (XMLTV) baseados no calendário e agendamentos recorrentes.
+- 📉 **Precisão de Sessões**: Novo motor de contagem de sessões que distingue leitores HLS (estáticos) de RTMP/UDP (ativos).
+- 🔄 **Stabilidade de Protocolos**: Refinamento dos processos FFmpeg para evitar flickering e garantir persistência do stream UDP.
+- 🎨 **EPG Timeline**: Nova vista gráfica de linha de tempo para visualização fácil de toda a programação diária.
+- 🔒 **Protocol Security**: Implementação de `read` permissions e tokens para acesso seguro a streams SRT/RTMP.
+
+### Versão Anterior: 1.9.5-PRO (2026-01-19)
 
 ### Versão Anterior: 1.9.4-PRO (2026-01-18)
 

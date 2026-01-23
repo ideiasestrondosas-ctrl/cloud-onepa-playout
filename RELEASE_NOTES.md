@@ -1,17 +1,32 @@
-# Release Notes v1.9.4-PRO (2026-01-18)
+# Release Notes v2.0.0-PRO (2026-01-23)
 
-## 📡 Advanced Protocols & Distribution (v1.9.4)
+## 📅 EPG Intelligence & Timeline (v2.0.0)
 
-- **Multi-Protocol Distribution Engine**: Implemented support for **MPEG-DASH**, **Microsoft Smooth Streaming (MSS)**, and **RIST** via FFmpeg's `tee` muxer.
-- **Native Streaming Connectors**: Enabled **RTSP**, **WebRTC (WHIP/WHEP)**, and **Low-Latency HLS (LL-HLS)** natively via MediaMTX integration.
-- **Intelligent Transcoding**: Added logic to automatically force `libx264/aac` transcoding when filters (logo/overlays) are active, even if "Copy" mode is selected, ensuring 100% stability in distribution.
-- **Enhanced UI Monitoring**: New real-time protocol monitor in the Dashboard and persistent configuration panel in Settings for all advanced distribution methods.
+- **Automated EPG Generation**: Native support for generating XMLTV guides based on the master schedule and recurring calendar events.
+- **Graphic Timeline View**: Implemented a professional EPG timeline component for visual program navigation.
+- **Recurring Logic**: Full support for "daily" and "weekly" repetitions with automatic clip timing expansion in the guide.
+- **EPG Metadata Expansion**: Content now includes Genre, Rating, and detailed descriptions for a premium receiver experience.
 
-## 🛠️ Performance & Stability
+## 📉 Distribution & Session Accuracy
 
-- **UDP Reliability**: Resolved Master Feed initialization errors that caused cascading failures in UDP relays.
-- **UI Fixes**: Corrected a critical "White Screen" error in the Settings panel due to missing component imports.
-- **Database Schema**: Added dedicated columns for extended protocol management and link persistence.
+- **Granular Session Counting**: Differentiated counting for HLS readers vs RTMP/UDP active sessions, providing 100% accurate viewer statistics.
+- **Broadcasting Status**: HLS status now accurately reflects the engine state even when MediaMTX doesn't report active sessions for static segments.
+- **Protocol Stability**: Optimized FFmpeg relay management to eliminate flickering and ensure permanent connection for UDP pushed streams.
+
+## 🛠️ Performance & Reliability
+
+- **Auto-Recovery**: Improved process monitor to detect and restart stalled relays automatically.
+- **Clean Rebuild Suite**: Standardized cleanup and repair scripts for rapid environment recovery.
+
+---
+
+# Release Notes v1.9.5-PRO (2026-01-19)
+
+## 📡 Protocol Security & Visuals (v1.9.5)
+
+- **MediaMTX Security integration**: RTMP/SRT relays now support query-string authentication.
+- **Recurring Markers**: Added visual markers "(R)" and "REPETIÇÃO" across the dashboard and calendar.
+- **HLS URL Standardization**: Optimized HLS playback paths for broader player compatibility.
 
 ---
 
