@@ -55,6 +55,7 @@ export const authAPI = {
 // Media endpoints
 export const mediaAPI = {
   list: (params) => api.get('/media', { params }),
+  get: (id) => api.get(`/media/${id}`),
   upload: (formData, onProgress) => api.post('/media/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
     onUploadProgress: onProgress
@@ -70,11 +71,12 @@ export const mediaAPI = {
   copyMedia: (id, targetFolderId) => api.post(`/media/${id}/copy`, { target_folder_id: targetFolderId }),
   checkUsage: (id) => api.get(`/media/${id}/usage`),
   replaceWithFiller: (id) => api.post(`/media/${id}/replace-with-filler`),
+  fetchMetadata: (id) => api.post(`/media/${id}/fetch-metadata`),
 };
 
 // Playlist endpoints
 export const playlistAPI = {
-  list: () => api.get('/playlists'),
+  list: (params) => api.get('/playlists', { params }),
   get: (id) => api.get(`/playlists/${id}`),
   create: (data) => api.post('/playlists', data),
   update: (id, data) => api.put(`/playlists/${id}`, data),
@@ -116,6 +118,8 @@ export const settingsAPI = {
   uploadOverlayPair: (formData) => api.post('/settings/upload-overlay-pair', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
+  testApi: (service, apiKey) => api.post('/settings/test-api', { service, api_key: apiKey }),
+  applyDefaults: () => api.post('/settings/apply-defaults'),
   resetAll: () => api.post('/settings/reset-all'),
 };
 

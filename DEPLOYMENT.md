@@ -1,105 +1,101 @@
-# Guia de Implantação - ONEPA Playout PRO
+# Guia de Implantação ("Total Automation") - ONEPA Playout PRO
 
-Este documento descreve como instalar, atualizar e gerenciar o sistema em diferentes sistemas operacionais.
+Este sistema foi atualizado para **Automação Total**. A instalação e manutenção agora são feitas com um único clique ou comando.
 
-## 🏗️ Modos de Instalação
+## 🚀 Instalação Rápida (Zero-Touch)
 
-Pode escolher entre dois modos de funcionamento:
+Escolha o seu sistema operativo e siga o passo único.
 
-### 1. Recomendado: Docker (Multi-plataforma)
+### 🐧 Linux (Ubuntu/Debian/CentOS)
 
-O sistema corre em contentores isolados, garantindo que todas as dependências (Postgres, FFmpeg, MediaMTX) funcionam exatamente da mesma forma em Linux, macOS e Windows.
-
-**O que será instalado:**
-
-- **onepa-backend**: O motor de playout em Rust.
-- **onepa-frontend**: A interface web em React.
-- **onepa-postgres**: Base de dados para clips e agendamentos.
-- **onepa-mediamtx**: Servidor de streaming para HLS, RTMP, SRT e WebRTC.
-
-### 2. Manual: Nativo (Apenas Linux/macOS)
-
-Não recomendado para iniciantes. Requer instalação manual de:
-
-- Rust (Cargo) v1.75+
-- Node.js v18+
-- PostgreSQL v16
-- FFmpeg v6.1+
-- MediaMTX
-
----
-
-## 🚀 Instruções de Instalação (Docker)
-
-### Linux e macOS
-
-1. Abra o terminal na pasta do projeto.
-2. Execute o instalador:
-   ```bash
-   chmod +x scripts/install.sh
-   ./scripts/install.sh
-   ```
-
-### Windows
-
-1. Certifique-se de que o **Docker Desktop** está a correr.
-2. Dê um duplo clique em `scripts\install.bat` ou execute via CMD/PowerShell:
-   ```cmd
-   scripts\install.bat
-   ```
-
----
-
-## 🔄 Atualização e Manutenção
-
-### Como atualizar a aplicação
-
-Se houver novas versões do código, execute:
-
-**Linux/macOS:**
+Execute este comando no terminal:
 
 ```bash
-./scripts/update.sh
+# 1. Navegue para a pasta
+cd cloud-onepa-playout
+
+# 2. Execute o instalador automático
+chmod +x scripts/install.sh
+./scripts/install.sh
 ```
 
-**Windows:**
+**O que ele faz:**
 
-```cmd
-scripts\update.bat
-```
-
-### Como fazer um Reset Completo (Fábrica)
-
-Se quiser apagar todos os vídeos, playlists e definições, voltando ao estado original:
-
-**Linux/macOS:**
-
-```bash
-./scripts/update.sh --reset
-```
-
-**Windows:**
-
-```cmd
-scripts\update.bat --reset
-```
+- Verifica se o Docker está instalado (e avisa se não estiver).
+- Gera senhas seguras automaticamente (`.env`).
+- Verifica conflitos de portas.
+- Inicia todo o sistema.
 
 ---
 
-## 📋 Requisitos do Sistema
+### 🍎 macOS (Intel/M1/M2/M3)
 
-| Componente | Requisito Mínimo | Notas                                           |
-| :--------- | :--------------- | :---------------------------------------------- |
-| **CPU**    | 2 Cores          | Recomendado 4+ para streaming 1080p             |
-| **RAM**    | 4GB              | O motor de vídeo consome RAM conforme o bitrate |
-| **Disco**  | 10GB+            | Espaço para contentores e clips de vídeo        |
-| **Docker** | v24.0+           | Docker Compose V2 incluído                      |
+1.  Abra o Terminal.
+2.  Arraste a pasta `cloud-onepa-playout` para o Terminal ou navegue até ela (`cd ...`).
+3.  Execute:
+    `bash
+    chmod +x scripts/install.sh
+    ./scripts/install.sh
+    `
+    **Notas Mac:**
+
+- Lembre-se de configurar a saída UDP para `host.docker.internal` se monitorizar localmente.
 
 ---
 
-## 🌐 Acesso ao Sistema
+### 🪟 Windows 10/11
 
-- **Painel de Controlo**: [http://localhost:3000](http://localhost:3000)
-- **API Backend**: [http://localhost:8081](http://localhost:8081)
-- **HLS Stream**: [http://localhost:3000/hls/stream.m3u8](http://localhost:3000/hls/stream.m3u8)
-- **RTMP Stream**: `rtmp://localhost:1935/live/stream`
+1.  Certifique-se que o **Docker Desktop** está a correr.
+2.  Abra a pasta do projeto no Explorador de Arquivos.
+3.  Entre na pasta `scripts`.
+4.  Faça duplo clique em `install.bat`.
+
+**O que ele faz:**
+
+- Gera senhas seguras usando PowerShell.
+- Cria toda a estrutura de pastas.
+- Inicia o sistema automaticamente.
+
+---
+
+## 🔄 Automação de Atualizações (Auto-Update)
+
+O sistema pode atualizar-se sozinho quando houver novas versões no GitHub.
+
+### Configurar Atualização Automática (Linux/macOS)
+
+Adicione uma tarefa no Cron para verificar atualizações todas as noites às 04:00 AM.
+
+1.  Abra o editor cron:
+    ```bash
+    crontab -e
+    ```
+2.  Adicione a linha (ajuste o caminho `/caminho/para/`):
+    ```bash
+    0 4 * * * /caminho/para/cloud-onepa-playout/scripts/auto_update.sh >> /var/log/onepa_update.log 2>&1
+    ```
+
+### Atualização Manual (Qualquer SO)
+
+Se preferir atualizar manualmente:
+
+- **Linux/Mac**: `./scripts/auto_update.sh`
+- **Windows**: Não tem script auto-update, use `scripts\install.bat` novamente para reconstruir.
+
+---
+
+## 🛠️ Resolução de Problemas Comuns
+
+| Erro                      | Solução Automática                                                                           |
+| :------------------------ | :------------------------------------------------------------------------------------------- |
+| **Porta em uso**          | O script `install.sh` avisará a amarelo. Pare aplicações que usem portas 3000, 8081 ou 1935. |
+| **Permissões (Linux)**    | O script tenta corrigir (`chmod 777`). Se falhar, execute como `sudo`.                       |
+| **Docker não encontrado** | O script fornecerá o link direto para download.                                              |
+
+---
+
+## 🌐 Acesso Pós-Instalação
+
+- **Painel**: [http://localhost:3000](http://localhost:3000)
+- **API**: [http://localhost:8081](http://localhost:8081)
+- **Stream**: [http://localhost:3000/hls/stream.m3u8](http://localhost:3000/hls/stream.m3u8)

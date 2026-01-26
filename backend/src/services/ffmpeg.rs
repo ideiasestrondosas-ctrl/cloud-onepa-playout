@@ -316,10 +316,15 @@ impl FFmpegService {
                     final_url
                 }
             } else if output_url.starts_with("udp://") {
-                log::info!("📡 UDP: Mapping localhost to host.docker.internal");
-                output_url
-                    .replace("localhost", "host.docker.internal")
-                    .replace("127.0.0.1", "host.docker.internal")
+                if output_url.contains("@") {
+                    log::info!("📡 UDP LISTENER: Mapping to all interfaces (empty host)");
+                    output_url.replace("localhost", "").replace("127.0.0.1", "")
+                } else {
+                    log::info!("📡 UDP PUSH: Mapping localhost to host.docker.internal");
+                    output_url
+                        .replace("localhost", "host.docker.internal")
+                        .replace("127.0.0.1", "host.docker.internal")
+                }
             } else {
                 output_url.to_string()
             }
@@ -670,6 +675,20 @@ impl FFmpegService {
                 };
                 final_output_url = format!("{}{}listen=1", final_output_url, separator4);
             }
+        } else if final_output_url.starts_with("udp://") {
+            // Support for UDP Listener mode (udp://@:port)
+            if final_output_url.contains("@") && !final_output_url.contains("listen=1") {
+                let separator = if final_output_url.contains('?') {
+                    "&"
+                } else {
+                    "?"
+                };
+                final_output_url = format!("{}{}listen=1", final_output_url, separator);
+                log::info!(
+                    "📡 UDP LISTENER: Enabled listen=1 for URL: {}",
+                    final_output_url
+                );
+            }
         }
 
         let output_format = if final_output_url.starts_with("rtmp://") {
@@ -798,6 +817,8 @@ impl FFmpegService {
         ];
 
         args.extend(vec![
+            "-rw_timeout".to_string(),
+            "10000000".to_string(), // 10s timeout to survive clip transitions
             "-i".to_string(),
             final_input_url.to_string(),
             "-map".to_string(),
@@ -820,9 +841,9 @@ impl FFmpegService {
                 "60000".to_string(),
                 "-attempt_recovery".to_string(),
                 "1".to_string(),
-                "-recover_any_error".to_string(),
-                "1".to_string(),
                 "-recovery_wait_time".to_string(),
+                "1".to_string(),
+                "-drop_pkts_on_overflow".to_string(),
                 "1".to_string(),
                 final_output_url.to_string(),
             ]);
@@ -863,14 +884,88 @@ impl FFmpegService {
                 "60000".to_string(),
                 "-attempt_recovery".to_string(),
                 "1".to_string(),
-                "-recover_any_error".to_string(),
+                "-drop_pkts_on_overflow".to_string(),
                 "1".to_string(),
                 "-recovery_wait_time".to_string(),
                 "1".to_string(),
                 final_output_url.to_string(),
             ]);
         } else if final_output_url.starts_with("udp://") {
-            // UDP FIFO
+            // Very basic multicast range check (224.x.x.x to 239.x.x.x)
+            let is_multicast = final_output_url.contains("://224.")
+                || final_output_url.contains("://225.")
+                || final_output_url.contains("://226.")
+                || final_output_url.contains("://227.")
+                || final_output_url.contains("://228.")
+                || final_output_url.contains("://229.")
+                || final_output_url.contains("://230.")
+                || final_output_url.contains("://231.")
+                || final_output_url.contains("://232.")
+                || final_output_url.contains("://233.")
+                || final_output_url.contains("://234.")
+                || final_output_url.contains("://235.")
+                || final_output_url.contains("://236.")
+                || final_output_url.contains("://237.")
+                || final_output_url.contains("://238.")
+                || final_output_url.contains("://239.");
+
+            if is_multicast {
+                let separator = if final_output_url.contains('?') {
+                    "&"
+                } else {
+                    "?"
+                };
+                if !final_output_url.contains("ttl=") {
+                    final_output_url = format!("{}{}ttl=2", final_output_url, separator);
+                }
+                let separator2 = if final_output_url.contains('?') {
+                    "&"
+                } else {
+                    "?"
+                };
+                if !final_output_url.contains("buffer_size=") {
+                    final_output_url =
+                        format!("{}{}buffer_size=10000000", final_output_url, separator2);
+                }
+            }
+
+            // Support for UDP Listener mode (udp://@:port)
+            if (final_output_url.contains('@') || final_output_url.contains("listen=1"))
+                && !final_output_url.contains("://2")
+            {
+                let separator = if final_output_url.contains('?') {
+                    "&"
+                } else {
+                    "?"
+                };
+
+                if !final_output_url.contains("listen=1") {
+                    final_output_url = format!("{}{}listen=1", final_output_url, separator);
+                }
+
+                // FFmpeg 6 compatibility: Replace @ with 0.0.0.0 for binding
+                if final_output_url.contains('@') {
+                    // Try to isolate the part after @ (the port)
+                    let parts: Vec<&str> = final_output_url.split('@').collect();
+                    if parts.len() > 1 {
+                        let after_at = parts[1];
+                        // If it's like @:1234 or @mediamtx:1234, we want 0.0.0.0:1234
+                        if let Some(colon_pos) = after_at.find(':') {
+                            let port_part = &after_at[colon_pos..]; // includes the colon
+                            final_output_url = format!("udp://0.0.0.0{}", port_part);
+                        } else {
+                            // fallback simple replace
+                            final_output_url = final_output_url.replace('@', "0.0.0.0");
+                        }
+                    }
+                }
+
+                log::info!(
+                    "📡 UDP RELAY LISTENER: Normalized URL for FFmpeg 6: {}",
+                    final_output_url
+                );
+            }
+
             if !final_output_url.contains("pkt_size=") {
                 let separator = if final_output_url.contains('?') {
                     "&"
@@ -880,19 +975,10 @@ impl FFmpegService {
                 final_output_url = format!("{}{}pkt_size=1316", final_output_url, separator);
             }
 
+            // Direct UDP output without FIFO overhead for real-time
             args.extend(vec![
                 "-f".to_string(),
-                "fifo".to_string(),
-                "-fifo_format".to_string(),
                 "mpegts".to_string(),
-                "-queue_size".to_string(),
-                "60000".to_string(),
-                "-attempt_recovery".to_string(),
-                "1".to_string(),
-                "-recover_any_error".to_string(),
-                "1".to_string(),
-                "-recovery_wait_time".to_string(),
-                "1".to_string(),
                 final_output_url.to_string(),
             ]);
         } else {

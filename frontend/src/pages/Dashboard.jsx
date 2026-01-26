@@ -179,14 +179,16 @@ export default function Dashboard() {
               }
           }
 
-          if (audioCtxRef.current.state === 'running' && !sourceNodeRef.current && internalPlayer) {
+          if (audioCtxRef.current.state === 'running' && !internalPlayer.__audioSourceConnected) {
               try {
                   sourceNodeRef.current = audioCtxRef.current.createMediaElementSource(internalPlayer);
                   sourceNodeRef.current.connect(analyzerRef.current);
                   analyzerRef.current.connect(audioCtxRef.current.destination);
+                  internalPlayer.__audioSourceConnected = true;
                   console.log('[AudioAnalysis] Source connected to analyzer');
               } catch (e) {
                   console.warn('[AudioAnalysis] Connection failed (already connected?):', e);
+                  internalPlayer.__audioSourceConnected = true; 
               }
           }
       };
@@ -199,6 +201,13 @@ export default function Dashboard() {
       if (audioCtxRef.current?.state === 'running') {
           initAudio();
       }
+      
+      // Guard against null analyzer
+      if (!analyzerRef.current) {
+        console.warn('[AudioAnalysis] Analyzer not initialized yet');
+        return;
+      }
+      
       const bufferLength = analyzerRef.current.frequencyBinCount;
       const dataArray = new Uint8Array(bufferLength);
         const updateLevel = () => {
@@ -381,9 +390,7 @@ export default function Dashboard() {
   };
 
   const isPlaying = status.status === 'playing';
-  const isDistributionActive = status.active_streams?.some(s => 
-      ['RTMP', 'SRT', 'UDP'].includes(s.protocol) && s.status === 'active'
-  );
+  const isDistributionActive = settings?.rtmp_enabled || settings?.srt_enabled || settings?.udp_enabled || settings?.hls_enabled;
 
   useEffect(() => {
     if (isPlaying && !previewPaused && !previewMuted) {
@@ -563,16 +570,12 @@ export default function Dashboard() {
                         {stream.status === 'active' ? 'ATIVA' : stream.status === 'error' ? 'ERRO' : 'IDLE'}
                       </Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      {(stream.protocol === 'RTMP' || stream.protocol === 'SRT' || stream.protocol === 'UDP' || stream.protocol === 'HLS') && (
+                      {(status.display_urls && status.display_urls[stream.protocol]) && (
                           <IconButton 
                             size="small" 
                             sx={{ p: 0, opacity: 0.6 }}
                             onClick={() => {
-                              let textToCopy = stream.details.replace('Relay: ', '');
-                              // Fix for SRT: Use read mode for playback
-                              if (stream.protocol === 'SRT' && textToCopy.includes('mode=caller')) {
-                                textToCopy = textToCopy.replace('streamid=publish', 'streamid=read');
-                              }
+                              const textToCopy = status.display_urls[stream.protocol];
                               navigator.clipboard.writeText(textToCopy);
                               showInfo('URL copiada!');
                             }}
@@ -626,7 +629,7 @@ export default function Dashboard() {
             <ReactPlayer
               key={playerKey}
               ref={playerRef}
-              url="/hls/stream.m3u8"
+              url="/hls/stream.m3u8?preview=true"
               playing={!previewPaused}
               muted={previewMuted}
               width="100%"

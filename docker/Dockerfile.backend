@@ -16,7 +16,7 @@ RUN apk add --no-cache \
 WORKDIR /app
 
 # Copy dependency files first
-COPY Cargo.toml ./
+COPY Cargo.toml Cargo.lock ./
 
 # (Simplified build: remove dummy main to avoid binary confusion)
 
@@ -38,7 +38,9 @@ RUN apk add --no-cache \
     ffmpeg \
     libssl3 \
     ca-certificates \
-    curl
+    curl \
+    iproute2 \
+    net-tools
 
 # Create storage directories
 RUN mkdir -p /var/lib/onepa-playout/media /var/lib/onepa-playout/thumbnails /var/lib/onepa-playout/playlists

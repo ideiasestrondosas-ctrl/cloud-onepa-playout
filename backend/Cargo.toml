@@ -3,7 +3,7 @@ name = "cloud-onepa-playout"
 edition = "2021"
 authors = ["Cloud Onepa Team"]
 description = "Sistema de Automação de Playout 24/7 para Streaming de Vídeo"
-version = "2.0.0"
+version = "2.1.0"
 license = "GPL-3.0"
 
 [dependencies]
@@ -68,6 +68,7 @@ reqwest = { version = "0.11", default-features = false, features = [
 # Error Handling
 anyhow = "1.0"
 thiserror = "1.0.40"
+base64 = "0.22.1"
 
 [dev-dependencies]
 actix-rt = "2.9"

@@ -6,8 +6,10 @@ use chrono::{Datelike, Local, NaiveTime};
 use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, Row};
 use std::collections::{HashMap, VecDeque};
+use std::net::IpAddr;
 use std::process::Child;
 use std::sync::Arc;
+use std::time::Instant;
 use tokio::sync::Mutex;
 use tokio::time::{sleep, Duration};
 use uuid::Uuid;
@@ -24,6 +26,7 @@ pub struct PlayoutStatus {
     pub schedule_source: Option<String>,
     pub current_playlist_id: Option<Uuid>,
     pub current_playlist_name: Option<String>,
+    pub display_urls: std::collections::HashMap<String, String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -60,7 +63,10 @@ pub struct PlayoutEngine {
     current_sequence: Arc<Mutex<Vec<String>>>,
     pub logs: Arc<Mutex<VecDeque<String>>>,
     distribution_processes: Arc<Mutex<HashMap<String, Child>>>,
+    last_relay_urls: Arc<Mutex<HashMap<String, String>>>,
     relay_cooldowns: Arc<Mutex<HashMap<String, std::time::Instant>>>,
+    pub hls_sessions: Arc<Mutex<HashMap<String, Instant>>>,
+    pub preview_ips: Arc<Mutex<HashMap<IpAddr, Instant>>>,
 }
 
 impl PlayoutEngine {
@@ -82,6 +88,7 @@ impl PlayoutEngine {
                 schedule_source: None,
                 current_playlist_id: None,
                 current_playlist_name: None,
+                display_urls: std::collections::HashMap::new(),
             })),
             engine_start_time: Arc::new(Mutex::new(None)),
             skip_requested: Arc::new(Mutex::new(false)),
@@ -94,7 +101,10 @@ impl PlayoutEngine {
             current_sequence: Arc::new(Mutex::new(Vec::new())),
             logs: Arc::new(Mutex::new(VecDeque::new())),
             distribution_processes: Arc::new(Mutex::new(HashMap::new())),
+            last_relay_urls: Arc::new(Mutex::new(HashMap::new())),
             relay_cooldowns: Arc::new(Mutex::new(HashMap::new())),
+            hls_sessions: Arc::new(Mutex::new(HashMap::new())),
+            preview_ips: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -121,7 +131,7 @@ impl PlayoutEngine {
         *r = running;
 
         if !running {
-            let _ = sqlx::query("UPDATE settings SET is_running = $1, rtmp_enabled = FALSE, srt_enabled = FALSE, udp_enabled = FALSE WHERE id = TRUE")
+            let _ = sqlx::query("UPDATE settings SET is_running = $1 WHERE id = TRUE")
                 .bind(running)
                 .execute(&self.pool)
                 .await;
@@ -177,10 +187,8 @@ impl PlayoutEngine {
 
                     if !settings.auto_start_protocols {
                         log::info!(
-                            "Auto-start protocols is OFF. Disabling distribution protocols."
+                            "Auto-start protocols is OFF. Distribution protocols must be enabled manually."
                         );
-                        let _ = sqlx::query("UPDATE settings SET rtmp_enabled = FALSE, srt_enabled = FALSE, udp_enabled = FALSE, hls_enabled = FALSE WHERE id = TRUE")
-                            .execute(&pool).await;
                     }
                 }
             });
@@ -846,8 +854,10 @@ impl PlayoutEngine {
         let mut current_id = self.current_clip_id.lock().await;
         *current_id = None;
 
-        // Cleanup HLS cache
+        // Cleanup HLS cache and sessions
         self.cleanup_cache().await;
+        let mut sessions = self.hls_sessions.lock().await;
+        sessions.clear();
     }
 
     async fn update_stream_stats(&self, settings: &Settings) {
@@ -989,9 +999,19 @@ impl PlayoutEngine {
         });
 
         // 2. HLS Status
-        let hls_path_info = mediamtx_paths.get("live_stream");
+        // Cleanup old HLS sessions (older than 15s for more immediate reset)
+        let hls_count = {
+            let mut hls_sessions = self.hls_sessions.lock().await;
+            hls_sessions.retain(|_, last_seen| last_seen.elapsed() < Duration::from_secs(15));
+            if !hls_sessions.is_empty() {
+                log::info!(
+                    "[HLS-SESSION] Active Session IDs: {:?}",
+                    hls_sessions.keys().collect::<Vec<_>>()
+                );
+            }
+            hls_sessions.len() as i32
+        };
 
-        // HLS is tied to ffmpeg process - if engine is running, HLS is available
         streams.push(ActiveStream {
             protocol: "HLS".to_string(),
             status: if engine_running {
@@ -999,8 +1019,7 @@ impl PlayoutEngine {
             } else {
                 "idle".to_string()
             },
-            // HLS readers only (not RTSP/RTMP which are separate protocols)
-            sessions: hls_path_info.map(|i| i.hls).unwrap_or(0),
+            sessions: hls_count,
             details: "http://localhost:3000/hls/stream.m3u8".to_string(),
         });
 
@@ -1043,7 +1062,6 @@ impl PlayoutEngine {
         // 4. UDP Status
         let udp_enabled_in_settings = settings.udp_enabled || settings.output_type == "udp";
         let mut udp_status = "idle".to_string();
-        let mut udp_sessions = 0;
 
         if udp_enabled_in_settings {
             let mut procs = self.distribution_processes.lock().await;
@@ -1051,7 +1069,6 @@ impl PlayoutEngine {
                 match child.try_wait() {
                     Ok(None) => {
                         udp_status = "active".to_string();
-                        udp_sessions = 1;
                     }
                     Ok(Some(_)) => {
                         udp_status = "error".to_string();
@@ -1068,8 +1085,13 @@ impl PlayoutEngine {
 
         streams.push(ActiveStream {
             protocol: "UDP".to_string(),
-            status: udp_status,
-            sessions: udp_sessions,
+            status: udp_status.clone(),
+            sessions: if udp_status == "active" {
+                self.get_udp_session_count(settings.udp_output_url.as_deref().unwrap_or(""))
+                    .await
+            } else {
+                0
+            },
             details: format!(
                 "Relay: {}",
                 settings
@@ -1133,6 +1155,15 @@ impl PlayoutEngine {
         let logs_lock = self.logs.lock().await;
         status.logs = logs_lock.iter().cloned().collect();
         status.active_streams = streams;
+
+        // Populate standardized display URLs
+        let host = std::env::var("SERVER_HOST").unwrap_or_else(|_| "localhost".to_string());
+        let public_host = if host == "0.0.0.0" || host == "127.0.0.1" {
+            "localhost".to_string()
+        } else {
+            host
+        };
+        status.display_urls = settings.get_display_urls(&public_host);
     }
 
     async fn cleanup_cache(&self) {
@@ -1162,7 +1193,6 @@ impl PlayoutEngine {
             _ => return Err(format!("Unknown protocol: {}", protocol)),
         };
 
-        log::info!("API: Toggling protocol {} to {}", protocol, enabled);
         sqlx::query(query)
             .bind(enabled)
             .execute(&self.pool)
@@ -1190,23 +1220,36 @@ impl PlayoutEngine {
             log::debug!("Engine not running, but will manage distribution based on DB flags");
         }
 
-        // Check if master feed is available before starting relays
+        static INACTIVE_COUNT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
         let master_feed_active = self.check_master_feed_active().await;
         if !master_feed_active {
-            // If master feed is not active, we must ensure all relays are stopped
-            let mut procs = self.distribution_processes.lock().await;
-            if !procs.is_empty() {
-                log::info!("Master feed inactive. Stopping all distribution relays.");
-                for child in procs.values_mut() {
-                    child.kill().ok();
+            tokio::time::sleep(Duration::from_millis(500)).await;
+            if !self.check_master_feed_active().await {
+                let count = INACTIVE_COUNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
+                if count < 10 {
+                    log::debug!("[DEBUG-RELAY] Master feed is inactive (count={}/10). Waiting for stabilization.", count);
+                    return;
                 }
-                procs.clear();
+                let mut procs = self.distribution_processes.lock().await;
+                if !procs.is_empty() {
+                    log::info!("[DEBUG-RELAY] Master feed INACTIVE prolonged. Stopping all distribution relays.");
+                    for child in procs.values_mut() {
+                        child.kill().ok();
+                        child.wait().ok();
+                    }
+                    procs.clear();
+                    let mut last_urls = self.last_relay_urls.lock().await;
+                    last_urls.clear();
+                }
+                return;
+            } else {
+                INACTIVE_COUNT.store(0, std::sync::atomic::Ordering::Relaxed);
             }
-            return;
+        } else {
+            INACTIVE_COUNT.store(0, std::sync::atomic::Ordering::Relaxed);
         }
 
-        // Add 2s grace period for Master Feed to stabilize (Reduce I/O errors)
-        sleep(Duration::from_secs(2)).await;
+        // REMOVED 2S SLEEP - it slows down the tick loop and causes sync issues
 
         let mut procs = self.distribution_processes.lock().await;
         let ffmpeg = FFmpegService::new();
@@ -1215,66 +1258,98 @@ impl PlayoutEngine {
         let master_url = format!("rtmp://{}:1935/live/master", mediamtx_host);
 
         // 1. RTMP
-        let rtmp_enabled = settings.rtmp_enabled || settings.output_type == "rtmp";
-        let rtmp_fallback = format!("rtmp://{}:1935/live_stream", mediamtx_host);
-        let rtmp_url = if settings.output_type == "rtmp" {
+        let rtmp_enabled = settings.rtmp_enabled
+            || (settings.output_type == "rtmp" && settings.auto_start_protocols);
+        let rtmp_url = if settings.rtmp_enabled
+            && settings
+                .rtmp_output_url
+                .as_ref()
+                .map(|s| !s.is_empty())
+                .unwrap_or(false)
+        {
+            settings.rtmp_output_url.as_deref().unwrap_or("")
+        } else if settings.output_type == "rtmp" {
             &settings.output_url
         } else {
-            settings
-                .rtmp_output_url
-                .as_deref()
-                .unwrap_or(&rtmp_fallback)
+            ""
         };
-        self.handle_relay(
-            "rtmp",
-            rtmp_enabled,
-            rtmp_url,
-            &master_url,
-            &mut procs,
-            &ffmpeg,
-        )
-        .await;
+
+        if !rtmp_url.is_empty() {
+            self.handle_relay(
+                "rtmp",
+                rtmp_enabled,
+                rtmp_url.trim(),
+                &master_url,
+                &mut procs,
+                &ffmpeg,
+            )
+            .await;
+        } else {
+            procs.remove("rtmp");
+        }
 
         // 2. SRT
-        let srt_enabled = settings.srt_enabled || settings.output_type == "srt";
-        let srt_fallback = format!(
-            "srt://{}:8890?mode=caller&streamid=publish:live_stream_srt",
-            mediamtx_host
-        );
-        let srt_url = if settings.output_type == "srt" {
+        let srt_enabled = settings.srt_enabled
+            || (settings.output_type == "srt" && settings.auto_start_protocols);
+        let srt_url = if settings.srt_enabled
+            && settings
+                .srt_output_url
+                .as_ref()
+                .map(|s| !s.is_empty())
+                .unwrap_or(false)
+        {
+            settings.srt_output_url.as_deref().unwrap_or("")
+        } else if settings.output_type == "srt" {
             &settings.output_url
         } else {
-            settings.srt_output_url.as_deref().unwrap_or(&srt_fallback)
+            ""
         };
-        self.handle_relay(
-            "srt",
-            srt_enabled,
-            srt_url,
-            &master_url,
-            &mut procs,
-            &ffmpeg,
-        )
-        .await;
+
+        if !srt_url.is_empty() {
+            self.handle_relay(
+                "srt",
+                srt_enabled,
+                srt_url.trim(),
+                &master_url,
+                &mut procs,
+                &ffmpeg,
+            )
+            .await;
+        } else {
+            procs.remove("srt");
+        }
 
         // 3. UDP
-        let udp_enabled = settings.udp_enabled || settings.output_type == "udp";
-        let udp_url = if settings.output_type == "udp" {
+        // Only enable if explicitly checked OR (it's main output AND auto_start is true)
+        let udp_enabled = settings.udp_enabled
+            || (settings.output_type == "udp" && settings.auto_start_protocols);
+
+        let udp_url = if settings
+            .udp_output_url
+            .as_ref()
+            .map(|s| !s.is_empty())
+            .unwrap_or(false)
+        {
+            settings.udp_output_url.as_deref().unwrap_or("")
+        } else if settings.output_type == "udp" {
             &settings.output_url
         } else {
-            settings
-                .udp_output_url
-                .as_deref()
-                .unwrap_or("udp://@239.0.0.1:1234")
+            ""
         };
-        self.handle_relay(
-            "udp",
-            udp_enabled,
-            udp_url,
-            &master_url,
-            &mut procs,
-            &ffmpeg,
-        )
-        .await;
+
+        if !udp_url.is_empty() {
+            self.handle_relay(
+                "udp",
+                udp_enabled,
+                udp_url.trim(),
+                &master_url,
+                &mut procs,
+                &ffmpeg,
+            )
+            .await;
+        } else {
+            procs.remove("udp");
+        }
     }
 
     async fn handle_relay(
@@ -1291,7 +1366,13 @@ impl PlayoutEngine {
         let mut needs_remove = false;
         let is_running = if let Some(child) = procs.get_mut(key) {
             match child.try_wait() {
-                Ok(None) => true,
+                Ok(None) => {
+                    log::debug!(
+                        "[DEBUG-RELAY] key={} is actually running (child.try_wait() == Ok(None))",
+                        key
+                    );
+                    true
+                }
                 Ok(Some(status)) => {
                     log::warn!("Relay '{}' stopped (Exit: {})", key, status);
                     self.add_log(format!(
@@ -1317,9 +1398,46 @@ impl PlayoutEngine {
 
         if needs_remove {
             procs.remove(key);
+            let mut last_urls = self.last_relay_urls.lock().await;
+            last_urls.remove(key);
         }
 
-        if enabled && !is_running {
+        let mut last_urls = self.last_relay_urls.lock().await;
+        let last_url_opt = last_urls.get(key).map(|s| s.as_str());
+        let current_url = url.trim();
+        let url_changed = if let Some(last_url) = last_url_opt {
+            let changed = last_url != current_url;
+            if changed {
+                log::info!(
+                    "[DEBUG-RELAY] key={} URL MISMATCH: last='{}' != current='{}'",
+                    key,
+                    last_url,
+                    current_url
+                );
+            }
+            changed
+        } else {
+            false
+        };
+
+        if enabled && url_changed && is_running {
+            log::info!(
+                "[Relay Restart] '{}' URL changed. Old: {:?}, New: {}. Restarting...",
+                key,
+                last_urls.get(key),
+                url
+            );
+            if let Some(mut child) = procs.remove(key) {
+                let _ = child.kill();
+                let _ = child.wait();
+            }
+            last_urls.remove(key);
+            // Fall through to !is_running block below
+        }
+
+        let is_running_after_check = if procs.contains_key(key) { true } else { false };
+
+        if enabled && !is_running_after_check {
             // Check cooldown
             let mut cooldowns = self.relay_cooldowns.lock().await;
             let now = std::time::Instant::now();
@@ -1332,9 +1450,26 @@ impl PlayoutEngine {
                 }
             }
 
-            log::info!("Starting relay for {} -> {}", key, url);
+            let start_reason = if url_changed {
+                "URL changed"
+            } else if is_running_after_check {
+                "Already running (unexpected path)"
+            } else {
+                "Fresh start"
+            };
+            log::info!(
+                "Starting relay for {} -> {} (Reason: {})",
+                key,
+                url,
+                start_reason
+            );
             match ffmpeg.start_relay(master_url, url) {
                 Ok(mut child) => {
+                    log::info!(
+                        "✓ Phase 1: FFmpeg spawned for {} (PID: {:?})",
+                        key,
+                        child.id()
+                    );
                     // Capture stderr to system logs for debugging distribution issues
                     if let Some(stderr) = child.stderr.take() {
                         let key_clone = key.to_string();
@@ -1354,7 +1489,15 @@ impl PlayoutEngine {
                         });
                     }
                     procs.insert(key.to_string(), child);
+                    let clean_url = current_url.to_string();
+                    last_urls.insert(key.to_string(), clean_url);
                     cooldowns.remove(key); // Clear cooldown on success
+
+                    log::debug!(
+                        "[DEBUG-RELAY] key={} successfully registered in last_urls with '{}'",
+                        key,
+                        url
+                    );
 
                     // Log to system logs
                     self.add_log(format!(
@@ -1431,7 +1574,11 @@ impl PlayoutEngine {
                                 if let Some(ready) =
                                     path.get("ready").or_else(|| path.get("sourceReady"))
                                 {
-                                    return ready.as_bool().unwrap_or(false);
+                                    let is_ready = ready.as_bool().unwrap_or(false);
+                                    if !is_ready {
+                                        log::debug!("[DEBUG-RELAY] Master feed live/master found but NOT READY");
+                                    }
+                                    return is_ready;
                                 }
                             }
                         }
@@ -1439,8 +1586,67 @@ impl PlayoutEngine {
                 }
             }
         }
-
-        // Fallback: Check if the engine process itself is running
+        log::warn!("[DEBUG-RELAY] Master feed API check failed or timed out. Falling back to engine status.");
         *self.is_running.lock().await
+    }
+
+    async fn get_udp_session_count(&self, url: &str) -> i32 {
+        if !url.starts_with("udp://") {
+            return 0;
+        }
+
+        // Extract port
+        let port = url.split(':').last().and_then(|p| p.parse::<u16>().ok());
+        if let Some(port) = port {
+            // Check if we are in listener mode (url contains @ or is empty host or has listen=1)
+            let is_listener = url.contains("@")
+                || url.contains("://:")
+                || url.contains("0.0.0.0")
+                || url.contains("listen=1");
+
+            if is_listener {
+                // Use 'ss' to find unique remote addresses connected to our UDP port
+                if let Ok(output) = std::process::Command::new("ss").arg("-uan").output() {
+                    let stdout = String::from_utf8_lossy(&output.stdout);
+                    let mut unique_remote = std::collections::HashSet::new();
+                    let port_str = format!(":{}", port);
+
+                    for line in stdout.lines().skip(1) {
+                        let parts: Vec<&str> = line.split_whitespace().collect();
+                        if parts.len() >= 5 {
+                            let local = parts[3];
+                            let remote = parts[4];
+
+                            // Check if this row is for our source port
+                            // AND has a specific remote address (not * or 0.0.0.0)
+                            if local.ends_with(&port_str)
+                                && remote != "*:*"
+                                && !remote.starts_with("0.0.0.0")
+                                && !remote.starts_with("[::]")
+                                && remote != "0.0.0.0:*"
+                            {
+                                // Remote is usually IP:Port, take just the IP
+                                let ip = remote.split(':').next().unwrap_or(remote);
+                                unique_remote.insert(ip.to_string());
+                            }
+                        }
+                    }
+
+                    if !unique_remote.is_empty() {
+                        log::info!(
+                            "[UDP-SESSION] Port {}: Found {} peers: {:?}",
+                            port,
+                            unique_remote.len(),
+                            unique_remote
+                        );
+                        return unique_remote.len() as i32;
+                    }
+                }
+                return 0;
+            }
+        }
+
+        // Default to 0 for PUSH mode (as we cannot track external receivers in raw UDP push)
+        0
     }
 }

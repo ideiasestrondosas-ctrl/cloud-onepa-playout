@@ -44,7 +44,8 @@ services:
       - ./backend/assets:/var/lib/onepa-playout/assets
     ports:
       - "8081:8081"
-      - "9900:9900/udp" # SRT Listener port (MUST be enabled for App-as-Listener mode)
+      - "9900:9900/udp" # SRT Listener port
+      - "1235-1250:1235-1250/udp" # UDP Listener range
     networks:
       - onepa-network
     depends_on:

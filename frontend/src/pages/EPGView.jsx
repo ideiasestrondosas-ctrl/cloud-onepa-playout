@@ -9,14 +9,26 @@ import {
   useTheme,
   LinearProgress,
   Stack,
-  Button
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Grid,
+  Divider
 } from '@mui/material';
 import {
   NavigateBefore,
   NavigateNext,
   Today,
   Info as InfoIcon,
-  LiveTv
+  LiveTv,
+  Close as CloseIcon,
+  Description,
+  Timer,
+  Movie,
+  FolderOpen,
+  Tag
 } from '@mui/icons-material';
 import { playlistAPI } from '../services/api';
 import { format, parseISO, addDays, isSameDay, differenceInSeconds } from 'date-fns';
@@ -27,6 +39,10 @@ export default function EPGView() {
   const [playlists, setPlaylists] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [liveMetadata, setLiveMetadata] = useState(null);
+  const [isFetchingLive, setIsFetchingLive] = useState(false);
   const scrollRef = useRef(null);
 
   // Constants for timeline sizing
@@ -70,6 +86,28 @@ export default function EPGView() {
         setTimeout(scrollToNow, 500);
     }
   }, [selectedDate]);
+
+  useEffect(() => {
+    if (dialogOpen && selectedItem?.media_id) {
+        fetchLiveMetadata(selectedItem.media_id);
+    } else {
+        setLiveMetadata(null);
+    }
+  }, [dialogOpen, selectedItem]);
+
+  const fetchLiveMetadata = async (mediaId) => {
+    try {
+        setIsFetchingLive(true);
+        const response = await mediaAPI.get(mediaId); 
+        if (response.data) {
+            setLiveMetadata(response.data.metadata);
+        }
+    } catch (error) {
+        console.error("Failed to fetch live metadata:", error);
+    } finally {
+        setIsFetchingLive(false);
+    }
+  };
 
   const renderTimeRuler = () => {
     const hours = Array.from({ length: 24 }, (_, i) => i);
@@ -133,13 +171,45 @@ export default function EPGView() {
 
                 return (
                     <Tooltip key={`${playlist.id}-${index}`} title={
-                        <Box>
-                            <Typography variant="subtitle2">{item.filename}</Typography>
-                            <Typography variant="caption">{item.start_time} - {item.end_time}</Typography>
-                            {item.metadata?.description && <Typography variant="body2" sx={{mt:1}}>{item.metadata.description}</Typography>}
+                        <Box sx={{ p: 0.5 }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{item.metadata?.title || item.filename}</Typography>
+                            <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
+                                <strong>Horário:</strong> {item.start_time} - {item.end_time}
+                            </Typography>
+                            <Typography variant="caption" display="block">
+                                <strong>Duração:</strong> {item.duration ? new Date(item.duration * 1000).toISOString().substr(11, 8) : 'N/A'}
+                            </Typography>
+                            {item.media_type && (
+                                <Typography variant="caption" display="block">
+                                    <strong>Tipo:</strong> {item.media_type}
+                                </Typography>
+                            )}
+                            {(item.path || item.source) && (
+                                <Typography variant="caption" display="block" sx={{ wordBreak: 'break-all' }}>
+                                    <strong>Arquivo:</strong> {item.path || item.source}
+                                </Typography>
+                            )}
+                            {item.metadata?.description && (
+                                <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                    {item.metadata?.description}
+                                </Typography>
+                            )}
+                            {(item.metadata?.director || item.metadata?.rating) && (
+                                <Box sx={{ mt: 1, display: 'flex', justifyContent: 'space-between' }}>
+                                    {item.metadata?.director && <Typography variant="caption">🎬 {item.metadata.director}</Typography>}
+                                    {item.metadata?.rating && <Typography variant="caption">⭐ {item.metadata.rating}</Typography>}
+                                </Box>
+                            )}
+                            <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'text.secondary', fontSize: '0.7em' }}>
+                                (Clique para detalhes completos)
+                            </Typography>
                         </Box>
                     }>
                         <Paper 
+                            onClick={() => {
+                                setSelectedItem(item);
+                                setDialogOpen(true);
+                            }}
                             sx={{
                                 position: 'absolute',
                                 left: left,
@@ -271,6 +341,123 @@ export default function EPGView() {
                 )}
             </Box>
         </Box>
+        
+        {/* Metadata Dialog */}
+        <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
+            {selectedItem && (
+                <>
+                    <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'primary.main', color: 'white' }}>
+                        <Typography variant="h6" noWrap sx={{ maxWidth: '90%' }}>
+                            📋 Detalhes da Programação: {liveMetadata?.title || selectedItem.metadata?.title || selectedItem.filename}
+                        </Typography>
+                        <IconButton onClick={() => setDialogOpen(false)} size="small" sx={{ color: 'white' }}>
+                            <CloseIcon />
+                        </IconButton>
+                    </DialogTitle>
+                    <DialogContent dividers sx={{ bgcolor: 'background.default' }}>
+                        {isFetchingLive && <LinearProgress sx={{ mb: 2 }} />}
+                        <Grid container spacing={3}>
+                            {/* Left Column: Poster & Quick Info */}
+                            <Grid item xs={12} md={4}>
+                                <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', height: '100%' }}>
+                                    {(liveMetadata?.poster || selectedItem.metadata?.poster) ? (
+                                        <Box 
+                                            component="img" 
+                                            src={liveMetadata?.poster || selectedItem.metadata.poster} 
+                                            sx={{ width: '100%', borderRadius: 2, mb: 2, boxShadow: 3 }}
+                                        />
+                                    ) : (
+                                        <Box sx={{ height: 200, bgcolor: 'action.hover', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 2, mb: 2 }}>
+                                            <Movie sx={{ fontSize: 60, opacity: 0.2 }} />
+                                        </Box>
+                                    )}
+                                    <Stack spacing={1}>
+                                        {(liveMetadata?.rating || selectedItem.metadata?.rating) && (
+                                            <Chip label={`Classificação: ${liveMetadata?.rating || selectedItem.metadata.rating}`} color="warning" variant="filled" />
+                                        )}
+                                        {(liveMetadata?.year || selectedItem.metadata?.year) && (
+                                            <Chip label={`Ano: ${liveMetadata?.year || selectedItem.metadata.year}`} variant="outlined" />
+                                        )}
+                                        <Chip label={selectedItem.media_type || 'Vídeo'} size="small" />
+                                    </Stack>
+                                </Paper>
+                            </Grid>
+
+                            {/* Right Column: Full Details */}
+                            <Grid item xs={12} md={8}>
+                                <Stack spacing={3}>
+                                    <Box>
+                                        <Typography variant="subtitle2" color="primary" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Timer fontSize="small" /> AGENDA E DURAÇÃO
+                                        </Typography>
+                                        <Paper variant="outlined" sx={{ p: 2 }}>
+                                            <Grid container>
+                                                <Grid item xs={6}><Typography variant="body2"><strong>Início:</strong> {selectedItem.start_time}</Typography></Grid>
+                                                <Grid item xs={6}><Typography variant="body2"><strong>Fim:</strong> {selectedItem.end_time}</Typography></Grid>
+                                                <Divider sx={{ width: '100%', my: 1 }} />
+                                                <Grid item xs={12}><Typography variant="body2"><strong>Duração:</strong> {selectedItem.duration ? new Date(selectedItem.duration * 1000).toISOString().substr(11, 8) : 'N/A'}</Typography></Grid>
+                                            </Grid>
+                                        </Paper>
+                                    </Box>
+
+                                    <Box>
+                                        <Typography variant="subtitle2" color="primary" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Description fontSize="small" /> SINOPSE E FICHA TÉCNICA
+                                        </Typography>
+                                        <Paper variant="outlined" sx={{ p: 2 }}>
+                                            <Typography variant="body2" paragraph color="text.secondary">
+                                                {liveMetadata?.description || selectedItem.metadata?.description || 'Nenhuma descrição disponível para este conteúdo.'}
+                                            </Typography>
+                                            <Stack spacing={1.5}>
+                                                {(liveMetadata?.director || selectedItem.metadata?.director) && (
+                                                    <Typography variant="body2"><strong>Diretor:</strong> {liveMetadata?.director || selectedItem.metadata.director}</Typography>
+                                                )}
+                                                {(liveMetadata?.cast || selectedItem.metadata?.cast) && (
+                                                    <Typography variant="body2"><strong>Elenco:</strong> {liveMetadata?.cast || selectedItem.metadata.cast}</Typography>
+                                                )}
+                                                {(liveMetadata?.genre || selectedItem.metadata?.genre) && (
+                                                    <Typography variant="body2"><strong>Gênero:</strong> {liveMetadata?.genre || selectedItem.metadata.genre}</Typography>
+                                                )}
+                                                {(liveMetadata?.source_service || selectedItem.metadata?.source_service) && (
+                                                    <Box sx={{ mt: 1, p: 1, bgcolor: 'action.hover', borderRadius: 1 }}>
+                                                        <Typography variant="caption" display="block">
+                                                            Fonte: <strong>{liveMetadata?.source_service || selectedItem.metadata.source_service}</strong>
+                                                        </Typography>
+                                                        {(liveMetadata?.source_url || selectedItem.metadata?.source_url) && (
+                                                            <Link href={liveMetadata?.source_url || selectedItem.metadata.source_url} target="_blank" variant="caption">
+                                                                Ver na fonte ↗
+                                                            </Link>
+                                                        )}
+                                                    </Box>
+                                                )}
+                                            </Stack>
+                                        </Paper>
+                                    </Box>
+
+                                    <Box>
+                                        <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <FolderOpen fontSize="small" /> INFOS TÉCNICAS
+                                        </Typography>
+                                        <Paper variant="outlined" sx={{ p: 2, bgcolor: 'rgba(0,0,0,0.02)' }}>
+                                            <Typography variant="caption" display="block" sx={{ wordBreak: 'break-all' }}>
+                                                <strong>Caminho:</strong> {selectedItem.path || selectedItem.source || selectedItem.filename}
+                                            </Typography>
+                                            <Grid container spacing={1} sx={{ mt: 1 }}>
+                                                {(liveMetadata?.resolution || selectedItem.metadata?.resolution) && <Grid item><Chip label={liveMetadata?.resolution || selectedItem.metadata.resolution} size="small" variant="outlined" /></Grid>}
+                                                {(liveMetadata?.videoCodec || selectedItem.metadata?.videoCodec) && <Grid item><Chip label={liveMetadata?.videoCodec || selectedItem.metadata.videoCodec} size="small" variant="outlined" /></Grid>}
+                                            </Grid>
+                                        </Paper>
+                                    </Box>
+                                </Stack>
+                            </Grid>
+                        </Grid>
+                    </DialogContent>
+                    <DialogActions sx={{ p: 2 }}>
+                        <Button onClick={() => setDialogOpen(false)} variant="contained">Fechar</Button>
+                    </DialogActions>
+                </>
+            )}
+        </Dialog>
     </Box>
   );
 }

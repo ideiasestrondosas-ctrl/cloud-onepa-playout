@@ -545,7 +545,7 @@ dependencies = [
 
 [[package]]
 name = "cloud-onepa-playout"
-version = "2.0.0"
+version = "2.1.0"
 dependencies = [
  "actix-cors",
  "actix-files",
@@ -555,6 +555,7 @@ dependencies = [
  "actix-web-httpauth",
  "actix-ws",
  "anyhow",
+ "base64 0.22.1",
  "bcrypt",
  "chrono",
  "config",

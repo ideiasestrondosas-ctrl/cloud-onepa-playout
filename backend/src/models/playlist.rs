@@ -19,6 +19,7 @@ pub struct PlaylistItem {
     pub media_type: Option<String>,
     pub metadata: Option<serde_json::Value>, // EPG metadata
     pub is_filler: Option<bool>,
+    pub media_id: Option<String>,
 }
 
 impl PlaylistItem {

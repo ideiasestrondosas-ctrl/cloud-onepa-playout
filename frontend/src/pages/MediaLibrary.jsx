@@ -85,6 +85,8 @@ export default function MediaLibrary() {
   const [metadataOpen, setMetadataOpen] = useState(false);
   const [metadataForm, setMetadataForm] = useState({ title: '', description: '', episode: '', season: '' });
   const [editingMedia, setEditingMedia] = useState(null);
+  const [isReviewMode, setIsReviewMode] = useState(false);
+  const [metadataSource, setMetadataSource] = useState(null);
 
   // Debounce search
   useEffect(() => {
@@ -208,13 +210,56 @@ export default function MediaLibrary() {
   const handleSaveMetadata = async () => {
     try {
       await mediaAPI.update(editingMedia.id, {
-        metadata: metadataForm
+        metadata: {
+            ...metadataForm,
+            source_service: metadataSource?.service,
+            source_url: metadataSource?.url
+        }
       });
       showSuccess('Metadados atualizados');
       setMetadataOpen(false);
+      setIsReviewMode(false);
       fetchMedia();
     } catch (error) {
       showError('Erro ao atualizar metadados');
+    }
+  };
+
+  const handleFetchMetadata = async (item) => {
+    try {
+      showInfo(`Buscando metadados para "${item.filename}"...`);
+      const response = await mediaAPI.fetchMetadata(item.id);
+      const data = response.data.data;
+      
+      setEditingMedia(item);
+      setMetadataForm({
+        title: data.title || '',
+        description: data.description || '',
+        episode: data.episode || '',
+        season: data.season || '',
+        genre: data.tags?.join(', ') || '',
+        keywords: item.metadata?.keywords || '', // Keep existing keywords
+        rating: data.rating || '',
+        cast: data.cast?.join(', ') || '',
+        director: data.director || '',
+        poster: data.poster_url || '',
+        // Keep technical specs from existing
+        resolution: item.metadata?.resolution || `${item.width || 0}x${item.height || 0}`,
+        fps: item.metadata?.fps || '',
+        videoCodec: item.metadata?.videoCodec || item.codec || '',
+        audioCodec: item.metadata?.audioCodec || '',
+      });
+      
+      setMetadataSource({
+          service: data.source_service || 'API Automática',
+          url: data.source_url || null
+      });
+      
+      setIsReviewMode(true);
+      setMetadataOpen(true);
+      showSuccess(`Metadados encontrados. Por favor, revise e salve.`);
+    } catch (error) {
+      showError('Falha ao buscar metadados: ' + (error.response?.data?.error || error.message));
     }
   };
 
@@ -504,6 +549,7 @@ export default function MediaLibrary() {
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
                                     <Stack direction="row" spacing={0.5}>
                                         <IconButton size="small" color="primary" onClick={() => { setSelectedMedia(item); setPreviewOpen(true); }}><PlayIcon /></IconButton>
+                                        <IconButton size="small" color="secondary" onClick={() => handleFetchMetadata(item)} title="Buscar Metadados Auto"><AutoFixIcon /></IconButton>
                                         <IconButton size="small" onClick={() => handleEditMetadata(item)}><EditIcon /></IconButton>
                                         <IconButton size="small" color="info" onClick={() => { setMediaToMove(item); setMoveOpen(true); }}><MoveIcon /></IconButton>
                                         <IconButton 
@@ -652,9 +698,21 @@ export default function MediaLibrary() {
       </Dialog>
 
       {/* Metadata Editor Dialog */}
-      <Dialog open={metadataOpen} onClose={() => setMetadataOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Editar Metadados EPG: {editingMedia?.filename}</DialogTitle>
-        <DialogContent>
+      <Dialog open={metadataOpen} onClose={() => { setMetadataOpen(false); setIsReviewMode(false); }} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ bgcolor: isReviewMode ? 'secondary.main' : 'primary.main', color: 'white' }}>
+            {isReviewMode ? '🪄 Revisar Metadados Automáticos' : 'Editar Metadados EPG'}: {editingMedia?.filename}
+        </DialogTitle>
+        <DialogContent dividers>
+            {(isReviewMode || editingMedia?.metadata?.source_service) && (
+                <Alert severity="secondary" sx={{ mb: 2, border: '1px solid', borderColor: 'secondary.main' }}>
+                    Informação proveniente de: <strong>{isReviewMode ? metadataSource?.service : editingMedia?.metadata?.source_service}</strong>.
+                    {(isReviewMode ? metadataSource?.url : editingMedia?.metadata?.source_url) && (
+                        <Link href={isReviewMode ? metadataSource?.url : editingMedia?.metadata?.source_url} target="_blank" sx={{ ml: 1, display: 'block' }}>
+                            Ver fonte original ↗
+                        </Link>
+                    )}
+                </Alert>
+            )}
             <Stack spacing={2} sx={{ mt: 1 }}>
                 <TextField 
                     label="Título (EPG)" 
@@ -663,6 +721,7 @@ export default function MediaLibrary() {
                     onChange={e => setMetadataForm({...metadataForm, title: e.target.value})} 
                     placeholder={editingMedia?.filename}
                     helperText="Deixe vazio para usar o nome do ficheiro"
+                    sx={{ bgcolor: isReviewMode && metadataForm.title ? 'rgba(76, 175, 80, 0.05)' : 'inherit' }}
                 />
                 <TextField 
                     label="Descrição / Sinopse" 
@@ -671,6 +730,7 @@ export default function MediaLibrary() {
                     rows={3}
                     value={metadataForm.description} 
                     onChange={e => setMetadataForm({...metadataForm, description: e.target.value})} 
+                    sx={{ bgcolor: isReviewMode && metadataForm.description ? 'rgba(76, 175, 80, 0.05)' : 'inherit' }}
                 />
                 <Stack direction="row" spacing={2}>
                     <TextField 

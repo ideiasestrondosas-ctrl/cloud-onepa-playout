@@ -2,7 +2,10 @@ use crate::models::settings::{Settings, UpdateSettingsRequest};
 use actix_files::NamedFile;
 use actix_multipart::Multipart;
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
+use base64::{engine::general_purpose, Engine as _};
 use futures::TryStreamExt;
+use reqwest::Client;
+use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, Row};
 use std::io::Write;
 use std::path::Path;
@@ -18,10 +21,28 @@ async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
         .await;
 
     match result {
-        Ok(Some(mut settings)) => {
-            settings.protected_path = Some(protected_path.clone());
-            settings.docs_path = Some(docs_path.clone());
-            HttpResponse::Ok().json(settings)
+        Ok(Some(settings)) => {
+            let mut val = serde_json::to_value(&settings).unwrap();
+            let obj = val.as_object_mut().unwrap();
+
+            // Add virtual paths
+            obj.insert("protected_path".to_string(), protected_path.into());
+            obj.insert("docs_path".to_string(), docs_path.into());
+
+            // Add standardized display URLs
+            let host = std::env::var("SERVER_HOST").unwrap_or_else(|_| "localhost".to_string());
+            let public_host = if host == "0.0.0.0" || host == "127.0.0.1" {
+                "localhost".to_string()
+            } else {
+                host
+            };
+            let display_urls = settings.get_display_urls(&public_host);
+            obj.insert(
+                "display_urls".to_string(),
+                serde_json::to_value(display_urls).unwrap(),
+            );
+
+            HttpResponse::Ok().json(val)
         }
         Ok(None) => {
             // Insert default settings
@@ -63,8 +84,8 @@ async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
                 overlay_scale: Some(0.2),
                 srt_mode: Some("caller".to_string()),
                 updated_at: chrono::Utc::now(),
-                system_version: Some("1.9.4-PRO".to_string()),
-                release_date: Some("2026-01-16".to_string()),
+                system_version: Some("v2.0.1-DEBUG".to_string()),
+                release_date: Some("2026-01-24".to_string()),
                 protected_path: Some(protected_path),
                 docs_path: Some(docs_path),
                 rtmp_enabled: false,
@@ -96,6 +117,9 @@ async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
                 rtsp_output_url: Some("rtsp://localhost:8554/live/stream".to_string()),
                 webrtc_output_url: Some("http://localhost:8889/live/stream".to_string()),
                 epg_days: Some(7),
+                tmdb_api_key: None,
+                omdb_api_key: None,
+                tvmaze_api_key: None,
             })
         }
         Err(_) => HttpResponse::InternalServerError()
@@ -107,168 +131,155 @@ async fn update_settings(
     req: web::Json<UpdateSettingsRequest>,
     pool: web::Data<PgPool>,
 ) -> impl Responder {
+    log::info!("Received update_settings request: {:?}", req);
     let mut sql = String::from("UPDATE settings SET updated_at = CURRENT_TIMESTAMP");
+    let mut counter = 1;
 
-    if let Some(ref output_type) = req.output_type {
-        sql.push_str(&format!(", output_type = '{}'", output_type));
-    }
-    if let Some(ref output_url) = req.output_url {
-        sql.push_str(&format!(", output_url = '{}'", output_url));
-    }
-    if let Some(ref resolution) = req.resolution {
-        sql.push_str(&format!(", resolution = '{}'", resolution));
-    }
-    if let Some(ref fps) = req.fps {
-        sql.push_str(&format!(", fps = '{}'", fps));
-    }
-    if let Some(ref video_bitrate) = req.video_bitrate {
-        sql.push_str(&format!(", video_bitrate = '{}'", video_bitrate));
-    }
-    if let Some(ref audio_bitrate) = req.audio_bitrate {
-        sql.push_str(&format!(", audio_bitrate = '{}'", audio_bitrate));
-    }
-    if let Some(ref media_path) = req.media_path {
-        sql.push_str(&format!(", media_path = '{}'", media_path));
-    }
-    if let Some(ref thumbnails_path) = req.thumbnails_path {
-        sql.push_str(&format!(", thumbnails_path = '{}'", thumbnails_path));
-    }
-    if let Some(ref playlists_path) = req.playlists_path {
-        sql.push_str(&format!(", playlists_path = '{}'", playlists_path));
-    }
-    if let Some(ref fillers_path) = req.fillers_path {
-        sql.push_str(&format!(", fillers_path = '{}'", fillers_path));
-    }
-    if let Some(ref logo_path) = req.logo_path {
-        sql.push_str(&format!(", logo_path = '{}'", logo_path));
-    }
-    if let Some(ref logo_position) = req.logo_position {
-        sql.push_str(&format!(", logo_position = '{}'", logo_position));
-    }
-    if let Some(ref day_start) = req.day_start {
-        sql.push_str(&format!(", day_start = '{}'", day_start));
-    }
-    if let Some(ref channel_name) = req.channel_name {
-        sql.push_str(&format!(", channel_name = '{}'", channel_name));
-    }
-    if let Some(ref default_image_path) = req.default_image_path {
-        if default_image_path.is_empty() || default_image_path == "null" {
-            sql.push_str(", default_image_path = NULL");
-        } else {
-            sql.push_str(&format!(", default_image_path = '{}'", default_image_path));
-        }
-    }
-    if let Some(ref default_video_path) = req.default_video_path {
-        if default_video_path.is_empty() || default_video_path == "null" {
-            sql.push_str(", default_video_path = NULL");
-        } else {
-            sql.push_str(&format!(", default_video_path = '{}'", default_video_path));
-        }
-    }
-    if let Some(clips_played_today) = req.clips_played_today {
-        sql.push_str(&format!(", clips_played_today = {}", clips_played_today));
-    }
-    if let Some(overlay_opacity) = req.overlay_opacity {
-        sql.push_str(&format!(", overlay_opacity = {}", overlay_opacity));
-    }
-    if let Some(overlay_scale) = req.overlay_scale {
-        sql.push_str(&format!(", overlay_scale = {}", overlay_scale));
-    }
-    if let Some(ref srt_mode) = req.srt_mode {
-        sql.push_str(&format!(", srt_mode = '{}'", srt_mode));
-    }
-    if let Some(ref system_version) = req.system_version {
-        sql.push_str(&format!(", system_version = '{}'", system_version));
-    }
-    if let Some(ref release_date) = req.release_date {
-        sql.push_str(&format!(", release_date = '{}'", release_date));
-    }
-    if let Some(overlay_enabled) = req.overlay_enabled {
-        sql.push_str(&format!(", overlay_enabled = {}", overlay_enabled));
-    }
-    if let Some(ref app_logo_path) = req.app_logo_path {
-        sql.push_str(&format!(", app_logo_path = '{}'", app_logo_path));
+    macro_rules! add_field {
+        ($field:expr, $col:expr) => {
+            if $field.is_some() {
+                sql.push_str(&format!(", {} = ${}", $col, counter));
+                counter += 1;
+            }
+        };
     }
 
-    // Multi-protocol settings
-    if let Some(enabled) = req.rtmp_enabled {
-        sql.push_str(&format!(", rtmp_enabled = {}", enabled));
-    }
-    if let Some(enabled) = req.hls_enabled {
-        sql.push_str(&format!(", hls_enabled = {}", enabled));
-    }
-    if let Some(enabled) = req.srt_enabled {
-        sql.push_str(&format!(", srt_enabled = {}", enabled));
-    }
-    if let Some(enabled) = req.udp_enabled {
-        sql.push_str(&format!(", udp_enabled = {}", enabled));
-    }
-    if let Some(ref url) = req.rtmp_output_url {
-        sql.push_str(&format!(", rtmp_output_url = '{}'", url));
-    }
-    if let Some(ref url) = req.srt_output_url {
-        sql.push_str(&format!(", srt_output_url = '{}'", url));
-    }
-    if let Some(ref url) = req.udp_output_url {
-        sql.push_str(&format!(", udp_output_url = '{}'", url));
-    }
-    if let Some(ref mode) = req.udp_mode {
-        sql.push_str(&format!(", udp_mode = '{}'", mode));
-    }
-    if let Some(auto_start) = req.auto_start_protocols {
-        sql.push_str(&format!(", auto_start_protocols = {}", auto_start));
-    }
-    if let Some(ref vc) = req.video_codec {
-        sql.push_str(&format!(", video_codec = '{}'", vc));
-    }
-    if let Some(ref ac) = req.audio_codec {
-        sql.push_str(&format!(", audio_codec = '{}'", ac));
-    }
-    if let Some(enabled) = req.dash_enabled {
-        sql.push_str(&format!(", dash_enabled = {}", enabled));
-    }
-    if let Some(enabled) = req.mss_enabled {
-        sql.push_str(&format!(", mss_enabled = {}", enabled));
-    }
-    if let Some(enabled) = req.rist_enabled {
-        sql.push_str(&format!(", rist_enabled = {}", enabled));
-    }
-    if let Some(enabled) = req.rtsp_enabled {
-        sql.push_str(&format!(", rtsp_enabled = {}", enabled));
-    }
-    if let Some(enabled) = req.webrtc_enabled {
-        sql.push_str(&format!(", webrtc_enabled = {}", enabled));
-    }
-    if let Some(enabled) = req.llhls_enabled {
-        sql.push_str(&format!(", llhls_enabled = {}", enabled));
-    }
-    if let Some(ref url) = req.dash_output_url {
-        sql.push_str(&format!(", dash_output_url = '{}'", url));
-    }
-    if let Some(ref url) = req.mss_output_url {
-        sql.push_str(&format!(", mss_output_url = '{}'", url));
-    }
-    if let Some(ref url) = req.rist_output_url {
-        sql.push_str(&format!(", rist_output_url = '{}'", url));
-    }
-    if let Some(ref url) = req.rtsp_output_url {
-        sql.push_str(&format!(", rtsp_output_url = '{}'", url));
-    }
-    if let Some(ref url) = req.webrtc_output_url {
-        sql.push_str(&format!(", webrtc_output_url = '{}'", url));
-    }
-    if let Some(epg_days) = req.epg_days {
-        sql.push_str(&format!(", epg_days = {}", epg_days));
-    }
+    // Explicitly handle all fields from UpdateSettingsRequest
+    add_field!(req.output_type, "output_type");
+    add_field!(req.output_url, "output_url");
+    add_field!(req.resolution, "resolution");
+    add_field!(req.fps, "fps");
+    add_field!(req.video_bitrate, "video_bitrate");
+    add_field!(req.audio_bitrate, "audio_bitrate");
+    add_field!(req.media_path, "media_path");
+    add_field!(req.thumbnails_path, "thumbnails_path");
+    add_field!(req.playlists_path, "playlists_path");
+    add_field!(req.fillers_path, "fillers_path");
+    add_field!(req.logo_path, "logo_path");
+    add_field!(req.logo_position, "logo_position");
+    add_field!(req.day_start, "day_start");
+    add_field!(req.channel_name, "channel_name");
+    add_field!(req.default_image_path, "default_image_path");
+    add_field!(req.default_video_path, "default_video_path");
+    add_field!(req.clips_played_today, "clips_played_today");
+    add_field!(req.overlay_opacity, "overlay_opacity");
+    add_field!(req.overlay_scale, "overlay_scale");
+    add_field!(req.srt_mode, "srt_mode");
+    add_field!(req.system_version, "system_version");
+    add_field!(req.release_date, "release_date");
+    add_field!(req.overlay_enabled, "overlay_enabled");
+    add_field!(req.app_logo_path, "app_logo_path");
+    add_field!(req.rtmp_enabled, "rtmp_enabled");
+    add_field!(req.hls_enabled, "hls_enabled");
+    add_field!(req.srt_enabled, "srt_enabled");
+    add_field!(req.udp_enabled, "udp_enabled");
+    add_field!(req.rtmp_output_url, "rtmp_output_url");
+    add_field!(req.srt_output_url, "srt_output_url");
+    add_field!(req.udp_output_url, "udp_output_url");
+    add_field!(req.udp_mode, "udp_mode");
+    add_field!(req.auto_start_protocols, "auto_start_protocols");
+    add_field!(req.video_codec, "video_codec");
+    add_field!(req.audio_codec, "audio_codec");
+    add_field!(req.dash_enabled, "dash_enabled");
+    add_field!(req.mss_enabled, "mss_enabled");
+    add_field!(req.rist_enabled, "rist_enabled");
+    add_field!(req.rtsp_enabled, "rtsp_enabled");
+    add_field!(req.webrtc_enabled, "webrtc_enabled");
+    add_field!(req.llhls_enabled, "llhls_enabled");
+    add_field!(req.dash_output_url, "dash_output_url");
+    add_field!(req.mss_output_url, "mss_output_url");
+    add_field!(req.rist_output_url, "rist_output_url");
+    add_field!(req.rtsp_output_url, "rtsp_output_url");
+    add_field!(req.webrtc_output_url, "webrtc_output_url");
+    add_field!(req.epg_days, "epg_days");
+    add_field!(req.tmdb_api_key, "tmdb_api_key");
+    add_field!(req.omdb_api_key, "omdb_api_key");
+    add_field!(req.tvmaze_api_key, "tvmaze_api_key");
 
     sql.push_str(" WHERE id = TRUE");
+    log::info!("Updating settings SQL: {}", sql);
 
-    let result = sqlx::query(&sql).execute(pool.get_ref()).await;
+    let mut query = sqlx::query(&sql);
+
+    // Bind all fields in the same order
+    macro_rules! bind_field {
+        ($field:expr) => {
+            if let Some(ref val) = $field {
+                query = query.bind(val);
+            }
+        };
+        (bool, $field:expr) => {
+            if let Some(val) = $field {
+                query = query.bind(val);
+            }
+        };
+        (num, $field:expr) => {
+            if let Some(val) = $field {
+                query = query.bind(val);
+            }
+        };
+    }
+
+    bind_field!(req.output_type);
+    bind_field!(req.output_url);
+    bind_field!(req.resolution);
+    bind_field!(req.fps);
+    bind_field!(req.video_bitrate);
+    bind_field!(req.audio_bitrate);
+    bind_field!(req.media_path);
+    bind_field!(req.thumbnails_path);
+    bind_field!(req.playlists_path);
+    bind_field!(req.fillers_path);
+    bind_field!(req.logo_path);
+    bind_field!(req.logo_position);
+    bind_field!(req.day_start);
+    bind_field!(req.channel_name);
+    bind_field!(req.default_image_path);
+    bind_field!(req.default_video_path);
+    bind_field!(num, req.clips_played_today);
+    bind_field!(num, req.overlay_opacity);
+    bind_field!(num, req.overlay_scale);
+    bind_field!(req.srt_mode);
+    bind_field!(req.system_version);
+    bind_field!(req.release_date);
+    bind_field!(bool, req.overlay_enabled);
+    bind_field!(req.app_logo_path);
+    bind_field!(bool, req.rtmp_enabled);
+    bind_field!(bool, req.hls_enabled);
+    bind_field!(bool, req.srt_enabled);
+    bind_field!(bool, req.udp_enabled);
+    bind_field!(req.rtmp_output_url);
+    bind_field!(req.srt_output_url);
+    bind_field!(req.udp_output_url);
+    bind_field!(req.udp_mode);
+    bind_field!(bool, req.auto_start_protocols);
+    bind_field!(req.video_codec);
+    bind_field!(req.audio_codec);
+    bind_field!(bool, req.dash_enabled);
+    bind_field!(bool, req.mss_enabled);
+    bind_field!(bool, req.rist_enabled);
+    bind_field!(bool, req.rtsp_enabled);
+    bind_field!(bool, req.webrtc_enabled);
+    bind_field!(bool, req.llhls_enabled);
+    bind_field!(req.dash_output_url);
+    bind_field!(req.mss_output_url);
+    bind_field!(req.rist_output_url);
+    bind_field!(req.rtsp_output_url);
+    bind_field!(req.webrtc_output_url);
+    bind_field!(num, req.epg_days);
+    bind_field!(req.tmdb_api_key);
+    bind_field!(req.omdb_api_key);
+    bind_field!(req.tvmaze_api_key);
+
+    let result = query.execute(pool.get_ref()).await;
 
     match result {
         Ok(_) => HttpResponse::Ok().json(serde_json::json!({"message": "Settings updated"})),
-        Err(_) => HttpResponse::InternalServerError()
-            .json(serde_json::json!({"error": "Failed to update settings"})),
+        Err(e) => {
+            log::error!("Failed to update settings: {}", e);
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": format!("Failed to update settings: {}", e)}))
+        }
     }
 }
 
@@ -536,9 +547,109 @@ async fn reset_all(pool: web::Data<PgPool>) -> impl Responder {
     }
 }
 
+#[derive(Deserialize)]
+struct TestApiRequest {
+    service: String,
+    api_key: String,
+}
+
+async fn test_api_keys(req: web::Json<TestApiRequest>) -> impl Responder {
+    let client = Client::new();
+    let result = match req.service.as_str() {
+        "tmdb" => {
+            let url = format!(
+                "https://api.themoviedb.org/3/configuration?api_key={}",
+                req.api_key
+            );
+            client.get(&url).send().await
+        }
+        "omdb" => {
+            let url = format!("http://www.omdbapi.com/?apikey={}&s=test", req.api_key);
+            client.get(&url).send().await
+        }
+        "tvmaze" => {
+            let url = format!("https://api.tvmaze.com/search/shows?q=test");
+            client.get(&url).send().await
+        }
+        _ => {
+            return HttpResponse::BadRequest().json(serde_json::json!({"error": "Unknown service"}))
+        }
+    };
+
+    match result {
+        Ok(res) => {
+            if res.status().is_success() {
+                HttpResponse::Ok()
+                    .json(serde_json::json!({"success": true, "message": "API Key is Valid!"}))
+            } else {
+                HttpResponse::BadRequest()
+                    .json(serde_json::json!({"error": format!("API Error: {}", res.status())}))
+            }
+        }
+        Err(e) => HttpResponse::InternalServerError()
+            .json(serde_json::json!({"error": format!("Request failed: {}", e)})),
+    }
+}
+
+async fn apply_defaults(pool: web::Data<PgPool>) -> impl Responder {
+    let defaults_path = Path::new("backend/data/api_defaults.enc");
+    if !defaults_path.exists() {
+        return HttpResponse::NotFound()
+            .json(serde_json::json!({"error": "Defaults file not found"}));
+    }
+
+    let encoded_data = match std::fs::read_to_string(defaults_path) {
+        Ok(s) => s,
+        Err(e) => {
+            return HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": format!("Read failed: {}", e)}))
+        }
+    };
+
+    let decoded_bytes = match general_purpose::STANDARD.decode(encoded_data.trim()) {
+        Ok(b) => b,
+        Err(e) => {
+            return HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": format!("Decode failed: {}", e)}))
+        }
+    };
+
+    let decoded_str = String::from_utf8_lossy(&decoded_bytes);
+    let defaults: serde_json::Value = match serde_json::from_str(&decoded_str) {
+        Ok(v) => v,
+        Err(e) => {
+            return HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": format!("Parse failed: {}", e)}))
+        }
+    };
+
+    let tmdb_key = defaults["tmdb_api_key"].as_str().unwrap_or_default();
+    let omdb_key = defaults["omdb_api_key"].as_str().unwrap_or_default();
+    let tvmaze_key = defaults["tvmaze_api_key"].as_str().unwrap_or_default();
+
+    // Update settings table
+    let result = sqlx::query(
+        "UPDATE settings SET tmdb_api_key = $1, omdb_api_key = $2, tvmaze_api_key = $3 WHERE id = TRUE"
+    )
+    .bind(tmdb_key)
+    .bind(omdb_key)
+    .bind(tvmaze_key)
+    .execute(pool.get_ref())
+    .await;
+
+    match result {
+        Ok(_) => HttpResponse::Ok()
+            .json(serde_json::json!({"success": true, "message": "Defaults applied successfully"})),
+        Err(e) => HttpResponse::InternalServerError()
+            .json(serde_json::json!({"error": format!("Update failed: {}", e)})),
+    }
+}
+
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.route("", web::get().to(get_settings))
         .route("", web::put().to(update_settings))
+        .route("/test-api", web::post().to(test_api_keys))
+        .route("/apply-defaults", web::post().to(apply_defaults))
         .route("/logo", web::get().to(get_logo))
         .route("/upload-logo", web::post().to(upload_logo))
         .route("/app-logo", web::get().to(get_app_logo))

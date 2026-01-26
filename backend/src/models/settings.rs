@@ -59,6 +59,68 @@ pub struct Settings {
     pub rtsp_output_url: Option<String>,
     pub webrtc_output_url: Option<String>,
     pub epg_days: Option<i32>,
+    #[sqlx(default)]
+    pub tmdb_api_key: Option<String>,
+    #[sqlx(default)]
+    pub omdb_api_key: Option<String>,
+    #[sqlx(default)]
+    pub tvmaze_api_key: Option<String>,
+}
+
+impl Settings {
+    pub fn get_display_urls(&self, host: &str) -> std::collections::HashMap<String, String> {
+        let mut urls = std::collections::HashMap::new();
+
+        // 1. RTMP
+        let rtmp = self
+            .rtmp_output_url
+            .as_deref()
+            .unwrap_or("rtmp://localhost:1935/live/stream");
+        urls.insert(
+            "RTMP".to_string(),
+            rtmp.replace("mediamtx", host).replace("127.0.0.1", host),
+        );
+
+        // 2. SRT
+        let srt = self
+            .srt_output_url
+            .as_deref()
+            .unwrap_or("srt://localhost:8890?mode=caller&streamid=read:live/stream");
+        let srt_final = srt.replace("mediamtx", host).replace("127.0.0.1", host);
+        // Ensure read mode for display
+        let srt_final = if srt_final.contains("streamid=publish") {
+            srt_final.replace("streamid=publish", "streamid=read")
+        } else if !srt_final.contains("streamid=") {
+            format!("{}&streamid=read:live/stream", srt_final)
+        } else {
+            srt_final
+        };
+        urls.insert("SRT".to_string(), srt_final);
+
+        // 3. UDP (Smart formatting)
+        let udp = self.udp_output_url.as_deref().unwrap_or("udp://@:1234");
+        let udp_final = if udp.contains("@") {
+            // For Unicast Listener, show @host:port
+            udp.replace("@:", &format!("@{}:", host))
+                .replace("@localhost:", &format!("@{}:", host))
+                .replace("@127.0.0.1:", &format!("@{}:", host))
+        } else {
+            // For Push/Multicast
+            udp.replace("localhost", host).replace("127.0.0.1", host)
+        };
+        urls.insert("UDP".to_string(), udp_final);
+
+        // 4. HLS
+        urls.insert(
+            "HLS".to_string(),
+            format!("http://{}:3000/hls/stream.m3u8", host),
+        );
+
+        // 5. MASTER
+        urls.insert("MASTER".to_string(), "Internal System Feed".to_string());
+
+        urls
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -110,4 +172,7 @@ pub struct UpdateSettingsRequest {
     pub rtsp_output_url: Option<String>,
     pub webrtc_output_url: Option<String>,
     pub epg_days: Option<i32>,
+    pub tmdb_api_key: Option<String>,
+    pub omdb_api_key: Option<String>,
+    pub tvmaze_api_key: Option<String>,
 }

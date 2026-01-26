@@ -321,6 +321,7 @@ export default function PlaylistEditor() {
         duration: clip.duration,
         source: clip.path,
         filename: clip.filename,
+        media_id: clip.media_id,
         metadata: clip.metadata || null,
         is_filler: clip.is_filler || false,
         start_time: clip.start_time,

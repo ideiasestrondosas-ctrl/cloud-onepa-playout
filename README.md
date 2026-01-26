@@ -5,7 +5,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB.svg)](https://reactjs.org/)
-[![Version](https://img.shields.io/badge/Version-2.0.0--PRO-blue.svg)]()
+[![Version](https://img.shields.io/badge/Version-2.1.0--PRO-blue.svg)]()
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)]()
 
 ## 📖 Sobre
@@ -110,9 +110,9 @@ Este projeto representa um esforço significativo de engenharia para criar uma s
 
 | Métrica          | Detalhe                    | Valor                                     |
 | ---------------- | -------------------------- | ----------------------------------------- |
-| **Código Fonte** | Frontend (React/JSX)       | ~7,500 linhas                             |
-|                  | Backend (Rust)             | ~5,800 linhas                             |
-|                  | Total                      | **~13,300+ linhas**                       |
+| **Código Fonte** | Frontend (React/JSX)       | ~8734 linhas                             |
+|                  | Backend (Rust)             | ~7054 linhas                             |
+|                  | Total                      | **~15788+ linhas**                       |
 | **Arquitetura**  | Módulos Backend (Rust)     | 30                                        |
 |                  | Componentes Visuais        | 22+                                       |
 |                  | Migrações de Base de Dados | 15                                        |

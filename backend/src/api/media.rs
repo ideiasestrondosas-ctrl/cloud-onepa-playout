@@ -9,6 +9,7 @@ use uuid::Uuid;
 
 use crate::models::media::{CreateFolder, Folder, Media};
 use crate::services::ffmpeg::FFmpegService;
+use crate::services::metadata_fetcher::MetadataFetcherService;
 
 #[derive(serde::Deserialize)]
 pub struct MediaQuery {
@@ -586,6 +587,80 @@ async fn make_transparent(
     }
 }
 
+async fn fetch_metadata(media_id: web::Path<Uuid>, pool: web::Data<PgPool>) -> impl Responder {
+    let media = sqlx::query_as::<_, Media>("SELECT * FROM media WHERE id = $1")
+        .bind(media_id.into_inner())
+        .fetch_optional(pool.get_ref())
+        .await;
+
+    match media {
+        Ok(Some(m)) => {
+            // Fetch API keys from settings
+            let settings = sqlx::query_as::<_, crate::models::settings::Settings>(
+                "SELECT * FROM settings WHERE id = TRUE",
+            )
+            .fetch_optional(pool.get_ref())
+            .await
+            .ok()
+            .flatten();
+
+            let tmdb_key = settings
+                .as_ref()
+                .and_then(|s| s.tmdb_api_key.clone())
+                .unwrap_or_default();
+            let omdb_key = settings
+                .as_ref()
+                .and_then(|s| s.omdb_api_key.clone())
+                .unwrap_or_default();
+            let tvmaze_key = settings
+                .as_ref()
+                .and_then(|s| s.tvmaze_api_key.clone())
+                .unwrap_or_default();
+
+            let fetcher = MetadataFetcherService::new(tmdb_key, omdb_key, tvmaze_key);
+            let result = fetcher.fetch_metadata(&m.filename).await;
+
+            match result {
+                Ok(meta) => {
+                    // Convert to JSON
+                    let metadata_json =
+                        serde_json::to_value(&meta).unwrap_or(serde_json::json!({}));
+
+                    // Update DB
+                    let update = sqlx::query("UPDATE media SET metadata = $1 WHERE id = $2")
+                        .bind(&metadata_json)
+                        .bind(m.id)
+                        .execute(pool.get_ref())
+                        .await;
+
+                    match update {
+                        Ok(_) => HttpResponse::Ok().json(serde_json::json!({
+                            "message": "Metadata fetched and updated",
+                            "data": meta
+                        })),
+                        Err(e) => {
+                            log::error!("Failed to update metadata in DB: {}", e);
+                            HttpResponse::InternalServerError()
+                                .json(serde_json::json!({"error": "Database update failed"}))
+                        }
+                    }
+                }
+                Err(e) => {
+                    log::warn!("Metadata fetch failed: {}", e);
+                    // Return a partial success or specific error so UI knows it tried
+                    HttpResponse::BadRequest().json(serde_json::json!({
+                        "error": format!("Fetch failed: {}", e)
+                    }))
+                }
+            }
+        }
+        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({"error": "Media not found"})),
+        Err(e) => {
+            HttpResponse::InternalServerError().json(serde_json::json!({"error": e.to_string()}))
+        }
+    }
+}
+
 async fn get_media(media_id: web::Path<Uuid>, pool: web::Data<PgPool>) -> impl Responder {
     let result = sqlx::query_as::<_, Media>("SELECT * FROM media WHERE id = $1")
         .bind(media_id.into_inner())
@@ -860,5 +935,6 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         .route("/{id}/transparent", web::post().to(make_transparent))
         .route("/upload", web::post().to(upload_media))
         .route("/{id}", web::put().to(update_media))
+        .route("/{id}/fetch-metadata", web::post().to(fetch_metadata))
         .route("/{id}", web::delete().to(delete_media));
 }

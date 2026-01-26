@@ -74,50 +74,6 @@ function TabPanel({ children, value, index }) {
   );
 }
 
-function UdpVerificationDialog({ open, onClose, onConfirm }) {
-  return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'warning.main', fontWeight: 'bold' }}>
-        <WarningIcon /> Configuração e Verificação UDP
-      </DialogTitle>
-      <DialogContent>
-        <Typography variant="body1" gutterBottom sx={{ fontWeight: 'bold' }}>
-          Configuração de Transmissão por UDP
-        </Typography>
-        
-        <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1, borderLeft: '4px solid #ed6c02' }}>
-          <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>1. Tipos de Protocolo:</Typography>
-          <Typography variant="body2" component="div">
-            • <strong>Unicast (Direto):</strong> Ideal para enviar para um IP específico (ex: <code>udp://192.168.1.100:1234</code>).<br/>
-            • <strong>Multicast (Rede):</strong> Envia para um grupo (ex: <code>udp://239.0.0.1:1234</code>). Útil para vários receptores na mesma rede local.<br/>
-          </Typography>
-          
-          <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold', mt: 2 }}>2. Como Aceder (VLC / Player Externo):</Typography>
-          <Typography variant="body2" component="div">
-            • <strong>Na mesma máquina:</strong> Abra o VLC e use <code>udp://@:1234</code>.<br/>
-            • <strong>Outro computador (Rede Local):</strong> Use <code>udp://@[IP_DO_SERVIDOR]:1234</code>.<br/>
-            • <strong>Acesso Externo:</strong> Requer <i>Port Forwarding</i> no router (Porta UDP 1234). Use o seu IP Público.<br/>
-          </Typography>
-
-          <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold', mt: 2 }}>3. Requisitos de Rede:</Typography>
-          <Typography variant="body2" component="div">
-            • <strong>Multicast:</strong> Pode bloquear redes Wi-Fi se não houver "IGMP Snooping". Prefira rede gigabit cabeada.<br/>
-            • <strong>Latência:</strong> O UDP é ultra-rápido mas não tem correção de erro. Picos de rede causam "frizz" na imagem.
-          </Typography>
-        </Box>
-
-        <Typography variant="caption" display="block" sx={{ mt: 2, fontStyle: 'italic' }}>
-          * Certifique-se que o firewall do servidor permite tráfego na porta escolhida.
-        </Typography>
-      </DialogContent>
-      <DialogActions sx={{ p: 2 }}>
-        <Button onClick={onClose} variant="outlined">Cancelar</Button>
-        <Button onClick={onConfirm} variant="contained" color="warning">Entendi e Desejo Ativar</Button>
-      </DialogActions>
-    </Dialog>
-  );
-}
-
 function OverlayConverterDialog({ open, onClose, onSave }) {
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -306,23 +262,24 @@ export default function Settings() {
     defaultVideoPath: '',
     version: '',
     releaseDate: '',
-    overlay_enabled: true,
+    overlayEnabled: true,
     channelName: 'Cloud Onepa',
-    branding_type: 'static',
+    brandingType: 'static',
     overlayOpacity: 1.0,
     overlayScale: 1.0,
     srtMode: 'caller',
-    release_date: '',
     autoStartProtocols: true,
     udpMode: 'multicast',
+    videoCodec: 'copy',
+    audioCodec: 'copy',
     epgDays: 7,
-    tmdbApiKey: '',
-    omdbApiKey: '',
-    tvmazeApiKey: '',
-    rtmpEnabled: false,
-    srtEnabled: false,
-    udpEnabled: false,
-    hlsEnabled: false,
+    rtspOutputUrl: '',
+    webrtcOutputUrl: '',
+    mssOutputUrl: '',
+    dashOutputUrl: '',
+    ristOutputUrl: '',
+    protectedPath: '',
+    docsPath: '',
     dashEnabled: false,
     mssEnabled: false,
     ristEnabled: false,
@@ -359,7 +316,6 @@ export default function Settings() {
     autoTrim: true,
     processing: false
   });
-  const [udpConfirmOpen, setUdpConfirmOpen] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -445,38 +401,39 @@ export default function Settings() {
         dayStart: data.day_start || '06:00',
         defaultImagePath: data.default_image_path || '',
         defaultVideoPath: data.default_video_path || '',
-        version: data.system_version || '1.9.1-PRO', 
+        version: data.system_version || 'v2.0.1-DEBUG', 
         releaseDate: data.release_date || '2026-01-12',
-        overlay_enabled: data.overlay_enabled ?? true,
+        overlayEnabled: data.overlay_enabled ?? true,
         channelName: data.channel_name || 'Cloud Onepa',
-        branding_type: isVideoBranding ? 'video' : 'static',
+        brandingType: isVideoBranding ? 'video' : 'static',
         overlayOpacity: data.overlay_opacity ?? 1.0,
         overlayScale: data.overlay_scale ?? 1.0,
         srtMode: data.srt_mode || 'caller',
         protectedPath: data.protected_path || '/var/lib/onepa-playout/assets/protected',
         docsPath: data.docs_path || '/app/docs',
-        system_version: data.system_version || '1.9.4-PRO',
-        release_date: data.release_date || '2026-01-16',
         rtmpOutputUrl: data.rtmp_output_url || '',
         srtOutputUrl: data.srt_output_url || '',
         udpOutputUrl: data.udp_output_url || '',
-        rtmpEnabled: data.rtmp_enabled || false,
-        srtEnabled: data.srt_enabled || false,
-        udpEnabled: data.udp_enabled || false,
-        hlsEnabled: data.hls_enabled || false,
-        dashEnabled: data.dash_enabled || false,
-        mssEnabled: data.mss_enabled || false,
-        ristEnabled: data.rist_enabled || false,
-        rtspEnabled: data.rtsp_enabled || false,
-        webrtcEnabled: data.webrtc_enabled || false,
-        llhlsEnabled: data.llhls_enabled || false,
+        rtmpEnabled: data.rtmp_enabled ?? false,
+        srtEnabled: data.srt_enabled ?? false,
+        udpEnabled: data.udp_enabled ?? false,
+        hlsEnabled: data.hls_enabled ?? false,
         autoStartProtocols: data.auto_start_protocols ?? true,
         udpMode: data.udp_mode || 'multicast',
         videoCodec: data.video_codec || 'copy',
         audioCodec: data.audio_codec || 'copy',
-        tmdbApiKey: data.tmdb_api_key || '',
-        omdbApiKey: data.omdb_api_key || '',
-        tvmazeApiKey: data.tvmaze_api_key || '',
+        epgDays: data.epg_days || 7,
+        rtspOutputUrl: data.rtsp_output_url || '',
+        webrtcOutputUrl: data.webrtc_output_url || '',
+        mssOutputUrl: data.mss_output_url || '',
+        dashOutputUrl: data.dash_output_url || '',
+        ristOutputUrl: data.rist_output_url || '',
+        dashEnabled: data.dash_enabled ?? false,
+        mssEnabled: data.mss_enabled ?? false,
+        ristEnabled: data.rist_enabled ?? false,
+        rtspEnabled: data.rtsp_enabled ?? false,
+        webrtcEnabled: data.webrtc_enabled ?? false,
+        llhlsEnabled: data.llhls_enabled ?? false,
         display_urls: data.display_urls || {},
       });
     } catch (error) {
@@ -546,7 +503,7 @@ export default function Settings() {
 
   const handleUdpModeChange = (mode) => {
       // Define defaults based on protocol and mode
-      let newUrl = mode === 'multicast' ? 'udp://239.0.0.1:1234?ttl=2' : 'udp://127.0.0.1:1234';
+      let newUrl = mode === 'multicast' ? 'udp://239.0.0.1:1234?ttl=2' : 'udp://@:1234';
 
       setSettings(prev => ({
           ...prev,
@@ -566,83 +523,75 @@ export default function Settings() {
     }
   };
 
-  const handleSaveSettings = async () => {
+  const handleSaveSettings = async (e) => {
+    e?.preventDefault();
+    console.log('handleSaveSettings triggered. Current settings:', settings);
+    
+    if (!window.confirm('Deseja salvar as configurações agora?')) {
+        return;
+    }
+    
     setSaving(true);
     try {
-      let payload = {};
+      console.log('--- V2.0.1-DEBUG-SAVES ---');
+      console.log('Sending update request with data:', {
+        udp_enabled: settings.udpEnabled,
+        udp_output_url: settings.udpOutputUrl
+      });
+      await settingsAPI.update({
+        output_type: settings.outputType,
+        output_url: settings.outputUrl,
+        resolution: settings.resolution,
+        fps: settings.fps,
+        video_bitrate: settings.videoBitrate,
+        audio_bitrate: settings.audioBitrate,
+        media_path: settings.mediaPath,
+        thumbnails_path: settings.thumbnailsPath,
+        playlists_path: settings.playlistsPath,
+        fillers_path: settings.fillersPath,
+        logo_path: settings.logoPath,
+        logo_position: settings.logoPosition,
+        epg_url: settings.epgUrl,
+        day_start: settings.dayStart,
+        overlay_enabled: settings.overlayEnabled,
+        channel_name: settings.channelName,
+        overlay_opacity: settings.overlayOpacity,
+        overlay_scale: settings.overlayScale,
+        srt_mode: settings.srtMode,
+        rtmp_output_url: settings.rtmpOutputUrl,
+        srt_output_url: settings.srtOutputUrl,
+        udp_output_url: settings.udpOutputUrl,
+        udp_mode: settings.udpMode,
+        rtmp_enabled: settings.rtmpEnabled,
+        srt_enabled: settings.srtEnabled,
+        udp_enabled: settings.udpEnabled,
+        hls_enabled: settings.hlsEnabled,
+        system_version: settings.version,
+        release_date: settings.releaseDate,
+        auto_start_protocols: settings.autoStartProtocols,
+        video_codec: settings.videoCodec,
+        audio_codec: settings.audioCodec,
+        epg_days: settings.epgDays,
+        dash_enabled: settings.dashEnabled,
+        mss_enabled: settings.mssEnabled,
+        rist_enabled: settings.ristEnabled,
+        rtsp_enabled: settings.rtspEnabled,
+        webrtc_enabled: settings.webrtcEnabled,
+        llhls_enabled: settings.llhlsEnabled,
+        dash_output_url: settings.dashOutputUrl,
+        mss_output_url: settings.mssOutputUrl,
+        rist_output_url: settings.ristOutputUrl,
+        rtsp_output_url: settings.rtspOutputUrl,
+        webrtc_output_url: settings.webrtcOutputUrl,
+      });
+      showSuccess('Configurações salvas! Reiniciando transmissão...');
       
-      if (tabValue === 0) { // Output Tab
-        payload = {
-          output_type: settings.outputType,
-          output_url: settings.outputUrl,
-          resolution: settings.resolution,
-          fps: settings.fps,
-          video_bitrate: settings.videoBitrate,
-          audio_bitrate: settings.audioBitrate,
-          rtmp_output_url: settings.rtmpOutputUrl,
-          srt_output_url: settings.srtOutputUrl,
-          udp_output_url: settings.udpOutputUrl,
-          rtmp_enabled: settings.rtmpEnabled,
-          srt_enabled: settings.srtEnabled,
-          udp_enabled: settings.udpEnabled,
-          hls_enabled: settings.hlsEnabled,
-          dash_enabled: settings.dashEnabled,
-          mss_enabled: settings.mssEnabled,
-          rist_enabled: settings.ristEnabled,
-          rtsp_enabled: settings.rtspEnabled,
-          webrtc_enabled: settings.webrtcEnabled,
-          llhls_enabled: settings.llhlsEnabled,
-          video_codec: settings.videoCodec,
-          audio_codec: settings.audioCodec,
-          udp_mode: settings.udpMode,
-          srt_mode: settings.srtMode,
-        };
-      } else if (tabValue === 1) { // Caminhos/API Tab
-        // Simple sanitization for OMDb key if it contains &apikey=
-        let cleanOmdbKey = settings.omdbApiKey;
-        if (cleanOmdbKey && cleanOmdbKey.includes('apikey=')) {
-           const match = cleanOmdbKey.match(/apikey=([^&]+)/);
-           if (match) cleanOmdbKey = match[1];
-        }
-
-        payload = {
-          media_path: settings.mediaPath,
-          thumbnails_path: settings.thumbnailsPath,
-          playlists_path: settings.playlistsPath,
-          fillers_path: settings.fillersPath,
-          tmdb_api_key: settings.tmdbApiKey,
-          omdb_api_key: cleanOmdbKey,
-          tvmaze_api_key: settings.tvmazeApiKey,
-          epg_url: settings.epgUrl,
-          default_image_path: settings.defaultImagePath,
-          default_video_path: settings.defaultVideoPath,
-        };
-      } else if (tabValue === 2) { // Playout Tab
-        payload = {
-          day_start: settings.dayStart,
-          overlay_enabled: settings.overlay_enabled,
-          channel_name: settings.channelName,
-          overlay_opacity: settings.overlayOpacity,
-          overlay_scale: settings.overlayScale,
-          epg_days: settings.epgDays,
-          auto_start_protocols: settings.autoStartProtocols,
-        };
-      } else {
-        // Fallback for other tabs if any
-        payload = { ...settings };
-      }
-
-      await settingsAPI.update(payload);
-      showSuccess(`Configurações da aba ${['Output', 'Caminhos', 'Playout'][tabValue] || ''} salvas!`);
-      
-      // Auto-restart engine with new settings if in Output tab
-      if (tabValue === 0) {
-        try {
-          await playoutAPI.start();
-          showSuccess('Transmissão reiniciada com sucesso!');
-        } catch (startErr) {
-          console.warn('Auto-start failed/already running:', startErr);
-        }
+      // Auto-start engine with new settings
+      try {
+        await playoutAPI.start();
+        showSuccess('Transmissão reiniciada com sucesso!');
+      } catch (startErr) {
+        console.warn('Auto-start failed/already running:', startErr);
       }
 
     } catch (error) {
@@ -650,55 +599,6 @@ export default function Settings() {
       showError('Erro ao salvar configurações');
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleApplyDefaults = async () => {
-    if (!window.confirm('Isto irá substituir as suas chaves API atuais pelas recomendadas. Continuar?')) return;
-    try {
-      setSaving(true);
-      const response = await settingsAPI.applyDefaults();
-      if (response.data.success) {
-        showSuccess('Chaves recomendadas aplicadas com sucesso!');
-        fetchSettings(); // Refresh UI
-      } else {
-        showError(`Erro ao aplicar chaves: ${response.data.error}`);
-      }
-    } catch (error) {
-      console.error('Apply Defaults Error:', error);
-      showError(`Falha ao aplicar chaves: ${error.response?.data?.error || error.message}`);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleTestApi = async (service) => {
-    let key = '';
-    if (service === 'tmdb') key = settings.tmdbApiKey;
-    else if (service === 'omdb') {
-      key = settings.omdbApiKey;
-      if (key && key.includes('apikey=')) {
-        const match = key.match(/apikey=([^&]+)/);
-        if (match) key = match[1];
-      }
-    }
-    else if (service === 'tvmaze') key = settings.tvmazeApiKey; // TVMaze might operate without key but we test reachability
-
-    if (!key && service !== 'tvmaze') {
-        showWarning(`Insira a chave API para ${service.toUpperCase()} antes de testar.`);
-        return;
-    }
-
-    try {
-        const response = await settingsAPI.testApi(service, key);
-        if (response.data.success) {
-            showSuccess(`API ${service.toUpperCase()} conectada com sucesso!`);
-        } else {
-            showError(`Erro na API ${service.toUpperCase()}: ${response.data.error}`);
-        }
-    } catch (error) {
-        console.error('API Test Error:', error);
-        showError(`Falha ao testar ${service.toUpperCase()}: ${error.response?.data?.error || error.message}`);
     }
   };
 
@@ -918,7 +818,7 @@ export default function Settings() {
                              : (
                                <Box component="span" sx={{ display: 'block', mt: 1 }}>
                                   <strong style={{ color: '#2196f3' }}>ℹ️ Configuração Unicast (Sender):</strong> {settings.outputUrl}<br/>
-                                  <strong style={{ color: '#4caf50' }}>✅ Abrir no VLC (Receiver):</strong> <code>udp://@:1234</code>
+                                   <strong style={{ color: '#4caf50' }}>✅ Abrir no VLC (Receiver):</strong> <code>{`udp://@${window.location.hostname}:1234`}</code>
                                </Box>
                              )
                           }
@@ -933,14 +833,10 @@ export default function Settings() {
                   </Typography>
                   <Grid container spacing={2}>
                     <Grid item xs={12} md={4}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <Checkbox 
-                          size="small" 
-                          checked={settings.rtmpEnabled} 
-                          onChange={(e) => setSettings({...settings, rtmpEnabled: e.target.checked})} 
-                        />
-                        <Typography variant="caption" sx={{ fontWeight: 'bold' }}>ATIVAR RTMP</Typography>
-                      </Box>
+                      <FormControlLabel
+                        control={<Checkbox size="small" checked={settings.rtmpEnabled || false} onChange={(e) => setSettings({...settings, rtmpEnabled: e.target.checked})} />}
+                        label={<Typography variant="caption" sx={{ fontWeight: 'bold' }}>ATIVAR RTMP Transmissão</Typography>}
+                      />
                       <TextField
                         fullWidth
                         label="URL RTMP"
@@ -953,14 +849,10 @@ export default function Settings() {
                       />
                     </Grid>
                     <Grid item xs={12} md={4}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <Checkbox 
-                          size="small" 
-                          checked={settings.srtEnabled} 
-                          onChange={(e) => setSettings({...settings, srtEnabled: e.target.checked})} 
-                        />
-                        <Typography variant="caption" sx={{ fontWeight: 'bold' }}>ATIVAR SRT</Typography>
-                      </Box>
+                      <FormControlLabel
+                        control={<Checkbox size="small" checked={settings.srtEnabled || false} onChange={(e) => setSettings({...settings, srtEnabled: e.target.checked})} />}
+                        label={<Typography variant="caption" sx={{ fontWeight: 'bold' }}>ATIVAR SRT Transmissão</Typography>}
+                      />
                       <TextField
                         fullWidth
                         label="URL SRT"
@@ -973,17 +865,10 @@ export default function Settings() {
                       />
                     </Grid>
                     <Grid item xs={12} md={4}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <Checkbox 
-                          size="small" 
-                          checked={settings.udpEnabled} 
-                          onChange={(e) => {
-                            if (e.target.checked) setUdpConfirmOpen(true);
-                            else setSettings({...settings, udpEnabled: false});
-                          }} 
-                        />
-                        <Typography variant="caption" sx={{ fontWeight: 'bold' }}>ATIVAR UDP</Typography>
-                      </Box>
+                      <FormControlLabel
+                        control={<Checkbox size="small" checked={settings.udpEnabled || false} onChange={(e) => setSettings({...settings, udpEnabled: e.target.checked})} />}
+                        label={<Typography variant="caption" sx={{ fontWeight: 'bold' }}>ATIVAR UDP Transmissão</Typography>}
+                      />
                       <TextField
                         fullWidth
                         label="URL UDP"
@@ -1007,14 +892,14 @@ export default function Settings() {
                     <Grid item xs={12} md={6}>
                        <Box sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
                           <FormControlLabel
-                            control={<Checkbox checked={settings.dashEnabled || false} onChange={(e) => setSettings({...settings, dash_enabled: e.target.checked, dashEnabled: e.target.checked})} />}
+                            control={<Checkbox checked={settings.dashEnabled || false} onChange={(e) => setSettings({...settings, dashEnabled: e.target.checked})} />}
                             label={<Typography variant="body2" sx={{ fontWeight: 'bold' }}>MPEG-DASH</Typography>}
                           />
                           <TextField
                             fullWidth
                             label="DASH Output Path"
                             value={settings.dashOutputUrl || ''}
-                            onChange={(e) => setSettings({ ...settings, dash_output_url: e.target.value, dashOutputUrl: e.target.value })}
+                            onChange={(e) => setSettings({ ...settings, dashOutputUrl: e.target.value })}
                             placeholder="/var/lib/onepa-playout/hls/dash.mpd"
                             variant="outlined"
                             size="small"
@@ -1028,14 +913,14 @@ export default function Settings() {
                     <Grid item xs={12} md={6}>
                        <Box sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
                           <FormControlLabel
-                            control={<Checkbox checked={settings.mssEnabled || false} onChange={(e) => setSettings({...settings, mss_enabled: e.target.checked, mssEnabled: e.target.checked})} />}
+                            control={<Checkbox checked={settings.mssEnabled || false} onChange={(e) => setSettings({...settings, mssEnabled: e.target.checked})} />}
                             label={<Typography variant="body2" sx={{ fontWeight: 'bold' }}>Microsoft Smooth Streaming (MSS)</Typography>}
                           />
                           <TextField
                             fullWidth
                             label="MSS Output Path"
                             value={settings.mssOutputUrl || ''}
-                            onChange={(e) => setSettings({ ...settings, mss_output_url: e.target.value, mssOutputUrl: e.target.value })}
+                            onChange={(e) => setSettings({ ...settings, mssOutputUrl: e.target.value })}
                             placeholder="/var/lib/onepa-playout/hls/stream.ism"
                             variant="outlined"
                             size="small"
@@ -1049,14 +934,14 @@ export default function Settings() {
                     <Grid item xs={12} md={6}>
                        <Box sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
                           <FormControlLabel
-                            control={<Checkbox checked={settings.ristEnabled || false} onChange={(e) => setSettings({...settings, rist_enabled: e.target.checked, ristEnabled: e.target.checked})} />}
+                            control={<Checkbox checked={settings.ristEnabled || false} onChange={(e) => setSettings({...settings, ristEnabled: e.target.checked})} />}
                             label={<Typography variant="body2" sx={{ fontWeight: 'bold' }}>RIST (Reliable Internet Stream Transport)</Typography>}
                           />
                           <TextField
                             fullWidth
                             label="RIST URL"
                             value={settings.ristOutputUrl || ''}
-                            onChange={(e) => setSettings({ ...settings, rist_output_url: e.target.value, ristOutputUrl: e.target.value })}
+                            onChange={(e) => setSettings({ ...settings, ristOutputUrl: e.target.value })}
                             placeholder="rist://127.0.0.1:1234"
                             variant="outlined"
                             size="small"
@@ -1071,15 +956,15 @@ export default function Settings() {
                        <Box sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1, height: '100%' }}>
                           <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>MediaMTX Services</Typography>
                           <FormControlLabel
-                            control={<Checkbox checked={settings.rtspEnabled || false} onChange={(e) => setSettings({...settings, rtsp_enabled: e.target.checked, rtspEnabled: e.target.checked})} />}
+                            control={<Checkbox checked={settings.rtspEnabled || false} onChange={(e) => setSettings({...settings, rtspEnabled: e.target.checked})} />}
                             label="RTSP Server"
                           />
                           <FormControlLabel
-                            control={<Checkbox checked={settings.webrtcEnabled || false} onChange={(e) => setSettings({...settings, webrtc_enabled: e.target.checked, webrtcEnabled: e.target.checked})} />}
+                            control={<Checkbox checked={settings.webrtcEnabled || false} onChange={(e) => setSettings({...settings, webrtcEnabled: e.target.checked})} />}
                             label="WebRTC (WHIP/WHEP)"
                           />
                           <FormControlLabel
-                            control={<Checkbox checked={settings.llhlsEnabled || false} onChange={(e) => setSettings({...settings, llhls_enabled: e.target.checked, llhlsEnabled: e.target.checked})} />}
+                            control={<Checkbox checked={settings.llhlsEnabled || false} onChange={(e) => setSettings({...settings, llhlsEnabled: e.target.checked})} />}
                             label="Low-Latency HLS"
                           />
                        </Box>
@@ -1134,8 +1019,12 @@ export default function Settings() {
                                   
                                   <Typography variant="caption" display="block" sx={{ mt: 1, fontWeight: 'bold', color: 'success.main' }}>Passo 2: No VLC (Fluxo de Rede)</Typography>
                                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <code>srt://localhost:8890?mode=caller&streamid=read:live_stream_srt</code>
-                                    <IconButton size="small" onClick={() => { navigator.clipboard.writeText(`srt://localhost:8890?mode=caller&streamid=read:live_stream_srt`); showSuccess('Copiado!'); }}>
+                                    <code>{settings.display_urls?.SRT || `srt://${window.location.hostname}:8890?mode=caller&streamid=read:live_stream_srt`}</code>
+                                    <IconButton size="small" onClick={() => { 
+                                        const url = settings.display_urls?.SRT || `srt://${window.location.hostname}:8890?mode=caller&streamid=read:live_stream_srt`;
+                                        navigator.clipboard.writeText(url); 
+                                        showSuccess('Copiado!'); 
+                                    }}>
                                       <ContentCopyIcon fontSize="small" />
                                     </IconButton>
                                   </Box>
@@ -1229,16 +1118,22 @@ export default function Settings() {
                       {settings.outputType === 'udp' && (
                         <Alert severity="info" sx={{ mt: 2 }}>
                           <Typography variant="subtitle2" fontWeight="bold">Configuração UDP</Typography>
-                          <Typography variant="caption" display="block">Para Multicast use o prefixo @:</Typography>
+                          
+                          <Typography variant="caption" display="block">ℹ️ Configuração no Playout (Sender):</Typography>
+                          <Paper sx={{ mt: 0.5, p: 0.5, bgcolor: 'rgba(0,0,0,0.1)', mb: 1 }}>
+                            <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{settings.display_urls?.UDP || 'udp://@:1234'}</code>
+                          </Paper>
+
+                          <Typography variant="caption" display="block">✅ Abrir no VLC (Receiver):</Typography>
                           <Paper sx={{ mt: 0.5, p: 0.5, bgcolor: 'rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>udp://@239.0.0.1:1234</code>
-                            <IconButton size="small" onClick={() => { navigator.clipboard.writeText('udp://@239.0.0.1:1234'); showSuccess('Copiado!'); }}>
+                            <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{`udp://@${window.location.hostname}:1234`}</code>
+                            <IconButton size="small" onClick={() => { 
+                                const url = `udp://@${window.location.hostname}:1234`;
+                                navigator.clipboard.writeText(url); 
+                                showSuccess('Copiado!'); 
+                            }}>
                                 <ContentCopyIcon fontSize="small" />
                             </IconButton>
-                          </Paper>
-                          <Typography variant="caption" display="block" sx={{ mt: 1 }}>Para Unicast (VLC):</Typography>
-                          <Paper sx={{ mt: 0.5, p: 0.5, bgcolor: 'rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                             <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>udp://[IP_DESTINO]:1234</code>
                           </Paper>
                         </Alert>
                       )}
@@ -1256,38 +1151,38 @@ export default function Settings() {
 
                       {settings.outputType === 'rtmp' && (
                         <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'primary.main', cursor: 'pointer' }} onClick={() => {
-                              const rtmpUrl = `rtmp://${window.location.hostname}:1935/live/stream`;
+                              const rtmpUrl = settings.display_urls?.RTMP || `rtmp://${window.location.hostname}:1935/live/stream`;
                               navigator.clipboard.writeText(rtmpUrl);
-                              showSuccess(`Link RTMP copiado: ${rtmpUrl}`);
+                              showSuccess(`Link RTMP copiado!`);
                           }}>
-                          Link RTMP (VLC): rtmp://{window.location.hostname}:1935/live/stream
+                          Link RTMP para Visualização: {settings.display_urls?.RTMP || `rtmp://${window.location.hostname}:1935/live/stream`}
                         </Typography>
                       )}
 
                       {settings.outputType === 'srt' && (
                         <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'primary.main', cursor: 'pointer' }} onClick={() => {
-                              const srtUrl = `srt://${window.location.hostname}:8890?mode=caller`;
+                              const srtUrl = settings.display_urls?.SRT || `srt://${window.location.hostname}:8890?mode=caller`;
                               navigator.clipboard.writeText(srtUrl);
-                              showSuccess(`Link SRT copiado: ${srtUrl}`);
+                              showSuccess(`Link SRT copiado!`);
                           }}>
-                          Link SRT (VLC Caller): srt://{window.location.hostname}:8890?mode=caller
+                          Link SRT (Modo Recetor): {settings.display_urls?.SRT || `srt://${window.location.hostname}:8890?mode=caller`}
                         </Typography>
                       )}
 
                       {settings.outputType === 'udp' && (
                         <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'primary.main' }}>
-                          Link UDP: {settings.outputUrl}
+                          Link UDP Ativo: {settings.outputUrl}
                         </Typography>
                       )}
 
                       {settings.outputType === 'hls' && (
                         <Box sx={{ mt: 1 }}>
                           <Typography variant="caption" sx={{ display: 'block', color: 'primary.main', cursor: 'pointer' }} onClick={() => {
-                                const hlsUrl = `${window.location.origin}/hls/stream.m3u8`;
+                                const hlsUrl = settings.display_urls?.HLS || `${window.location.origin}/hls/stream.m3u8`;
                                 navigator.clipboard.writeText(hlsUrl);
-                                showSuccess(`Link HLS copiado: ${hlsUrl}`);
+                                showSuccess(`Link HLS copiado!`);
                             }}>
-                            Link HLS para Distribuição Externa: {window.location.origin}/hls/stream.m3u8
+                            Link HLS Público: {settings.display_urls?.HLS || `${window.location.origin}/hls/stream.m3u8`}
                           </Typography>
                           <Alert severity="warning" size="small" sx={{ mt: 1, py: 0, '& .MuiAlert-message': { p: 0.5 } }}>
                              <Typography variant="caption" sx={{ fontSize: '0.65rem' }}>
@@ -1453,7 +1348,7 @@ export default function Settings() {
                   />
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12}>
                   <TextField
                     fullWidth
                     label="Caminho de Fillers"
@@ -1461,66 +1356,6 @@ export default function Settings() {
                     onChange={(e) => setSettings({ ...settings, fillersPath: e.target.value })}
                     helperText="Diretório com vídeos para preencher espaços vazios"
                   />
-                </Grid>
-
-                <Grid item xs={12}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Divider sx={{ flexGrow: 1 }}><Chip label="APIs Externas (Metadados)" /></Divider>
-                    <Button 
-                      variant="text" 
-                      size="small" 
-                      startIcon={<WizardIcon />} 
-                      onClick={handleApplyDefaults}
-                      sx={{ ml: 2 }}
-                    >
-                      Aplicar Recomendadas (Criptografado)
-                    </Button>
-                  </Box>
-                  <Alert severity="info" sx={{ mb: 2 }}>
-                    Dica: Insira apenas o ID da chave. Se colar um link OMDb, o sistema extrairá a chave automaticamente ao salvar.
-                  </Alert>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-                    <TextField
-                        fullWidth
-                        label="TMDB API Key"
-                        value={settings.tmdbApiKey}
-                        onChange={(e) => setSettings({ ...settings, tmdbApiKey: e.target.value })}
-                        helperText="Para capas e informação de filmes (Gratuito: themoviedb.org)"
-                        type="password"
-                        size="small"
-                    />
-                    <Button variant="outlined" onClick={() => handleTestApi('tmdb')} sx={{ mt: 0.5 }}>Testar</Button>
-                  </Box>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-                    <TextField
-                        fullWidth
-                        label="OMDb API Key"
-                        value={settings.omdbApiKey}
-                        onChange={(e) => setSettings({ ...settings, omdbApiKey: e.target.value })}
-                        helperText="Backup para informação IMDB (omdbapi.com)"
-                        type="password"
-                        size="small"
-                    />
-                    <Button variant="outlined" onClick={() => handleTestApi('omdb')} sx={{ mt: 0.5 }}>Testar</Button>
-                  </Box>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-                    <TextField
-                        fullWidth
-                        label="TVMaze API Key (Opcional)"
-                        value={settings.tvmazeApiKey}
-                        onChange={(e) => setSettings({ ...settings, tvmazeApiKey: e.target.value })}
-                        helperText="Para dados de séries/programas de TV (tvmaze.com)"
-                        type="password"
-                        size="small"
-                    />
-                    <Button variant="outlined" onClick={() => handleTestApi('tvmaze')} sx={{ mt: 0.5 }}>Testar</Button>
-                  </Box>
                 </Grid>
 
                 <Grid item xs={12}>
@@ -2400,6 +2235,7 @@ export default function Settings() {
 
             <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end', borderTop: 1, borderColor: 'divider' }}>
               <Button
+                type="button"
                 variant="contained"
                 startIcon={<SaveIcon />}
                 onClick={handleSaveSettings}
@@ -2496,46 +2332,82 @@ export default function Settings() {
         </DialogTitle>
         <DialogContent dividers>
           <Box sx={{ mb: 4 }}>
-            <Typography variant="h6" color="primary" gutterBottom>Destaques da Versão 1.9.2-PRO</Typography>
+            <Typography variant="h6" color="primary" gutterBottom>Destaques da Versão {settings.version || '2.0.1-DEBUG'}</Typography>
             <Typography variant="body2" paragraph>
-              Esta versão consolida a experiência PRO com refinamentos críticos na interface, estabilidade de upload e diagnósticos avançados de rede.
+              Esta versão foca na padronização absoluta das saídas de transmissão e na sincronização em tempo real entre o Dashboard e as Configurações.
             </Typography>
             
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
                 <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'primary.main' }}>
-                  <Typography variant="subtitle2" fontWeight="bold">✨ UI/UX Refinements</Typography>
-                  <Typography variant="caption">• Setup Wizard: Multi-select & Metadata</Typography><br />
-                  <Typography variant="caption">• Playlist: Unique Clips & Bulk Add</Typography><br />
-                  <Typography variant="caption">• Dashboard: Novo indicador ON AIR Pulsante</Typography>
+                  <Typography variant="subtitle2" fontWeight="bold">📡 Padronização de Saídas</Typography>
+                  <Typography variant="caption">• Fonte Única de Verdade para URLs (RTMP/SRT/UDP/HLS)</Typography><br />
+                  <Typography variant="caption">• Sincronização Bi-direcional Dashboard ↔ Configurações</Typography><br />
+                  <Typography variant="caption">• Guia dinâmico para receptores VLC e OBS</Typography>
                 </Box>
               </Grid>
               <Grid item xs={12} md={6}>
                 <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'success.main' }}>
-                  <Typography variant="subtitle2" fontWeight="bold">📡 Protocol & Diagnostics</Typography>
-                  <Typography variant="caption">• VLC Smart Launcher com Logs em Tempo Real</Typography><br />
-                  <Typography variant="caption">• SRT: Configuração Dinâmica (Caller/Listener)</Typography><br />
-                  <Typography variant="caption">• Safari: Fix Áudio Context & LUFS Meter</Typography>
+                  <Typography variant="subtitle2" fontWeight="bold">📅 EPG & Timeline (v2.0)</Typography>
+                  <Typography variant="caption">• Gerador Automático de XMLTV (Guia de Programação)</Typography><br />
+                  <Typography variant="caption">• Timeline Gráfica Profissional no modo EPG View</Typography><br />
+                  <Typography variant="caption">• Suporte a Metadados Expandidos (Género, Classificação)</Typography>
                 </Box>
               </Grid>
               <Grid item xs={12} md={6}>
                 <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'warning.main' }}>
-                  <Typography variant="subtitle2" fontWeight="bold">🛡️ Estabilidade Crítica</Typography>
-                  <Typography variant="caption">• Fix: Upload Sequencial (White Screen)</Typography><br />
-                  <Typography variant="caption">• Fix: Delete Confirm Dialog (Chrome)</Typography><br />
-                  <Typography variant="caption">• Versão Sincronizada: v1.9.2-PRO</Typography>
+                  <Typography variant="subtitle2" fontWeight="bold">🛡️ Persistência e Fixes</Typography>
+                  <Typography variant="caption">• Fix: Protocolos mantêm estado ON/OFF após reiniciar</Typography><br />
+                  <Typography variant="caption">• Fix: SRT URLs com streamid=read para visualização</Typography><br />
+                  <Typography variant="caption">• Docker: Pinning de dependências (Cargo.lock)</Typography>
                 </Box>
               </Grid>
               <Grid item xs={12} md={6}>
                 <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'secondary.main' }}>
-                  <Typography variant="subtitle2" fontWeight="bold">🔧 Performance</Typography>
-                  <Typography variant="caption">• Clean Build System (Docker Cache Reset)</Typography><br />
-                  <Typography variant="caption">• Otimização de renderização de listas</Typography><br />
-                  <Typography variant="caption">• Validação robusta de caminhos de arquivo</Typography>
+                  <Typography variant="subtitle2" fontWeight="bold">📞 Conectividade SRT/UDP</Typography>
+                  <Typography variant="caption">• SRT: Novos modos Caller/Listener simplificados</Typography><br />
+                  <Typography variant="caption">• UDP: Guia visual de IP para Receptores Unicast</Typography><br />
+                  <Typography variant="caption">• Logs de transmissão integrados na UI</Typography>
                 </Box>
               </Grid>
             </Grid>
           </Box>
+
+          <Divider sx={{ my: 3 }} />
+
+          <Typography variant="h6" gutterBottom>Histórico de Versões</Typography>
+          <List dense>
+            <ListItem>
+              <ListItemText 
+                primary="v2.0.1-DEBUG (2026-01-24)" 
+                secondary="Padronização de Saídas, Persistência de Protocolos, UDP Listener" 
+              />
+            </ListItem>
+            <ListItem>
+              <ListItemText 
+                primary="v2.0.0-PRO (2026-01-23)" 
+                secondary="EPG Intelligence, Timeline Gráfica, Session Accuracy" 
+              />
+            </ListItem>
+            <ListItem>
+              <ListItemText 
+                primary="v1.9.5-PRO (2026-01-19)" 
+                secondary="MediaMTX Security, Recurring Markers, HLS Standardization" 
+              />
+            </ListItem>
+            <ListItem>
+              <ListItemText 
+                primary="v1.9.4-PRO (2026-01-17)" 
+                secondary="Setup Wizard, VLC Launcher, Safari Fixes, Upload Stability" 
+              />
+            </ListItem>
+            <ListItem>
+              <ListItemText 
+                primary="v1.9.3-PRO (2026-01-16)" 
+                secondary="SQL Injection Prevention, SRT Caller v2, Diagnostics Suite" 
+              />
+            </ListItem>
+          </List>
 
           <Divider sx={{ my: 3 }} />
 
@@ -2662,15 +2534,6 @@ export default function Settings() {
         open={converterOpen} 
         onClose={() => setConverterOpen(false)} 
         onSave={handleConverterSave} 
-      />
-      <UdpVerificationDialog 
-        open={udpConfirmOpen} 
-        onClose={() => setUdpConfirmOpen(false)}
-        onConfirm={() => {
-          setSettings({...settings, udpEnabled: true});
-          setUdpConfirmOpen(false);
-          showSuccess("Protocolo UDP pronto para ativação ao salvar.");
-        }}
       />
     </Box>
   );
