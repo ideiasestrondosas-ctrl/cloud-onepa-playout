@@ -50,8 +50,30 @@ const AppLogo = ({ version }) => (
         style={{ width: '100%', height: 'auto', maxHeight: '80px', objectFit: 'contain' }}
       />
     </Box>
-    <Typography variant="caption" sx={{ color: 'text.secondary', mt: 1, fontSize: '0.75rem', fontWeight: 'bold', textAlign: 'center' }}>
-    </Typography>
+    {version && version.includes('ALPHA') && (
+      <Box sx={{ 
+        mt: 1, 
+        px: 1.5, 
+        py: 0.5, 
+        bgcolor: 'error.main', 
+        borderRadius: 1, 
+        boxShadow: '0 0 10px rgba(211, 47, 47, 0.5)',
+        animation: 'pulse 2s infinite'
+      }}>
+        <Typography variant="caption" sx={{ color: 'white', fontWeight: 900, fontSize: '0.65rem', letterSpacing: 1 }}>
+          ALPHA TEST MODE
+        </Typography>
+      </Box>
+    )}
+    <style>
+      {`
+        @keyframes pulse {
+          0% { opacity: 0.8; }
+          50% { opacity: 1; transform: scale(1.05); }
+          100% { opacity: 0.8; }
+        }
+      `}
+    </style>
   </Box>
 );
 

@@ -57,16 +57,33 @@ echo -e "${NC}"
 log_step "Initializing Version Management"
 CURRENT_VERSION=$(grep '"version":' frontend/package.json | awk -F '"' '{print $4}')
 echo -e "Current detected version: ${YELLOW}$CURRENT_VERSION${NC}"
-read -p "Enter new version (e.g., 2.1.0) [ENTER to exit]: " NEW_VERSION
 
-if [[ -z "$NEW_VERSION" ]]; then
-    log_error "Version input was empty. Release cancelled."
-    exit 1
+# Auto-increment logic
+if [[ "$CURRENT_VERSION" =~ (.*[^0-9])([0-9]+)$ ]]; then
+    prefix="${BASH_REMATCH[1]}"
+    last_num="${BASH_REMATCH[2]}"
+    next_num=$((last_num + 1))
+    SUGGESTED_VERSION="${prefix}${next_num}"
+elif [[ "$CURRENT_VERSION" =~ (.*)-ALPHA$ ]]; then
+    SUGGESTED_VERSION="${CURRENT_VERSION}.1"
+else
+    # Fallback for semantic versioning X.Y.Z
+    IFS='.' read -r major minor patch <<< "$CURRENT_VERSION"
+    SUGGESTED_VERSION="$major.$minor.$((patch + 1))"
 fi
+
+read -p "Enter new version (Press ENTER for $SUGGESTED_VERSION): " NEW_VERSION
+NEW_VERSION=${NEW_VERSION:-$SUGGESTED_VERSION}
+
+# Branch Selection
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+echo -e "Current active branch: ${YELLOW}$CURRENT_BRANCH${NC}"
+read -p "Target branch for update (alpha, beta, final, stable) [ENTER for $CURRENT_BRANCH]: " TARGET_BRANCH
+TARGET_BRANCH=${TARGET_BRANCH:-$CURRENT_BRANCH}
 
 RELEASE_NAME="v${NEW_VERSION}-PRO"
 ZIP_NAME="${PROJECT_NAME}-${RELEASE_NAME}.zip"
-echo -e "Release Target: ${YELLOW}$RELEASE_NAME${NC}"
+echo -e "Release Target: ${YELLOW}$RELEASE_NAME${NC} on branch ${YELLOW}$TARGET_BRANCH${NC}"
 
 # 2. Cleanup
 log_step "Project Workspace Sanitization"
@@ -109,9 +126,9 @@ log_step "Synchronizing with GitHub Cloud"
 echo "Staging changes and committing..."
 git add .
 git commit -m "chore(release): bump version to $NEW_VERSION and update stats" || echo "No changes to commit"
-echo "Pushing to remote 'master' branch..."
-git push origin master
-log_success "GitHub master branch is synchronized."
+echo "Pushing to remote '$TARGET_BRANCH' branch..."
+git push origin "$TARGET_BRANCH"
+log_success "GitHub $TARGET_BRANCH branch is synchronized."
 
 # 7. Professional Archiving
 log_step "Generating Release Archive"
