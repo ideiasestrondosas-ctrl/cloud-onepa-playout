@@ -126,8 +126,8 @@ log_step "Synchronizing with GitHub Cloud"
 echo "Staging changes and committing..."
 git add .
 git commit -m "chore(release): bump version to $NEW_VERSION and update stats" || echo "No changes to commit"
-echo "Pushing to remote '$TARGET_BRANCH' branch..."
-git push origin "$TARGET_BRANCH"
+echo "Pushing current HEAD to remote '$TARGET_BRANCH' branch..."
+git push origin HEAD:"$TARGET_BRANCH"
 log_success "GitHub $TARGET_BRANCH branch is synchronized."
 
 # 7. Professional Archiving
