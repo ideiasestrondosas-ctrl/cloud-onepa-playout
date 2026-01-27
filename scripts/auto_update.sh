@@ -11,13 +11,15 @@ cd "$DIR"
 echo "[$(date)] 🔄 Checking for updates..."
 
 # 1. Update Code
-git fetch origin main
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+echo "[$(date)] 🔄 Checking for updates on branch: $BRANCH..."
+git fetch origin "$BRANCH"
 LOCAL=$(git rev-parse HEAD)
-REMOTE=$(git rev-parse origin/main)
+REMOTE=$(git rev-parse origin/"$BRANCH")
 
 if [ "$LOCAL" != "$REMOTE" ]; then
     echo "[$(date)] 📥 Updates found! Pulling..."
-    git pull origin main
+    git pull origin "$BRANCH"
     
     echo "[$(date)] 🏗️  Rebuilding containers..."
     

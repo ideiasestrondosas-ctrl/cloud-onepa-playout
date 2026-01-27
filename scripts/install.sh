@@ -19,6 +19,12 @@ NC='\033[0m' # No Color
 echo -e "${GREEN}🚀 ONEPA Playout PRO - Total Automation Installer${NC}"
 echo "--------------------------------------------------"
 
+# Ensure we are in the project root
+if [ ! -f "docker-compose.yml" ]; then
+    echo -e "${RED}❌ docker-compose.yml não encontrado. Por favor, execute este script da raiz do projeto.${NC}"
+    exit 1
+fi
+
 # 1. Helper Functions
 check_command() {
     if ! command -v "$1" &> /dev/null; then

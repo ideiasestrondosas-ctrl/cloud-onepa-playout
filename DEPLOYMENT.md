@@ -1,101 +1,99 @@
-# Guia de Implantação ("Total Automation") - ONEPA Playout PRO
+# Guia de Implantação e Automação - ONEPA Playout PRO
 
-Este sistema foi atualizado para **Automação Total**. A instalação e manutenção agora são feitas com um único clique ou comando.
+Este guia detalha como instalar, configurar e manter o sistema **ONEPA Playout PRO** com automação total em Linux, macOS e Windows.
 
-## 🚀 Instalação Rápida (Zero-Touch)
+---
 
-Escolha o seu sistema operativo e siga o passo único.
+## ⚡ Instalação Rápida (Recomendado)
 
-### 🐧 Linux (Ubuntu/Debian/CentOS)
+Escolha o seu comando de acordo com o sistema operativo. Estes scripts configuram dependências, geram credenciais seguras e iniciam o sistema.
 
-Execute este comando no terminal:
+### 🐧 Linux (Ubuntu/Debian)
 
 ```bash
-# 1. Navegue para a pasta
-cd cloud-onepa-playout
-
-# 2. Execute o instalador automático
-chmod +x scripts/install.sh
-./scripts/install.sh
+curl -sSL https://raw.githubusercontent.com/ideiasestrondosas-ctrl/cloud-onepa-playout/master/scripts/setup_linux.sh | bash
 ```
 
-**O que ele faz:**
+_Ou manualmente:_
 
-- Verifica se o Docker está instalado (e avisa se não estiver).
-- Gera senhas seguras automaticamente (`.env`).
-- Verifica conflitos de portas.
-- Inicia todo o sistema.
+```bash
+chmod +x scripts/setup_linux.sh
+./scripts/setup_linux.sh
+```
 
----
+### 🍎 macOS
 
-### 🍎 macOS (Intel/M1/M2/M3)
-
-1.  Abra o Terminal.
-2.  Arraste a pasta `cloud-onepa-playout` para o Terminal ou navegue até ela (`cd ...`).
-3.  Execute:
-    `bash
-    chmod +x scripts/install.sh
-    ./scripts/install.sh
-    `
-    **Notas Mac:**
-
-- Lembre-se de configurar a saída UDP para `host.docker.internal` se monitorizar localmente.
-
----
+```bash
+chmod +x scripts/setup_macos.sh
+./scripts/setup_macos.sh
+```
 
 ### 🪟 Windows 10/11
 
-1.  Certifique-se que o **Docker Desktop** está a correr.
-2.  Abra a pasta do projeto no Explorador de Arquivos.
-3.  Entre na pasta `scripts`.
-4.  Faça duplo clique em `install.bat`.
-
-**O que ele faz:**
-
-- Gera senhas seguras usando PowerShell.
-- Cria toda a estrutura de pastas.
-- Inicia o sistema automaticamente.
+1. Certifique-se que o **Docker Desktop** está a correr.
+2. Navegue até a pasta `scripts/`.
+3. Clique com o botão direito em `install.bat` e escolha **Executar como Administrador**.
 
 ---
 
-## 🔄 Automação de Atualizações (Auto-Update)
+## 🛠️ Instalação Passo a Passo (Manual)
 
-O sistema pode atualizar-se sozinho quando houver novas versões no GitHub.
+Se preferir configurar manualmente cada componente:
 
-### Configurar Atualização Automática (Linux/macOS)
-
-Adicione uma tarefa no Cron para verificar atualizações todas as noites às 04:00 AM.
-
-1.  Abra o editor cron:
-    ```bash
-    crontab -e
-    ```
-2.  Adicione a linha (ajuste o caminho `/caminho/para/`):
-    ```bash
-    0 4 * * * /caminho/para/cloud-onepa-playout/scripts/auto_update.sh >> /var/log/onepa_update.log 2>&1
-    ```
-
-### Atualização Manual (Qualquer SO)
-
-Se preferir atualizar manualmente:
-
-- **Linux/Mac**: `./scripts/auto_update.sh`
-- **Windows**: Não tem script auto-update, use `scripts\install.bat` novamente para reconstruir.
+1.  **Pré-requisitos**:
+    - Instale o **Docker** e **Docker Compose**.
+    - Instale o **Git**.
+2.  **Configuração de Ambiente**:
+    - Copie o ficheiro de exemplo (ou crie um novo) `.env`:
+      ```bash
+      POSTGRES_USER=onepa
+      POSTGRES_PASSWORD=uma_senha_forte
+      POSTGRES_DB=onepa_playout
+      JWT_SECRET=outra_senha_forte
+      ```
+3.  **Pastas de Dados**:
+    - Crie as pastas necessárias: `mkdir -p data/postgres data/media data/thumbnails data/playlists`.
+4.  **Iniciar o Sistema**:
+    - Execute: `docker compose up -d`.
 
 ---
 
-## 🛠️ Resolução de Problemas Comuns
+## 🔄 Atualização Automática (GitHub Cloud Sync)
 
-| Erro                      | Solução Automática                                                                           |
-| :------------------------ | :------------------------------------------------------------------------------------------- |
-| **Porta em uso**          | O script `install.sh` avisará a amarelo. Pare aplicações que usem portas 3000, 8081 ou 1935. |
-| **Permissões (Linux)**    | O script tenta corrigir (`chmod 777`). Se falhar, execute como `sudo`.                       |
-| **Docker não encontrado** | O script fornecerá o link direto para download.                                              |
+O sistema pode verificar e instalar atualizações automaticamente sincronizando com o GitHub.
+
+### 🐧 Linux / 🍎 macOS (via Cron)
+
+1. Adicione o script ao seu agendador: `crontab -e`.
+2. Adicione esta linha para atualizar todos os dias às 04:00 AM:
+   ```bash
+   0 4 * * * /caminho/para/cloud-onepa-playout/scripts/auto_update.sh >> /var/log/onepa_update.log 2>&1
+   ```
+
+### 🪟 Windows (via Task Scheduler)
+
+1. Abra o **Task Scheduler** (Agendador de Tarefas).
+2. Crie uma **Tarefa Básica** chamada "ONEPA Auto Update".
+3. Gatilho: Diário (ex: 04:00 AM).
+4. Ação: Iniciar um Programa.
+5. Selecione o ficheiro: `C:\caminho\para\cloud-onepa-playout\scripts\auto_update.bat`.
 
 ---
 
-## 🌐 Acesso Pós-Instalação
+## 🧪 Resolução de Problemas
 
-- **Painel**: [http://localhost:3000](http://localhost:3000)
-- **API**: [http://localhost:8081](http://localhost:8081)
-- **Stream**: [http://localhost:3000/hls/stream.m3u8](http://localhost:3000/hls/stream.m3u8)
+| Sintoma                   | Causa Provável         | Solução                                                 |
+| :------------------------ | :--------------------- | :------------------------------------------------------ |
+| **Erro de Porta 3000**    | Outro serviço UI ativo | Pare o serviço ou mude a porta no `docker-compose.yml`. |
+| **Transmissão Lenta**     | CPU/GPU insuficiente   | Ajuste os codecs em **Settings -> Playout**.            |
+| **Base de Dados Offline** | Permissões de escrita  | Execute `chmod -R 777 data/postgres`.                   |
+
+---
+
+## 🌐 Acesso ao Painel
+
+- **Dashboard Principal**: [http://localhost:3000](http://localhost:3000)
+- **Documentação Master**: [http://localhost:3000/docs](http://localhost:3000/docs)
+- **Stream HLS**: [http://localhost:3000/hls/stream.m3u8](http://localhost:3000/hls/stream.m3u8)
+
+**Credenciais Padrão:** `admin` / `admin`
