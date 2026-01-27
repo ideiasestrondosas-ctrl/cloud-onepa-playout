@@ -3,7 +3,7 @@ name = "cloud-onepa-playout"
 edition = "2021"
 authors = ["Cloud Onepa Team"]
 description = "Sistema de Automação de Playout 24/7 para Streaming de Vídeo"
-version = "2.1.2"
+version = "2.1.3"
 license = "GPL-3.0"
 
 [dependencies]
