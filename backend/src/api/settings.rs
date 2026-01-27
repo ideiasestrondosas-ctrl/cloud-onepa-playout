@@ -82,6 +82,9 @@ async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
                 clips_played_today: Some(0),
                 overlay_opacity: Some(0.4),
                 overlay_scale: Some(0.2),
+                overlay_x: Some(50),
+                overlay_y: Some(50),
+                overlay_anchor: Some("top-right".to_string()),
                 srt_mode: Some("caller".to_string()),
                 updated_at: chrono::Utc::now(),
                 system_version: Some("v2.0.1-DEBUG".to_string()),
@@ -116,6 +119,7 @@ async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
                 rist_output_url: Some("rist://127.0.0.1:1234".to_string()),
                 rtsp_output_url: Some("rtsp://localhost:8554/live/stream".to_string()),
                 webrtc_output_url: Some("http://localhost:8889/live/stream".to_string()),
+                epg_url: Some("".to_string()),
                 epg_days: Some(7),
                 tmdb_api_key: None,
                 omdb_api_key: None,
@@ -164,6 +168,9 @@ async fn update_settings(
     add_field!(req.clips_played_today, "clips_played_today");
     add_field!(req.overlay_opacity, "overlay_opacity");
     add_field!(req.overlay_scale, "overlay_scale");
+    add_field!(req.overlay_x, "overlay_x");
+    add_field!(req.overlay_y, "overlay_y");
+    add_field!(req.overlay_anchor, "overlay_anchor");
     add_field!(req.srt_mode, "srt_mode");
     add_field!(req.system_version, "system_version");
     add_field!(req.release_date, "release_date");
@@ -191,6 +198,7 @@ async fn update_settings(
     add_field!(req.rist_output_url, "rist_output_url");
     add_field!(req.rtsp_output_url, "rtsp_output_url");
     add_field!(req.webrtc_output_url, "webrtc_output_url");
+    add_field!(req.epg_url, "epg_url");
     add_field!(req.epg_days, "epg_days");
     add_field!(req.tmdb_api_key, "tmdb_api_key");
     add_field!(req.omdb_api_key, "omdb_api_key");
@@ -239,6 +247,9 @@ async fn update_settings(
     bind_field!(num, req.clips_played_today);
     bind_field!(num, req.overlay_opacity);
     bind_field!(num, req.overlay_scale);
+    bind_field!(num, req.overlay_x);
+    bind_field!(num, req.overlay_y);
+    bind_field!(req.overlay_anchor);
     bind_field!(req.srt_mode);
     bind_field!(req.system_version);
     bind_field!(req.release_date);
@@ -266,6 +277,7 @@ async fn update_settings(
     bind_field!(req.rist_output_url);
     bind_field!(req.rtsp_output_url);
     bind_field!(req.webrtc_output_url);
+    bind_field!(req.epg_url);
     bind_field!(num, req.epg_days);
     bind_field!(req.tmdb_api_key);
     bind_field!(req.omdb_api_key);
@@ -645,6 +657,31 @@ async fn apply_defaults(pool: web::Data<PgPool>) -> impl Responder {
     }
 }
 
+async fn get_release_history() -> impl Responder {
+    let history_path = Path::new("backend/data/RELEASE_HISTORY.json");
+    // Fallback to local path if running from root
+    let history_path = if !history_path.exists() {
+        Path::new("data/RELEASE_HISTORY.json")
+    } else {
+        history_path
+    };
+
+    if !history_path.exists() {
+        // Return default/empty if not found
+        return HttpResponse::Ok().json(serde_json::json!([]));
+    }
+
+    match std::fs::read_to_string(history_path) {
+        Ok(content) => {
+            let history: serde_json::Value =
+                serde_json::from_str(&content).unwrap_or(serde_json::json!([]));
+            HttpResponse::Ok().json(history)
+        }
+        Err(_) => HttpResponse::InternalServerError()
+            .json(serde_json::json!({"error": "Failed to read release history"})),
+    }
+}
+
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.route("", web::get().to(get_settings))
         .route("", web::put().to(update_settings))
@@ -655,5 +692,6 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         .route("/app-logo", web::get().to(get_app_logo))
         .route("/upload-app-logo", web::post().to(upload_app_logo))
         .route("/upload-overlay-pair", web::post().to(upload_overlay_pair))
-        .route("/reset-all", web::post().to(reset_all));
+        .route("/reset-all", web::post().to(reset_all))
+        .route("/release-history", web::get().to(get_release_history));
 }

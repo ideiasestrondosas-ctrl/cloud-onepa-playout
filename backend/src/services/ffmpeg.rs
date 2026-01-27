@@ -349,6 +349,9 @@ impl FFmpegService {
         let logo_position = settings.logo_position.as_deref();
         let overlay_opacity = settings.overlay_opacity;
         let overlay_scale = settings.overlay_scale;
+        let overlay_x = settings.overlay_x.unwrap_or(50);
+        let overlay_y = settings.overlay_y.unwrap_or(50);
+        let overlay_anchor = settings.overlay_anchor.as_deref().unwrap_or("top-right");
         let fps = &settings.fps;
 
         // Automatic Docker Network Fix
@@ -413,12 +416,13 @@ impl FFmpegService {
             let opacity = overlay_opacity.unwrap_or(1.0).clamp(0.0, 1.0);
             let scale = overlay_scale.unwrap_or(1.0).clamp(0.1, 2.0);
 
-            // Determine overlay position coordinates
-            let pos_coords = match logo_position.unwrap_or("top-right") {
-                "top-left" => "50:50",
-                "bottom-left" => "50:H-h-50",
-                "bottom-right" => "W-w-50:H-h-50",
-                _ => "W-w-50:50", // top-right default
+            // Determine overlay position coordinates based on anchor + offsets
+            // Anchors allow us to keep 50:50 spacing from corners easily
+            let pos_coords = match overlay_anchor {
+                "top-left" => format!("{}:{}", overlay_x, overlay_y),
+                "bottom-left" => format!("{}:H-h-{}", overlay_x, overlay_y),
+                "bottom-right" => format!("W-w-{}:H-h-{}", overlay_x, overlay_y),
+                _ => format!("W-w-{}:{}", overlay_x, overlay_y), // top-right default
             };
 
             filter_complex.push_str(&format!(

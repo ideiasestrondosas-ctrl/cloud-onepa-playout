@@ -50,6 +50,7 @@ import {
   HourglassEmpty as PendingIcon,
   Info as InfoIcon,
   Edit as EditIcon,
+  AutoFixHigh as WizardIcon,
 } from '@mui/icons-material';
 import { CircularProgress } from '@mui/material';
 import { useDropzone } from 'react-dropzone';
@@ -83,7 +84,23 @@ export default function MediaLibrary() {
   const [uploadProgressOpen, setUploadProgressOpen] = useState(false);
   const [checkingDelete, setCheckingDelete] = useState(null); // ID of media being checked
   const [metadataOpen, setMetadataOpen] = useState(false);
-  const [metadataForm, setMetadataForm] = useState({ title: '', description: '', episode: '', season: '' });
+  const [metadataForm, setMetadataForm] = useState({ 
+    title: '', 
+    description: '', 
+    episode: '', 
+    season: '',
+    genre: '',
+    rating: '',
+    cast: '',
+    director: '',
+    poster_url: '',
+    keywords: '',
+    resolution: '',
+    fps: '',
+    audioCodec: '',
+    subtitles: '',
+    year: ''
+  });
   const [editingMedia, setEditingMedia] = useState(null);
   const [isReviewMode, setIsReviewMode] = useState(false);
   const [metadataSource, setMetadataSource] = useState(null);
@@ -193,16 +210,18 @@ export default function MediaLibrary() {
       description: item.metadata?.description || '',
       episode: item.metadata?.episode || '',
       season: item.metadata?.season || '',
-      genre: item.metadata?.genre || '',
+      genre: Array.isArray(item.metadata?.genre) ? item.metadata?.genre.join(', ') : (item.metadata?.genre || ''),
       keywords: item.metadata?.keywords || '',
       rating: item.metadata?.rating || '',
-      cast: item.metadata?.cast || '',
+      cast: Array.isArray(item.metadata?.cast) ? item.metadata?.cast.join(', ') : (item.metadata?.cast || ''),
       director: item.metadata?.director || '',
+      poster_url: item.metadata?.poster_url || item.metadata?.poster || '',
       resolution: item.metadata?.resolution || `${item.width || 0}x${item.height || 0}`,
       fps: item.metadata?.fps || '',
       videoCodec: item.metadata?.videoCodec || item.codec || '',
       audioCodec: item.metadata?.audioCodec || '',
       subtitles: item.metadata?.subtitles || '',
+      year: item.metadata?.year || '',
     });
     setMetadataOpen(true);
   };
@@ -212,8 +231,9 @@ export default function MediaLibrary() {
       await mediaAPI.update(editingMedia.id, {
         metadata: {
             ...metadataForm,
-            source_service: metadataSource?.service,
-            source_url: metadataSource?.url
+            // Ensure source info is persisted even if not editing it right now
+            source_service: metadataSource?.service || editingMedia.metadata?.source_service,
+            source_url: metadataSource?.url || editingMedia.metadata?.source_url
         }
       });
       showSuccess('Metadados atualizados');
@@ -237,17 +257,18 @@ export default function MediaLibrary() {
         description: data.description || '',
         episode: data.episode || '',
         season: data.season || '',
-        genre: data.tags?.join(', ') || '',
+        genre: Array.isArray(data.tags) ? data.tags.join(', ') : (data.genre || ''),
         keywords: item.metadata?.keywords || '', // Keep existing keywords
         rating: data.rating || '',
-        cast: data.cast?.join(', ') || '',
+        cast: Array.isArray(data.cast) ? data.cast.join(', ') : (data.cast || ''),
         director: data.director || '',
-        poster: data.poster_url || '',
+        poster_url: data.poster_url || '',
         // Keep technical specs from existing
         resolution: item.metadata?.resolution || `${item.width || 0}x${item.height || 0}`,
         fps: item.metadata?.fps || '',
         videoCodec: item.metadata?.videoCodec || item.codec || '',
         audioCodec: item.metadata?.audioCodec || '',
+        year: data.year || '',
       });
       
       setMetadataSource({
@@ -415,95 +436,178 @@ export default function MediaLibrary() {
   };
 
   return (
-    <Box>
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>Media Library</Typography>
-        <Stack direction="row" spacing={1}>
-            <Button variant="contained" startIcon={<NewFolderIcon />} onClick={() => setNewFolderOpen(true)}>Nova Pasta</Button>
-            <Chip label={`${pagination.total} Ficheiros`} color="primary" variant="outlined" />
+    <Box sx={{ position: 'relative' }}>
+      {/* Background Glow */}
+      <Box sx={{ 
+        position: 'fixed', 
+        top: '20%', 
+        left: '10%', 
+        width: '500px', 
+        height: '500px', 
+        bgcolor: 'secondary.main', 
+        filter: 'blur(180px)', 
+        opacity: 0.08, 
+        pointerEvents: 'none',
+        zIndex: 0
+      }} />
+
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 1 }}>
+        <Box>
+            <Typography variant="h4" className="neon-text" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>Media Library</Typography>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase' }}>
+                Gestão Inteligente de Conteúdo
+            </Typography>
+        </Box>
+        <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
+            <Chip 
+                label={`${pagination.total} Ficheiros`} 
+                sx={{ 
+                    bgcolor: 'rgba(255, 255, 255, 0.05)', 
+                    color: 'primary.main', 
+                    fontWeight: 800,
+                    border: '1px solid rgba(0, 229, 255, 0.2)'
+                }} 
+            />
+            <Button 
+                variant="contained" 
+                startIcon={<NewFolderIcon />} 
+                onClick={() => setNewFolderOpen(true)}
+                sx={{ 
+                    fontWeight: 800,
+                    background: 'linear-gradient(45deg, #00e5ff 30%, #00b2cc 90%)',
+                    color: '#0a0b10'
+                }}
+            >
+                Nova Pasta
+            </Button>
         </Stack>
       </Box>
 
       <Grid container spacing={3}>
         {/* Sidebar Folders */}
-        <Grid item xs={12} md={3}>
-            <Paper sx={{ p: 2, height: '100%', minHeight: '60vh' }}>
-                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <FolderIcon color="primary" /> Pastas
+        <Grid item xs={12} md={3} sx={{ position: 'relative', zIndex: 1 }}>
+            <Paper className="glass-panel" sx={{ p: 2, height: '100%', minHeight: '60vh', display: 'flex', flexDirection: 'column' }}>
+                <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 800, mb: 2, display: 'flex', alignItems: 'center', gap: 1, letterSpacing: 2 }}>
+                    <FolderIcon sx={{ fontSize: 18 }} /> ESTRUTURA
                 </Typography>
-                <Divider sx={{ mb: 2 }} />
-                <List size="small">
-                    <ListItemButton selected={currentFolder === null} onClick={() => setCurrentFolder(null)}>
-                        <ListItemIcon><FolderIcon color={currentFolder === null ? "primary" : "inherit"} /></ListItemIcon>
-                        <ListItemText primary="Raiz (Root)" />
+                <List size="small" sx={{ flexGrow: 1 }}>
+                    <ListItemButton 
+                        selected={currentFolder === null} 
+                        onClick={() => setCurrentFolder(null)}
+                        sx={{ 
+                            borderRadius: 2, 
+                            mb: 0.5,
+                            '&.Mui-selected': { bgcolor: 'rgba(0, 229, 255, 0.1)', color: 'primary.main' }
+                        }}
+                    >
+                        <ListItemIcon><FolderIcon sx={{ color: currentFolder === null ? "primary.main" : "text.disabled" }} /></ListItemIcon>
+                        <ListItemText primary="Raiz (Root)" primaryTypographyProps={{ fontWeight: 700, fontSize: '0.85rem' }} />
                     </ListItemButton>
                     {folders.map(f => (
                         <ListItem 
                             key={f.id} 
                             disablePadding
                             secondaryAction={
-                                <IconButton edge="end" size="small" color="error" onClick={() => handleDeleteFolder(f.id, f.name)}>
+                                <IconButton edge="end" size="small" color="error" onClick={() => handleDeleteFolder(f.id, f.name)} sx={{ opacity: 0.4, '&:hover': { opacity: 1 } }}>
                                     <DeleteIcon fontSize="small" />
                                 </IconButton>
                             }
                         >
-                            <ListItemButton selected={currentFolder?.id === f.id} onClick={() => setCurrentFolder(f)}>
-                                <ListItemIcon><FolderIcon /></ListItemIcon>
-                                <ListItemText primary={f.name} />
+                            <ListItemButton 
+                                selected={currentFolder?.id === f.id} 
+                                onClick={() => setCurrentFolder(f)}
+                                sx={{ 
+                                    borderRadius: 2, 
+                                    mb: 0.5,
+                                    '&.Mui-selected': { bgcolor: 'rgba(0, 229, 255, 0.1)', color: 'primary.main' }
+                                }}
+                            >
+                                <ListItemIcon><FolderIcon sx={{ color: currentFolder?.id === f.id ? "primary.main" : "text.disabled" }} /></ListItemIcon>
+                                <ListItemText primary={f.name} primaryTypographyProps={{ fontWeight: 600, fontSize: '0.85rem' }} />
                             </ListItemButton>
                         </ListItem>
                     ))}
                 </List>
+                
+                <Box sx={{ mt: 'auto', p: 2, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600, display: 'block', mb: 1 }}>DICA</Typography>
+                    <Typography variant="caption" sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)' }}>
+                        Arraste ficheiros diretamente para as pastas para organizar a sua biblioteca.
+                    </Typography>
+                </Box>
             </Paper>
         </Grid>
 
         {/* Media Content */}
         <Grid item xs={12} md={9}>
             {/* Breadcrumbs */}
-            <Paper sx={{ p: 1, mb: 2, bgcolor: 'action.hover' }}>
-                <Breadcrumbs separator={<NextIcon fontSize="small" />}>
-                    <Link color="inherit" sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }} onClick={() => setCurrentFolder(null)}>
-                        <FolderIcon sx={{ mr: 0.5 }} fontSize="inherit" /> Media
+            <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Breadcrumbs separator={<NextIcon sx={{ fontSize: 14, color: 'text.disabled' }} />}>
+                    <Link 
+                        color="inherit" 
+                        sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'text.secondary', '&:hover': { color: 'primary.main' }, textDecoration: 'none' }} 
+                        onClick={() => setCurrentFolder(null)}
+                    >
+                        <FolderIcon sx={{ mr: 0.8, fontSize: 16 }} /> <Typography variant="caption" sx={{ fontWeight: 700 }}>MEDIA</Typography>
                     </Link>
                     {currentFolder && (
-                        <Typography color="text.primary" sx={{ display: 'flex', alignItems: 'center' }}>
-                            <FolderOpenIcon sx={{ mr: 0.5 }} fontSize="inherit" /> {currentFolder.name}
+                        <Typography color="primary.main" variant="caption" sx={{ display: 'flex', alignItems: 'center', fontWeight: 800 }}>
+                            <FolderOpenIcon sx={{ mr: 0.8, fontSize: 16 }} /> {currentFolder.name.toUpperCase()}
                         </Typography>
                     )}
                 </Breadcrumbs>
-            </Paper>
+            </Box>
 
             {/* Upload Area */}
-            <Card sx={{ mb: 3, p: 3, border: '2px dashed', borderColor: isDragActive ? 'primary.main' : 'divider', bgcolor: isDragActive ? 'action.hover' : 'background.paper' }}>
+            <Paper 
+                className="glass-panel" 
+                sx={{ 
+                    mb: 3, 
+                    p: 4, 
+                    border: '2px dashed', 
+                    borderColor: isDragActive ? 'primary.main' : 'rgba(255, 255, 255, 0.1)', 
+                    bgcolor: isDragActive ? 'rgba(0, 229, 255, 0.05)' : 'rgba(255, 255, 255, 0.02)',
+                    transition: 'all 0.3s ease',
+                    '&:hover': { borderColor: 'primary.main', bgcolor: 'rgba(0, 229, 255, 0.03)' }
+                }}
+            >
                 <Box {...getRootProps()} sx={{ textAlign: 'center', cursor: 'pointer' }}>
                     <input {...getInputProps()} />
-                    <UploadIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1, opacity: 0.6 }} />
-                    <Typography variant="subtitle1">
-                        {isDragActive ? 'Solte para Upload' : `Arraste ficheiros para ${currentFolder?.name || 'Raiz'}`}
+                    <UploadIcon className={isDragActive ? "neon-text" : ""} sx={{ fontSize: 48, color: isDragActive ? 'primary.main' : 'rgba(255, 255, 255, 0.2)', mb: 2 }} />
+                    <Typography variant="body1" sx={{ fontWeight: 700, mb: 0.5 }}>
+                        {isDragActive ? 'SOLTE PARA ENVIAR' : 'UPLOAD DE MEDIA'}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                        Suporta múltiplos vídeos, áudios e imagens
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+                        {`Arraste ficheiros ou clique para explorar (Destino: ${currentFolder?.name || 'Raiz'})`}
                     </Typography>
                 </Box>
-            </Card>
+            </Paper>
 
             {/* Filters */}
-            <Card sx={{ mb: 3, p: 2 }}>
+            <Paper className="glass-panel" sx={{ mb: 4, p: 2, border: '1px solid rgba(255, 255, 255, 0.05)' }}>
                 <Grid container spacing={2}>
                     <Grid item xs={12} sm={6}>
                         <TextField 
                             fullWidth 
                             size="small" 
-                            placeholder="Pesquisar..." 
+                            placeholder="Pesquisar na biblioteca..." 
                             value={searchTerm} 
                             onChange={e => setSearchTerm(e.target.value)} 
-                            InputProps={{ startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} /> }} 
+                            InputProps={{ 
+                                startAdornment: <SearchIcon sx={{ mr: 1, color: 'primary.main' }} />,
+                                sx: { bgcolor: 'rgba(0, 0, 0, 0.2)', borderRadius: 2 }
+                            }} 
                         />
                     </Grid>
                     <Grid item xs={12} sm={3}>
                         <FormControl fullWidth size="small">
                             <InputLabel>Tipo</InputLabel>
-                            <Select value={filters.media_type} label="Tipo" onChange={e => setFilters({...filters, media_type: e.target.value, page: 1})}>
+                            <Select 
+                                value={filters.media_type} 
+                                label="Tipo" 
+                                onChange={e => setFilters({...filters, media_type: e.target.value, page: 1})}
+                                sx={{ bgcolor: 'rgba(0, 0, 0, 0.2)', borderRadius: 2 }}
+                            >
                                 <MenuItem value="">Todos</MenuItem>
                                 <MenuItem value="video">Vídeo</MenuItem>
                                 <MenuItem value="image">Imagem</MenuItem>
@@ -513,16 +617,21 @@ export default function MediaLibrary() {
                     </Grid>
                     <Grid item xs={12} sm={3}>
                         <FormControl fullWidth size="small">
-                            <InputLabel>Filler</InputLabel>
-                            <Select value={filters.is_filler === undefined ? "" : filters.is_filler} label="Filler" onChange={e => setFilters({...filters, is_filler: e.target.value === "" ? undefined : e.target.value, page: 1})}>
+                            <InputLabel>Categoria</InputLabel>
+                            <Select 
+                                value={filters.is_filler === undefined ? "" : filters.is_filler} 
+                                label="Categoria" 
+                                onChange={e => setFilters({...filters, is_filler: e.target.value === "" ? undefined : e.target.value, page: 1})}
+                                sx={{ bgcolor: 'rgba(0, 0, 0, 0.2)', borderRadius: 2 }}
+                            >
                                 <MenuItem value="">Ambos</MenuItem>
-                                <MenuItem value="true">Fillers</MenuItem>
-                                <MenuItem value="false">Normais</MenuItem>
+                                <MenuItem value="true">Fillers (Geral)</MenuItem>
+                                <MenuItem value="false">Programação</MenuItem>
                             </Select>
                         </FormControl>
                     </Grid>
                 </Grid>
-            </Card>
+            </Paper>
 
             {loading && <LinearProgress sx={{ mb: 2 }} />}
 
@@ -530,41 +639,129 @@ export default function MediaLibrary() {
             <Grid container spacing={2}>
                 {media.map(item => (
                     <Grid item xs={12} sm={6} md={4} key={item.id}>
-                        <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-                            <CardMedia 
-                              component="img" 
-                              height="120" 
-                              image={item.media_type === 'video' ? `/api/media/${item.id}/thumbnail` : (item.media_type === 'image' ? `/api/media/${item.id}/stream` : 'https://via.placeholder.com/300x120?text=Sem+Preview')} 
-                              onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src = 'https://via.placeholder.com/300x120?text=Sem+Preview';
-                              }}
-                            />
-                            <CardContent sx={{ p: 1.5, flexGrow: 1 }}>
-                                <Typography variant="body2" sx={{ fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.filename}>{item.filename}</Typography>
-                                <Stack direction="row" spacing={0.5} sx={{ mt: 1 }}>
-                                    <Chip label={item.media_type} size="small" variant="outlined" color="primary" />
-                                    {item.duration > 0 && <Chip label={formatDuration(item.duration)} size="small" variant="outlined" />}
-                                </Stack>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
-                                    <Stack direction="row" spacing={0.5}>
-                                        <IconButton size="small" color="primary" onClick={() => { setSelectedMedia(item); setPreviewOpen(true); }}><PlayIcon /></IconButton>
-                                        <IconButton size="small" color="secondary" onClick={() => handleFetchMetadata(item)} title="Buscar Metadados Auto"><AutoFixIcon /></IconButton>
-                                        <IconButton size="small" onClick={() => handleEditMetadata(item)}><EditIcon /></IconButton>
-                                        <IconButton size="small" color="info" onClick={() => { setMediaToMove(item); setMoveOpen(true); }}><MoveIcon /></IconButton>
-                                        <IconButton 
+                        <Paper className="glass-panel" sx={{ 
+                            height: '100%', 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            position: 'relative',
+                            overflow: 'hidden',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            border: '1px solid rgba(255, 255, 255, 0.05)',
+                            '&:hover': {
+                                transform: 'translateY(-4px)',
+                                borderColor: 'primary.main',
+                                boxShadow: '0 8px 24px rgba(0, 229, 255, 0.15)'
+                            }
+                        }}>
+                            <Box sx={{ position: 'relative', height: 140 }}>
+                                <CardMedia 
+                                    component="img" 
+                                    height="140" 
+                                    image={item.media_type === 'video' ? `/api/media/${item.id}/thumbnail` : (item.media_type === 'image' ? `/api/media/${item.id}/stream` : 'https://via.placeholder.com/300x140?text=ÁUDIO')} 
+                                    onError={(e) => {
+                                        e.target.onerror = null;
+                                        e.target.src = 'https://via.placeholder.com/300x140?text=Sem+Preview';
+                                    }}
+                                    sx={{ filter: 'brightness(0.8)' }}
+                                />
+                                <Box sx={{ 
+                                    position: 'absolute', 
+                                    top: 8, 
+                                    right: 8, 
+                                    display: 'flex', 
+                                    flexDirection: 'column', 
+                                    gap: 0.5 
+                                }}>
+                                    <Chip 
+                                        label={item.media_type.toUpperCase()} 
+                                        size="small" 
+                                        sx={{ 
+                                            height: 18, 
+                                            fontSize: '0.6rem', 
+                                            fontWeight: 800, 
+                                            bgcolor: 'rgba(0,0,0,0.6)', 
+                                            color: 'primary.main',
+                                            backdropFilter: 'blur(4px)'
+                                        }} 
+                                    />
+                                    {item.duration > 0 && (
+                                        <Chip 
+                                            label={formatDuration(item.duration)} 
                                             size="small" 
-                                            color="error" 
-                                            disabled={checkingDelete === item.id}
-                                            onClick={(e) => handleSmartDelete(e, item)}
-                                        >
-                                            {checkingDelete === item.id ? <CircularProgress size={20} color="inherit" /> : <DeleteIcon />}
-                                        </IconButton>
-                                    </Stack>
-                                    <Button size="small" color="warning" variant={item.is_filler ? "contained" : "outlined"} onClick={async () => { await mediaAPI.setFiller(item.id, !item.is_filler); fetchMedia(); }}>Filler</Button>
+                                            sx={{ 
+                                                height: 18, 
+                                                fontSize: '0.6rem', 
+                                                fontWeight: 800, 
+                                                bgcolor: 'rgba(0,0,0,0.6)', 
+                                                color: '#fff',
+                                                backdropFilter: 'blur(4px)'
+                                            }} 
+                                        />
+                                    )}
                                 </Box>
-                            </CardContent>
-                        </Card>
+                                {item.is_filler && (
+                                    <Box sx={{ 
+                                        position: 'absolute', 
+                                        bottom: 8, 
+                                        left: 8,
+                                        bgcolor: 'primary.main',
+                                        color: '#000',
+                                        px: 1,
+                                        borderRadius: 1,
+                                        fontSize: '0.6rem',
+                                        fontWeight: 800
+                                    }}>
+                                        FILLER
+                                    </Box>
+                                )}
+                            </Box>
+                            
+                            <Box sx={{ p: 2, flexGrow: 1 }}>
+                                <Typography variant="body2" sx={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', mb: 2 }} title={item.filename}>
+                                    {item.filename}
+                                </Typography>
+                                
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Stack direction="row" spacing={0.5}>
+                                        <Tooltip title="Preview">
+                                            <IconButton size="small" sx={{ color: 'primary.main', bgcolor: 'rgba(0, 229, 255, 0.1)' }} onClick={() => { setSelectedMedia(item); setPreviewOpen(true); }}><PlayIcon fontSize="small" /></IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Assistente de Metadados">
+                                            <IconButton size="small" sx={{ color: 'secondary.main', bgcolor: 'rgba(156, 39, 176, 0.1)' }} onClick={() => handleFetchMetadata(item)}><WizardIcon fontSize="small" /></IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Editar">
+                                            <IconButton size="small" sx={{ color: 'text.secondary', bgcolor: 'rgba(255, 255, 255, 0.05)' }} onClick={() => handleEditMetadata(item)}><EditIcon fontSize="small" /></IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Ficheiro">
+                                            <IconButton 
+                                                size="small" 
+                                                color="error" 
+                                                sx={{ bgcolor: 'rgba(244, 67, 54, 0.1)' }}
+                                                disabled={checkingDelete === item.id}
+                                                onClick={(e) => handleSmartDelete(e, item)}
+                                            >
+                                                {checkingDelete === item.id ? <CircularProgress size={16} color="inherit" /> : <DeleteIcon fontSize="small" />}
+                                            </IconButton>
+                                        </Tooltip>
+                                    </Stack>
+                                    <Button 
+                                        size="small" 
+                                        className={item.is_filler ? 'neon-glow' : ''}
+                                        sx={{ 
+                                            fontSize: '0.65rem', 
+                                            fontWeight: 800,
+                                            minWidth: 60,
+                                            height: 24,
+                                            bgcolor: item.is_filler ? 'primary.main' : 'rgba(255, 255, 255, 0.05)',
+                                            color: item.is_filler ? '#000' : 'text.secondary'
+                                        }}
+                                        onClick={async () => { await mediaAPI.setFiller(item.id, !item.is_filler); fetchMedia(); }}
+                                    >
+                                        {item.is_filler ? 'FILLER' : 'PROG'}
+                                    </Button>
+                                </Box>
+                            </Box>
+                        </Paper>
                     </Grid>
                 ))}
             </Grid>
@@ -704,13 +901,23 @@ export default function MediaLibrary() {
         </DialogTitle>
         <DialogContent dividers>
             {(isReviewMode || editingMedia?.metadata?.source_service) && (
-                <Alert severity="secondary" sx={{ mb: 2, border: '1px solid', borderColor: 'secondary.main' }}>
-                    Informação proveniente de: <strong>{isReviewMode ? metadataSource?.service : editingMedia?.metadata?.source_service}</strong>.
+                <Alert severity="secondary" sx={{ mb: 2, border: '1px solid', borderColor: 'secondary.main', bgcolor: 'rgba(156, 39, 176, 0.02)' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <WizardIcon fontSize="small" color="secondary" />
+                        <Typography variant="body2">
+                            Informação recuperada de: <strong>{isReviewMode ? metadataSource?.service : (editingMedia?.metadata?.source_service || 'API Automática')}</strong>
+                        </Typography>
+                    </Box>
                     {(isReviewMode ? metadataSource?.url : editingMedia?.metadata?.source_url) && (
-                        <Link href={isReviewMode ? metadataSource?.url : editingMedia?.metadata?.source_url} target="_blank" sx={{ ml: 1, display: 'block' }}>
-                            Ver fonte original ↗
+                        <Link href={isReviewMode ? metadataSource?.url : editingMedia?.metadata?.source_url} target="_blank" variant="caption" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            🔗 Ver fonte original no {isReviewMode ? metadataSource?.service : (editingMedia?.metadata?.source_service || 'API')} ↗
                         </Link>
                     )}
+                </Alert>
+            )}
+            {isReviewMode && (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                    Estes dados foram encontrados automaticamente. Pode editá-los abaixo antes de confirmar o salvamento.
                 </Alert>
             )}
             <Stack spacing={2} sx={{ mt: 1 }}>
@@ -837,6 +1044,15 @@ export default function MediaLibrary() {
                         placeholder="aac, mp3, opus"
                     />
                 </Stack>
+                <TextField 
+                    label="Póster URL" 
+                    fullWidth 
+                    value={metadataForm.poster_url || ''} 
+                    onChange={e => setMetadataForm({...metadataForm, poster_url: e.target.value})} 
+                    placeholder="https://image.tmdb.org/..."
+                    helperText="Caminho para a imagem de capa (carregada do Wizard)"
+                    sx={{ bgcolor: isReviewMode && metadataForm.poster_url ? 'rgba(76, 175, 80, 0.05)' : 'inherit' }}
+                />
                 <TextField 
                     label="Legendas / Idiomas" 
                     fullWidth 

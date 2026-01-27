@@ -40,6 +40,10 @@ import {
   Radio,
   FormControlLabel,
   Checkbox,
+  Switch,
+  Stack,
+  Tooltip,
+  CircularProgress,
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -64,6 +68,7 @@ import {
   AspectRatio as AspectRatioIcon,
   Crop as CropIcon,
   CloudUpload as UploadIcon,
+  Person as UserIcon,
 } from '@mui/icons-material';
 
 function TabPanel({ children, value, index }) {
@@ -359,11 +364,14 @@ export default function Settings() {
     autoTrim: true,
     processing: false
   });
+  const [releaseHistory, setReleaseHistory] = useState([]);
   const [udpConfirmOpen, setUdpConfirmOpen] = useState(false);
 
   useEffect(() => {
     fetchSettings();
     fetchProtectedAssets();
+    fetchUsers();
+    fetchReleaseHistory();
     
     // Handle URL parameters for deep-linking
     const tab = searchParams.get('tab');
@@ -445,8 +453,8 @@ export default function Settings() {
         dayStart: data.day_start || '06:00',
         defaultImagePath: data.default_image_path || '',
         defaultVideoPath: data.default_video_path || '',
-        version: data.system_version || '1.9.1-PRO', 
-        releaseDate: data.release_date || '2026-01-12',
+        version: data.system_version || '2.1.1-PRO', 
+        releaseDate: data.release_date || '2026-01-26',
         overlay_enabled: data.overlay_enabled ?? true,
         channelName: data.channel_name || 'Cloud Onepa',
         branding_type: isVideoBranding ? 'video' : 'static',
@@ -455,8 +463,8 @@ export default function Settings() {
         srtMode: data.srt_mode || 'caller',
         protectedPath: data.protected_path || '/var/lib/onepa-playout/assets/protected',
         docsPath: data.docs_path || '/app/docs',
-        system_version: data.system_version || '1.9.4-PRO',
-        release_date: data.release_date || '2026-01-16',
+        system_version: data.system_version || '2.1.1-PRO',
+        release_date: data.release_date || '2026-01-26',
         rtmpOutputUrl: data.rtmp_output_url || '',
         srtOutputUrl: data.srt_output_url || '',
         udpOutputUrl: data.udp_output_url || '',
@@ -478,6 +486,7 @@ export default function Settings() {
         omdbApiKey: data.omdb_api_key || '',
         tvmazeApiKey: data.tvmaze_api_key || '',
         display_urls: data.display_urls || {},
+        epgDays: data.epg_days || 7,
       });
     } catch (error) {
       console.error('Failed to fetch settings:', error);
@@ -566,6 +575,15 @@ export default function Settings() {
     }
   };
 
+  const fetchReleaseHistory = async () => {
+    try {
+      const response = await settingsAPI.getReleaseHistory();
+      setReleaseHistory(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch release history:', error);
+    }
+  };
+
   const handleSaveSettings = async () => {
     setSaving(true);
     try {
@@ -610,10 +628,11 @@ export default function Settings() {
           thumbnails_path: settings.thumbnailsPath,
           playlists_path: settings.playlistsPath,
           fillers_path: settings.fillersPath,
-          tmdb_api_key: settings.tmdbApiKey,
-          omdb_api_key: cleanOmdbKey,
-          tvmaze_api_key: settings.tvmazeApiKey,
           epg_url: settings.epgUrl,
+          epg_days: settings.epgDays,
+          tmdb_api_key: settings.tmdbApiKey,
+          omdb_api_key: cleanOmdbKey, // Keep existing omdb_api_key
+          tvmaze_api_key: settings.tvmazeApiKey,
           default_image_path: settings.defaultImagePath,
           default_video_path: settings.defaultVideoPath,
         };
@@ -625,6 +644,7 @@ export default function Settings() {
           overlay_opacity: settings.overlayOpacity,
           overlay_scale: settings.overlayScale,
           epg_days: settings.epgDays,
+          epg_url: settings.epgUrl,
           auto_start_protocols: settings.autoStartProtocols,
         };
       } else {
@@ -802,1773 +822,756 @@ export default function Settings() {
   };
 
   return (
-    <Box>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Configurações
-      </Typography>
+    <Box sx={{ position: 'relative', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Background Glows */}
+      <Box sx={{ 
+        position: 'fixed', 
+        top: '10%', 
+        right: '5%', 
+        width: '600px', 
+        height: '600px', 
+        bgcolor: 'primary.main', 
+        filter: 'blur(180px)', 
+        opacity: 0.05, 
+        pointerEvents: 'none',
+        zIndex: 0
+      }} />
+      <Box sx={{ 
+        position: 'fixed', 
+        bottom: '10%', 
+        left: '5%', 
+        width: '400px', 
+        height: '400px', 
+        bgcolor: 'secondary.main', 
+        filter: 'blur(150px)', 
+        opacity: 0.04, 
+        pointerEvents: 'none',
+        zIndex: 0
+      }} />
 
-      <Card>
-        {(!settings || typeof settings !== 'object') ? (
-          <Box sx={{ p: 3 }}><Alert severity="error">Erro ao carregar configurações. Tente recarregar a página.</Alert></Box>
-        ) : (
-          <>
-            <Tabs value={tabValue} onChange={(e, v) => setTabValue(v)}>
-              <Tab label="Output" />
-              <Tab label="Caminhos" />
-              <Tab label="Playout" />
-              <Tab label="Assets Protegidos" />
-              <Tab label="Utilizadores" />
-              <Tab label="Presets" />
-              <Tab label="Release Notes" />
-            </Tabs>
-
-            {/* Output Tab */}
-            <TabPanel value={tabValue} index={0}>
-              <Grid container spacing={3}>
-                <Grid item xs={12}>
-                  <Typography variant="h6" gutterBottom>
-                    Configuração de Output
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={12} sm={6}>
-                  <FormControl fullWidth>
-                    <InputLabel>Tipo de Output</InputLabel>
-                    <Select
-                      value={settings.outputType}
-                      label="Tipo de Output"
-                      onChange={(e) => handleOutputTypeChange(e.target.value)}
-                    >
-                      <MenuItem value="rtmp">RTMP Stream</MenuItem>
-                      <MenuItem value="hls">HLS</MenuItem>
-                      <MenuItem value="srt">SRT</MenuItem>
-                      <MenuItem value="udp">UDP</MenuItem>
-                      <MenuItem value="desktop">Desktop (Preview)</MenuItem>
-                    </Select>
-                  </FormControl>
-
-                   {settings.outputType === 'srt' && (
-                     <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
-                        <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>Modo de Operação SRT</Typography>
-                        <FormControl fullWidth sx={{ mt: 1 }}>
-                          <Select
-                             value={settings.srtMode || 'caller'}
-                             onChange={(e) => {
-                               const mode = e.target.value;
-                               const newUrl = mode === 'listener' 
-                                 ? 'srt://0.0.0.0:9900?mode=listener'
-                                 : 'srt://mediamtx:8890?mode=caller&streamid=publish:live_stream_srt';
-                               setSettings({ 
-                                 ...settings, 
-                                 srtMode: mode,
-                                 outputUrl: newUrl,
-                                 srtOutputUrl: newUrl
-                               });
-                             }}
-                          >
-                             <MenuItem value="caller">Caller (Playout conecta ao receptor)</MenuItem>
-                             <MenuItem value="listener">Listener (Playout aguarda conexão)</MenuItem>
-                          </Select>
-                        </FormControl>
-                        <Box sx={{ mt: 1, display: 'flex', gap: 1 }}>
-                           <Button 
-                              size="small" 
-                              variant="outlined" 
-                              startIcon={<HistoryIcon />}
-                              onClick={() => setShowLogsDialog(true)}
-                           >
-                              Ver Logs SRT
-                           </Button>
-                           <Button 
-                              size="small" 
-                              variant="outlined" 
-                              color="warning"
-                              startIcon={<RefreshIcon />}
-                              onClick={handleRetryPlayout}
-                           >
-                              Tentar Novamente
-                           </Button>
-                        </Box>
-                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                          Escolha <strong>Listener</strong> para o Playout servir o sinal, ou <strong>Caller</strong> para enviar a um servidor.
-                        </Typography>
-                     </Box>
-                   )}
-
-                  {/* UDP Mode Selection (Multicast/Unicast) - Only for UDP */}
-                  {settings.outputType === 'udp' && (
-                    <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
-                       <Typography variant="subtitle2" gutterBottom>Modo de Transmissão UDP</Typography>
-                       <RadioGroup 
-                          row 
-                          value={settings.udpMode || (settings.outputUrl.includes('239.') || settings.outputUrl.includes('224.') ? 'multicast' : 'unicast')}
-                          onChange={(e) => handleUdpModeChange(e.target.value)}
-                       >
-                          <FormControlLabel value="unicast" control={<Radio size="small" />} label="Unicast (Local/Direct)" />
-                          <FormControlLabel value="multicast" control={<Radio size="small" />} label="Multicast (Rede Local)" />
-                       </RadioGroup>
-                       <Typography variant="caption" color="text.secondary">
-                          {settings.udpMode === 'multicast' || (settings.outputUrl.includes('239.') || settings.outputUrl.includes('224.'))
-                             ? (
-                               <Box component="span" sx={{ display: 'block', mt: 1 }}>
-                                  <strong style={{ color: '#ff9800' }}>⚠️ Configuração Multicast (Sender):</strong> {settings.outputUrl}<br/>
-                                  <strong style={{ color: '#4caf50' }}>✅ Abrir no VLC (Receiver):</strong> <code>udp://@239.0.0.1:1234</code>
-                               </Box>
-                             )
-                             : (
-                               <Box component="span" sx={{ display: 'block', mt: 1 }}>
-                                  <strong style={{ color: '#2196f3' }}>ℹ️ Configuração Unicast (Sender):</strong> {settings.outputUrl}<br/>
-                                  <strong style={{ color: '#4caf50' }}>✅ Abrir no VLC (Receiver):</strong> <code>udp://@:1234</code>
-                               </Box>
-                             )
-                          }
-                       </Typography>
-                    </Box>
-                  )}
-                </Grid>
-
-                <Grid item xs={12}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    🚀 TRANSMISSÃO MULTI-PROTOCOLO (SIMULTÂNEA)
-                  </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} md={4}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <Checkbox 
-                          size="small" 
-                          checked={settings.rtmpEnabled} 
-                          onChange={(e) => setSettings({...settings, rtmpEnabled: e.target.checked})} 
-                        />
-                        <Typography variant="caption" sx={{ fontWeight: 'bold' }}>ATIVAR RTMP</Typography>
-                      </Box>
-                      <TextField
-                        fullWidth
-                        label="URL RTMP"
-                        value={settings.rtmpOutputUrl || ''}
-                        onChange={(e) => setSettings({ ...settings, rtmpOutputUrl: e.target.value })}
-                        placeholder="rtmp://localhost:1935/live_stream"
-                        variant="outlined"
-                        size="small"
-                        helperText="Destino RTMP (Ex: YouTube, Facebook)"
-                      />
-                    </Grid>
-                    <Grid item xs={12} md={4}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <Checkbox 
-                          size="small" 
-                          checked={settings.srtEnabled} 
-                          onChange={(e) => setSettings({...settings, srtEnabled: e.target.checked})} 
-                        />
-                        <Typography variant="caption" sx={{ fontWeight: 'bold' }}>ATIVAR SRT</Typography>
-                      </Box>
-                      <TextField
-                        fullWidth
-                        label="URL SRT"
-                        value={settings.srtOutputUrl || ''}
-                        onChange={(e) => setSettings({ ...settings, srtOutputUrl: e.target.value })}
-                        placeholder="srt://mediamtx:8890?mode=caller&streamid=publish:live_stream_srt"
-                        variant="outlined"
-                        size="small"
-                        helperText="Destino SRT (Caller ou Listener)"
-                      />
-                    </Grid>
-                    <Grid item xs={12} md={4}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <Checkbox 
-                          size="small" 
-                          checked={settings.udpEnabled} 
-                          onChange={(e) => {
-                            if (e.target.checked) setUdpConfirmOpen(true);
-                            else setSettings({...settings, udpEnabled: false});
-                          }} 
-                        />
-                        <Typography variant="caption" sx={{ fontWeight: 'bold' }}>ATIVAR UDP</Typography>
-                      </Box>
-                      <TextField
-                        fullWidth
-                        label="URL UDP"
-                        value={settings.udpOutputUrl || ''}
-                        onChange={(e) => setSettings({ ...settings, udpOutputUrl: e.target.value })}
-                        placeholder="udp://239.0.0.1:1234"
-                        variant="outlined"
-                        size="small"
-                        helperText="Destino UDP (Multicast ou Unicast)"
-                      />
-                    </Grid>
-                  </Grid>
-                </Grid>
-
-                <Grid item xs={12}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mt: 1, mb: 2, color: 'primary.main' }}>
-                    🌐 PROTOCOLOS AVANÇADOS (DISTRIBUIÇÃO)
-                  </Typography>
-                  <Grid container spacing={2}>
-                    {/* DASH */}
-                    <Grid item xs={12} md={6}>
-                       <Box sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-                          <FormControlLabel
-                            control={<Checkbox checked={settings.dashEnabled || false} onChange={(e) => setSettings({...settings, dash_enabled: e.target.checked, dashEnabled: e.target.checked})} />}
-                            label={<Typography variant="body2" sx={{ fontWeight: 'bold' }}>MPEG-DASH</Typography>}
-                          />
-                          <TextField
-                            fullWidth
-                            label="DASH Output Path"
-                            value={settings.dashOutputUrl || ''}
-                            onChange={(e) => setSettings({ ...settings, dash_output_url: e.target.value, dashOutputUrl: e.target.value })}
-                            placeholder="/var/lib/onepa-playout/hls/dash.mpd"
-                            variant="outlined"
-                            size="small"
-                            disabled={!settings.dashEnabled}
-                            sx={{ mt: 1 }}
-                          />
-                       </Box>
-                    </Grid>
-                    
-                    {/* MSS */}
-                    <Grid item xs={12} md={6}>
-                       <Box sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-                          <FormControlLabel
-                            control={<Checkbox checked={settings.mssEnabled || false} onChange={(e) => setSettings({...settings, mss_enabled: e.target.checked, mssEnabled: e.target.checked})} />}
-                            label={<Typography variant="body2" sx={{ fontWeight: 'bold' }}>Microsoft Smooth Streaming (MSS)</Typography>}
-                          />
-                          <TextField
-                            fullWidth
-                            label="MSS Output Path"
-                            value={settings.mssOutputUrl || ''}
-                            onChange={(e) => setSettings({ ...settings, mss_output_url: e.target.value, mssOutputUrl: e.target.value })}
-                            placeholder="/var/lib/onepa-playout/hls/stream.ism"
-                            variant="outlined"
-                            size="small"
-                            disabled={!settings.mssEnabled}
-                            sx={{ mt: 1 }}
-                          />
-                       </Box>
-                    </Grid>
-
-                    {/* RIST */}
-                    <Grid item xs={12} md={6}>
-                       <Box sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-                          <FormControlLabel
-                            control={<Checkbox checked={settings.ristEnabled || false} onChange={(e) => setSettings({...settings, rist_enabled: e.target.checked, ristEnabled: e.target.checked})} />}
-                            label={<Typography variant="body2" sx={{ fontWeight: 'bold' }}>RIST (Reliable Internet Stream Transport)</Typography>}
-                          />
-                          <TextField
-                            fullWidth
-                            label="RIST URL"
-                            value={settings.ristOutputUrl || ''}
-                            onChange={(e) => setSettings({ ...settings, rist_output_url: e.target.value, ristOutputUrl: e.target.value })}
-                            placeholder="rist://127.0.0.1:1234"
-                            variant="outlined"
-                            size="small"
-                            disabled={!settings.ristEnabled}
-                            sx={{ mt: 1 }}
-                          />
-                       </Box>
-                    </Grid>
-
-                    {/* RTSP / WebRTC (Served by MediaMTX) */}
-                    <Grid item xs={12} md={6}>
-                       <Box sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1, height: '100%' }}>
-                          <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>MediaMTX Services</Typography>
-                          <FormControlLabel
-                            control={<Checkbox checked={settings.rtspEnabled || false} onChange={(e) => setSettings({...settings, rtsp_enabled: e.target.checked, rtspEnabled: e.target.checked})} />}
-                            label="RTSP Server"
-                          />
-                          <FormControlLabel
-                            control={<Checkbox checked={settings.webrtcEnabled || false} onChange={(e) => setSettings({...settings, webrtc_enabled: e.target.checked, webrtcEnabled: e.target.checked})} />}
-                            label="WebRTC (WHIP/WHEP)"
-                          />
-                          <FormControlLabel
-                            control={<Checkbox checked={settings.llhlsEnabled || false} onChange={(e) => setSettings({...settings, llhls_enabled: e.target.checked, llhlsEnabled: e.target.checked})} />}
-                            label="Low-Latency HLS"
-                          />
-                       </Box>
-                    </Grid>
-                  </Grid>
-                </Grid>
-
-                <Grid item xs={12}>
-                  <Grid container spacing={2} sx={{ mt: 1 }}>
-                    <Grid item xs={12} md={12}>
-                      <Alert severity="info" sx={{ mb: 2 }}>
-                        <Typography variant="caption" display="block">
-                          💡 <strong>Dica:</strong> Ative ou desative cada protocolo em tempo real diretamente no <strong>Dashboard</strong> sem precisar reiniciar o playout.
-                        </Typography>
-                      </Alert>
-                  
-                      {/* RTMP Guidance */}
-                      {settings.outputType === 'rtmp' && (
-                        <Alert severity="info" sx={{ mt: 2 }}>
-                          <Typography variant="subtitle2" fontWeight="bold">Servidor RTMP (VLC/OBS)</Typography>
-                          <Typography variant="caption" display="block">
-                            O Playout atua como <strong>Publisher</strong>. Para ver no VLC:
-                          </Typography>
-                          <Paper sx={{ mt: 1, p: 0.5, bgcolor: 'rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>rtmp://{window.location.hostname}:1935/live_stream</code>
-                            <IconButton size="small" onClick={() => { navigator.clipboard.writeText(`rtmp://${window.location.hostname}:1935/live_stream`); showSuccess('Copiado!'); }}>
-                                <ContentCopyIcon fontSize="small" />
-                            </IconButton>
-                          </Paper>
-                          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                            💡 <strong>Dica VLC:</strong> Se der erro de I/O, verifique se o container 'mediamtx' está rodando (porta 1935).
-                          </Typography>
-                        </Alert>
-                      )}
-
-                        {/* SRT Guidance */}
-                        {settings.outputType === 'srt' && (
-                          <Alert severity={settings.srtMode === 'listener' ? "success" : "info"} sx={{ mt: 2 }}>
-                            <Typography variant="subtitle2" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              🛰️ Conexão SRT: {settings.srtMode === 'listener' ? 'Conexão Direta (Playout Listener)' : 'Ponte MediaMTX (Recomendado)'}
-                            </Typography>
-                            
-                            {settings.srtMode === 'caller' ? (
-                              <Box sx={{ mt: 1 }}>
-                                <Typography variant="caption" display="block">
-                                  <strong>Solução de Ponte:</strong> O Playout envia para o MediaMTX interno e você puxa de lá. 
-                                  Isso evita problemas de Firewall no seu Mac.
-                                </Typography>
-                                <Paper sx={{ mt: 1, p: 1, bgcolor: 'rgba(0,0,0,0.1)' }}>
-                                  <Typography variant="caption" display="block" sx={{ fontWeight: 'bold', color: 'primary.main' }}>Passo 1: No Playout (Output URL)</Typography>
-                                  <code>srt://mediamtx:8890?mode=caller&streamid=publish:live_stream_srt</code>
-                                  
-                                  <Typography variant="caption" display="block" sx={{ mt: 1, fontWeight: 'bold', color: 'success.main' }}>Passo 2: No VLC (Fluxo de Rede)</Typography>
-                                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <code>srt://localhost:8890?mode=caller&streamid=read:live_stream_srt</code>
-                                    <IconButton size="small" onClick={() => { navigator.clipboard.writeText(`srt://localhost:8890?mode=caller&streamid=read:live_stream_srt`); showSuccess('Copiado!'); }}>
-                                      <ContentCopyIcon fontSize="small" />
-                                    </IconButton>
-                                  </Box>
-                                </Paper>
-                              </Box>
-                            ) : (
-                              <Box sx={{ mt: 1 }}>
-                                <Typography variant="caption" display="block">
-                                  <strong>Modo Listener Direto:</strong> O Playout aguarda conexão na porta 9900.
-                                </Typography>
-                                <Paper sx={{ mt: 1, p: 1, bgcolor: 'rgba(0,0,0,0.1)' }}>
-                                  <Typography variant="caption" display="block" sx={{ fontWeight: 'bold', color: 'primary.main' }}>Passo 1: No Playout (Output URL)</Typography>
-                                  <code>srt://0.0.0.0:9900?mode=listener</code>
-                                  
-                                  <Typography variant="caption" display="block" sx={{ mt: 1, fontWeight: 'bold', color: 'success.main' }}>Passo 2: No VLC (Fluxo de Rede como Caller)</Typography>
-                                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <code>srt://{window.location.hostname}:9900?mode=caller</code>
-                                    <IconButton size="small" onClick={() => { navigator.clipboard.writeText(`srt://${window.location.hostname}:9900?mode=caller`); showSuccess('Copiado!'); }}>
-                                      <ContentCopyIcon fontSize="small" />
-                                    </IconButton>
-                                  </Box>
-                                </Paper>
-                                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                                  💡 <strong>Dica:</strong> Certifique-se que o VLC está no modo <strong>Caller</strong> para conectar ao Playout.
-                                </Typography>
-                              </Box>
-                            )}
-                          </Alert>
-                        )}
- 
-                        {/* Logs Dialog */}
-                        <Dialog 
-                          open={showLogsDialog} 
-                          onClose={() => setShowLogsDialog(false)}
-                          maxWidth="md"
-                          fullWidth
-                        >
-                          <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            Logs de Transmissão (FFmpeg/SRT)
-                            <IconButton onClick={() => setShowLogsDialog(false)} size="small">
-                              <CloseIcon />
-                            </IconButton>
-                          </DialogTitle>
-                          <DialogContent dividers>
-                            <Box 
-                              sx={{ 
-                                bgcolor: '#1e1e1e', 
-                                color: '#d4d4d4', 
-                                p: 2, 
-                                borderRadius: 1,
-                                fontFamily: 'monospace',
-                                fontSize: '0.85rem',
-                                minHeight: '300px',
-                                maxHeight: '500px',
-                                overflow: 'auto',
-                                whiteSpace: 'pre-wrap'
-                              }}
-                            >
-                                {logs.length > 0 ? (
-                                  logs.slice().reverse().map((log, i) => (
-                                  <div key={i} style={{ 
-                                    borderBottom: '1px solid #333', 
-                                    padding: '2px 0',
-                                    color: log.includes('error') || log.includes('failed') ? '#f44336' : 
-                                           log.includes('warn') ? '#ff9800' : 'inherit'
-                                  }}>
-                                    {log}
-                                  </div>
-                                ))
-                              ) : (
-                                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-                                  Nenhum log disponível no momento.
-                                </Box>
-                              )}
-                            </Box>
-                          </DialogContent>
-                          <DialogActions>
-                            <Button onClick={fetchLogs} disabled={isRefreshingLogs}>
-                              Atualizar Logs
-                            </Button>
-                            <Button onClick={handleRetryPlayout} color="warning">
-                              Reiniciar SRT
-                            </Button>
-                            <Button onClick={() => setShowLogsDialog(false)}>
-                              Fechar
-                            </Button>
-                          </DialogActions>
-                        </Dialog>
-
-                      {/* UDP Guidance */}
-                      {settings.outputType === 'udp' && (
-                        <Alert severity="info" sx={{ mt: 2 }}>
-                          <Typography variant="subtitle2" fontWeight="bold">Configuração UDP</Typography>
-                          <Typography variant="caption" display="block">Para Multicast use o prefixo @:</Typography>
-                          <Paper sx={{ mt: 0.5, p: 0.5, bgcolor: 'rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>udp://@239.0.0.1:1234</code>
-                            <IconButton size="small" onClick={() => { navigator.clipboard.writeText('udp://@239.0.0.1:1234'); showSuccess('Copiado!'); }}>
-                                <ContentCopyIcon fontSize="small" />
-                            </IconButton>
-                          </Paper>
-                          <Typography variant="caption" display="block" sx={{ mt: 1 }}>Para Unicast (VLC):</Typography>
-                          <Paper sx={{ mt: 0.5, p: 0.5, bgcolor: 'rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                             <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>udp://[IP_DESTINO]:1234</code>
-                          </Paper>
-                        </Alert>
-                      )}
-
-                      {/* Desktop Preview Guidance */}
-                      {settings.outputType === 'desktop' && (
-                        <Alert severity="warning" sx={{ mt: 2 }}>
-                          <Typography variant="subtitle2" fontWeight="bold">Desktop Preview</Typography>
-                          <Typography variant="caption" display="block">
-                            Esta opção abre uma janela SDL direta no servidor.
-                            <strong> Pode não funcionar em ambientes Docker ou Cloud sem X11 / Display.</strong>
-                          </Typography>
-                        </Alert>
-                      )}
-
-                      {settings.outputType === 'rtmp' && (
-                        <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'primary.main', cursor: 'pointer' }} onClick={() => {
-                              const rtmpUrl = `rtmp://${window.location.hostname}:1935/live/stream`;
-                              navigator.clipboard.writeText(rtmpUrl);
-                              showSuccess(`Link RTMP copiado: ${rtmpUrl}`);
-                          }}>
-                          Link RTMP (VLC): rtmp://{window.location.hostname}:1935/live/stream
-                        </Typography>
-                      )}
-
-                      {settings.outputType === 'srt' && (
-                        <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'primary.main', cursor: 'pointer' }} onClick={() => {
-                              const srtUrl = `srt://${window.location.hostname}:8890?mode=caller`;
-                              navigator.clipboard.writeText(srtUrl);
-                              showSuccess(`Link SRT copiado: ${srtUrl}`);
-                          }}>
-                          Link SRT (VLC Caller): srt://{window.location.hostname}:8890?mode=caller
-                        </Typography>
-                      )}
-
-                      {settings.outputType === 'udp' && (
-                        <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'primary.main' }}>
-                          Link UDP: {settings.outputUrl}
-                        </Typography>
-                      )}
-
-                      {settings.outputType === 'hls' && (
-                        <Box sx={{ mt: 1 }}>
-                          <Typography variant="caption" sx={{ display: 'block', color: 'primary.main', cursor: 'pointer' }} onClick={() => {
-                                const hlsUrl = `${window.location.origin}/hls/stream.m3u8`;
-                                navigator.clipboard.writeText(hlsUrl);
-                                showSuccess(`Link HLS copiado: ${hlsUrl}`);
-                            }}>
-                            Link HLS para Distribuição Externa: {window.location.origin}/hls/stream.m3u8
-                          </Typography>
-                          <Alert severity="warning" size="small" sx={{ mt: 1, py: 0, '& .MuiAlert-message': { p: 0.5 } }}>
-                             <Typography variant="caption" sx={{ fontSize: '0.65rem' }}>
-                              <strong>Nota:</strong> Este link HLS é destinado a visualização externa (CDN, Players Externos). 
-                              Não tem relação com o HLS interno do Dashboard.
-                             </Typography>
-                          </Alert>
-                        </Box>
-                      )}
-                    </Grid>
-                  </Grid>
-                </Grid>
-
-                <Grid item xs={12}>
-                  <Divider sx={{ my: 2 }} />
-                  <Typography variant="h6" gutterBottom>
-                    Qualidade de Vídeo
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={12} sm={4}>
-                  <FormControl fullWidth>
-                    <InputLabel>Resolução</InputLabel>
-                    <Select
-                      value={settings.resolution}
-                      label="Resolução"
-                      onChange={(e) => setSettings({ ...settings, resolution: e.target.value })}
-                    >
-                      <MenuItem value="1280x720">720p (1280x720)</MenuItem>
-                      <MenuItem value="1920x1080">1080p (1920x1080)</MenuItem>
-                      <MenuItem value="3840x2160">4K (3840x2160)</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-
-                <Grid item xs={12} sm={4}>
-                  <FormControl fullWidth>
-                    <InputLabel>FPS</InputLabel>
-                    <Select
-                      value={settings.fps}
-                      label="FPS"
-                      onChange={(e) => setSettings({ ...settings, fps: e.target.value })}
-                    >
-                      <MenuItem value="24">24 fps</MenuItem>
-                      <MenuItem value="25">25 fps</MenuItem>
-                      <MenuItem value="30">30 fps</MenuItem>
-                      <MenuItem value="60">60 fps</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-
-                <Grid item xs={12} sm={4}>
-                  <FormControl fullWidth>
-                    <InputLabel>Codec de Vídeo</InputLabel>
-                    <Select
-                      value={settings.videoCodec}
-                      label="Codec de Vídeo"
-                      onChange={(e) => setSettings({ ...settings, videoCodec: e.target.value })}
-                    >
-                      <MenuItem value="copy">Original (Copy)</MenuItem>
-                      <MenuItem value="h264">H.264 (AVC)</MenuItem>
-                      <MenuItem value="hevc">H.265 (HEVC)</MenuItem>
-                      <MenuItem value="vp8">VP8</MenuItem>
-                      <MenuItem value="vp9">VP9</MenuItem>
-                      <MenuItem value="av1">AV1</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-
-                <Grid item xs={12} sm={4}>
-                  <FormControl fullWidth>
-                    <InputLabel>Codec de Áudio</InputLabel>
-                    <Select
-                      value={settings.audioCodec}
-                      label="Codec de Áudio"
-                      onChange={(e) => setSettings({ ...settings, audioCodec: e.target.value })}
-                    >
-                      <MenuItem value="copy">Original (Copy)</MenuItem>
-                      <MenuItem value="aac">AAC</MenuItem>
-                      <MenuItem value="opus">Opus</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-
-                <Grid item xs={12} sm={4}>
-                  <TextField
-                    fullWidth
-                    label="Bitrate de Vídeo"
-                    value={settings.videoBitrate}
-                    onChange={(e) => setSettings({ ...settings, videoBitrate: e.target.value })}
-                    placeholder="5000k"
-                  />
-                </Grid>
-
-                <Grid item xs={12} sm={4}>
-                  <TextField
-                    fullWidth
-                    label="Bitrate de Áudio"
-                    value={settings.audioBitrate}
-                    onChange={(e) => setSettings({ ...settings, audioBitrate: e.target.value })}
-                    placeholder="192k"
-                  />
-                </Grid>
-
-                <Grid item xs={12}>
-                  <Divider sx={{ my: 2 }} />
-                  <Typography variant="h6" gutterBottom>Comportamento de Inicialização</Typography>
-                  <FormControlLabel
-                    control={
-                        <Radio 
-                            checked={settings.autoStartProtocols} 
-                            onClick={() => setSettings({ ...settings, autoStartProtocols: !settings.autoStartProtocols })} 
-                        />
-                    }
-                    label="Iniciar Protocolos de Distribuição (RTMP/SRT/UDP) automaticamente ao iniciar o Playout"
-                  />
-                  <Typography variant="caption" color="text.secondary" display="block" sx={{ ml: 4 }}>
-                    Se desativado, os protocolos marcados como ativos só iniciarão após serem alternados manualmente no Dashboard.
-                  </Typography>
-                </Grid>
-              </Grid>
-            </TabPanel>
-
-            {/* Paths Tab */}
-            <TabPanel value={tabValue} index={1}>
-              <Grid container spacing={3}>
-                <Grid item xs={12}>
-                  <Typography variant="h6" gutterBottom>
-                    Caminhos de Armazenamento
-                  </Typography>
-                  <Alert severity="info" sx={{ mb: 2 }}>
-                    Certifique-se de que os diretórios existem e têm permissões adequadas.
-                  </Alert>
-                </Grid>
-
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Caminho de Media"
-                    value={settings.mediaPath}
-                    onChange={(e) => setSettings({ ...settings, mediaPath: e.target.value })}
-                    helperText="Diretório onde os ficheiros de vídeo/áudio são armazenados"
-                  />
-                </Grid>
-
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Caminho de Thumbnails"
-                    value={settings.thumbnailsPath}
-                    onChange={(e) => setSettings({ ...settings, thumbnailsPath: e.target.value })}
-                    helperText="Diretório para thumbnails gerados automaticamente"
-                  />
-                </Grid>
-
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Caminho de Playlists"
-                    value={settings.playlistsPath}
-                    onChange={(e) => setSettings({ ...settings, playlistsPath: e.target.value })}
-                    helperText="Diretório para ficheiros JSON de playlists"
-                  />
-                </Grid>
-
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Caminho de Fillers"
-                    value={settings.fillersPath}
-                    onChange={(e) => setSettings({ ...settings, fillersPath: e.target.value })}
-                    helperText="Diretório com vídeos para preencher espaços vazios"
-                  />
-                </Grid>
-
-                <Grid item xs={12}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Divider sx={{ flexGrow: 1 }}><Chip label="APIs Externas (Metadados)" /></Divider>
-                    <Button 
-                      variant="text" 
-                      size="small" 
-                      startIcon={<WizardIcon />} 
-                      onClick={handleApplyDefaults}
-                      sx={{ ml: 2 }}
-                    >
-                      Aplicar Recomendadas (Criptografado)
-                    </Button>
-                  </Box>
-                  <Alert severity="info" sx={{ mb: 2 }}>
-                    Dica: Insira apenas o ID da chave. Se colar um link OMDb, o sistema extrairá a chave automaticamente ao salvar.
-                  </Alert>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-                    <TextField
-                        fullWidth
-                        label="TMDB API Key"
-                        value={settings.tmdbApiKey}
-                        onChange={(e) => setSettings({ ...settings, tmdbApiKey: e.target.value })}
-                        helperText="Para capas e informação de filmes (Gratuito: themoviedb.org)"
-                        type="password"
-                        size="small"
-                    />
-                    <Button variant="outlined" onClick={() => handleTestApi('tmdb')} sx={{ mt: 0.5 }}>Testar</Button>
-                  </Box>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-                    <TextField
-                        fullWidth
-                        label="OMDb API Key"
-                        value={settings.omdbApiKey}
-                        onChange={(e) => setSettings({ ...settings, omdbApiKey: e.target.value })}
-                        helperText="Backup para informação IMDB (omdbapi.com)"
-                        type="password"
-                        size="small"
-                    />
-                    <Button variant="outlined" onClick={() => handleTestApi('omdb')} sx={{ mt: 0.5 }}>Testar</Button>
-                  </Box>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-                    <TextField
-                        fullWidth
-                        label="TVMaze API Key (Opcional)"
-                        value={settings.tvmazeApiKey}
-                        onChange={(e) => setSettings({ ...settings, tvmazeApiKey: e.target.value })}
-                        helperText="Para dados de séries/programas de TV (tvmaze.com)"
-                        type="password"
-                        size="small"
-                    />
-                    <Button variant="outlined" onClick={() => handleTestApi('tvmaze')} sx={{ mt: 0.5 }}>Testar</Button>
-                  </Box>
-                </Grid>
-
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="URL EPG Externo (Importação)"
-                    value={settings.epgUrl}
-                    onChange={(e) => setSettings({ ...settings, epgUrl: e.target.value })}
-                    helperText="URL para importar guia de programação externo (opcional)"
-                  />
-                </Grid>
-
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="EPG Days Ahead"
-                    type="number"
-                    value={settings.epgDays}
-                    onChange={(e) => setSettings({ ...settings, epgDays: parseInt(e.target.value) || 7 })}
-                    helperText="Número de dias de programação a gerar no guia XMLTV"
-                    InputProps={{ inputProps: { min: 1, max: 30 } }}
-                  />
-                </Grid>
-
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="URL Exportação EPG (Para Operadores)"
-                    value={`${window.location.origin}/api/playlists/epg.xml`}
-                    InputProps={{ readOnly: true }}
-                    helperText="URL do guia XMLTV gerado por este playout (Forneça este link aos seus transmissores)"
-                  />
-                </Grid>
-
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Caminho Assets Protegidos"
-                    value={settings.protectedPath}
-                    disabled
-                    helperText="Diretório de segurança (Somente Leitura)"
-                  />
-                </Grid>
-
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Caminho Documentação"
-                    value={settings.docsPath}
-                    disabled
-                    helperText="Localização dos manuais e guias"
-                  />
-                </Grid>
-              </Grid>
-            </TabPanel>
-
-            {/* Playout Tab */}
-            <TabPanel value={tabValue} index={2}>
-              <Grid container spacing={3}>
-                <Grid item xs={12}>
-                  <Typography variant="h6" gutterBottom>
-                    Configurações de Playout
-                  </Typography>
-                  <Alert severity="info" sx={{ mb: 2 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Typography variant="body2">
-                        Precisa de ajuda para configurar o seu canal? Use o assistente de configuração.
-                      </Typography>
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Button 
-                          variant="contained" 
-                          startIcon={<WizardIcon />}
-                          onClick={() => navigate('/setup')}
-                        >
-                          Configurar Canal
-                        </Button>
-                        <Button
-                          variant="outlined"
-                          color="error"
-                          startIcon={<DeleteIcon />}
-                          onClick={() => setResetConfirmOpen(true)}
-                        >
-                          Eliminar Tudo
-                        </Button>
-                      </Box>
-                    </Box>
-                  </Alert>
-                </Grid>
-
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Início do Dia"
-                    type="time"
-                    value={settings.dayStart}
-                    onChange={(e) => setSettings({ ...settings, dayStart: e.target.value })}
-                    InputLabelProps={{ shrink: true }}
-                    helperText="Horário de início do dia de programação (ex: 06:00)"
-                  />
-                </Grid>
-
-                <Grid item xs={12}>
-                  <Typography variant="h6" gutterBottom id="channel-identity">
-                    Identidade do Canal
-                  </Typography>
-                  <FormControl fullWidth sx={{ mb: 2 }}>
-                    <TextField
-                      label="Nome do Canal"
-                      value={settings.channelName}
-                      onChange={(e) => setSettings({ ...settings, channelName: e.target.value })}
-                      helperText="Este nome aparecerá no Dashboard e nos relatórios."
-                    />
-                  </FormControl>
-
-                  <Divider sx={{ my: 2 }} />
-
-                  <Typography variant="h6" gutterBottom id="overlay-section">
-                    Overlay (Marca d'água)
-                  </Typography>
-                  <FormControl fullWidth sx={{ mb: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Box>
-                        <Typography variant="subtitle1">Ativar Overlay de Canal</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Mostra o logotipo e gráficos sobre o vídeo transmitido
-                        </Typography>
-                      </Box>
-                      <Button 
-                        variant={settings.overlay_enabled ? "contained" : "outlined"}
-                        color={settings.overlay_enabled ? "success" : "inherit"}
-                        onClick={() => setSettings({ ...settings, overlay_enabled: !settings.overlay_enabled })}
-                      >
-                        {settings.overlay_enabled ? "ATIVADO" : "DESATIVADO"}
-                      </Button>
-                    </Box>
-                    <Box sx={{ mt: 2 }}>
-                      <Typography variant="subtitle2" gutterBottom>
-                        Opacidade do Logo ({Math.round(settings.overlayOpacity * 100)}%)
-                      </Typography>
-                      <Slider
-                        value={settings.overlayOpacity || 1.0}
-                        min={0}
-                        max={1}
-                        step={0.1}
-                        onChange={(e, val) => setSettings({ ...settings, overlayOpacity: val })}
-                        valueLabelDisplay="auto"
-                        sx={{ mb: 2 }}
-                      />
-
-                      <Typography variant="subtitle2" gutterBottom>
-                        Escala do Logo ({settings.overlayScale}x)
-                      </Typography>
-                      <Slider
-                        value={settings.overlayScale || 1.0}
-                        min={0.1}
-                        max={2.0}
-                        step={0.1}
-                        onChange={(e, val) => setSettings({ ...settings, overlayScale: val })}
-                        valueLabelDisplay="auto"
-                        sx={{ mb: 2 }}
-                      />
-                    </Box>
-                  </FormControl>
-                </Grid>
-
-                <Grid item xs={12} sm={8}>
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1 }}>
-                    <TextField
-                      fullWidth
-                      label="Caminho Absoluto do Logo"
-                      value={settings.logoPath}
-                      onChange={(e) => setSettings({ ...settings, logoPath: e.target.value })}
-                      placeholder="/path/to/logo.png"
-                      helperText="Pode fornecer um caminho local absoluto ou fazer upload"
-                    />
-                    <input
-                      type="file"
-                      id="logo-upload"
-                      hidden
-                      accept="image/*"
-                      onChange={handleLogoUpload}
-                    />
-                    <label htmlFor="logo-upload">
-                      <Button variant="contained" component="span" startIcon={<AddIcon />}>
-                        Upload
-                      </Button>
-                    </label>
-                    <IconButton 
-                      color="primary" 
-                      onClick={() => setConverterOpen(true)}
-                      title="Otimizador de Overlay Pro"
-                      sx={{ bgcolor: 'rgba(25, 118, 210, 0.1)', '&:hover': { bgcolor: 'rgba(25, 118, 210, 0.2)' } }}
-                    >
-                      <MagicIcon />
-                    </IconButton>
-                  </Box>
-                </Grid>
-
-                <Grid item xs={12} sm={4}>
-                  <Box 
-                    sx={{ 
-                      border: '1px dashed #ccc', 
-                      borderRadius: 1, 
-                      p: 1, 
-                      textAlign: 'center',
-                      minHeight: 80,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      bgcolor: '#fafafa',
-                      mb: 2
-                    }}
-                  >
-                    {settings.logoPath ? (
-                      <Box sx={{ width: '100%' }}>
-                        <img 
-                          src={`/api/settings/logo?t=${Date.now()}`} 
-                          alt="Logo" 
-                          style={{ maxWidth: '100%', maxHeight: '50px', objectFit: 'contain' }} 
-                        />
-                      </Box>
-                    ) : (
-                      <Typography variant="caption" color="text.secondary">
-                        Sem logo
-                      </Typography>
-                    )}
-                  </Box>
-                  <FormControl fullWidth>
-                    <InputLabel>Posição do Logo</InputLabel>
-                    <Select
-                      value={settings.logoPosition}
-                      label="Posição do Logo"
-                      onChange={(e) => setSettings({ ...settings, logoPosition: e.target.value })}
-                    >
-                      <MenuItem value="top-left">Superior Esquerdo</MenuItem>
-                      <MenuItem value="top-right">Superior Direito</MenuItem>
-                      <MenuItem value="bottom-left">Inferior Esquerdo</MenuItem>
-                      <MenuItem value="bottom-right">Inferior Direito</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-              </Grid>
-              <Divider sx={{ my: 3 }} />
-              <Typography variant="h6" gutterBottom>
-                Branding da Aplicação
-              </Typography>
-              <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
-                Personalize o visual do sistema carregando seu próprio logotipo para a barra lateral (Sidebar) e Login.
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                <Box 
-                  sx={{ 
-                    width: 100, 
-                    height: 100, 
-                    border: '1px solid', 
-                    borderColor: 'divider',
-                    borderRadius: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    bgcolor: 'background.default'
-                  }}
-                >
-                  <img 
-                    src={`/api/settings/app-logo?t=${Date.now()}`}
-                    alt="App Logo" 
-                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-                    onError={(e) => { e.target.src = 'https://via.placeholder.com/100?text=APP+LOGO'; }}
-                  />
-                </Box>
-                <Box>
-                  <Button variant="outlined" component="label" startIcon={<AddIcon />}>
-                    Carregar Logo da App
-                    <input
-                      type="file"
-                      hidden
-                      accept="image/*"
-                      onChange={async (e) => {
-                        const file = e.target.files[0];
-                        if (!file) return;
-                        const formData = new FormData();
-                        formData.append('file', file);
-                        try {
-                          await settingsAPI.uploadAppLogo(formData);
-                          showSuccess('Logo da aplicação atualizado!');
-                          // Force refresh
-                          fetchSettings();
-                        } catch (error) {
-                          showError('Erro ao carregar logo da aplicação');
-                        }
-                      }}
-                    />
-                  </Button>
-                  <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                    Recomendado: SVG ou PNG transparente (512x512px)
-                  </Typography>
-                </Box>
-              </Box>
-            </TabPanel>
-
-            {/* Protected Assets & Branding Tab */}
-            <TabPanel value={tabValue} index={3}>
-              <Typography variant="h6" gutterBottom>
-                Branding & Assets Protegidos
-              </Typography>
-              <Alert severity="info" sx={{ mb: 3 }}>
-                Configure a identidade visual do canal e os ficheiros de contingência (fillers).
-                Os assets protegidos estão em: <code>/var/lib/onepa-playout/assets/protected</code>
-              </Alert>
-
-              {/* Branding Section */}
-              <Paper sx={{ p: 3, mb: 3 }}>
-                 <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <StartIcon /> Identidade Visual (Branding)
-                 </Typography>
-                 <Divider sx={{ mb: 2 }} />
-                 <Grid container spacing={3}>
-                    <Grid item xs={12} md={6}>
-                       <Box sx={{ p: 2, bgcolor: '#000', borderRadius: 1, textAlign: 'center', height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          {/* Preview of Branding */}
-                          {(settings.brandingType === 'video' || settings.branding_type === 'video') ? (
-                              <video 
-                                src="/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4" 
-                                autoPlay loop muted playsInline
-                                style={{ maxHeight: '100%', maxWidth: '100%' }}
-                              />
-                          ) : (
-                              <img 
-                                src={`/api/settings/app-logo?t=${Date.now()}`} 
-                                alt="Logo" 
-                                style={{ maxHeight: '100%', maxWidth: '100%' }}
-                              />
-                          )}
-                        </Box>
-                     </Grid>
-
-                     <Grid item xs={12} md={6}>
-                       <Typography variant="subtitle2" gutterBottom>Modo de Exibição</Typography>
-                       <ToggleButtonGroup
-                          value={settings.branding_type || 'static'}
-                          exclusive
-                          onChange={(e, val) => {
-                            if (val) {
-                              const newLogoPath = val === 'video' 
-                                ? '/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4'
-                                : '/assets/protected/Cloud_Onepa_Playout_Infinity_Logo_remodelado.png';
-                              
-                              setSettings({
-                                ...settings, 
-                                branding_type: val,
-                                logoPath: newLogoPath
-                              });
-                            }
-                          }}
-                          fullWidth
-                          sx={{ mb: 3 }}
-                       >
-                          <ToggleButton value="static">
-                             <ImageIcon sx={{ mr: 1 }} /> Logotipo Estático
-                          </ToggleButton>
-                          <ToggleButton value="video">
-                             <MovieIcon sx={{ mr: 1 }} /> Vídeo Animado
-                          </ToggleButton>
-                       </ToggleButtonGroup>
-                       
-                       <Typography variant="subtitle2" gutterBottom>Ficheiro de Vídeo (Branding)</Typography>
-                       <Box sx={{ display: 'flex', gap: 1 }}>
-                          <TextField 
-                             fullWidth 
-                             size="small" 
-                             value="/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4"
-                             disabled
-                          />
-                          {/* Hardcoded for now as per specific request, or could use selector */}
-                       </Box>
-                       <Alert severity="info" sx={{ mt: 2, fontSize: '0.8rem' }}>
-                          A alteração reflete-se no Login e no topo do Dashboard.
-                        </Alert>
-                    </Grid>
-                 </Grid>
-              </Paper>
-
-              <Typography variant="h6" gutterBottom>
-                Assets de Contingência (Padrão)
-              </Typography>
-              <Grid container spacing={2}>
-                 <Grid item xs={12} md={6}>
-                    <Card variant="outlined">
-                       <CardContent>
-                          <Typography color="text.secondary" gutterBottom>Imagem Padrão (Fallback)</Typography>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, my: 2 }}>
-                             <ImageIcon fontSize="large" color="primary" />
-                             <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
-                                <Typography variant="body2" noWrap title={settings.defaultImagePath}>
-                                   {settings.defaultImagePath ? settings.defaultImagePath.split('/').pop() : 'Não definido'}
-                                </Typography>
-                             </Box>
-                          </Box>
-                          <Button 
-                             variant="outlined" 
-                             fullWidth 
-                             startIcon={<FolderIcon />}
-                             onClick={() => { setMediaTypeSelector('image'); setMediaSelectorOpen(true); }}
-                          >
-                             Selecionar Imagem
-                          </Button>
-                       </CardContent>
-                    </Card>
-                 </Grid>
-                 <Grid item xs={12} md={6}>
-                    <Card variant="outlined">
-                       <CardContent>
-                          <Typography color="text.secondary" gutterBottom>Vídeo Padrão (Filler)</Typography>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, my: 2 }}>
-                             <MovieIcon fontSize="large" color="primary" />
-                             <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
-                                <Typography variant="body2" noWrap title={settings.defaultVideoPath}>
-                                   {settings.defaultVideoPath ? settings.defaultVideoPath.split('/').pop() : 'Não definido'}
-                                </Typography>
-                             </Box>
-                          </Box>
-                          <Button 
-                             variant="outlined" 
-                             fullWidth 
-                             startIcon={<FolderIcon />}
-                             onClick={() => { setMediaTypeSelector('video'); setMediaSelectorOpen(true); }}
-                          >
-                             Selecionar Vídeo
-                          </Button>
-                       </CardContent>
-                    </Card>
-                 </Grid>
-              </Grid>
-
-              {/* Enhanced Media Selector Dialog with Preview */}
-              <Dialog 
-                open={mediaSelectorOpen} 
-                onClose={() => { setMediaSelectorOpen(false); setPreviewAsset(null); }} 
-                maxWidth="md" 
-                fullWidth
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 1, p: 2 }}>
+        <Box>
+            <Typography variant="h4" className="neon-text" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>Definições</Typography>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: 2, textTransform: 'uppercase' }}>
+                Painel de Controlo do Sistema • v2.1.1-PRO
+            </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+            <Tooltip title="Ver novidades desta versão" arrow>
+              <Button 
+                  variant="outlined" 
+                  startIcon={<HistoryIcon />} 
+                  onClick={() => setReleaseNotesOpen(true)}
+                  sx={{ fontWeight: 800, borderColor: 'rgba(255,255,255,0.1)' }}
               >
-                 <DialogTitle sx={{ borderBottom: '1px solid', borderColor: 'divider', py: 1.5, px: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.paper' }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-                       {mediaTypeSelector === 'video' ? 'Selecionar Vídeo' : 'Selecionar Imagem'}
-                    </Typography>
-                    
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        <Button 
-                            variant="outlined" 
-                            color="error" 
-                            size="small"
-                            startIcon={<DeleteIcon />}
-                            onClick={() => {
-                                setDefaultMedia(mediaTypeSelector, null);
-                                setMediaSelectorOpen(false);
-                                setPreviewAsset(null);
-                            }}
-                            sx={{ height: 32, fontSize: '0.75rem' }}
-                        >
-                            LIMPAR (Padrão)
-                        </Button>
-                        <Button 
-                            variant="contained" 
-                            color="primary"
-                            size="small"
-                            disabled={!previewAsset}
-                            onClick={() => {
-                                setDefaultMedia(mediaTypeSelector, previewAsset.path);
-                                setMediaSelectorOpen(false);
-                                setPreviewAsset(null);
-                            }}
-                            sx={{ height: 32, fontSize: '0.75rem' }}
-                        >
-                            CONFIRMAR
-                        </Button>
-                        <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
-                        <IconButton onClick={() => { setMediaSelectorOpen(false); setPreviewAsset(null); }} size="small" sx={{ bgcolor: 'rgba(0,0,0,0.05)' }}>
-                           <CloseIcon fontSize="small" />
-                        </IconButton>
-                    </Box>
-                 </DialogTitle>
-                 <DialogContent sx={{ p: 0 }}>
-                    <Grid container sx={{ height: 500 }}>
-                       {/* Left Column: List */}
-                       <Grid item xs={12} md={5} sx={{ borderRight: '1px solid', borderColor: 'divider', overflowY: 'auto' }}>
-                          <List>
-                             {protectedAssets
-                                .filter(a => mediaTypeSelector === 'video' ? a.is_video : !a.is_video)
-                                .map((asset) => (
-                                   <ListItem key={asset.path} disablePadding>
-                                      <ListItemButton 
-                                        selected={previewAsset?.path === asset.path}
-                                        onClick={() => setPreviewAsset(asset)}
-                                      >
-                                         <ListItemIcon>
-                                            {asset.is_video ? <MovieIcon /> : <ImageIcon />}
-                                         </ListItemIcon>
-                                         <ListItemText 
-                                            primary={asset.name} 
-                                            secondary={`${(asset.size / 1024 / 1024).toFixed(2)} MB`} 
-                                            primaryTypographyProps={{ variant: 'body2', fontWeight: 'medium' }}
-                                         />
-                                         {((mediaTypeSelector === 'video' && settings.defaultVideoPath === asset.path) || 
-                                           (mediaTypeSelector === 'image' && settings.defaultImagePath === asset.path)) && (
-                                            <CheckIcon color="success" fontSize="small" />
-                                         )}
-                                      </ListItemButton>
-                                   </ListItem>
-                             ))}
-                             {protectedAssets.filter(a => mediaTypeSelector === 'video' ? a.is_video : !a.is_video).length === 0 && (
-                                <Box sx={{ p: 4, textAlign: 'center', opacity: 0.6 }}>
-                                   <PlatformIcon sx={{ fontSize: 48, mb: 1 }} />
-                                   <Typography variant="body2">Nenhum asset encontrado.</Typography>
-                                </Box>
-                             )}
-                          </List>
-                       </Grid>
-
-                       {/* Right Column: Preview & Confirm */}
-                       <Grid item xs={12} md={7} sx={{ bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
-                          <Box sx={{ flexGrow: 1, p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                             {previewAsset ? (
-                                <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                                   <Typography variant="subtitle2" gutterBottom color="primary">
-                                      PREVIEW: {previewAsset.name}
-                                   </Typography>
-                                   <Box sx={{ 
-                                      flexGrow: 1, 
-                                      bgcolor: '#000', 
-                                      borderRadius: 2, 
-                                      overflow: 'hidden', 
-                                      display: 'flex', 
-                                      alignItems: 'center', 
-                                      justifyContent: 'center',
-                                      boxShadow: 4,
-                                      position: 'relative'
-                                   }}>
-                                      {previewAsset.is_video ? (
-                                         <ReactPlayer
-                                            url={protectedAPI.getStreamUrl(previewAsset.name)}
-                                            width="100%"
-                                            height="100%"
-                                            playing={true}
-                                            controls={true}
-                                            muted={true}
-                                            playsinline
-                                            style={{ maxHeight: '100%' }}
-                                         />
-                                      ) : (
-                                         <img 
-                                            src={protectedAPI.getStreamUrl(previewAsset.name)} 
-                                            alt="Preview" 
-                                            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} 
-                                         />
-                                      )}
-                                   </Box>
-                                </Box>
-                             ) : (
-                                <Box sx={{ textAlign: 'center', opacity: 0.5 }}>
-                                   <TvIcon sx={{ fontSize: 64, mb: 2 }} />
-                                   <Typography>Selecione um ficheiro para pré-visualizar</Typography>
-                                </Box>
-                             )}
-                          </Box>
-
-                           {/* No footer buttons as they were moved to the top */}
-                       </Grid>
-                    </Grid>
-                 </DialogContent>
-              </Dialog>
-            </TabPanel>
-
-            {/* Users Tab */}
-            <TabPanel value={tabValue} index={4}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6">
-                  Utilizadores
-                </Typography>
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={() => setUserDialogOpen(true)}
-                >
-                  Adicionar Utilizador
-                </Button>
-              </Box>
-
-              <List>
-                {Array.isArray(users) && users.map((user) => (
-                  <ListItem
-                    key={user.id}
-                    secondaryAction={
-                      <Box>
-                        <Button 
-                          size="small" 
-                          onClick={() => handleOpenPasswordDialog(user)}
-                          sx={{ mr: 1 }}
-                        >
-                          Alterar Password
-                        </Button>
-                        {user.username !== 'admin' && (
-                          <IconButton edge="end" onClick={() => handleDeleteUser(user.id)} color="error">
-                            <DeleteIcon />
-                          </IconButton>
-                        )}
-                      </Box>
-                    }
-                    sx={{ bgcolor: 'background.paper', mb: 1, borderRadius: 1 }}
-                  >
-                    <ListItemText
-                      primary={user.username}
-                      secondary={`Role: ${user.role}`}
-                    />
-                  </ListItem>
-                ))}
-                {(!users || users.length === 0) && (
-                  <Typography variant="body2" color="text.secondary" sx={{ p: 2, textAlign: 'center' }}>
-                    Nenhum utilizador encontrado.
-                  </Typography>
-                )}
-              </List>
-            </TabPanel>
-
-            {/* Presets Tab */}
-            <TabPanel value={tabValue} index={5}>
-              <Typography variant="h6" gutterBottom>
-                Presets de Configuração
-              </Typography>
-              <Alert severity="info" sx={{ mb: 3 }}>
-                Clique num preset para aplicar configurações pré-definidas
-              </Alert>
-
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6} md={4}>
-                  <Card 
-                    variant="outlined" 
-                    sx={{ 
-                      cursor: 'pointer', 
-                      bgcolor: activePreset === '720p' ? 'action.selected' : 'background.paper',
-                      border: activePreset === '720p' ? '2px solid' : '1px solid',
-                      borderColor: activePreset === '720p' ? 'primary.main' : 'divider'
-                    }}
-                    onClick={() => applyPreset('720p')}
-                  >
-                    <CardContent>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                        <Typography variant="h6">720p Streaming</Typography>
-                        {activePreset === '720p' && <Chip label="ATIVO" color="primary" size="small" />}
-                      </Box>
-                      <Typography variant="body2" color="text.secondary">
-                        1280x720 @ 25fps<br />
-                        Bitrate: 2500k<br />
-                        Ideal para streaming básico
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-
-                <Grid item xs={12} sm={6} md={4}>
-                  <Card 
-                    variant="outlined" 
-                    sx={{ 
-                      cursor: 'pointer', 
-                      bgcolor: activePreset === '1080p' ? 'action.selected' : 'background.paper',
-                      border: activePreset === '1080p' ? '2px solid' : '1px solid',
-                      borderColor: activePreset === '1080p' ? 'primary.main' : 'divider'
-                    }}
-                    onClick={() => applyPreset('1080p')}
-                  >
-                    <CardContent>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                        <Typography variant="h6">1080p HD</Typography>
-                        {activePreset === '1080p' && <Chip label="ATIVO" color="primary" size="small" />}
-                      </Box>
-                      <Typography variant="body2" color="text.secondary">
-                        1920x1080 @ 25fps<br />
-                        Bitrate: 5000k<br />
-                        Qualidade profissional
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-
-                <Grid item xs={12} sm={6} md={4}>
-                  <Card 
-                    variant="outlined" 
-                    sx={{ 
-                      cursor: 'pointer', 
-                      bgcolor: activePreset === '4k' ? 'action.selected' : 'background.paper',
-                      border: activePreset === '4k' ? '2px solid' : '1px solid',
-                      borderColor: activePreset === '4k' ? 'primary.main' : 'divider'
-                    }}
-                    onClick={() => applyPreset('4k')}
-                  >
-                    <CardContent>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                        <Typography variant="h6">4K Ultra HD</Typography>
-                        {activePreset === '4k' && <Chip label="ATIVO" color="primary" size="small" />}
-                      </Box>
-                      <Typography variant="body2" color="text.secondary">
-                        3840x2160 @ 30fps<br />
-                        Bitrate: 15000k<br />
-                        Máxima qualidade
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              </Grid>
-            </TabPanel>
-
-            {/* Release Notes Tab */}
-            <TabPanel value={tabValue} index={6}>
-              <Grid container spacing={3}>
-                <Grid item xs={12}>
-                  <Typography variant="h6" gutterBottom>
-                    Informação do Sistema
-                  </Typography>
-                  <Card variant="outlined" sx={{ mb: 3 }}>
-                    <CardContent>
-                      <Grid container spacing={2}>
-                        <Grid item xs={12} sm={3}>
-                          <Typography variant="subtitle2" color="text.secondary">Versão do Sistema</Typography>
-                          <Typography variant="body1" fontWeight="bold">{settings.version ? (settings.version.startsWith('v') ? settings.version : 'v' + settings.version) : 'v1.9.2-PRO'}</Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={3}>
-                          <Typography variant="subtitle2" color="text.secondary">Última Atualização</Typography>
-                          <Typography variant="body1">{settings.releaseDate}</Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={3}>
-                          <Typography variant="subtitle2" color="text.secondary">Frontend</Typography>
-                          <Typography variant="body1">React 18.3 + Vite 5.4</Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={3}>
-                          <Typography variant="subtitle2" color="text.secondary">Backend</Typography>
-                          <Typography variant="body1">Rust + Actix-web</Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={3}>
-                          <Typography variant="subtitle2" color="text.secondary">Base de Dados</Typography>
-                          <Typography variant="body1">PostgreSQL 16</Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={3}>
-                          <Typography variant="subtitle2" color="text.secondary">Sistema Operativo</Typography>
-                          <Typography variant="body1">Docker Container (Linux)</Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={3}>
-                          <Typography variant="subtitle2" color="text.secondary">FFmpeg</Typography>
-                          <Typography variant="body1">7.2+</Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={3}>
-                          <Typography variant="subtitle2" color="text.secondary">Ambiente</Typography>
-                          <Typography variant="body1">Production</Typography>
-                        </Grid>
-                      </Grid>
-                      <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
-                        <Button 
-                          variant="outlined" 
-                          size="small"
-                          onClick={() => window.open('https://github.com/ideiasestrondosas-ctrl/cloud-onepa-playout/blob/master/RELEASE_NOTES.md', '_blank')}
-                        >
-                          Ver Release Notes Completas
-                        </Button>
-                        <Button 
-                          variant="outlined" 
-                          size="small"
-                          onClick={() => window.open('https://github.com/ideiasestrondosas-ctrl/cloud-onepa-playout', '_blank')}
-                        >
-                          GitHub Repository
-                        </Button>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Grid>
-
-                <Grid item xs={12}>
-                  <Typography variant="h6" gutterBottom>
-                    Histórico de Versões
-                  </Typography>
-                  <List>
-                    <ListItem>
-                      <ListItemText
-                        primary={<Typography variant="subtitle1"><strong>v1.9.3-PRO</strong> - 2026-01-20</Typography>}
-                        secondary={
-                          <Box component="span">
-                            • EPG Expansion: Support for Genre, Rating, Keywords, Cast, and Director<br />
-                            • Fix: UDP/HLS Session Counting and Master Feed sync<br />
-                            • Fix: Metadata saving error in Media Library<br />
-                            • Fix: Playlist deletion using database schedule check<br />
-                            • Added: External EPG XML Export URL in Settings
-                          </Box>
-                        }
-                      />
-                    </ListItem>
-                    <Divider />
-                    <ListItem>
-                      <ListItemText
-                        primary={<Typography variant="subtitle1"><strong>v1.9.2-PRO</strong> - 2026-01-12</Typography>}
-                        secondary={
-                          <Box component="span">
-                            • Intermediary RTMP Server Integration (VLC Support)<br />
-                            • Smart Media Deletion (Usage check & Replacement)<br />
-                            • Friendly Media Copy (Cópia naming convention)<br />
-                            • Calendar Event Deletion Fixes<br />
-                            • Improved Output Configuration UI
-                          </Box>
-                        }
-                      />
-                    </ListItem>
-                    <Divider />
-                    <ListItem>
-                      <ListItemText
-                        primary={<Typography variant="subtitle1"><strong>v1.9.0-PRO</strong> - 2026-01-12</Typography>}
-                        secondary={
-                          <Box component="span">
-                            • Áudio Standardizado (EBU R128 / Loudnorm)<br />
-                            • Controlos de Overlay em Tempo Real (Opacidade/Escala)<br />
-                            • Função Skip Instantâneo no Dashboard<br />
-                            • Smart Launcher VLC com deteção de OS e Diagnóstico<br />
-                            • Manual Visual e Ajuda Integrada
-                          </Box>
-                        }
-                      />
-                    </ListItem>
-                    <Divider />
-                    <ListItem>
-                      <ListItemText
-                        primary={<Typography variant="subtitle1"><strong>v1.8.1-EXP</strong> - 2026-01-11</Typography>}
-                        secondary={
-                          <Box component="span">
-                            • Setup Wizard para configuração inicial<br />
-                            • Melhorias na página de Settings (HLS links, Logo público)
-                          </Box>
-                        }
-                      />
-                    </ListItem>
-                    <Divider />
-                    <ListItem>
-                      <ListItemText
-                        primary={<Typography variant="subtitle1"><strong>v1.0.0</strong> - 2025-12-31</Typography>}
-                        secondary={
-                          <Box component="span">
-                            • Lançamento inicial<br />
-                            • Sistema de playout completo<br />
-                            • Gestão de media, playlists e agendamento<br />
-                            • Suporte HLS e RTMP
-                          </Box>
-                        }
-                      />
-                    </ListItem>
-                  </List>
-                </Grid>
-              </Grid>
-            </TabPanel>
-
-            {/* Version Info Section */}
-            <Divider />
-            <Box sx={{ p: 2, bgcolor: 'rgba(0,0,0,0.02)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">Versão do Sistema</Typography>
-                <TextField 
-                  variant="standard" 
-                  value={settings.version} 
-                  onChange={(e) => setSettings({...settings, version: e.target.value})}
-                  sx={{ width: 150 }}
-                />
-              </Box>
-              <Box sx={{ textAlign: 'right' }}>
-                <Typography variant="subtitle2" color="text.secondary">Última Atualização</Typography>
-                <TextField 
-                  variant="standard" 
-                  value={settings.releaseDate} 
-                  onChange={(e) => setSettings({...settings, releaseDate: e.target.value})}
-                  sx={{ width: 150 }}
-                />
-              </Box>
-              <Button size="small" color="primary" variant="outlined" onClick={() => setReleaseNotesOpen(true)}>Release Notes</Button>
-            </Box>
-
-            <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end', borderTop: 1, borderColor: 'divider' }}>
-              <Button
-                variant="contained"
-                startIcon={<SaveIcon />}
+                  NOTAS DE VERSÃO
+              </Button>
+            </Tooltip>
+            <Button 
+                variant="contained" 
+                startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />} 
                 onClick={handleSaveSettings}
                 disabled={saving}
-              >
-                {saving ? 'A Guardar...' : 'Guardar Configurações'}
-              </Button>
-            </Box>
-          </>
-        )}
-      </Card>
+                sx={{ 
+                    fontWeight: 800,
+                    background: 'linear-gradient(45deg, #00e5ff 30%, #00b2cc 90%)',
+                    color: '#0a0b10',
+                    minWidth: '200px'
+                }}
+            >
+                {saving ? 'A GUARDAR...' : 'GUARDAR ALTERAÇÕES'}
+            </Button>
+        </Box>
+      </Box>
+
+      <Grid container spacing={4} sx={{ position: 'relative', zIndex: 1, flexGrow: 1, px: 2, pb: 4 }}>
+        {/* Navigation Sidebar */}
+        <Grid item xs={12} md={2.5}>
+            <Paper className="glass-panel" sx={{ p: 1.5, position: 'sticky', top: 16 }}>
+                <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 800, mb: 1, px: 2, display: 'block', letterSpacing: 2 }}>
+                    CONFIGURAÇÃO
+                </Typography>
+                <List size="small">
+                    {[
+                        { icon: <TvIcon />, label: 'EMISSÃO & SAÍDA' },
+                        { icon: <FolderIcon />, label: 'CAMINHOS & MEDIA' },
+                        { icon: <PlatformIcon />, label: 'PLAYOUT & PRESETS' },
+                        { icon: <UserIcon />, label: 'UTILIZADORES' },
+                        { icon: <ViewIcon />, label: 'SOBRE O SISTEMA' }
+                    ].map((item, idx) => (
+                        <Tooltip key={idx} title={`Explorar ${item.label}`} placement="right" arrow>
+                            <ListItemButton 
+                                selected={tabValue === idx} 
+                                onClick={() => setTabValue(idx)}
+                                sx={{ 
+                                    borderRadius: 3, 
+                                    mb: 0.5,
+                                    py: 1.5,
+                                    '&.Mui-selected': { 
+                                        bgcolor: 'rgba(0, 229, 255, 0.1)', 
+                                        color: 'primary.main',
+                                        '& .MuiListItemIcon-root': { color: 'primary.main' }
+                                    }
+                                }}
+                            >
+                                <ListItemIcon sx={{ minWidth: 40, color: tabValue === idx ? 'primary.main' : 'text.disabled' }}>
+                                    {item.icon}
+                                </ListItemIcon>
+                                <ListItemText primary={item.label} primaryTypographyProps={{ fontWeight: 800, fontSize: '0.75rem', letterSpacing: 1 }} />
+                            </ListItemButton>
+                        </Tooltip>
+                    ))}
+                    <Divider sx={{ my: 2, opacity: 0.05 }} />
+                    <ListItemButton 
+                        onClick={() => navigate('/backend-monitor')}
+                        sx={{ borderRadius: 3, py: 1.5 }}
+                    >
+                        <ListItemIcon sx={{ minWidth: 40, color: 'text.disabled' }}><HistoryIcon /></ListItemIcon>
+                        <ListItemText primary="MONITOR BACKEND" primaryTypographyProps={{ fontWeight: 800, fontSize: '0.75rem', letterSpacing: 1 }} />
+                    </ListItemButton>
+                </List>
+                
+                <Box sx={{ mt: 4, p: 2, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 4, textAlign: 'center' }}>
+                    <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 800, display: 'block' }}>SUPORTE TÉCNICO</Typography>
+                    <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.6rem' }}>Cloud Onepa Intelligence</Typography>
+                </Box>
+            </Paper>
+        </Grid>
+
+        {/* Content Area */}
+        <Grid item xs={12} md={9.5}>
+            <TabPanel value={tabValue} index={0}>
+                {/* Protocolo Section */}
+                <Paper className="glass-panel" sx={{ p: 4, mb: 4 }}>
+                    <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Box>
+                            <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>CONFIGURAÇÃO DE SAÍDA</Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>GESTÃO DE PROTOCOLOS E DISTRIBUIÇÃO</Typography>
+                        </Box>
+                        <Chip label="ONLINE • ENGINE READY" color="success" sx={{ fontWeight: 800, fontSize: '0.65rem', height: 24 }} />
+                    </Box>
+                    
+                    <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 800, letterSpacing: 1 }}>PROTOCOLO PRINCIPAL</Typography>
+                    <ToggleButtonGroup
+                        value={settings.outputType}
+                        exclusive
+                        onChange={(e, val) => val && handleOutputTypeChange(val)}
+                        fullWidth
+                        sx={{ mb: 4, gap: 1 }}
+                    >
+                        {['rtmp', 'srt', 'udp', 'hls', 'desktop'].map(type => (
+                            <ToggleButton 
+                                key={type}
+                                value={type} 
+                                sx={{ 
+                                    borderRadius: '12px !important', 
+                                    border: '1px solid rgba(255,255,255,0.05) !important',
+                                    fontWeight: 800,
+                                    '&.Mui-selected': { bgcolor: 'primary.main', color: '#000', '&:hover': { bgcolor: 'primary.light' } }
+                                }}
+                            >
+                                {type.toUpperCase()}
+                            </ToggleButton>
+                        ))}
+                    </ToggleButtonGroup>
+
+                    <Grid container spacing={3}>
+                        <Grid item xs={12}>
+                            <TextField
+                                fullWidth
+                                label="URL DE SAÍDA PRINCIPAL"
+                                value={settings.outputUrl}
+                                onChange={(e) => setSettings({ ...settings, outputUrl: e.target.value })}
+                                InputProps={{ sx: { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3, fontWeight: 700, fontFamily: 'monospace' } }}
+                            />
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                            <FormControl fullWidth>
+                                <InputLabel>RESOLUÇÃO</InputLabel>
+                                <Select value={settings.resolution} label="RESOLUÇÃO" onChange={(e) => setSettings({ ...settings, resolution: e.target.value })} sx={{ bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3 }}>
+                                    <MenuItem value="1920x1080">1080p (Full HD)</MenuItem>
+                                    <MenuItem value="1280x720">720p (HD)</MenuItem>
+                                    <MenuItem value="640x360">360p (SD)</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                            <TextField 
+                                fullWidth 
+                                label="BITRATE VÍDEO (ex: 5000k)" 
+                                value={settings.videoBitrate} 
+                                onChange={(e) => setSettings({ ...settings, videoBitrate: e.target.value })}
+                                InputProps={{ sx: { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3 } }}
+                            />
+                        </Grid>
+                    </Grid>
+                </Paper>
+                
+                {/* Secondary Protocols Section */}
+                <Paper className="glass-panel" sx={{ p: 4 }}>
+                    <Box sx={{ mb: 4 }}>
+                        <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>MULTI-STREAMING</Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>ACTIVAÇÃO DE PROTOCOLOS ADICIONAIS</Typography>
+                    </Box>
+                    
+                    <Grid container spacing={4}>
+                        {[
+                            { id: 'rtmp', label: 'RTMP Server', icon: <PlatformIcon /> },
+                            { id: 'srt', label: 'SRT (Caller/Listener)', icon: <PlatformIcon /> },
+                            { id: 'udp', label: 'UDP Streaming', icon: <PlatformIcon /> },
+                            { id: 'hls', label: 'HLS Distribution', icon: <TvIcon /> }
+                        ].map(proto => (
+                            <Grid item xs={12} md={6} key={proto.id}>
+                                <Box sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 4, border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                        <Box sx={{ p: 1, bgcolor: 'rgba(0,229,255,0.1)', borderRadius: 2, color: 'primary.main' }}>
+                                            {proto.icon}
+                                        </Box>
+                                        <Typography variant="body2" sx={{ fontWeight: 800 }}>{proto.label}</Typography>
+                                    </Box>
+                                    <Checkbox 
+                                        checked={settings[`${proto.id}Enabled`]} 
+                                        onChange={(e) => setSettings({ ...settings, [`${proto.id}Enabled`]: e.target.checked })}
+                                        sx={{ color: 'primary.main', '&.Mui-checked': { color: 'primary.main' } }}
+                                    />
+                                </Box>
+                            </Grid>
+                        ))}
+                    </Grid>
+                </Paper>
+            </TabPanel>
+
+            {/* CATEGORY 1: CAMINHOS & MEDIA (Combined Old 1 & 3) */}
+            <TabPanel value={tabValue} index={1}>
+                <Paper className="glass-panel" sx={{ p: 4, mb: 4 }}>
+                    <Box sx={{ mb: 4 }}>
+                        <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>CAMINHOS DE ARMAZENAMENTO</Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>CONFIGURAÇÃO DE DIRETÓRIOS E VOLUMES</Typography>
+                    </Box>
+
+                    <Grid container spacing={3}>
+                        {[
+                            { label: 'MEDIA & VIDEO', value: settings.mediaPath, key: 'mediaPath', helper: 'Armazenamento principal de conteúdos' },
+                            { label: 'THUMBNAILS', value: settings.thumbnailsPath, key: 'thumbnailsPath', helper: 'Cache de miniaturas geradas' },
+                            { label: 'PLAYLISTS DB', value: settings.playlistsPath, key: 'playlistsPath', helper: 'Base de dados das programações' },
+                            { label: 'FILLERS & LOOPS', value: settings.fillersPath, key: 'fillersPath', helper: 'Conteúdos de preenchimento automático' }
+                        ].map(field => (
+                            <Grid item xs={12} key={field.key}>
+                                <TextField
+                                    fullWidth
+                                    label={field.label}
+                                    value={field.value}
+                                    onChange={(e) => setSettings({ ...settings, [field.key]: e.target.value })}
+                                    helperText={field.helper}
+                                    InputProps={{ sx: { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3 } }}
+                                />
+                            </Grid>
+                        ))}
+                    </Grid>
+                </Paper>
+
+                <Paper className="glass-panel" sx={{ p: 4, mb: 4 }}>
+                    <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Box>
+                            <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>APIS DE METADADOS</Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>INDEXAÇÃO INTELIGENTE (TMDB / OMDB)</Typography>
+                        </Box>
+                        <Button 
+                            variant="outlined" 
+                            size="small" 
+                            startIcon={<WizardIcon />} 
+                            onClick={handleApplyDefaults}
+                            sx={{ fontWeight: 800, borderRadius: 2 }}
+                        >
+                            AUTO-CONFIG
+                        </Button>
+                    </Box>
+
+                    <Grid container spacing={3}>
+                        {[
+                            { id: 'tmdb', label: 'TMDB API KEY', key: 'tmdbApiKey' },
+                            { id: 'omdb', label: 'OMDB API KEY', key: 'omdbApiKey' },
+                            { id: 'tvmaze', label: 'TVMAZE KEY', key: 'tvmazeApiKey' }
+                        ].map(api => (
+                            <Grid item xs={12} md={4} key={api.id}>
+                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                    <TextField
+                                        fullWidth
+                                        label={api.label}
+                                        value={settings[api.key]}
+                                        type="password"
+                                        onChange={(e) => setSettings({ ...settings, [api.key]: e.target.value })}
+                                        InputProps={{ sx: { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3, fontSize: '0.8rem' } }}
+                                    />
+                                    <IconButton onClick={() => handleTestApi(api.id)} color="primary" sx={{ mt: 1 }}><RefreshIcon /></IconButton>
+                                </Box>
+                            </Grid>
+                        ))}
+                    </Grid>
+                </Paper>
+
+                <Paper className="glass-panel" sx={{ p: 4 }}>
+                    <Box sx={{ mb: 4 }}>
+                        <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>BRANDING & ASSETS PROTEGIDOS</Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>IDENTIDADE VISUAL E FALLBACKS</Typography>
+                    </Box>
+
+                    <Grid container spacing={3}>
+                        <Grid item xs={12} md={6}>
+                            <Box sx={{ p: 3, bgcolor: 'rgba(0,0,0,0.4)', borderRadius: 4, border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 800, mb: 2, display: 'block' }}>PREVIEW LOGO/VIDEO</Typography>
+                                <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 180 }}>
+                                    {(settings.branding_type === 'video') ? (
+                                        <video src="/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4" autoPlay loop muted style={{ maxWidth: '100%', maxHeight: '100%' }} />
+                                    ) : (
+                                        <img src={`/api/settings/app-logo?t=${Date.now()}`} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                                    )}
+                                </Box>
+                                <ToggleButtonGroup
+                                    value={settings.branding_type || 'static'}
+                                    exclusive
+                                    onChange={(e, v) => v && setSettings({...settings, branding_type: v})}
+                                    fullWidth
+                                    sx={{ mt: 3 }}
+                                >
+                                    <ToggleButton value="static" sx={{ fontWeight: 800 }}>ESTÁTICO</ToggleButton>
+                                    <ToggleButton value="video" sx={{ fontWeight: 800 }}>ANIMADO</ToggleButton>
+                                </ToggleButtonGroup>
+                            </Box>
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                           <Stack spacing={2}>
+                               <Button variant="outlined" component="label" fullWidth sx={{ py: 2, borderRadius: 3, fontWeight: 800 }}>
+                                   CARREGAR LOGO DA APP
+                                   <input type="file" hidden accept="image/*" onChange={(e) => {/* handle upload */}} />
+                               </Button>
+                               <Divider sx={{ opacity: 0.1 }}>OU SELECIONAR FALLBACKS</Divider>
+                               <Grid container spacing={2}>
+                                   <Grid item xs={6}>
+                                       <Button variant="contained" fullWidth onClick={() => { setMediaTypeSelector('image'); setMediaSelectorOpen(true); }} sx={{ bgcolor: 'rgba(255,255,255,0.05)', fontWeight: 800 }}>IMAGE FB</Button>
+                                   </Grid>
+                                   <Grid item xs={6}>
+                                       <Button variant="contained" fullWidth onClick={() => { setMediaTypeSelector('video'); setMediaSelectorOpen(true); }} sx={{ bgcolor: 'rgba(255,255,255,0.05)', fontWeight: 800 }}>VIDEO FB</Button>
+                                   </Grid>
+                               </Grid>
+                           </Stack>
+                        </Grid>
+                    </Grid>
+                </Paper>
+            </TabPanel>
+
+            {/* CATEGORY 2: PLAYOUT & PRESETS */}
+            <TabPanel value={tabValue} index={2}>
+                <Paper className="glass-panel" sx={{ p: 4, mb: 4 }}>
+                    <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Box>
+                            <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>MOTOR DE PLAYOUT</Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>PERFORMANCE E SINCRONIZAÇÃO EM TEMPO REAL</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Button variant="outlined" startIcon={<WizardIcon />} onClick={() => navigate('/setup')} sx={{ borderRadius: 2, fontWeight: 800 }}>ASSISTENTE</Button>
+                            <Button variant="outlined" color="error" startIcon={<DeleteIcon />} onClick={() => setResetConfirmOpen(true)} sx={{ borderRadius: 2, fontWeight: 800 }}>RESET</Button>
+                        </Box>
+                    </Box>
+
+                    <Grid container spacing={3}>
+                        <Grid item xs={12} md={6}>
+                            <TextField
+                                fullWidth
+                                label="INÍCIO DO DIA (PROGRAMAÇÃO)"
+                                type="time"
+                                value={settings.dayStart}
+                                onChange={(e) => setSettings({ ...settings, dayStart: e.target.value })}
+                                InputLabelProps={{ shrink: true }}
+                                InputProps={{ sx: { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3 } }}
+                            />
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                            <TextField
+                                fullWidth
+                                label="NOME DO CANAL"
+                                value={settings.channelName}
+                                onChange={(e) => setSettings({ ...settings, channelName: e.target.value })}
+                                InputProps={{ sx: { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3 } }}
+                            />
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                            <TextField
+                                fullWidth
+                                label="FPS (BASE)"
+                                value={settings.fps}
+                                onChange={(e) => setSettings({ ...settings, fps: e.target.value })}
+                                InputProps={{ sx: { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3 } }}
+                            />
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                            <FormControl fullWidth>
+                                <InputLabel>ENCODING PRESET</InputLabel>
+                                <Select value={settings.encodingPreset || 'medium'} label="ENCODING PRESET" onChange={(e) => setSettings({ ...settings, encodingPreset: e.target.value })} sx={{ bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3 }}>
+                                    <MenuItem value="ultrafast">Ultra Fast</MenuItem>
+                                    <MenuItem value="veryfast">Very Fast</MenuItem>
+                                    <MenuItem value="medium">Medium</MenuItem>
+                                    <MenuItem value="slow">Slow</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                    </Grid>
+                </Paper>
+                
+                {/* EPG CONFIGURATION SECTION */}
+                <Paper className="glass-panel" sx={{ p: 4, mb: 4 }}>
+                    <Box sx={{ mb: 4 }}>
+                        <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>PROGRAMAÇÃO & EPG</Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>DISTRIBUIÇÃO DE GUIA DE PROGRAMAÇÃO (XMLTV)</Typography>
+                    </Box>
+                    <Grid container spacing={3}>
+                        <Grid item xs={12} md={8}>
+                            <Tooltip title="URL estática para o seu fornecedor (M3U/IPTV)" arrow>
+                                <TextField
+                                    fullWidth
+                                    label="URL DO EPG (LOCAL/REF)"
+                                    value={settings.epgUrl || `${window.location.protocol}//${window.location.host}/api/playlists/epg.xml`}
+                                    onChange={(e) => setSettings({ ...settings, epgUrl: e.target.value })}
+                                    helperText="URL para referenciar o seu guia de programação (XMLTV)"
+                                    InputProps={{ 
+                                        sx: { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3 },
+                                        endAdornment: (
+                                            <IconButton onClick={() => {
+                                                navigator.clipboard.writeText(`${window.location.protocol}//${window.location.host}/api/playlists/epg.xml`);
+                                                showSuccess('URL copiada para a área de transferência!');
+                                            }}>
+                                                <MagicIcon />
+                                            </IconButton>
+                                        )
+                                    }}
+                                />
+                            </Tooltip>
+                        </Grid>
+                        <Grid item xs={12} md={4}>
+                            <Tooltip title="Número de dias futuros a incluir no guia" arrow>
+                                <TextField
+                                    fullWidth
+                                    label="DIAS DE EPG (ANTECEDÊNCIA)"
+                                    type="number"
+                                    value={settings.epgDays}
+                                    onChange={(e) => setSettings({ ...settings, epgDays: parseInt(e.target.value) || 7 })}
+                                    inputProps={{ min: 1, max: 30 }}
+                                    InputProps={{ sx: { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3 } }}
+                                />
+                            </Tooltip>
+                        </Grid>
+                    </Grid>
+                </Paper>
+
+                <Paper className="glass-panel" sx={{ p: 4, mb: 4 }}>
+                    <Box sx={{ mb: 4 }}>
+                        <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>OVERLAY DE CANAL</Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>GESTÃO DE MARCA D'ÁGUA EM TEMPO REAL</Typography>
+                    </Box>
+
+                    <Box sx={{ p: 3, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 4, border: '1px solid rgba(255,255,255,0.05)', mb: 3 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                            <Box>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>ESTADO DO OVERLAY</Typography>
+                                <Typography variant="caption" color="text.secondary">Ativar/Desativar camada de gráficos no output</Typography>
+                            </Box>
+                            <Switch 
+                                checked={settings.overlay_enabled} 
+                                onChange={(e) => setSettings({ ...settings, overlay_enabled: e.target.checked })}
+                                sx={{ 
+                                    '& .MuiSwitch-switchBase.Mui-checked': { color: 'primary.main' },
+                                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: 'primary.main' }
+                                }}
+                            />
+                        </Box>
+                        <Grid container spacing={4}>
+                            <Grid item xs={12} md={6}>
+                                <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', mb: 1, display: 'block' }}>OPACIDADE ({Math.round(settings.overlayOpacity * 100)}%)</Typography>
+                                <Slider value={settings.overlayOpacity || 1.0} min={0} max={1} step={0.1} onChange={(e, v) => setSettings({...settings, overlayOpacity: v})} />
+                            </Grid>
+                            <Grid item xs={12} md={6}>
+                                <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', mb: 1, display: 'block' }}>ESCALA ({settings.overlayScale}x)</Typography>
+                                <Slider value={settings.overlayScale || 1.0} min={0.1} max={2.0} step={0.1} onChange={(e, v) => setSettings({...settings, overlayScale: v})} />
+                            </Grid>
+                        </Grid>
+                    </Box>
+
+                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                        <TextField 
+                            fullWidth 
+                            label="CAMINHO DO LOGO" 
+                            value={settings.logoPath} 
+                            onChange={(e) => setSettings({...settings, logoPath: e.target.value})}
+                            InputProps={{ sx: { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3 } }}
+                        />
+                        <Button variant="contained" component="label" startIcon={<AddIcon />} sx={{ height: 56, borderRadius: 3, minWidth: 140, fontWeight: 800 }}>UPLOAD</Button>
+                        <IconButton onClick={() => setConverterOpen(true)} sx={{ width: 56, height: 56, bgcolor: 'rgba(0,229,255,0.1)', color: 'primary.main', borderRadius: 3 }}><MagicIcon /></IconButton>
+                    </Box>
+                </Paper>
+
+                <Paper className="glass-panel" sx={{ p: 4 }}>
+                    <Box sx={{ mb: 4 }}>
+                        <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>PRESETS DE QUALIDADE</Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>CONFIGURAÇÕES RÁPIDAS DE PERFORMANCE</Typography>
+                    </Box>
+                    <Grid container spacing={3}>
+                        {[
+                            { id: '720p', title: '720p STREAMING', desc: '1280x720 @ 25fps • 2500k' },
+                            { id: '1080p', title: '1080p HD PRO', desc: '1920x1080 @ 25fps • 5000k' },
+                            { id: '4k', title: '4K ULTRA HD', desc: '3840x2160 @ 30fps • 15000k' }
+                        ].map(p => (
+                            <Grid item xs={12} md={4} key={p.id}>
+                                <Box 
+                                    onClick={() => applyPreset(p.id)}
+                                    sx={{ 
+                                        p: 3, borderRadius: 4, cursor: 'pointer',
+                                        bgcolor: activePreset === p.id ? 'rgba(0,229,255,0.1)' : 'rgba(255,255,255,0.02)',
+                                        border: '1px solid', borderColor: activePreset === p.id ? 'primary.main' : 'rgba(255,255,255,0.05)',
+                                        transition: '0.3s', '&:hover': { transform: 'translateY(-4px)', bgcolor: 'rgba(255,255,255,0.05)' }
+                                    }}
+                                >
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: activePreset === p.id ? 'primary.main' : 'text.primary' }}>{p.title}</Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>{p.desc}</Typography>
+                                </Box>
+                            </Grid>
+                        ))}
+                    </Grid>
+                </Paper>
+            </TabPanel>
+
+            {/* CATEGORY 3: UTILIZADORES */}
+            <TabPanel value={tabValue} index={3}>
+                <Paper className="glass-panel" sx={{ p: 4 }}>
+                    <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Box>
+                            <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>GESTÃO DE ACESSOS</Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>UTILIZADORES COM ACESSO AO PAINEL</Typography>
+                        </Box>
+                        <Button 
+                            variant="contained" 
+                            startIcon={<AddIcon />} 
+                            onClick={() => setUserDialogOpen(true)}
+                            sx={{ borderRadius: 3, fontWeight: 800, px: 3 }}
+                        >
+                            ADICIONAR USER
+                        </Button>
+                    </Box>
+
+                    <List sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {Array.isArray(users) && users.map((user) => (
+                            <ListItem
+                                key={user.id}
+                                sx={{ 
+                                    bgcolor: 'rgba(255,255,255,0.02)', 
+                                    borderRadius: 4, 
+                                    border: '1px solid rgba(255,255,255,0.05)',
+                                    p: 2,
+                                    transition: '0.3s',
+                                    '&:hover': { bgcolor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.1)' }
+                                }}
+                            >
+                                <ListItemIcon sx={{ color: 'primary.main', minWidth: 50 }}>
+                                    <UserIcon />
+                                </ListItemIcon>
+                                <ListItemText
+                                    primary={user.username.toUpperCase()}
+                                    secondary={`NÍVEL DE ACESSO: ${user.role.toUpperCase()}`}
+                                    primaryTypographyProps={{ sx: { fontWeight: 800, letterSpacing: 1 } }}
+                                    secondaryTypographyProps={{ sx: { fontWeight: 600, fontSize: '0.65rem', opacity: 0.6 } }}
+                                />
+                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                    <Button 
+                                        size="small" 
+                                        variant="outlined"
+                                        onClick={() => handleOpenPasswordDialog(user)}
+                                        sx={{ borderRadius: 2, fontWeight: 800, fontSize: '0.7rem' }}
+                                    >
+                                        REPOR PASSWORD
+                                    </Button>
+                                    {user.username !== 'admin' && (
+                                        <IconButton onClick={() => handleDeleteUser(user.id)} color="error" sx={{ bgcolor: 'rgba(244,67,54,0.1)', borderRadius: 2 }}>
+                                            <DeleteIcon />
+                                        </IconButton>
+                                    )}
+                                </Box>
+                            </ListItem>
+                        ))}
+                    </List>
+                </Paper>
+            </TabPanel>
+
+            {/* CATEGORY 4: SOBRE O SISTEMA */}
+            <TabPanel value={tabValue} index={4}>
+                <Paper className="glass-panel" sx={{ p: 4, mb: 4 }}>
+                    <Box sx={{ mb: 4 }}>
+                        <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>INFORMAÇÃO DO SISTEMA</Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>DETALHES DO DEPLOYMENT E AMBIENTE</Typography>
+                    </Box>
+                    <Grid container spacing={3}>
+                        {[
+                            { label: 'VERSÃO DO SISTEMA', value: settings.version || 'v2.1.1-PRO', icon: <WizardIcon /> },
+                            { label: 'ÚLTIMA ATUALIZAÇÃO', value: settings.releaseDate || '2026-01-26', icon: <CheckIcon /> },
+                            { label: 'AMBIENTE DE HOST', value: 'MacBook Pro M4 / Proxmox', icon: <PlatformIcon /> },
+                            { label: 'DEPLOYMENT', value: 'Docker Container (Linux)', icon: <FolderIcon /> }
+                        ].map((item, id) => (
+                            <Grid item xs={12} sm={6} md={3} key={id}>
+                                <Box sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 3, border: '1px solid rgba(255,255,255,0.05)' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, color: 'primary.main' }}>
+                                        {item.icon}
+                                        <Typography variant="caption" sx={{ fontWeight: 800, fontSize: '0.6rem', opacity: 0.8 }}>{item.label}</Typography>
+                                    </Box>
+                                    <Typography variant="body2" sx={{ fontWeight: 800 }}>{item.value}</Typography>
+                                </Box>
+                            </Grid>
+                        ))}
+                    </Grid>
+                    <Box sx={{ mt: 4, display: 'flex', gap: 2 }}>
+                        <Button variant="outlined" onClick={() => window.open('https://github.com/onepa/cloud-onepa-playout/blob/master/RELEASE_NOTES.md', '_blank')} sx={{ borderRadius: 2, fontWeight: 800 }}>NOTAS DE LANÇAMENTO</Button>
+                        <Button variant="outlined" onClick={() => window.open('https://github.com/onepa/cloud-onepa-playout', '_blank')} sx={{ borderRadius: 2, fontWeight: 800 }}>GITHUB REPO</Button>
+                    </Box>
+                </Paper>
+
+                <Paper className="glass-panel" sx={{ p: 4 }}>
+                    <Box sx={{ mb: 4 }}>
+                        <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>HISTÓRICO DE VERSÕES</Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>NOTAS CRÍTICAS E EVOLUÇÃO DO PROJETO</Typography>
+                    </Box>
+                    <List sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        {releaseHistory.length > 0 ? releaseHistory.map((release, idx) => (
+                            <ListItem key={idx} sx={{ display: 'block', p: 0 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'primary.main' }}>{release.version.startsWith('v') ? release.version : 'v' + release.version}</Typography>
+                                    <Divider sx={{ flexGrow: 1, opacity: 0.1 }} />
+                                    <Typography variant="caption" sx={{ opacity: 0.5 }}>{release.date}</Typography>
+                                </Box>
+                                <Box sx={{ pl: 4, borderLeft: '2px dashed rgba(0,229,255,0.2)' }}>
+                                    {release.changes.map((change, cIdx) => (
+                                        <Typography key={cIdx} variant="body2" sx={{ mb: 1, opacity: 0.8, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Box sx={{ width: 4, height: 4, bgcolor: 'primary.main', borderRadius: '50%' }} /> {change}
+                                        </Typography>
+                                    ))}
+                                </Box>
+                            </ListItem>
+                        )) : (
+                            <Typography variant="body2" sx={{ opacity: 0.5, textAlign: 'center', py: 4 }}>NENHUM HISTÓRICO DISPONÍVEL</Typography>
+                        )}
+                    </List>
+                </Paper>
+            </TabPanel>
+
+        </Grid>
+      </Grid>
 
       {/* Add User Dialog */}
-      <Dialog open={userDialogOpen} onClose={() => setUserDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Adicionar Utilizador</DialogTitle>
+      {/* Add User Dialog */}
+      <Dialog 
+        open={userDialogOpen} 
+        onClose={() => setUserDialogOpen(false)} 
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: 'primary.main' }}>ADICIONAR UTILIZADOR</DialogTitle>
         <DialogContent>
           <TextField
-            fullWidth
-            label="Username"
+            fullWidth label="USERNAME"
             value={newUser.username}
             onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
             sx={{ mt: 2 }}
-            placeholder="ex: joao.silva"
-            helperText="Nome de utilizador único"
+            InputProps={{ sx: { borderRadius: 3 } }}
             InputLabelProps={{ shrink: true }}
           />
           <TextField
-            fullWidth
-            label="Password"
-            type="password"
+            fullWidth label="PASSWORD" type="password"
             value={newUser.password}
             onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-            sx={{ mt: 2 }}
-            placeholder="Mínimo 8 caracteres"
-            helperText="Use letras, números e símbolos"
+            sx={{ mt: 3 }}
+            InputProps={{ sx: { borderRadius: 3 } }}
             InputLabelProps={{ shrink: true }}
           />
-          <FormControl fullWidth sx={{ mt: 2 }}>
-            <InputLabel>Role</InputLabel>
+          <FormControl fullWidth sx={{ mt: 3 }}>
+            <InputLabel shrink>NÍVEL DE ACESSO</InputLabel>
             <Select
               value={newUser.role}
-              label="Role"
+              label="NÍVEL DE ACESSO"
               onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+              sx={{ borderRadius: 3 }}
+              notched
             >
-              <MenuItem value="admin">Admin</MenuItem>
-              <MenuItem value="operator">Operator</MenuItem>
+              <MenuItem value="admin">ADMINISTRADOR</MenuItem>
+              <MenuItem value="operator">OPERADOR</MenuItem>
             </Select>
           </FormControl>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setUserDialogOpen(false)}>Cancelar</Button>
-          <Button variant="contained" onClick={handleAddUser}>
-            Adicionar
-          </Button>
+        <DialogActions sx={{ p: 3 }}>
+          <Button onClick={() => setUserDialogOpen(false)} sx={{ fontWeight: 800 }}>CANCELAR</Button>
+          <Button variant="contained" onClick={handleAddUser} sx={{ borderRadius: 2, fontWeight: 800, px: 4 }}>GUARDAR</Button>
         </DialogActions>
       </Dialog>
 
-
       {/* Change Password Dialog */}
-      <Dialog open={passwordDialogOpen} onClose={() => setPasswordDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Alterar Password: {selectedUser?.username}</DialogTitle>
+      <Dialog 
+        open={passwordDialogOpen} 
+        onClose={() => setPasswordDialogOpen(false)} 
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: 'primary.main' }}>REPOR PASSWORD: {selectedUser?.username?.toUpperCase()}</DialogTitle>
         <DialogContent>
           <TextField
-            fullWidth
-            label="Nova Password"
-            type="password"
+            fullWidth label="NOVA PASSWORD" type="password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             sx={{ mt: 2 }}
-            placeholder="Mínimo 8 caracteres"
-            helperText="A nova password para este utilizador"
+            InputProps={{ sx: { borderRadius: 3 } }}
+            InputLabelProps={{ shrink: true }}
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setPasswordDialogOpen(false)}>Cancelar</Button>
-          <Button variant="contained" onClick={handleChangePassword}>
-            Alterar
-          </Button>
+        <DialogActions sx={{ p: 3 }}>
+          <Button onClick={() => setPasswordDialogOpen(false)} sx={{ fontWeight: 800 }}>CANCELAR</Button>
+          <Button variant="contained" onClick={handleChangePassword} sx={{ borderRadius: 2, fontWeight: 800, px: 4 }}>ATUALIZAR</Button>
         </DialogActions>
       </Dialog>
+
       {/* Release Notes Dialog */}
       <Dialog 
         open={releaseNotesOpen} 
         onClose={() => setReleaseNotesOpen(false)} 
         maxWidth="md" 
         fullWidth
-        scroll="paper"
+        PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
       >
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <WizardIcon color="primary" /> Notas de Lançamento - {settings.version ? (settings.version.startsWith('v') ? settings.version : 'v' + settings.version) : 'v1.9.2-PRO'}
-          </Box>
-          <Chip label="PRO-RELEASE" color="success" size="small" />
+        <DialogTitle sx={{ fontWeight: 800, color: 'primary.main', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <WizardIcon /> NOTAS DE LANÇAMENTO
+            </Box>
+            <Typography variant="caption" sx={{ opacity: 0.5 }}>v2.1.1-PRO</Typography>
         </DialogTitle>
-        <DialogContent dividers>
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h6" color="primary" gutterBottom>Destaques da Versão 1.9.2-PRO</Typography>
-            <Typography variant="body2" paragraph>
-              Esta versão consolida a experiência PRO com refinamentos críticos na interface, estabilidade de upload e diagnósticos avançados de rede.
-            </Typography>
-            
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'primary.main' }}>
-                  <Typography variant="subtitle2" fontWeight="bold">✨ UI/UX Refinements</Typography>
-                  <Typography variant="caption">• Setup Wizard: Multi-select & Metadata</Typography><br />
-                  <Typography variant="caption">• Playlist: Unique Clips & Bulk Add</Typography><br />
-                  <Typography variant="caption">• Dashboard: Novo indicador ON AIR Pulsante</Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'success.main' }}>
-                  <Typography variant="subtitle2" fontWeight="bold">📡 Protocol & Diagnostics</Typography>
-                  <Typography variant="caption">• VLC Smart Launcher com Logs em Tempo Real</Typography><br />
-                  <Typography variant="caption">• SRT: Configuração Dinâmica (Caller/Listener)</Typography><br />
-                  <Typography variant="caption">• Safari: Fix Áudio Context & LUFS Meter</Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'warning.main' }}>
-                  <Typography variant="subtitle2" fontWeight="bold">🛡️ Estabilidade Crítica</Typography>
-                  <Typography variant="caption">• Fix: Upload Sequencial (White Screen)</Typography><br />
-                  <Typography variant="caption">• Fix: Delete Confirm Dialog (Chrome)</Typography><br />
-                  <Typography variant="caption">• Versão Sincronizada: v1.9.2-PRO</Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'secondary.main' }}>
-                  <Typography variant="subtitle2" fontWeight="bold">🔧 Performance</Typography>
-                  <Typography variant="caption">• Clean Build System (Docker Cache Reset)</Typography><br />
-                  <Typography variant="caption">• Otimização de renderização de listas</Typography><br />
-                  <Typography variant="caption">• Validação robusta de caminhos de arquivo</Typography>
-                </Box>
-              </Grid>
-            </Grid>
-          </Box>
-
-          <Divider sx={{ my: 3 }} />
-
-          <Typography variant="h6" gutterBottom>Próximos Passos (Roadmap)</Typography>
-          <List dense>
-            <ListItem>
-              <ListItemText primary="📡 Fase 22: Conectividade & Live Inputs" secondary="WebRTC, NDI, SDI, Streaming nativo para YouTube/Facebook Live, SRT Support" />
-            </ListItem>
-            <ListItem>
-              <ListItemText primary="📅 Fase 23: EPG & Metadata Engine" secondary="Gerador de EPG, Exportação Web, Compliance XMLTV/DVB-EIT" />
-            </ListItem>
-            <ListItem>
-              <ListItemText primary="🎨 Fase 24: Graphics & Visual Experience" secondary="Editor Drag-and-Drop, HTML5 Graphics, Mobile Responsive Layout" />
-            </ListItem>
-            <ListItem>
-              <ListItemText primary="🏢 Fase 25: Enterprise & Compliance" secondary="Multi-user (RBAC), Audit Logs, As-Run Logs, SCTE-35 Support" />
-            </ListItem>
-            <ListItem>
-              <ListItemText primary="🚀 Fase 26: Future Tech" secondary="AI Integration, Multi-Channel Core, High Availability" />
-            </ListItem>
-          </List>
+        <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+            <List sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {releaseHistory.map((release, index) => (
+                    <Box key={release.version}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1.5 }}>
+                            <Typography variant="h6" sx={{ fontWeight: 800, color: 'primary.main' }}>
+                                Versão {release.version}
+                            </Typography>
+                            <Typography variant="caption" sx={{ opacity: 0.4 }}>{release.date}</Typography>
+                        </Box>
+                        <Box sx={{ pl: 3, borderLeft: '2px solid rgba(0,229,255,0.1)' }}>
+                            {release.changes.map((change, i) => (
+                                <Box key={i} sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, mb: 1 }}>
+                                    <CheckIcon color="success" sx={{ fontSize: 14, mt: 0.5 }} />
+                                    <Typography variant="body2" sx={{ opacity: 0.8 }}>{change}</Typography>
+                                </Box>
+                            ))}
+                        </Box>
+                    </Box>
+                ))}
+            </List>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setReleaseNotesOpen(false)}>Fechar</Button>
-          <Button 
-            variant="contained" 
-            onClick={() => {
-              setReleaseNotesOpen(false);
-              showSuccess('Obrigado pelo seu feedback!');
-            }}
-          >
-            Entendido
-          </Button>
+        <DialogActions sx={{ p: 2 }}>
+          <Button variant="contained" onClick={() => setReleaseNotesOpen(false)} sx={{ borderRadius: 2, fontWeight: 800, px: 4 }}>ENTENDIDO</Button>
         </DialogActions>
       </Dialog>
       {/* Preview Dialog */}

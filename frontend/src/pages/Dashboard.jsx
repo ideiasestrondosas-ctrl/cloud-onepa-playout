@@ -15,6 +15,7 @@ import {
   Tooltip,
   Divider,
   TextField,
+  CircularProgress,
 } from '@mui/material';
 import {
   Error as ErrorIcon,
@@ -411,23 +412,43 @@ export default function Dashboard() {
   };
 
   return (
-    <Box>
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Box sx={{ position: 'relative' }}>
+      {/* Background Glow */}
+      <Box sx={{ 
+        position: 'fixed', 
+        top: '10%', 
+        right: '5%', 
+        width: '400px', 
+        height: '400px', 
+        bgcolor: 'primary.main', 
+        filter: 'blur(150px)', 
+        opacity: 0.1, 
+        pointerEvents: 'none',
+        zIndex: 0
+      }} />
+
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+            <Typography variant="h4" className="neon-text" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>
                 {settings?.channel_name || 'Cloud Onepa'}
             </Typography>
             <Chip 
-              label={settings?.system_version || 'v1.9.2-PRO'} 
-              size="small" 
-              variant="outlined" 
-              sx={{ borderColor: 'primary.main', color: 'primary.main', fontWeight: 'bold', height: 20, fontSize: '0.65rem' }} 
+              label={settings?.system_version || 'v2.1.1-PRO'} 
+              className="neon-glow"
+              sx={{ 
+                bgcolor: 'rgba(0, 229, 255, 0.1)', 
+                color: 'primary.main', 
+                fontWeight: '800', 
+                height: 24, 
+                fontSize: '0.75rem',
+                border: '1px solid rgba(0, 229, 255, 0.3)',
+                backdropFilter: 'blur(4px)'
+              }} 
             />
         </Box>
         
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            {/* ON AIR Indicator Removed */}
-            <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 'medium', display: { xs: 'none', md: 'block' } }}>
+            <Typography variant="subtitle1" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 2 }}>
                 Monitorização e Controlo
             </Typography>
         </Box>
@@ -435,50 +456,50 @@ export default function Dashboard() {
 
       {loading && <LinearProgress sx={{ mb: 2 }} />}
 
-      <Grid container spacing={3}>
+      <Grid container spacing={3} sx={{ position: 'relative', zIndex: 1 }}>
         <Grid item xs={12} md={6} lg={3}>
-          <Card>
-            <CardContent>
-              <Typography color="text.secondary" gutterBottom>Status</Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
+          <Paper className="glass-panel" sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <Typography color="text.secondary" variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', mb: 1 }}>Status</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Box sx={{ 
                   display: 'flex', 
                   alignItems: 'center', 
                   gap: 1.5, 
-                  bgcolor: isPlaying ? 'success.dark' : 'grey.800', 
-                  color: isPlaying ? '#fff' : 'grey.400', 
-                  px: 3, 
-                  py: 1.5, 
+                  bgcolor: isPlaying ? 'rgba(76, 175, 80, 0.1)' : 'rgba(255, 255, 255, 0.05)', 
+                  color: isPlaying ? 'success.main' : 'text.disabled', 
+                  px: 2, 
+                  py: 1, 
                   borderRadius: 2,
-                  border: '2px solid',
-                  borderColor: isPlaying ? 'success.main' : 'grey.700'
+                  border: '1px solid',
+                  borderColor: isPlaying ? 'success.main' : 'rgba(255, 255, 255, 0.1)',
+                  flexGrow: 1
                 }}>
-                  {isPlaying ? <PlayIcon sx={{ fontSize: 32 }} /> : <StopIcon sx={{ fontSize: 32 }} />}
-                  <Box>
-                    <Typography variant="h6" sx={{ fontWeight: '700', letterSpacing: 1 }}>
-                      {isPlaying ? 'EXECUTANDO' : 'OFFLINE'}
-                    </Typography>
-                    <Typography variant="caption">
-                      {isPlaying ? 'Em execução' : 'Parado'}
-                    </Typography>
-                  </Box>
+                  {isPlaying ? <PlayIcon sx={{ fontSize: 24 }} /> : <StopIcon sx={{ fontSize: 24 }} />}
+                  <Typography variant="h6" sx={{ fontWeight: '800', letterSpacing: 1 }}>
+                    {isPlaying ? 'EXECUTANDO' : 'OFFLINE'}
+                  </Typography>
                 </Box>
               </Box>
-            </CardContent>
-          </Card>
+          </Paper>
         </Grid>
         <Grid item xs={12} md={6} lg={3}>
-          <Card><CardContent><Typography color="text.secondary" gutterBottom>Uptime</Typography><Typography variant="h4" sx={{ mt: 2, fontFamily: 'monospace' }}>{formatTime(status.uptime)}</Typography></CardContent></Card>
+          <Paper className="glass-panel" sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <Typography color="text.secondary" variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', mb: 1 }}>Tempo de Emissão</Typography>
+            <Typography variant="h4" className="neon-text" sx={{ fontWeight: 800, fontFamily: '"Orbitron", sans-serif' }}>
+              {formatTime(status.uptime)}
+            </Typography>
+          </Paper>
         </Grid>
         <Grid item xs={12} md={6} lg={3}>
-          <Card><CardContent><Typography color="text.secondary" gutterBottom>Clips Hoje</Typography><Typography variant="h4" sx={{ mt: 2 }}>{status.clips_played_today}</Typography></CardContent></Card>
+          <Paper className="glass-panel" sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <Typography color="text.secondary" variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', mb: 1 }}>Clips Hoje</Typography>
+            <Typography variant="h4" sx={{ fontWeight: 800 }}>{status.clips_played_today}</Typography>
+          </Paper>
         </Grid>
         <Grid item xs={12} md={6} lg={3}>
-          <Card><CardContent>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, width: '100%' }}>
+          <Paper className="glass-panel" sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
               <Button 
-                variant={isPlaying ? "outlined" : "contained"}
-                color={isPlaying ? "error" : "success"}
+                variant="contained"
                 onClick={() => {
                   if (isPlaying) {
                     handleStop();
@@ -494,114 +515,97 @@ export default function Dashboard() {
                     setRestartDialogOpen(true);
                   }
                 }} 
-                size="large"
-                fullWidth
                 startIcon={isPlaying ? <StopIcon /> : <PlayIcon />}
-                sx={{ fontWeight: 'bold', py: 2, fontSize: '1.1rem' }}
+                sx={{ 
+                  fontWeight: '800', 
+                  py: 1, 
+                  background: isPlaying ? 'rgba(244, 67, 54, 0.1)' : 'linear-gradient(45deg, #00e5ff 30%, #00b2cc 90%)',
+                  color: isPlaying ? 'error.main' : '#0a0b10',
+                  border: isPlaying ? '1px solid' : 'none',
+                  borderColor: isPlaying ? 'error.main' : 'transparent',
+                  '&:hover': {
+                    bgcolor: isPlaying ? 'rgba(244, 67, 54, 0.2)' : undefined,
+                  }
+                }}
               >
-                  {isPlaying ? 'PARAR EMISSÃO' : 'INICIAR EMISSÃO'}
+                  {isPlaying ? 'PARAR' : 'INICIAR'}
               </Button>
-              <Box sx={{ width: '100%', display: 'flex', gap: 1, mt: 1 }}>
-                <Button variant="outlined" onClick={handleSkip} disabled={!isPlaying} size="small" sx={{ flexGrow: 1 }} startIcon={<SkipIcon />}>PULAR CLIP</Button>
-                <Button variant="outlined" color="info" onClick={handleDiagnose} size="small" sx={{ flexGrow: 1 }}>DIAGNÓSTICO</Button>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button variant="outlined" onClick={handleSkip} disabled={!isPlaying} size="small" sx={{ flexGrow: 1, fontSize: '0.7rem' }}>SKIP</Button>
+                <Button variant="outlined" color="primary" onClick={handleDiagnose} size="small" sx={{ flexGrow: 1, fontSize: '0.7rem' }}>LOGS</Button>
               </Box>
-              <Button variant="contained" color="primary" onClick={handleLaunchVLC} size="small" fullWidth sx={{ mt: 1, fontWeight: 'bold' }}>ABRIR NO VLC PLAYER</Button>
               <Button 
                 variant="contained" 
-                fullWidth 
-                size="large"
+                size="small"
                 color={isDistributionActive ? "error" : "success"}
                 className={isDistributionActive ? 'flash-active' : ''}
                 sx={{ 
-                  bgcolor: isDistributionActive ? 'error.main !important' : 'success.main !important',
-                  color: '#fff !important',
                   fontWeight: 'bold',
-                  py: 1.5,
-                  fontSize: '1rem',
-                  mt: 1,
+                  fontSize: '0.75rem',
                   display: isPlaying ? 'inline-flex' : 'none'
                 }}
                 onClick={() => handleToggleAllDistribution(!isDistributionActive)}
               >
-                {isDistributionActive ? 'DESACTIVAR DISTRIBUIÇÃO' : 'INICIAR DISTRIBUIÇÃO'}
+                {isDistributionActive ? 'DESLIGAR DISTR.' : 'LIGAR DISTR.'}
               </Button>
-            </Box>
-          </CardContent></Card>
+          </Paper>
         </Grid>
       </Grid>
 
       {status.active_streams?.length > 0 && (
-        <Box sx={{ mt: 3 }}>
-          <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontWeight: 'bold', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <LaunchIcon sx={{ fontSize: 16 }} /> PROTOCOLOS DE TRANSMISSÃO EM TEMPO REAL
+        <Box sx={{ mt: 3, position: 'relative', zIndex: 1 }}>
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, mb: 1.5, display: 'flex', alignItems: 'center', gap: 1, textTransform: 'uppercase', letterSpacing: 1.5 }}>
+            <LaunchIcon sx={{ fontSize: 14 }} /> Protocolos de Transmissão
           </Typography>
           <Grid container spacing={2}>
             {status.active_streams.map((stream, idx) => (
               <Grid item xs={6} md={3} key={idx}>
-                <Paper sx={{ 
-                  p: 1.5, 
-                  bgcolor: stream.status === 'active' ? 'rgba(211, 47, 47, 0.05)' : 'rgba(0,0,0,0.02)', 
+                <Paper className="glass-panel" sx={{ 
+                  p: 2, 
+                  bgcolor: stream.status === 'active' ? 'rgba(0, 229, 255, 0.03)' : 'rgba(255, 255, 255, 0.02)', 
                   border: '1px solid',
-                  borderColor: stream.status === 'active' ? 'error.main' : 'divider',
+                  borderColor: stream.status === 'active' ? 'primary.main' : 'rgba(255, 255, 255, 0.05)',
                   display: 'flex',
                   justifyContent: 'space-between',
-                  alignItems: 'center'
+                  alignItems: 'center',
+                  transition: 'all 0.3s ease'
                 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                     <Box sx={{ 
                       p: 1, 
                       borderRadius: 1.5, 
-                      bgcolor: stream.status === 'active' ? 'error.main' : 'grey.200',
+                      bgcolor: stream.status === 'active' ? 'rgba(0, 229, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center'
+                      justifyContent: 'center',
+                      border: '1px solid',
+                      borderColor: stream.status === 'active' ? 'primary.main' : 'transparent'
                     }}>
-                      <ProtocolIcon protocol={stream.protocol} size={40} active={stream.status === 'active'} />
+                      <ProtocolIcon protocol={stream.protocol} size={32} active={stream.status === 'active'} />
                     </Box>
                     <Box>
-                      <Typography variant="caption" sx={{ color: stream.status === 'active' ? 'error.main' : 'text.disabled', fontWeight: 'bold' }}>
+                      <Typography variant="caption" sx={{ color: stream.status === 'active' ? 'primary.main' : 'text.disabled', fontWeight: 800 }}>
                         {stream.protocol}
                       </Typography>
                       <Typography variant="body2" sx={{ 
-                        fontWeight: 'bold', 
-                        fontSize: '0.75rem',
-                        color: stream.status === 'active' ? 'error.main' : stream.status === 'error' ? 'warning.main' : 'text.secondary' 
+                        fontWeight: '700', 
+                        fontSize: '0.7rem',
+                        color: stream.status === 'active' ? 'primary.main' : stream.status === 'error' ? 'warning.main' : 'text.secondary' 
                       }}>
-                        {stream.status === 'active' ? 'ATIVA' : stream.status === 'error' ? 'ERRO' : 'IDLE'}
+                        {stream.status === 'active' ? 'ON AIR' : stream.status === 'error' ? 'ERRO' : 'OFFLINE'}
                       </Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      {(status.display_urls && status.display_urls[stream.protocol]) && (
-                          <IconButton 
-                            size="small" 
-                            sx={{ p: 0, opacity: 0.6 }}
-                            onClick={() => {
-                              const textToCopy = status.display_urls[stream.protocol];
-                              navigator.clipboard.writeText(textToCopy);
-                              showInfo('URL copiada!');
-                            }}
-                          >
-                            <ContentCopyIcon sx={{ fontSize: 12 }} />
-                          </IconButton>
-                        )}
-                      </Box>
                     </Box>
                   </Box>
                   <Box sx={{ textAlign: 'right' }}>
-                    <Typography variant="h5" sx={{ color: stream.status === 'active' ? 'error.main' : 'text.disabled', fontWeight: 'bold' }}>
-                      {stream.sessions}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.6rem', display: 'block' }}>
-                      SESSÕES
-                    </Typography>
                     <Button 
                       size="small" 
                       variant={stream.status === 'active' ? "outlined" : "contained"}
                       color={stream.status === 'active' ? "error" : "primary"}
                       onClick={() => handleToggleProtocol(stream.protocol, stream.status)}
-                      sx={{ mt: 1, py: 0, fontSize: '0.65rem', minWidth: '80px' }}
+                      sx={{ py: 0, fontSize: '0.6rem', fontWeight: 800, minWidth: '70px', height: '24px' }}
                       disabled={stream.protocol === 'MASTER' || stream.protocol === 'HLS' || toggleLoading[stream.protocol]}
                     >
-                      {toggleLoading[stream.protocol] ? 'AGUARDE...' : (stream.status === 'active' ? 'DESATIVAR' : 'ATIVAR')}
+                      {toggleLoading[stream.protocol] ? '...' : (stream.status === 'active' ? 'STOP' : 'START')}
                     </Button>
                   </Box>
                 </Paper>
@@ -611,14 +615,18 @@ export default function Dashboard() {
         </Box>
       )}
 
-      <Paper sx={{ mt: 3, p: 0, height: 450, position: 'relative', bgcolor: '#000', borderRadius: 2, overflow: 'hidden', border: '2px solid', borderColor: isPlaying ? 'primary.main' : '#333' }}>
-        <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, p: 2, display: 'flex', justifyContent: 'space-between', bgcolor: 'rgba(0,0,0,0.5)' }}>
-            <Typography variant="subtitle2" sx={{ color: '#fff' }}>LIVE PREVIEW MONITOR</Typography>
+      <Paper className="glass-panel" sx={{ mt: 3, p: 0, height: 480, position: 'relative', bgcolor: '#000', borderRadius: 4, overflow: 'hidden', border: '2px solid', borderColor: isPlaying ? 'primary.main' : 'rgba(255, 255, 255, 0.1)', boxShadow: isPlaying ? '0 0 30px rgba(0, 229, 255, 0.15)' : 'none', zIndex: 1 }}>
+        <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, p: 2, display: 'flex', justifyContent: 'space-between', background: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%)' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <TvIcon className={isPlaying ? "neon-text" : ""} sx={{ fontSize: 20 }} />
+                <Typography variant="caption" sx={{ color: '#fff', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 2 }}>LIVE MONITOR</Typography>
+                {isPlaying && <Box sx={{ width: 8, height: 8, bgcolor: 'error.main', borderRadius: '50%', animation: 'logo-pulse 1s infinite' }} />}
+            </Box>
             <Box display="flex" gap={1}>
-                <IconButton size="small" color="inherit" onClick={handleTogglePause} sx={{ color: '#fff' }}>
+                <IconButton size="small" sx={{ color: '#fff', bgcolor: 'rgba(255, 255, 255, 0.1)', '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.2)' } }} onClick={handleTogglePause}>
                     {previewPaused ? <PlayCircleOutlineIcon /> : <PauseCircleOutlineIcon />}
                 </IconButton>
-                <IconButton size="small" color="inherit" onClick={() => setPreviewMuted(!previewMuted)} sx={{ color: '#fff' }}>
+                <IconButton size="small" sx={{ color: '#fff', bgcolor: 'rgba(255, 255, 255, 0.1)', '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.2)' } }} onClick={() => setPreviewMuted(!previewMuted)}>
                     {previewMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
                 </IconButton>
             </Box>
@@ -728,71 +736,111 @@ export default function Dashboard() {
         )}
       </Paper>
 
-      <Grid container spacing={3} sx={{ mt: 1 }}>
-        <Grid item xs={12} md={6}>
-          <Card sx={{ height: '100%' }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom color="primary">Logs de Inicialização / Ações</Typography>
-              <Box sx={{ bgcolor: '#1a1a1a', p: 1.5, borderRadius: 1, minHeight: 180, maxHeight: 300, overflowY: 'auto', fontFamily: 'monospace', fontSize: '0.85rem' }}>
-                {status.logs && status.logs.length > 0 ? status.logs.slice().reverse().map((log, i) => (
-                    <Box key={`backend-${i}`} sx={{ color: log.includes('✓') ? '#4caf50' : log.includes('✗') ? '#f44336' : '#bbb', mb: 0.5 }}>
-                        {log}
-                    </Box>
-                )) : startSteps.slice().reverse().map((s, i) => (
-                    <Box key={i} sx={{ color: s.type === 'success' ? '#4caf50' : s.type === 'error' ? '#f44336' : '#bbb', mb: 0.5 }}>
-                        {s.msg}
-                    </Box>
-                ))}
-                {(!status.logs || status.logs.length === 0) && startSteps.length === 0 && (
-                    <Typography variant="caption" color="text.secondary">Aguardando ações...</Typography>
-                )}
-              </Box>
-              <Typography variant="h6" gutterBottom color="primary" sx={{ mt: 3 }}>Clip Atual</Typography>
-              {status.current_clip ? (
-                <Box>
-                  <Typography variant="body1" fontWeight="bold">{status.current_clip.filename}</Typography>
-                  {status.schedule_source && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                        <Typography variant="caption" color="secondary" sx={{ fontStyle: 'italic' }}>
-                          Fonte: {status.schedule_source}
-                        </Typography>
-                        {(status.schedule_source.includes('Daily') || status.schedule_source.includes('Weekly')) && (
-                             <Box 
-                                sx={{ 
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    bgcolor: 'warning.main',
-                                    color: 'warning.contrastText',
-                                    px: 0.8,
-                                    py: 0.2,
-                                    borderRadius: 1,
-                                    fontSize: '0.65rem',
-                                    fontWeight: 'bold',
-                                    textTransform: 'uppercase'
-                                }}
-                            >
-                                Repetição
-                            </Box>
-                        )}
-                    </Box>
-                  )}
-                  <LinearProgress variant="determinate" value={(status.current_clip.position / status.current_clip.duration) * 100} sx={{ mt: 1, mb: 0.5 }} />
-                  <Typography variant="caption">{formatTime(status.current_clip.position)} / {formatTime(status.current_clip.duration)}</Typography>
-                </Box>
-              ) : <Typography color="text.secondary">Nenhum clip em reprodução</Typography>}
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <Card sx={{ height: '100%' }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom color="primary">Próximos Clips</Typography>
-              {status.next_clips?.map((c, i) => (
-                <Typography key={i} variant="body2" sx={{ opacity: 0.8 - (i * 0.1) }}>{i+1}. {c.filename} ({formatTime(c.duration)})</Typography>
+      <Grid container spacing={3} sx={{ mt: 1, position: 'relative', zIndex: 1 }}>
+        <Grid item xs={12} md={7}>
+          <Paper className="glass-panel" sx={{ p: 3, height: '100%', minHeight: 400 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
+                <InfoIcon className="neon-text" sx={{ fontSize: 20 }} />
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 2 }}>Informação da Emissão</Typography>
+            </Box>
+
+            <Typography variant="h6" gutterBottom className="neon-text" sx={{ fontWeight: 800, fontSize: '0.9rem', mb: 2 }}>LOGS DE SISTEMA</Typography>
+            <Box sx={{ 
+              bgcolor: 'rgba(0,0,0,0.3)', 
+              p: 2, 
+              borderRadius: 2, 
+              minHeight: 180, 
+              maxHeight: 250, 
+              overflowY: 'auto', 
+              fontFamily: '"JetBrains Mono", monospace', 
+              fontSize: '0.75rem',
+              border: '1px solid rgba(255, 255, 255, 0.05)',
+              mb: 4
+            }}>
+              {status.logs && status.logs.length > 0 ? status.logs.slice().reverse().map((log, i) => (
+                  <Box key={`backend-${i}`} sx={{ color: log.includes('✓') ? '#4caf50' : log.includes('✗') ? '#f44336' : 'rgba(255,255,255,0.6)', mb: 0.8, display: 'flex', gap: 1 }}>
+                      <Typography variant="caption" sx={{ opacity: 0.3, minWidth: '45px' }}>[{i}]</Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 500 }}>{log}</Typography>
+                  </Box>
+              )) : startSteps.slice().reverse().map((s, i) => (
+                  <Box key={i} sx={{ color: s.type === 'success' ? '#4caf50' : s.type === 'error' ? '#f44336' : 'rgba(255,255,255,0.6)', mb: 0.5 }}>
+                      {s.msg}
+                  </Box>
               ))}
-              {!status.next_clips?.length && <Typography color="text.secondary">Lista vazia</Typography>}
-            </CardContent>
-          </Card>
+              {(!status.logs || status.logs.length === 0) && startSteps.length === 0 && (
+                  <Typography variant="caption" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>Aguardando monitorização...</Typography>
+              )}
+            </Box>
+
+            <Typography variant="h6" gutterBottom className="neon-text" sx={{ fontWeight: 800, fontSize: '0.9rem', mb: 2 }}>CLIP EM REPRODUÇÃO</Typography>
+            {status.current_clip ? (
+              <Box sx={{ bgcolor: 'rgba(0, 229, 255, 0.05)', p: 2, borderRadius: 2, border: '1px solid rgba(0, 229, 255, 0.1)' }}>
+                <Typography variant="body2" sx={{ fontWeight: 800, color: 'primary.main', mb: 1 }}>{status.current_clip.filename}</Typography>
+                {status.schedule_source && (
+                  <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', mb: 2, fontStyle: 'italic' }}>
+                    Origem: {status.schedule_source}
+                  </Typography>
+                )}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Typography variant="caption" sx={{ minWidth: 60, fontFamily: 'monospace' }}>{formatTime(status.current_clip.position)}</Typography>
+                    <Box sx={{ flexGrow: 1, position: 'relative' }}>
+                        <LinearProgress 
+                            variant="determinate" 
+                            value={(status.current_clip.position / status.current_clip.duration) * 100} 
+                            sx={{ 
+                                height: 6, 
+                                borderRadius: 3,
+                                bgcolor: 'rgba(255,255,255,0.1)',
+                                '& .MuiLinearProgress-bar': {
+                                    borderRadius: 3,
+                                    background: 'linear-gradient(45deg, #00e5ff 30%, #9c27b0 90%)'
+                                }
+                            }} 
+                        />
+                    </Box>
+                    <Typography variant="caption" sx={{ minWidth: 60, fontFamily: 'monospace', textAlign: 'right' }}>{formatTime(status.current_clip.duration)}</Typography>
+                </Box>
+              </Box>
+            ) : (
+                <Box sx={{ p: 3, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2, border: '1px dashed rgba(255,255,255,0.1)' }}>
+                    <Typography variant="caption" sx={{ color: 'text.disabled' }}>Nenhum clip ativo no momento</Typography>
+                </Box>
+            )}
+          </Paper>
+        </Grid>
+        <Grid item xs={12} md={5}>
+          <Paper className="glass-panel" sx={{ p: 3, height: '100%' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
+                <SensorsIcon className="neon-text" sx={{ fontSize: 20 }} />
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 2 }}>Próximos na Lista</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+              {status.next_clips?.length > 0 ? status.next_clips.map((c, i) => (
+                <Box key={i} sx={{ 
+                    p: 1.5, 
+                    borderRadius: 2, 
+                    bgcolor: i === 0 ? 'rgba(255, 255, 255, 0.05)' : 'transparent',
+                    border: '1px solid',
+                    borderColor: i === 0 ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2,
+                    opacity: 1 - (i * 0.15)
+                }}>
+                  <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', minWidth: 24 }}>{i + 1}</Typography>
+                  <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
+                      <Typography variant="body2" noWrap sx={{ fontWeight: i === 0 ? 700 : 500, fontSize: '0.8rem' }}>{c.filename}</Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.65rem' }}>{formatTime(c.duration)}</Typography>
+                  </Box>
+                  {i === 0 && <Chip label="SÉGUE" size="small" sx={{ height: 16, fontSize: '0.6rem', bgcolor: 'primary.main', color: '#000', fontWeight: 800 }} />}
+                </Box>
+              )) : (
+                <Box sx={{ p: 4, textAlign: 'center', opacity: 0.5 }}>
+                    <Typography variant="caption">Lista de reprodução vazia</Typography>
+                </Box>
+              )}
+            </Box>
+          </Paper>
         </Grid>
       </Grid>
 

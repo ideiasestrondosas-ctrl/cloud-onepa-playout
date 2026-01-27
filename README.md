@@ -5,7 +5,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB.svg)](https://reactjs.org/)
-[![Version](https://img.shields.io/badge/Version-2.1.0--PRO-blue.svg)]()
+[![Version](https://img.shields.io/badge/Version-2.1.1--PRO-blue.svg)]()
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)]()
 
 ## 📖 Sobre
@@ -104,23 +104,38 @@ Ver [docs/INSTALL.md](docs/INSTALL.md) para instruções detalhadas.
 - **Container**: Docker + Docker Compose
 - **Auth**: JWT
 
-## 📊 Estatísticas de Desenvolvimento (v1.9.4-PRO)
+## 📊 Estatísticas de Desenvolvimento (v2.1.1-PRO)
 
 Este projeto representa um esforço significativo de engenharia para criar uma solução de playout robusta e moderna.
 
 | Métrica          | Detalhe                    | Valor                                     |
 | ---------------- | -------------------------- | ----------------------------------------- |
-| **Código Fonte** | Frontend (React/JSX)       | ~8734 linhas                             |
-|                  | Backend (Rust)             | ~7054 linhas                             |
-|                  | Total                      | **~15788+ linhas**                       |
-| **Arquitetura**  | Módulos Backend (Rust)     | 30                                        |
-|                  | Componentes Visuais        | 22+                                       |
-|                  | Migrações de Base de Dados | 15                                        |
+| **Código Fonte** | Frontend (React/JSX)       | ~9099 linhas                              |
+|                  | Backend (Rust)             | ~7127 linhas                              |
+|                  | Total                      | **~16226+ linhas**                        |
+| **Arquitetura**  | Módulos Backend (Rust)     | 32                                        |
+|                  | Componentes Visuais        | 25+                                       |
+|                  | Migrações de Base de Dados | 26                                        |
 | **Complexidade** | Linguagens Principais      | Rust, JavaScript, SQL                     |
 |                  | Tecnologias Core           | Tokio (Async), FFmpeg 7.2+, React 18      |
 |                  | Containers                 | 4 (Backend, Frontend, Postgres, MediaMTX) |
 
-> _Dados aproximados baseados na versão v1.9.5-PRO_
+## 🧪 Ambiente de Testes e Desenvolvimento
+
+Este sistema foi desenvolvido e validado em ambientes de alta performance e virtualização profissional.
+
+- **Desenvolvimento e Testes Locais**:
+  - **Hardware**: MacBook Pro 2024 (Apple M4)
+  - **Especificações**: 8GB RAM, 512GB SSD
+  - **OS**: macOS Sequoia (Native ARM)
+
+- **ALPHA/Staging Testing**:
+  - **Plataforma**: Virtualização Proxmox VE
+  - **Hardware**: Servidor Intel Xeon (Dedicated 4 Cores)
+  - **Especificações**: 4GB RAM, 32GB SSD
+  - **OS**: Debian 12 (Linux)
+
+> _Dados aproximados baseados na versão v2.1.1-PRO_
 
 ## 🎯 Roadmap & Future
 
@@ -169,9 +184,17 @@ _Focus: Innovation and High Availability_
 
 Ver [RELEASE_NOTES.md](RELEASE_NOTES.md) para detalhes completos.
 
-### Versão Atual: 2.0.0-PRO (2026-01-23)
+### Versão Atual: 2.1.1-PRO (2026-01-26)
 
 **Principais Novidades:**
+
+- 🪄 **Metadata Wizard Transparency**: O assistente agora mostra exatamente de onde os dados foram extraídos (TMDB/OMDb/TVMaze) com links diretos.
+- 📅 **EPG Intelligence 2.0**: Tooltips aprimorados com Diretor, Classificação, Género e Sinopse completa.
+- 📜 **Release History Sync**: Sincronização offline do histórico completo de versões desde a 1.9.3.
+- 🛠️ **Stability Fix**: Resolução de White Screens nos diálogos de metadados e persistência garantida do campo "EPG Days Ahead".
+- 📈 **Performance Metrics**: Atualização das estatísticas do repositório (~15k+ linhas de código).
+
+### Versão Anterior: 2.1.0-PRO (2026-01-25)
 
 - 📅 **EPG Intelligence**: Geração automática de guias de programação (XMLTV) baseados no calendário e agendamentos recorrentes.
 - 📉 **Precisão de Sessões**: Novo motor de contagem de sessões que distingue leitores HLS (estáticos) de RTMP/UDP (ativos).

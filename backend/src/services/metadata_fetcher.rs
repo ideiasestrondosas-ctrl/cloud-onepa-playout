@@ -12,6 +12,8 @@ pub struct FetchedMetadata {
     pub poster_url: Option<String>,
     pub cast: Option<Vec<String>>,
     pub rating: Option<String>,
+    pub source_service: Option<String>,
+    pub source_url: Option<String>,
 }
 
 #[derive(Clone)]
@@ -153,6 +155,13 @@ impl MetadataFetcherService {
             // Note: TMDB Genres are IDs in search results, need mapping or separate call.
             // Simplified for now.
 
+            let tmdb_id = first["id"].as_i64();
+            let source_url = match (media_type, tmdb_id) {
+                ("movie", Some(id)) => Some(format!("https://www.themoviedb.org/movie/{}", id)),
+                ("tv", Some(id)) => Some(format!("https://www.themoviedb.org/tv/{}", id)),
+                _ => None,
+            };
+
             Ok(FetchedMetadata {
                 title: fetched_title,
                 description: overview,
@@ -161,6 +170,8 @@ impl MetadataFetcherService {
                 poster_url,
                 cast: None, // Requires details call
                 rating: first["vote_average"].as_f64().map(|v| format!("{:.1}", v)),
+                source_service: Some("TMDB".to_string()),
+                source_url,
             })
         } else {
             Err(anyhow!("No results found on TMDB"))
@@ -201,6 +212,9 @@ impl MetadataFetcherService {
             .map(|s| s.split(", ").map(|a| a.to_string()).collect());
         let rating = json["imdbRating"].as_str().map(|s| s.to_string());
 
+        let imdb_id = json["imdbID"].as_str();
+        let source_url = imdb_id.map(|id| format!("https://www.imdb.com/title/{}/", id));
+
         Ok(FetchedMetadata {
             title: fetched_title,
             description: plot,
@@ -209,6 +223,8 @@ impl MetadataFetcherService {
             poster_url,
             cast,
             rating,
+            source_service: Some("OMDb".to_string()),
+            source_url,
         })
     }
 
@@ -255,6 +271,8 @@ impl MetadataFetcherService {
             })
             .unwrap_or_default();
 
+        let source_url = show["url"].as_str().map(|s| s.to_string());
+
         Ok(FetchedMetadata {
             title: fetched_title,
             description,
@@ -263,20 +281,25 @@ impl MetadataFetcherService {
             poster_url,
             cast: None, // Cast needs separate call `shwo_id/cast`
             rating,
+            source_service: Some("TVMaze".to_string()),
+            source_url,
         })
     }
 
     // Fallback logic to just return clean filename if no API
+    #[allow(dead_code)]
     pub fn fallback_metadata(&self, filename: &str) -> FetchedMetadata {
         let (title, year) = self.clean_filename(filename);
         FetchedMetadata {
             title,
             description: None,
             year,
-            tags: vec![],
+            tags: Vec::new(),
             poster_url: None,
             cast: None,
             rating: None,
+            source_service: Some("Local Filename".to_string()),
+            source_url: None,
         }
     }
 }

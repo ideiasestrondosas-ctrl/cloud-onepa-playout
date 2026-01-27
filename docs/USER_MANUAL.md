@@ -1,485 +1,728 @@
-# Cloud Onepa Playout - User Manual
+# ONEPA Playout PRO - User Manual
 
-**Versão 1.9.2-PRO**  
-**Data:** 2026-01-13
-
----
-
-## 📖 Índice
-
-1. [Introdução](#introdução)
-2. [Primeiros Passos](#primeiros-passos)
-3. [Media Library](#media-library)
-4. [Playlist Editor](#playlist-editor)
-5. [Calendário](#calendário)
-6. [Dashboard](#dashboard)
-7. [Configurações](#configurações)
-8. [Templates](#templates)
-9. [Resolução de Problemas](#resolução-de-problemas)
+**Version:** 2.1.1-PRO  
+**Release Date:** January 2026  
+**Document Version:** 1.0
 
 ---
 
-## 1. Introdução
+## Table of Contents
 
-### O que é o Cloud Onepa Playout?
-
-O Cloud Onepa Playout é um sistema de automação de playout 24/7 simplificado e moderno, ideal para streaming contínuo de vídeo. Permite gerir media, criar playlists, agendar programação e controlar a reprodução de forma intuitiva.
-
-### Funcionalidades Principais
-
-- ✅ **Upload de Media** - Suporte para vídeo, áudio e imagens
-- ✅ **Gestão de Playlists** - Editor visual com drag-and-drop
-- ✅ **Agendamento** - Calendário com repetições (daily/weekly/monthly)
-- ✅ **Validação 24h** - Garante playlists completas
-- ✅ **Controlo de Playout** - Start/Stop/Skip em tempo real
-- ✅ **Templates** - Presets para criação rápida de playlists
-- ✅ **Multi-formato** - RTMP, HLS, SRT, UDP
+1. [Introduction](#introduction)
+2. [Dashboard](#1-dashboard)
+3. [Media Library](#2-media-library)
+4. [Playlist Editor](#3-playlist-editor)
+5. [Calendar & Scheduling](#4-calendar--scheduling)
+6. [EPG (Electronic Program Guide)](#5-epg-electronic-program-guide)
+7. [Graphics Editor](#6-graphics-editor)
+8. [Templates](#7-templates)
+9. [Settings](#8-settings)
+10. [Additional Features](#9-additional-features)
 
 ---
 
-## 2. Primeiros Passos
+## Introduction
 
-### Login
+ONEPA Playout PRO is a professional broadcast automation system designed for 24/7 television and streaming operations. This manual provides comprehensive guidance on using all features of the application.
 
-1. Aceda a `http://localhost:3000` (ou URL do servidor)
-2. Insira as credenciais:
-   - **Username:** `admin`
-   - **Password:** `admin`
-3. Clique em **Login**
+### Key Features
 
-> ⚠️ **Importante:** Altere a password padrão após o primeiro login em **Configurações → Utilizadores**
-
-### Interface Principal
-
-Após login, verá o **Dashboard** com:
-
-- **Menu Lateral** - Navegação entre páginas
-- **Status do Playout** - Estado atual (ON AIR/STOPPED)
-- **Cards Informativos** - Uptime, clips reproduzidos, etc.
-
-### Navegação
-
-Use o menu lateral para aceder:
-
-- 📊 **Dashboard** - Visão geral e controlos
-- 📁 **Media Library** - Gestão de ficheiros
-- 📝 **Playlists** - Editor de playlists
-- 📅 **Calendário** - Agendamento
-- 📋 **Templates** - Presets de playlists
-- ⚙️ **Configurações** - Sistema e utilizadores
+- **24/7 Automated Playout** - Continuous broadcast automation
+- **Multi-Protocol Streaming** - RTMP, SRT, HLS, UDP, and more
+- **Advanced Scheduling** - Calendar-based program scheduling
+- **EPG Generation** - Automatic electronic program guide creation
+- **Graphics Overlay** - WYSIWYG logo and branding editor
+- **Metadata Management** - Automatic metadata enrichment via TMDB/OMDB
+- **Template System** - Reusable playlist templates
 
 ---
 
-## 3. Media Library
+## 1. Dashboard
 
-### Upload de Ficheiros
+The Dashboard is your central command center, providing real-time monitoring of playout status, upcoming content, and system health.
 
-**Método 1: Drag & Drop**
+### Main Interface
 
-1. Aceda a **Media Library**
-2. Arraste ficheiros para a área de upload
-3. Aguarde conclusão (progress bar)
-4. Ficheiros aparecem no grid com thumbnails
+![Dashboard - Top Section](file:///Users/arnaldoesilva/Documents/Cloud%20Onepa%20Playout/docs/screenshots/dashboard_main-1.png)
 
-**Método 2: Click**
+**Key Elements:**
 
-1. Clique na área de upload
-2. Selecione ficheiros no explorador
-3. Confirme upload
+1. **Playout Controls** (Top Right)
+   - **INICIAR EMISSÃO** - Start broadcast playout
+   - **PARAR EMISSÃO** - Stop broadcast playout
+   - Status indicator shows current state (Playing/Stopped)
 
-**Formatos Suportados:**
+2. **Current Clip Section** (Clip Atual)
+   - Displays currently playing content
+   - Shows title, duration, and progress
+   - Real-time playback indicator
 
-- **Vídeo:** MP4, MKV, AVI, MOV, WebM
-- **Áudio:** MP3, WAV, AAC, FLAC
-- **Imagem:** JPG, PNG, GIF, WebP
+![Dashboard - Middle Section](file:///Users/arnaldoesilva/Documents/Cloud%20Onepa%20Playout/docs/screenshots/dashboard_main-2.png)
 
-### Filtros e Pesquisa
+3. **Upcoming Clips Timeline** (Próximos Clips)
+   - Visual timeline of scheduled content
+   - Shows next 5-10 upcoming clips
+   - Time-based horizontal layout
+   - Color-coded by content type
 
-**Filtrar por Tipo:**
+4. **Protocol Status Cards**
+   - **RTMP** - Real-Time Messaging Protocol status
+   - **SRT** - Secure Reliable Transport status
+   - **UDP** - User Datagram Protocol status
+   - **HLS** - HTTP Live Streaming status
+   - Each card shows:
+     - Active/Inactive state
+     - Connection URL
+     - Copy button for quick access
 
-1. Use o dropdown "Tipo"
-2. Selecione: Todos, Vídeo, Áudio ou Imagem
-3. Grid atualiza automaticamente
+![Dashboard - Bottom Section](file:///Users/arnaldoesilva/Documents/Cloud%20Onepa%20Playout/docs/screenshots/dashboard_main-3.png)
 
-**Pesquisar:**
+5. **System Monitoring**
+   - **CPU Usage** - Real-time processor utilization
+   - **Memory Usage** - RAM consumption
+   - **GPU Temperature** - Graphics card thermal status
+   - **LUFS Meter** - Audio loudness monitoring
 
-1. Digite nome do ficheiro na caixa de pesquisa
-2. Resultados filtram em tempo real
+### Quick Actions
 
-### Preview de Media
-
-1. Clique no ícone ▶️ (play) no card
-2. Dialog abre com player
-3. Para vídeos/áudios: reproduz automaticamente
-4. Veja metadata: duração, resolução, codec
-
-### Deletar Ficheiros
-
-1. Clique no ícone 🗑️ (delete)
-2. Confirme a ação
-3. Ficheiro é removido (físico + database)
-
-> ⚠️ **Atenção:** Deletar é permanente!
-
----
-
-## 4. Playlist Editor
-
-### Criar Nova Playlist
-
-1. Aceda a **Playlists**
-2. Clique em **Nova Playlist**
-3. Insira:
-   - **Nome:** Ex: "Playlist 09/01/2026"
-   - **Data:** Selecione data (opcional)
-4. Clique em **Adicionar Clip**
-5. Selecione vídeos/áudios da lista
-6. Clips aparecem na lista
-
-### Reordenar Clips (Drag & Drop)
-
-1. Clique e segure no ícone ⋮⋮ (drag handle)
-2. Arraste clip para nova posição
-3. Solte para confirmar
-4. Ordem atualiza automaticamente
-
-### Validação de Duração
-
-O sistema valida se a playlist completa **24 horas**:
-
-**Alert Verde (✓):**
-
-- Playlist válida (~24h ±5%)
-- Pronta para agendar
-
-**Alert Amarelo (⚠):**
-
-- **"Faltam Xh Ym Zs"** - Adicione mais clips
-- **"Excede em Xh Ym Zs"** - Remova clips
-
-**Dica:** Use fillers para completar tempo restante
-
-### Salvar Playlist
-
-1. Verifique que validação está verde
-2. Clique em **Salvar**
-3. Playlist aparece na lista lateral
-4. Pode editar posteriormente
-
-### Carregar Playlist Existente
-
-1. Clique numa playlist na lista lateral
-2. Nome, data e clips carregam automaticamente
-3. Edite conforme necessário
-4. Salve novamente
+- Click **INICIAR EMISSÃO** to begin automated playout
+- Monitor protocol status cards for streaming health
+- Check upcoming timeline to verify schedule
+- Use LUFS meter to ensure audio compliance
 
 ---
 
-## 5. Calendário
+## 2. Media Library
 
-### Visualização
+The Media Library is your central repository for all broadcast content including videos, audio files, and images.
 
-O calendário mostra agendamentos por mês:
+### Main Interface
 
-- 🔴 **Vermelho** - Agendamento único
-- 🔵 **Azul** - Repetição (daily/weekly/monthly)
+![Media Library - Grid View](file:///Users/arnaldoesilva/Documents/Cloud%20Onepa%20Playout/docs/screenshots/media_library_main.png)
 
-### Criar Agendamento
+**Key Features:**
 
-1. Aceda a **Calendário**
-2. Clique numa **data futura**
-3. No dialog:
-   - **Playlist:** Selecione da lista
-   - **Horário:** Ex: 06:00
-   - **Repetição:** Escolha tipo
-4. Clique em **Agendar**
-5. Evento aparece no calendário
+1. **Folder Navigation** (Left Sidebar)
+   - Hierarchical folder structure
+   - Create custom folders for organization
+   - Quick access to media categories
 
-### Tipos de Repetição
+2. **Media Grid**
+   - Thumbnail previews for all media
+   - File information overlay
+   - Duration and format indicators
+   - Quick action buttons (Edit, Delete)
 
-**Sem repetição:**
+3. **Toolbar Actions**
+   - **Upload** - Add new media files
+   - **Create Folder** - Organize content
+   - **Search** - Find media by name or metadata
+   - **Filter** - By type (Video/Audio/Image)
 
-- Executa apenas na data selecionada
+### Metadata Management
 
-**Diária:**
+#### EPG Metadata Editor
 
-- Repete todos os dias a partir da data
+![Metadata Editor - Part 1](file:///Users/arnaldoesilva/Documents/Cloud%20Onepa%20Playout/docs/screenshots/media_library_edit_metadados_EPG-1.png)
 
-**Semanal:**
+The metadata editor allows you to enrich your content with detailed information for EPG generation:
 
-- Repete no mesmo dia da semana
+**Basic Information:**
 
-**Mensal:**
+- **Title** - Content title for EPG display
+- **Description** - Detailed synopsis
+- **Genre** - Content category (Movie, Series, Documentary, etc.)
+- **Year** - Production year
+- **Rating** - Content rating (G, PG, PG-13, R, etc.)
 
-- Repete no mesmo dia do mês
+![Metadata Editor - Part 2](file:///Users/arnaldoesilva/Documents/Cloud%20Onepa%20Playout/docs/screenshots/media_library_edit_metadados_EPG-2.png)
 
-### Deletar Agendamento
+**Extended Metadata:**
 
-1. Clique no **evento** no calendário
-2. Confirme delete
-3. Evento desaparece
+- **Director** - Director name(s)
+- **Cast** - Main actors/performers
+- **Duration** - Runtime
+- **Language** - Audio language
+- **Subtitles** - Available subtitle tracks
+
+#### Automatic Metadata Enrichment
+
+![Auto Metadata Review - Part 1](file:///Users/arnaldoesilva/Documents/Cloud%20Onepa%20Playout/docs/screenshots/media_library_edit_revisar_metadados_automatico-1.png)
+
+ONEPA Playout PRO can automatically fetch metadata from online databases (TMDB, OMDB):
+
+1. Click **"Revisar Metadados Automático"** button
+2. System searches for matching content
+3. Review suggested metadata
+
+![Auto Metadata Review - Part 2](file:///Users/arnaldoesilva/Documents/Cloud%20Onepa%20Playout/docs/screenshots/media_library_edit_revisar_metadados_automatico-2.png)
+
+4. **Accept** or **Reject** suggested data
+5. Manual override available for all fields
+6. Bulk metadata import for series/collections
+
+### Best Practices
+
+- Organize media into logical folders (Movies, Series, Commercials, etc.)
+- Always add metadata for EPG-enabled content
+- Use consistent naming conventions
+- Verify metadata accuracy before scheduling
 
 ---
 
-## 6. Dashboard
+## 3. Playlist Editor
 
-### Status do Playout
+The Playlist Editor is where you create and manage 24-hour broadcast schedules.
 
-**STOPPED (Vermelho):**
+### Main Interface
 
-- Playout não está ativo
-- Botão **Start** disponível
+![Playlist Editor](file:///Users/arnaldoesilva/Documents/Cloud%20Onepa%20Playout/docs/screenshots/playlists_editor_main.png)
 
-**ON AIR (Verde):**
+**Layout Components:**
 
-- Playout em execução
-- Botões **Stop** e **Skip** disponíveis
+1. **Playlist Library** (Left Sidebar)
+   - List of saved playlists
+   - Quick load/switch between playlists
+   - Create new playlist button
+   - Delete playlist option
 
-### Controlos
+2. **Playlist Details** (Top Section)
+   - **Playlist Name** - Editable title
+   - **Broadcast Date** - Target air date
+   - **Duration Progress** - Visual 24-hour completion bar
+   - **Total Duration** - Current playlist length
 
-**Start:**
+3. **Clip Sequence Grid** (Main Area)
+   - Drag-and-drop clip ordering
+   - Individual clip cards showing:
+     - Filename
+     - Start time
+     - End time
+     - Duration
+     - Filler flag (if applicable)
+   - Multi-select for bulk operations
+   - Remove clip button
 
-1. Clique em **Start**
-2. Status muda para "ON AIR"
-3. Clip atual começa a reproduzir
+4. **Action Toolbar**
+   - **ADICIONAR CLIP** - Add media to playlist
+   - **AUTOMAÇÃO** - Auto-fill 24 hours
+   - **NOVA PLAYLIST** - Create new playlist
+   - **SALVAR** - Save changes
 
-**Stop:**
+### Creating a Playlist
 
-1. Clique em **Stop**
-2. Playout para imediatamente
-3. Status volta para "STOPPED"
+1. Click **"NOVA PLAYLIST"** button
+2. Enter playlist name and date
+3. Click **"ADICIONAR CLIP"** to add media
+4. Drag clips to reorder sequence
+5. Monitor 24-hour progress bar
+6. Click **"SALVAR"** when complete
 
-**Skip:**
+### Automation Features
 
-1. Durante reprodução, clique em **Skip**
-2. Avança para próximo clip
-3. Útil para pular conteúdo
+The **AUTOMAÇÃO** button provides intelligent playlist filling:
 
-### Cards Informativos
+- **Random Mode** - Randomly select media to fill time
+- **Sequential Mode** - Add media in order
+- **Loop Mode** - Repeat existing clips
+- **Folder Selection** - Choose specific media folder
+- **Filler-Only** - Use only filler content
 
-**Uptime:**
+### Validation
 
-- Tempo desde último start
-- Formato: Xh Ym
-
-**Clips Reproduzidos Hoje:**
-
-- Contador de clips
-- Reset à meia-noite
-
-**Clip Atual:**
-
-- Nome do ficheiro
-- Duração total
-
-**Próximos Clips:**
-
-- Lista dos próximos 5 clips
-- Ordem de reprodução
-
-### Monitor de Saída
-
-281:
-282: O **Monitor de Saída** oferece ferramentas profissionais para verificar a qualidade do broadcast:
-283:
-284: **Live Preview:**
-285:
-286: - Player HLS de baixa latência
-287: - Mostra exatamente o que está a ser transmitido
-288: - Controlo de volume independente (local)
-289:
-290: **LUFS Meter (Áudio):**
-291:
-292: - Barra vertical à direita do vídeo
-293: - **Verde:** Níveis seguros (-23 LUFS)
-294: - **Amarelo:** Atenção, níveis elevados
-295: - **Vermelho:** Clipping/Distorção
-296: - _Nota: Requer que o volume local esteja ativo (unmuted)_
-297:
-298: **Ações de Diagnóstico:**
-299:
-300: - **Open VLC:** Abre o stream diretamente no VLC Media Player (nativo)
-301: - **Copy Link:** Copia o link HLS para a área de transferência
-302: - **Diagnosticar:** Abre janela com logs técnicos do FFmpeg e sistema
-303:
-304: ---
-
-## 7. Configurações
-
-### Tab: Output
-
-**Tipo de Output:**
-
-- **RTMP** - Para YouTube, Twitch, etc.
-- **HLS** - Para streaming HTTP
-- **SRT** - Para transmissão segura
-- **UDP** - Para broadcast local
-- **Desktop** - Preview local
-
-**URL de Output:**
-
-- Ex RTMP: `rtmp://a.rtmp.youtube.com/live2/STREAM_KEY`
-- Ex HLS: `http://localhost:8080/hls/stream.m3u8`
-
-**Qualidade:**
-
-- **Resolução:** 720p, 1080p, 4K
-- **FPS:** 24, 25, 30, 60
-- **Bitrate Vídeo:** Ex: 5000k
-- **Bitrate Áudio:** Ex: 192k
-
-### Tab: Caminhos
-
-Configure diretórios de armazenamento:
-
-- **Media:** Vídeos/áudios uploaded
-- **Thumbnails:** Imagens geradas
-- **Playlists:** Ficheiros JSON
-- **Fillers:** Vídeos para preencher tempo
-
-> 💡 **Dica:** Use caminhos absolutos
-
-### Tab: Playout
-
-**Início do Dia:**
-
-- Horário de início da programação
-- Ex: 06:00 (6h da manhã)
-
-**Logo Overlay:**
-
-- **Path:** Caminho para imagem PNG
-- **Posição:** Superior/Inferior, Esquerdo/Direito
-
-### Tab: Utilizadores
-
-**Adicionar Utilizador:**
-
-1. Clique em **Adicionar Utilizador**
-2. Insira username e password
-3. Selecione role:
-   - **Admin** - Acesso total
-   - **Operator** - Sem acesso a settings
-4. Clique em **Adicionar**
-
-**Deletar:**
-
-- Clique no ícone 🗑️
-- Utilizador "admin" não pode ser deletado
-
-### Tab: Presets
-
-Clique num preset para aplicar configurações:
-
-- **720p Streaming** - Básico (2500k)
-- **1080p HD** - Profissional (5000k)
-- **4K Ultra HD** - Máxima qualidade (15000k)
-
-**Guardar:**
-
-- Clique em **Guardar Configurações** no bottom
+- **Green Progress Bar** - 24 hours complete ✅
+- **Yellow Warning** - Incomplete playlist ⚠️
+- **Clip Timing** - Automatic start/end time calculation
+- **Duration Display** - Real-time total duration
 
 ---
 
-## 8. Templates
+## 4. Calendar & Scheduling
 
-### Usar Template
+The Calendar module enables advanced scheduling of playlists across days, weeks, and months.
 
-1. Aceda a **Templates**
-2. Veja templates disponíveis:
-   - **Morning Show** - 6 horas
-   - **Full Day 24h** - 24 horas
-   - **Loop Content** - Loop com comerciais
-3. Clique em **Usar Template**
-4. Insira nome e data da playlist
-5. Clique em **Criar Playlist**
-6. Playlist criada (edite em Playlists)
+### Month View
 
-### Estrutura de Templates
+![Calendar - Month View](file:///Users/arnaldoesilva/Documents/Cloud%20Onepa%20Playout/docs/screenshots/calendar_month_view.png)
 
-Cada template define:
+**Features:**
 
-- **Duração total**
-- **Estrutura:** Sequência de tipos (intro, content, commercial, outro, filler)
-- **Duração por tipo**
+1. **Calendar Grid**
+   - Monthly overview of scheduled content
+   - Color-coded event blocks
+   - Multi-day event support
+   - Repeat event indicators ("R" marker)
 
----
+2. **Event Cards**
+   - Each scheduled playlist appears as a card
+   - Shows playlist name and time
+   - Click to view/edit details
+   - Drag to reschedule (if enabled)
 
-## 9. Resolução de Problemas
+3. **Navigation**
+   - **Previous/Next Month** arrows
+   - **Today** button for quick return
+   - **Month/Week/Day** view toggle
 
-### Login não funciona
+### Scheduling Events
 
-**Problema:** "Invalid credentials"
+1. Click on any date in the calendar
+2. Select playlist from dropdown
+3. Set start time
+4. Configure repeat options:
+   - **None** - Single occurrence
+   - **Daily** - Every day
+   - **Weekly** - Same day each week
+   - **Monthly** - Same date each month
+5. Click **"Agendar"** to confirm
 
-**Solução:**
+### Repeat Events
 
-1. Verifique username: `admin`
-2. Verifique password: `admin`
-3. Se alterou password, use a nova
-4. Limpe cache do browser (Ctrl+Shift+Del)
+Events marked with **"R"** indicator are recurring:
 
-### Upload falha
-
-**Problema:** Ficheiro não faz upload
-
-**Soluções:**
-
-1. Verifique formato suportado
-2. Verifique tamanho (<2GB recomendado)
-3. Verifique conexão à internet
-4. Tente ficheiro menor primeiro
-
-### Playlist não valida
-
-**Problema:** Alert amarelo "Faltam Xh"
-
-**Solução:**
-
-1. Adicione mais clips
-2. Use fillers para completar
-3. Verifique duração de cada clip
-4. Objetivo: ~24h (86400 segundos)
-
-### Playout não inicia
-
-**Problema:** Botão Start não funciona
-
-**Soluções:**
-
-1. Verifique se há playlist agendada para hoje
-2. Verifique configurações de output
-3. Verifique logs do backend
-4. Reinicie o serviço
-
-### Sem thumbnail
-
-**Problema:** Vídeo sem imagem preview
-
-**Soluções:**
-
-1. Aguarde processamento (pode demorar)
-2. Verifique se FFmpeg está instalado
-3. Verifique permissões do diretório thumbnails
-4. Re-upload do ficheiro
+- Automatically create future instances
+- Edit single occurrence or all occurrences
+- Delete single or series
 
 ---
 
-## 📞 Suporte
+## 5. EPG (Electronic Program Guide)
 
-**Documentação:**
+The EPG module provides a visual timeline of scheduled programming, similar to traditional TV guides.
 
-- [README.md](../README.md) - Overview
-- [INSTALL.md](INSTALL.md) - Instalação
-- [FAQ.md](FAQ.md) - Perguntas frequentes
-- [TESTING.md](TESTING.md) - Testes
-- [DEPLOY.md](DEPLOY.md) - Deploy
+### Timeline View
 
-**Comunidade:**
+![EPG Timeline](file:///Users/arnaldoesilva/Documents/Cloud%20Onepa%20Playout/docs/screenshots/epg_timeline_main.png)
 
-- GitHub Issues: Reportar bugs
-- Discussions: Perguntas e sugestões
+**Interface Elements:**
+
+1. **Date Selector** (Top)
+   - Choose specific date to view
+   - Navigate between days
+   - Today quick-jump button
+
+2. **Timeline Ruler**
+   - 24-hour horizontal timeline (00:00 - 24:00)
+   - Hour markers every 1-2 hours
+   - Current time indicator (red line)
+
+3. **Program Blocks**
+   - Each scheduled item appears as a block
+   - Block width = duration
+   - Shows title and time
+   - Color-coded by content type
+
+### Program Information
+
+#### Clip Information Dialog
+
+![EPG Clip Information](file:///Users/arnaldoesilva/Documents/Cloud%20Onepa%20Playout/docs/screenshots/epg_timeline_information_clip.png)
+
+Click any program block to view basic information:
+
+- **Title** - Content name
+- **Start Time** - Scheduled start
+- **End Time** - Scheduled end
+- **Duration** - Total runtime
+- **Media Type** - Video/Audio/Image
+
+#### Detailed Schedule Information
+
+![EPG Detailed Information](file:///Users/arnaldoesilva/Documents/Cloud%20Onepa%20Playout/docs/screenshots/epg_timeline_information_detail_of_schedule_and_clip.png)
+
+Extended details include:
+
+- **Full Metadata** - Description, genre, year, rating
+- **Cast & Crew** - Director, actors
+- **Technical Info** - Resolution, codec, bitrate
+- **Playlist Source** - Which playlist scheduled this item
+- **Repeat Information** - If part of recurring schedule
+
+### EPG Export
+
+- Generate XML EPG for external systems
+- Compatible with XMLTV format
+- Configurable time range (1-30 days)
+- Automatic metadata inclusion
 
 ---
 
-**Última atualização:** 2026-01-11  
-**Versão:** 1.8.2-EXP
+## 6. Graphics Editor
+
+The Graphics Editor is a WYSIWYG (What You See Is What You Get) tool for positioning channel logos and overlays.
+
+### Main Interface
+
+![Graphics Editor](file:///Users/arnaldoesilva/Documents/Cloud%20Onepa%20Playout/docs/screenshots/graphics_editor_main.png)
+
+**Key Components:**
+
+1. **16:9 Preview Window** (Center)
+   - Real-time preview of logo placement
+   - Simulated TV screen
+   - Drag-and-drop logo positioning
+   - Visual feedback during adjustments
+
+2. **Anchor Point Selection** (Top Right)
+   - **Top-Left** - Logo anchors to top-left corner
+   - **Top-Right** - Logo anchors to top-right corner
+   - **Bottom-Left** - Logo anchors to bottom-left corner
+   - **Bottom-Right** - Logo anchors to bottom-right corner
+   - Ensures consistent placement across resolutions
+
+3. **Position Controls**
+   - **X Offset** - Horizontal fine-tuning (0-100)
+   - **Y Offset** - Vertical fine-tuning (0-100)
+   - Pixel-perfect positioning
+
+4. **Appearance Controls**
+   - **Scale** - Logo size (0-300%)
+   - **Opacity** - Transparency (0-100%)
+   - Real-time preview updates
+
+### Using the Graphics Editor
+
+1. **Select Anchor Point** - Choose corner for logo placement
+2. **Drag Logo** - Click and drag logo in preview window
+3. **Fine-Tune Position** - Use X/Y sliders for precision
+4. **Adjust Size** - Use Scale slider (100% = original size)
+5. **Set Transparency** - Use Opacity slider (100% = fully opaque)
+6. **Save Settings** - Click **"SALVAR CONFIGURAÇÕES"**
+
+### Best Practices
+
+- Use **Top-Right** or **Bottom-Right** for traditional logo placement
+- Keep opacity at 80-100% for visibility
+- Scale between 15-25% for most logos
+- Test on actual broadcast output before finalizing
+
+---
+
+## 7. Templates
+
+The Templates module allows you to create reusable playlist configurations for common broadcast scenarios.
+
+### Main Interface
+
+![Templates Grid](file:///Users/arnaldoesilva/Documents/Cloud%20Onepa%20Playout/docs/screenshots/templates_main.png)
+
+**Features:**
+
+1. **Template Cards**
+   - Visual preview of template structure
+   - Template name and description
+   - Quick action buttons:
+     - **Edit** - Modify template
+     - **Delete** - Remove template
+     - **Use** - Apply to new playlist
+
+2. **Preset Templates**
+   - **24h Filmes** - 24-hour movie marathon
+   - **Programação Mista** - Mixed programming
+   - **Séries Contínuas** - Continuous series playback
+   - **Comercial Heavy** - Ad-heavy schedule
+
+3. **Create New Template**
+   - Click **"+ NOVO TEMPLATE"** button
+   - Define template structure
+   - Save for reuse
+
+### Using Templates
+
+1. Select a template from the grid
+2. Click **"Usar Template"** button
+3. System creates new playlist based on template
+4. Customize as needed
+5. Save as new playlist
+
+### Template Benefits
+
+- **Consistency** - Maintain broadcast standards
+- **Efficiency** - Quick playlist creation
+- **Reusability** - Apply proven structures
+- **Flexibility** - Customize after application
+
+---
+
+## 8. Settings
+
+The Settings module provides comprehensive configuration for all aspects of ONEPA Playout PRO.
+
+### Tab 1: EMISSÃO & SAÍDA (Output Settings)
+
+![Settings - Output Tab Part 1](file:///Users/arnaldoesilva/Documents/Cloud%20Onepa%20Playout/docs/screenshots/settings_tab1_output-1.png)
+
+**Output Configuration:**
+
+1. **Output Type Selection**
+   - RTMP - For streaming servers (YouTube, Facebook, etc.)
+   - HLS - For HTTP Live Streaming
+   - SRT - For secure, low-latency streaming
+   - UDP - For IPTV and multicast
+   - Desktop - For local preview
+
+2. **Resolution Presets**
+   - **720p** - 1280x720, 2500k bitrate
+   - **1080p** - 1920x1080, 5000k bitrate
+   - **4K** - 3840x2160, 15000k bitrate
+   - **Custom** - Manual configuration
+
+![Settings - Output Tab Part 2](file:///Users/arnaldoesilva/Documents/Cloud%20Onepa%20Playout/docs/screenshots/settings_tab1_output-2.png)
+
+3. **Video Settings**
+   - **Codec** - H.264, H.265, VP9, Copy
+   - **Bitrate** - Video quality (kbps)
+   - **FPS** - Frame rate (23.976, 25, 29.97, 30, 50, 60)
+
+4. **Audio Settings**
+   - **Codec** - AAC, MP3, AC3, Copy
+   - **Bitrate** - Audio quality (128k, 192k, 256k, 320k)
+
+5. **Display URLs**
+   - Copyable URLs for each protocol
+   - Automatically updated based on settings
+   - Click copy icon for quick access
+
+### Tab 2: CAMINHOS & MEDIA (Paths & Media)
+
+![Settings - Paths Tab Part 1](file:///Users/arnaldoesilva/Documents/Cloud%20Onepa%20Playout/docs/screenshots/settings_tab2_paths-1.png)
+
+**Directory Configuration:**
+
+1. **Media Paths**
+   - **Media Library** - Main content storage
+   - **Thumbnails** - Generated preview images
+   - **Playlists** - Saved playlist files
+   - **Fillers** - Filler content directory
+
+2. **Channel Branding**
+   - **Logo Upload** - Channel logo file
+   - **Logo Position** - Placement on screen
+   - **Channel Name** - Displayed in EPG
+
+![Settings - Paths Tab Part 2](file:///Users/arnaldoesilva/Documents/Cloud%20Onepa%20Playout/docs/screenshots/settings_tab2_paths-2.png)
+
+3. **Default Media**
+   - **Default Image** - Shown when no video available
+   - **Default Video** - Filler content
+   - **Protected Assets** - System-level media
+
+4. **Protected Folder**
+   - System logos and assets
+   - Read-only content
+   - Backup important files here
+
+### Tab 3: PLAYOUT & PRESETS (Playout Settings)
+
+![Settings - Playout Tab](file:///Users/arnaldoesilva/Documents/Cloud%20Onepa%20Playout/docs/screenshots/settings_tab3_playout.png)
+
+**Playout Configuration:**
+
+1. **Broadcast Day**
+   - **Day Start Time** - When broadcast day begins (e.g., 06:00)
+   - Affects playlist scheduling and EPG generation
+
+2. **Overlay Settings**
+   - **Enable Overlay** - Toggle logo display
+   - **Opacity** - Logo transparency (0-100%)
+   - **Scale** - Logo size (0-300%)
+
+3. **Protocol Management**
+   - **RTMP** - Enable/Disable + URL
+   - **SRT** - Enable/Disable + URL + Mode (Caller/Listener)
+   - **UDP** - Enable/Disable + URL + Mode (Multicast/Unicast)
+   - **HLS** - Enable/Disable
+   - **DASH, MSS, RIST, RTSP, WebRTC, LL-HLS** - Advanced protocols
+
+4. **Auto-Start**
+   - **Auto-Start Protocols** - Start streaming on playout start
+   - Checkbox to enable/disable
+
+### Tab 4: UTILIZADORES (Users)
+
+![Settings - Users Tab](file:///Users/arnaldoesilva/Documents/Cloud%20Onepa%20Playout/docs/screenshots/settings_tab4_users.png)
+
+**User Management:**
+
+1. **User List**
+   - All system users displayed
+   - Username and role shown
+   - Edit/Delete actions
+
+2. **Add New User**
+   - Click **"+ ADICIONAR UTILIZADOR"**
+   - Enter username
+   - Set password
+   - Assign role (Admin/Operator/Viewer)
+
+3. **User Roles**
+   - **Admin** - Full system access
+   - **Operator** - Playout and scheduling
+   - **Viewer** - Read-only access
+
+4. **Change Password**
+   - Click user's edit button
+   - Enter new password
+   - Confirm password
+   - Save changes
+
+### Tab 5: SOBRE O SISTEMA (About System)
+
+![Settings - System Tab](file:///Users/arnaldoesilva/Documents/Cloud%20Onepa%20Playout/docs/screenshots/settings_tab5_version_system.png)
+
+**System Information:**
+
+1. **Version Details**
+   - **System Version** - Current software version
+   - **Release Date** - Build date
+   - **License** - License type
+
+2. **API Keys**
+   - **TMDB API Key** - The Movie Database integration
+   - **OMDB API Key** - Open Movie Database integration
+   - **TVMaze API Key** - TV show metadata
+   - Required for automatic metadata enrichment
+
+3. **EPG Configuration**
+   - **EPG Days** - Number of days to generate (1-30)
+   - More days = larger EPG file
+
+4. **Documentation**
+   - Links to user manual
+   - API documentation
+   - Support resources
+
+---
+
+## 9. Additional Features
+
+### Release Notes
+
+![Release Notes](file:///Users/arnaldoesilva/Documents/Cloud%20Onepa%20Playout/docs/screenshots/settings_notas_de_lancamento.png)
+
+Access release notes from the Settings page to view:
+
+- New features in current version
+- Bug fixes and improvements
+- Known issues
+- Upgrade instructions
+
+### Keyboard Shortcuts
+
+| Shortcut | Action                |
+| -------- | --------------------- |
+| `Space`  | Play/Pause playout    |
+| `Ctrl+S` | Save current playlist |
+| `Ctrl+N` | New playlist          |
+| `Ctrl+O` | Open playlist         |
+| `Delete` | Remove selected clip  |
+| `Ctrl+Z` | Undo                  |
+| `Ctrl+Y` | Redo                  |
+
+### System Requirements
+
+**Minimum:**
+
+- CPU: Intel i5 or AMD Ryzen 5
+- RAM: 8 GB
+- GPU: Integrated graphics
+- Storage: 100 GB SSD
+- Network: 100 Mbps
+
+**Recommended:**
+
+- CPU: Intel i7 or AMD Ryzen 7
+- RAM: 16 GB
+- GPU: Dedicated GPU (NVIDIA/AMD)
+- Storage: 500 GB NVMe SSD
+- Network: 1 Gbps
+
+---
+
+## Support & Resources
+
+### Getting Help
+
+- **Documentation**: `/docs` folder in installation directory
+- **Community Forum**: [Link to forum]
+- **Email Support**: support@onepa.tv
+- **Emergency Hotline**: [Phone number]
+
+### Troubleshooting
+
+**Playout won't start:**
+
+1. Check media paths in Settings
+2. Verify playlist has content
+3. Check protocol URLs are correct
+4. Review system logs
+
+**Black screen in UI:**
+
+1. Force refresh browser (Cmd+Shift+R)
+2. Clear browser cache
+3. Check browser console for errors
+4. Restart frontend container
+
+**Streaming issues:**
+
+1. Verify protocol is enabled in Settings
+2. Check output URL is correct
+3. Test network connectivity
+4. Review FFmpeg logs
+
+### Best Practices
+
+1. **Regular Backups** - Backup playlists and settings weekly
+2. **Metadata Maintenance** - Keep metadata up-to-date
+3. **Monitor Resources** - Watch CPU/RAM usage
+4. **Test Before Live** - Always test new configurations
+5. **Update Regularly** - Install updates during off-hours
+
+---
+
+## Appendix
+
+### Glossary
+
+- **EPG** - Electronic Program Guide
+- **RTMP** - Real-Time Messaging Protocol
+- **SRT** - Secure Reliable Transport
+- **HLS** - HTTP Live Streaming
+- **UDP** - User Datagram Protocol
+- **LUFS** - Loudness Units relative to Full Scale
+- **Filler** - Content used to fill gaps in schedule
+- **Template** - Reusable playlist configuration
+
+### File Formats Supported
+
+**Video:**
+
+- MP4 (H.264, H.265)
+- MKV
+- AVI
+- MOV
+- WebM
+
+**Audio:**
+
+- MP3
+- AAC
+- WAV
+- FLAC
+- OGG
+
+**Images:**
+
+- PNG
+- JPEG
+- GIF
+- BMP
+- WebP
+
+---
+
+**Document End**
+
+_For technical support, please contact: support@onepa.tv_  
+_© 2026 ONEPA Playout PRO. All rights reserved._

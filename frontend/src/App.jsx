@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import theme from './theme';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import Dashboard from './pages/Dashboard';
@@ -13,22 +14,12 @@ import Login from './pages/Login';
 import useAuthStore from './stores/authStore';
 import SetupWizard from './pages/Setup/Wizard';
 import EPGView from './pages/EPGView';
+import GraphicsEditor from './pages/GraphicsEditor';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { HelpProvider } from './context/HelpContext';
 import HelpSystem from './components/HelpSystem';
 import ConnectivityStatus from './components/ConnectivityStatus';
 
-const theme = createTheme({
-  palette: {
-    mode: 'dark',
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-  },
-});
 
 function App() {
   const { isAuthenticated } = useAuthStore();
@@ -116,6 +107,16 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <SetupWizard />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/graphics"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <GraphicsEditor />
                 </Layout>
               </ProtectedRoute>
             }

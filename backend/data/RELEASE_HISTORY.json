@@ -1,0 +1,60 @@
+[
+  {
+    "version": "2.1.1-PRO",
+    "date": "2026-01-26",
+    "changes": [
+      "EPG Intelligence 2.0: Enhanced tooltips with Director, Rating, and Genre.",
+      "Metadata Transparency: Persistent source links (TMDB/OMDb/TVMaze) in library.",
+      "Live Merge: Instant sync between library metadata and visual EPG guides.",
+      "Stability Fix: Resolved white screens in EPG and Media Library metadata dialogs.",
+      "Settings Fix: Guaranteed persistence for EPG Days Ahead property."
+    ]
+  },
+  {
+    "version": "2.0.1-PRO",
+    "date": "2026-01-24",
+    "changes": [
+      "EPG Intelligence: Automatic XMLTV generation for DVB compliance.",
+      "Session Accuracy: Real-time active viewer counting for RTMP/UDP.",
+      "Protocol Persistent: Fixed FFmpeg flickering in UDP multicast streams.",
+      "Security: Added JWT token verification for SRT contribution."
+    ]
+  },
+  {
+    "version": "2.0.0-PRO",
+    "date": "2026-01-22",
+    "changes": [
+      "Major UI Overhaul: Modernized dashboard and multi-tab settings.",
+      "Media Library Integration: Drag-and-drop playlist creation.",
+      "Live Monitor: Pulsing ON-AIR indicator with video preview.",
+      "Encrypted API Keys: Secure storage for TMDB and OMDb credentials."
+    ]
+  },
+  {
+    "version": "1.9.5-PRO",
+    "date": "2026-01-20",
+    "changes": [
+      "Filler Support: Automated insertion of gaps between programs.",
+      "Logo Branding: Independent application vs watermark logos.",
+      "Performance: Database indexing for faster schedule lookups."
+    ]
+  },
+  {
+    "version": "1.9.4-PRO",
+    "date": "2026-01-18",
+    "changes": [
+      "Multi-Protocol Support: DASH, MSS, RIST, and RTSP enabled.",
+      "SRT Caller v2: Intelligent hostname mapping for remote feeds.",
+      "VLC Smart Launcher: Real-time log integration."
+    ]
+  },
+  {
+    "version": "1.9.3-PRO",
+    "date": "2026-01-15",
+    "changes": [
+      "Core Engine: Base stable release of the playout automation system.",
+      "Playlist Management: Basic CRUD functionality for daily schedules.",
+      "Authentication: Initial JWT security implementation."
+    ]
+  }
+]

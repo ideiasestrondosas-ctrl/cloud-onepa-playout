@@ -296,19 +296,17 @@ export default function Calendar() {
     return (
       <Tooltip title={
         <Box sx={{ p: 0.5, textAlign: 'center' }}>
-          <Typography variant="subtitle2">{eventInfo.event.title}</Typography>
-          <Typography variant="caption" display="block">Hora: {eventInfo.timeText}</Typography>
+          <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{eventInfo.event.title.toUpperCase()}</Typography>
+          <Typography variant="caption" display="block" sx={{ fontWeight: 600 }}>HORA: {eventInfo.timeText}</Typography>
           {isPlayingCurrent && (
-            <Typography variant="caption" sx={{ color: '#4caf50', fontWeight: 'bold' }} display="block">
+            <Typography variant="caption" sx={{ color: 'success.main', fontWeight: 800, mt: 0.5 }} display="block">
                 ● EM REPRODUÇÃO
             </Typography>
           )}
           {eventInfo.event.extendedProps.repeatPattern && (
-            <Typography variant="caption" sx={{ color: '#90caf9' }} display="block">
-                Recorrente ({eventInfo.event.extendedProps.repeatPattern === 'daily' ? 'Diário' : 
-                             eventInfo.event.extendedProps.repeatPattern === 'weekly' ? 'Semanal' : 
-                             eventInfo.event.extendedProps.repeatPattern === 'monthly' ? 'Mensal' : ''})
-                {!isOriginal && ' (Ocorrência)'}
+            <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 700 }} display="block">
+                RECORRENTE ({eventInfo.event.extendedProps.repeatPattern.toUpperCase()})
+                {!isOriginal && ' (OCORRÊNCIA)'}
             </Typography>
           )}
         </Box>
@@ -319,82 +317,81 @@ export default function Calendar() {
         alignItems: 'center', 
         width: '100%', 
         overflow: 'hidden',
-        fontSize: '0.75rem',
+        fontSize: '0.65rem',
         p: 0.5,
         color: 'white',
         bgcolor: eventInfo.backgroundColor,
-        opacity: isOriginal ? 1 : 0.6, // Faded for other days
+        opacity: isOriginal ? 1 : 0.6,
         borderRadius: 1,
-        borderLeft: eventInfo.event.extendedProps.repeatPattern ? '3px solid #64b5f6' : '3px solid #ff8a80',
-        border: isPlayingCurrent ? '2px solid #fff' : 'none',
-        boxShadow: isPlayingCurrent ? '0 0 10px rgba(255,255,255,0.5)' : 'none',
+        borderLeft: isPlayingCurrent ? '4px solid #fff' : (eventInfo.event.extendedProps.repeatPattern ? '4px solid #00e5ff' : '4px solid #ff4081'),
+        boxShadow: isPlayingCurrent ? '0 0 15px rgba(255,255,255,0.4)' : 'none',
         cursor: 'pointer',
-        transition: 'transform 0.1s',
-        '&:hover': { transform: 'scale(1.02)', opacity: isOriginal ? 0.9 : 0.8 }
+        transition: '0.2s',
+        '&:hover': { transform: 'translateX(2px)', filter: 'brightness(1.2)' }
       }}>
-        <Typography variant="caption" noWrap sx={{ flexGrow: 1, fontWeight: 'bold' }}>
-          {eventInfo.timeText} {eventInfo.event.title}
-          {eventInfo.event.extendedProps.repeatPattern && (
-            <Box component="span" sx={{ ml: 0.5, opacity: 0.8, color: '#90caf9' }}>
-               (R)
-            </Box>
-          )}
+        <Typography variant="caption" noWrap sx={{ flexGrow: 1, fontWeight: 800, letterSpacing: 0.5 }}>
+          {eventInfo.timeText} {eventInfo.event.title.toUpperCase()}
         </Typography>
-        {eventInfo.event.extendedProps.repeatPattern && <HistoryIcon sx={{ fontSize: 12, ml: 0.5, opacity: 0.8 }} />}
+        {eventInfo.event.extendedProps.repeatPattern && <HistoryIcon sx={{ fontSize: 10, ml: 0.5, opacity: 0.8 }} />}
       </Box>
       </Tooltip>
     );
   };
 
   return (
-    <Box>
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
-          Calendário de Agendamento
-        </Typography>
+    <Box sx={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box>
+            <Typography variant="h4" className="neon-text" sx={{ fontWeight: 800 }}>CENTRAL DE AGENDAMENTO</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: 2 }}>GESTOR DE PROGRAMAÇÃO & RECORRÊNCIA</Typography>
+        </Box>
 
-        {playoutStatus?.current_playlist_id && (
-            <Paper sx={{ 
-                px: 2, 
-                py: 1, 
-                bgcolor: 'success.dark', 
-                color: 'white', 
-                display: 'flex', 
-                alignItems: 'center', 
-                borderRadius: 2,
-                boxShadow: 2,
-                animation: 'pulse 2s infinite'
-            }}>
-                <PlayIcon sx={{ mr: 1, fontSize: 20 }} />
-                <Box>
-                    <Typography variant="caption" sx={{ opacity: 0.8, display: 'block', lineHeight: 1 }}>EM REPRODUÇÃO</Typography>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{playoutStatus.current_playlist_name || 'Playlist Ativa'}</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            {playoutStatus?.current_playlist_id && (
+                <Box className="glass-panel" sx={{ 
+                    px: 3, 
+                    py: 1, 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    borderRadius: 3,
+                    border: '1px solid rgba(76, 175, 80, 0.3)',
+                    bgcolor: 'rgba(76, 175, 80, 0.05)',
+                    boxShadow: '0 0 15px rgba(76, 175, 80, 0.1)',
+                }}>
+                    <PlayIcon sx={{ mr: 1.5, fontSize: 20, color: 'success.main' }} />
+                    <Box>
+                        <Typography variant="caption" sx={{ opacity: 0.6, display: 'block', fontWeight: 800, fontSize: '0.55rem' }}>ON-AIR NOW</Typography>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'success.main', fontSize: '0.85rem' }}>{playoutStatus.current_playlist_name?.toUpperCase() || 'PLAYLIST ATIVA'}</Typography>
+                    </Box>
                 </Box>
-                <style>{`
-                    @keyframes pulse {
-                        0% { opacity: 1; }
-                        50% { opacity: 0.8; }
-                        100% { opacity: 1; }
-                    }
-                `}</style>
-            </Paper>
-        )}
+            )}
 
-        <Stack direction="row" spacing={2}>
             <Button 
                 variant="outlined" 
                 color="error" 
                 startIcon={<BulkDeleteIcon />} 
                 onClick={() => setBulkDialogOpen(true)}
+                sx={{ borderRadius: 2, fontWeight: 800 }}
             >
-                Limpeza em Massa
+                LIMPEZA EM MASSA
             </Button>
-        </Stack>
+        </Box>
       </Box>
 
-      <Grid container spacing={2}>
-        <Grid item xs={12} md={9}>
-            <Card sx={{ p: 2 }}>
+      <Grid container spacing={3} sx={{ flexGrow: 1, overflow: 'hidden' }}>
+        <Grid item xs={12} md={9} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <Paper className="glass-panel" sx={{ p: 2, flexGrow: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                <style>{`
+                    .fc { --fc-border-color: rgba(255,255,255,0.05); font-family: 'Inter', sans-serif; }
+                    .fc .fc-toolbar-title { font-weight: 800; text-transform: uppercase; letter-spacing: 1px; font-size: 1.1rem; color: #00e5ff; }
+                    .fc .fc-button { background: rgba(255,255,255,0.05) !important; border: 1px solid rgba(255,255,255,0.1) !important; font-weight: 800 !important; text-transform: uppercase !important; font-size: 0.7rem !important; transition: 0.3s !important; }
+                    .fc .fc-button:hover { background: rgba(0,229,255,0.1) !important; border-color: rgba(0,229,255,0.4) !important; }
+                    .fc .fc-button-active { background: #00e5ff !important; color: #000 !important; }
+                    .fc-theme-standard td, .fc-theme-standard th { border: 1px solid rgba(255,255,255,0.05) !important; }
+                    .fc-day-today { background: rgba(0,229,255,0.03) !important; }
+                    .fc-col-header-cell { background: rgba(255,255,255,0.02); padding: 10px 0 !important; }
+                    .fc-col-header-cell-cushion { font-size: 0.7rem; font-weight: 800; color: rgba(255,255,255,0.5); }
+                `}</style>
                 <FullCalendar
                     plugins={[dayGridPlugin, interactionPlugin]}
                     initialView="dayGridMonth"
@@ -402,7 +399,7 @@ export default function Calendar() {
                     dateClick={handleDateClick}
                     eventClick={handleEventClick}
                     eventContent={renderEventContent}
-                    height="70vh"
+                    height="100%"
                     locale="pt"
                     headerToolbar={{
                         left: 'prev,next today',
@@ -410,33 +407,50 @@ export default function Calendar() {
                         right: 'dayGridMonth,dayGridWeek',
                     }}
                 />
-            </Card>
+            </Paper>
         </Grid>
         
-        <Grid item xs={12} md={3}>
-            <Stack spacing={2}>
-                <Card>
-                    <CardContent>
-                        <Typography variant="h6" gutterBottom color="primary">Atalhos de Limpeza</Typography>
-                        <Divider sx={{ mb: 2 }} />
-                        <Stack spacing={1}>
-                            <Button fullWidth variant="outlined" color="error" size="small" onClick={() => quickBulkDelete('today')}>Limpar Hoje</Button>
-                            <Button fullWidth variant="outlined" color="error" size="small" onClick={() => quickBulkDelete('week')}>Limpar Esta Semana</Button>
-                            <Button fullWidth variant="outlined" color="error" size="small" onClick={() => quickBulkDelete('month')}>Limpar Este Mês</Button>
-                            <Button fullWidth variant="outlined" color="error" size="small" onClick={() => quickBulkDelete('year')}>Limpar Este Ano</Button>
+        <Grid item xs={12} md={3} sx={{ height: '100%' }}>
+            <Stack spacing={2} sx={{ height: '100%' }}>
+                <Paper className="glass-panel" sx={{ p: 2, flexGrow: 1 }}>
+                    <Typography variant="overline" sx={{ fontWeight: 800, color: 'primary.main', display: 'block', mb: 2 }}>ATALHOS DE LIMPEZA</Typography>
+                    <Stack spacing={1.5}>
+                        {[
+                            { label: 'LIMPAR HOJE', type: 'today' },
+                            { label: 'ESTA SEMANA', type: 'week' },
+                            { label: 'ESTE MÊS', type: 'month' },
+                            { label: 'ESTE ANO', type: 'year' }
+                        ].map((btn) => (
+                            <Button 
+                                key={btn.type}
+                                fullWidth 
+                                variant="outlined" 
+                                color="error" 
+                                size="small" 
+                                onClick={() => quickBulkDelete(btn.type)}
+                                sx={{ borderRadius: 2, fontWeight: 800, py: 1, borderColor: 'rgba(244,67,54,0.3)', '&:hover': { bgcolor: 'rgba(244,67,54,0.05)' } }}
+                            >
+                                {btn.label}
+                            </Button>
+                        ))}
+                    </Stack>
+
+                    <Box sx={{ mt: 4 }}>
+                        <Typography variant="overline" sx={{ fontWeight: 800, color: 'primary.main', display: 'block', mb: 2 }}>LEGENDA</Typography>
+                        <Stack spacing={1.5}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', p: 1, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.02)' }}>
+                                <Box sx={{ width: 8, height: 8, bgcolor: '#ff4081', mr: 2, borderRadius: '50%', boxShadow: '0 0 10px #ff4081' }} />
+                                <Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.8 }}>AGENDAMENTO ÚNICO</Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', p: 1, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.02)' }}>
+                                <Box sx={{ width: 8, height: 8, bgcolor: '#00e5ff', mr: 2, borderRadius: '50%', boxShadow: '0 0 10px #00e5ff' }} />
+                                <Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.8 }}>SÉRIE DE REPETIÇÃO</Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', p: 1, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.02)' }}>
+                                <Box sx={{ width: 8, height: 8, bgcolor: '#fff', mr: 2, borderRadius: '50%', boxShadow: '0 0 10px #fff' }} />
+                                <Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.8 }}>EM REPRODUÇÃO AGORA</Typography>
+                            </Box>
                         </Stack>
-                    </CardContent>
-                </Card>
-                
-                <Paper sx={{ p: 2, bgcolor: 'action.hover' }}>
-                    <Typography variant="subtitle2" gutterBottom>Legenda</Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <Box sx={{ width: 12, height: 12, bgcolor: '#dc004e', mr: 1, borderRadius: '50%' }} />
-                        <Typography variant="caption">Agendamento Único</Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Box sx={{ width: 12, height: 12, bgcolor: '#1976d2', mr: 1, borderRadius: '50%' }} />
-                        <Typography variant="caption">Repetição</Typography>
                     </Box>
                 </Paper>
             </Stack>
@@ -444,94 +458,166 @@ export default function Calendar() {
       </Grid>
 
       {/* Action Dialog */}
-      <Dialog open={actionDialogOpen} onClose={() => setActionDialogOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ borderBottom: 1, borderColor: 'divider' }}>Gerir Agendamento</DialogTitle>
+      <Dialog 
+        open={actionDialogOpen} 
+        onClose={() => setActionDialogOpen(false)} 
+        maxWidth="xs" 
+        fullWidth
+        PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
+      >
+        <DialogTitle sx={{ borderBottom: '1px solid rgba(255,255,255,0.05)', fontWeight: 800, color: 'primary.main' }}>
+            GERIR AGENDAMENTO
+        </DialogTitle>
         <DialogContent sx={{ mt: 2 }}>
-            <Typography variant="h6" color="primary">{selectedEvent?.title}</Typography>
-            <Typography variant="body2" color="text.secondary">Data: {selectedEvent?.startStr.split('T')[0]}</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 800, color: 'primary.main' }}>{selectedEvent?.title?.toUpperCase()}</Typography>
+            <Typography variant="caption" sx={{ fontWeight: 600, opacity: 0.6 }}>DATA: {selectedEvent?.startStr.split('T')[0]}</Typography>
             {selectedEvent?.extendedProps.repeatPattern && (
-                <Alert severity="info" sx={{ mt: 2 }} size="small">Este é um evento recorrente ({selectedEvent.extendedProps.repeatPattern})</Alert>
+                <Alert severity="info" sx={{ mt: 2, borderRadius: 2, bgcolor: 'rgba(0,229,255,0.05)', color: 'primary.main', border: '1px solid rgba(0,229,255,0.1)' }}>
+                    ESTE É UM EVENTO RECORRENTE ({selectedEvent.extendedProps.repeatPattern.toUpperCase()})
+                </Alert>
             )}
         </DialogContent>
-        <DialogActions sx={{ flexDirection: 'column', gap: 1, p: 2 }}>
-            <Button variant="contained" color="primary" fullWidth startIcon={<PlayIcon />} onClick={() => { 
-                // If it's an occurrence, we edit the series
-                handleEditSchedule(selectedEvent); 
-                setActionDialogOpen(false); 
-            }}>
-                Editar Série / Evento
+        <DialogActions sx={{ flexDirection: 'column', gap: 1.5, p: 3 }}>
+            <Button 
+                variant="contained" 
+                color="primary" 
+                fullWidth 
+                startIcon={<PlayIcon />} 
+                onClick={() => { handleEditSchedule(selectedEvent); setActionDialogOpen(false); }}
+                sx={{ borderRadius: 2, fontWeight: 800, py: 1.2 }}
+            >
+                EDITAR SÉRIE / EVENTO
             </Button>
 
             {selectedEvent?.extendedProps.repeatPattern && (
-                <Button variant="outlined" color="warning" fullWidth startIcon={<DeleteIcon />} onClick={() => { 
-                    if (window.confirm(`Remover apenas a ocorrência de ${selectedEvent.startStr.split('T')[0]}?`)) { 
-                        handleDeleteOnlyToday(selectedEvent.id, selectedEvent.startStr.split('T')[0]); 
-                    } 
-                    setActionDialogOpen(false); 
-                }}>
-                    Ignorar APENAS hoje
+                <Button 
+                    variant="outlined" 
+                    color="warning" 
+                    fullWidth 
+                    startIcon={<DeleteIcon />} 
+                    onClick={() => { 
+                        if (window.confirm(`Remover apenas a ocorrência de ${selectedEvent.startStr.split('T')[0]}?`)) { 
+                            handleDeleteOnlyToday(selectedEvent.id, selectedEvent.startStr.split('T')[0]); 
+                        } 
+                        setActionDialogOpen(false); 
+                    }}
+                    sx={{ borderRadius: 2, fontWeight: 800, py: 1 }}
+                >
+                    IGNORAR APENAS HOJE
                 </Button>
             )}
 
-            <Button variant="outlined" color="error" fullWidth startIcon={<DeleteIcon />} onClick={() => { 
-                const msg = selectedEvent?.extendedProps.repeatPattern 
-                    ? `Deseja parar toda a série de "${selectedEvent?.title}" definitivamente?`
-                    : `Remover definitivamente "${selectedEvent?.title}"?`;
-                if (window.confirm(msg)) { 
-                    handleDeleteSchedule(selectedEvent.id); 
-                } 
-                setActionDialogOpen(false); 
-            }}>
-                {selectedEvent?.extendedProps.repeatPattern ? 'Parar Série de Repetição' : 'Eliminar'}
+            <Button 
+                variant="outlined" 
+                color="error" 
+                fullWidth 
+                startIcon={<DeleteIcon />} 
+                onClick={() => { 
+                    const msg = selectedEvent?.extendedProps.repeatPattern 
+                        ? `Deseja parar toda a série de "${selectedEvent?.title}" definitivamente?`
+                        : `Remover definitivamente "${selectedEvent?.title}"?`;
+                    if (window.confirm(msg)) { handleDeleteSchedule(selectedEvent.id); } 
+                    setActionDialogOpen(false); 
+                }}
+                sx={{ borderRadius: 2, fontWeight: 800, py: 1 }}
+            >
+                {selectedEvent?.extendedProps.repeatPattern ? 'PARAR SÉRIE DE REPETIÇÃO' : 'ELIMINAR AGENDAMENTO'}
             </Button>
             
-            <Button onClick={() => setActionDialogOpen(false)} fullWidth>Cancelar</Button>
+            <Button onClick={() => setActionDialogOpen(false)} sx={{ fontWeight: 800, opacity: 0.5 }}>FECHAR</Button>
         </DialogActions>
       </Dialog>
 
       {/* Schedule Create/Edit Dialog */}
-      <Dialog open={dialogOpen} onClose={() => { setDialogOpen(false); resetForm(); }} maxWidth="sm" fullWidth>
-        <DialogTitle>{isEditing ? 'Editar Agendamento' : `Agendar para ${selectedDate}`}</DialogTitle>
-        <DialogContent dividers>
-          <FormControl fullWidth sx={{ mt: 1 }}>
-            <InputLabel>Playlist</InputLabel>
-            <Select value={selectedPlaylist} label="Playlist" onChange={(e) => setSelectedPlaylist(e.target.value)}>
-              {playlists.map((p) => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}
+      <Dialog 
+        open={dialogOpen} 
+        onClose={() => { setDialogOpen(false); resetForm(); }} 
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: 'primary.main', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            {isEditing ? 'EDITAR AGENDAMENTO' : `AGENDAR PARA ${selectedDate}`}
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          <FormControl fullWidth variant="standard" sx={{ mt: 1 }}>
+            <InputLabel shrink sx={{ fontWeight: 800 }}>PLAYLIST</InputLabel>
+            <Select 
+                value={selectedPlaylist} 
+                onChange={(e) => setSelectedPlaylist(e.target.value)}
+                sx={{ fontWeight: 800 }}
+            >
+              {playlists.map((p) => <MenuItem key={p.id} value={p.id} sx={{ fontWeight: 700 }}>{p.name.toUpperCase()}</MenuItem>)}
             </Select>
           </FormControl>
-          <TextField fullWidth label="Horário" type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} sx={{ mt: 2 }} InputLabelProps={{ shrink: true }} />
-          <FormControl fullWidth sx={{ mt: 2 }}>
-            <InputLabel>Repetição</InputLabel>
-            <Select value={repeatPattern} label="Repetição" onChange={(e) => setRepeatPattern(e.target.value)}>
-              <MenuItem value="">Sem repetição</MenuItem>
-              <MenuItem value="daily">Diária</MenuItem>
-              <MenuItem value="weekly">Semanal</MenuItem>
-              <MenuItem value="monthly">Mensal</MenuItem>
+          
+          <TextField 
+            fullWidth 
+            label="HORÁRIO" 
+            type="time" 
+            value={startTime} 
+            onChange={(e) => setStartTime(e.target.value)} 
+            sx={{ mt: 3 }} 
+            variant="standard"
+            InputLabelProps={{ shrink: true, sx: { fontWeight: 800 } }}
+            inputProps={{ sx: { fontWeight: 800 } }}
+          />
+          
+          <FormControl fullWidth variant="standard" sx={{ mt: 3 }}>
+            <InputLabel shrink sx={{ fontWeight: 800 }}>PADRÃO DE REPETIÇÃO</InputLabel>
+            <Select 
+                value={repeatPattern} 
+                onChange={(e) => setRepeatPattern(e.target.value)}
+                sx={{ fontWeight: 800 }}
+            >
+              <MenuItem value="" sx={{ fontWeight: 700, opacity: 0.5 }}>SEM REPETIÇÃO</MenuItem>
+              <MenuItem value="daily" sx={{ fontWeight: 700 }}>DIÁRIA</MenuItem>
+              <MenuItem value="weekly" sx={{ fontWeight: 700 }}>SEMANAL</MenuItem>
+              <MenuItem value="monthly" sx={{ fontWeight: 700 }}>MENSAL</MenuItem>
             </Select>
           </FormControl>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => { setDialogOpen(false); resetForm(); }}>Cancelar</Button>
-          <Button variant="contained" onClick={handleSaveSchedule}>Salvar</Button>
+        <DialogActions sx={{ p: 3 }}>
+          <Button onClick={() => { setDialogOpen(false); resetForm(); }} sx={{ fontWeight: 800 }}>CANCELAR</Button>
+          <Button 
+            variant="contained" 
+            onClick={handleSaveSchedule}
+            sx={{ borderRadius: 2, fontWeight: 800, px: 4 }}
+          >
+            GUARDAR
+          </Button>
         </DialogActions>
       </Dialog>
 
       {/* Bulk Delete Dialog */}
-      <Dialog open={bulkDialogOpen} onClose={() => setBulkDialogOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Limpeza Personalizada</DialogTitle>
-        <DialogContent dividers>
-            <Typography variant="body2" sx={{ mb: 2 }}>Escolha um período para remover toda a programação.</Typography>
-            <TextField fullWidth label="Início" type="date" InputLabelProps={{ shrink: true }} sx={{ mb: 2 }} id="bulk-start" />
-            <TextField fullWidth label="Fim" type="date" InputLabelProps={{ shrink: true }} id="bulk-end" />
+      <Dialog 
+        open={bulkDialogOpen} 
+        onClose={() => setBulkDialogOpen(false)} 
+        maxWidth="xs" 
+        fullWidth
+        PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: 'error.main' }}>LIMPEZA PERSONALIZADA</DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+            <Typography variant="body2" sx={{ mb: 3, fontWeight: 600, opacity: 0.6 }}>ESCOLHA UM PERÍODO PARA REMOVER TODA A PROGRAMAÇÃO.</Typography>
+            <TextField fullWidth label="INÍCIO" type="date" InputLabelProps={{ shrink: true, sx: { fontWeight: 800 } }} variant="standard" sx={{ mb: 3 }} id="bulk-start" inputProps={{ sx: { fontWeight: 800 } }} />
+            <TextField fullWidth label="FIM" type="date" InputLabelProps={{ shrink: true, sx: { fontWeight: 800 } }} variant="standard" id="bulk-end" inputProps={{ sx: { fontWeight: 800 } }} />
         </DialogContent>
-        <DialogActions>
-            <Button onClick={() => setBulkDialogOpen(false)}>Cancelar</Button>
-            <Button color="error" variant="contained" onClick={() => {
-                const s = document.getElementById('bulk-start').value;
-                const e = document.getElementById('bulk-end').value;
-                if (s && e) handleBulkDelete(s, e);
-                else showError('Selecione as datas');
-            }}>Eliminar Período</Button>
+        <DialogActions sx={{ p: 3 }}>
+            <Button onClick={() => setBulkDialogOpen(false)} sx={{ fontWeight: 800 }}>CANCELAR</Button>
+            <Button 
+                color="error" 
+                variant="contained" 
+                onClick={() => {
+                    const s = document.getElementById('bulk-start').value;
+                    const e = document.getElementById('bulk-end').value;
+                    if (s && e) handleBulkDelete(s, e);
+                    else showError('Selecione as datas');
+                }}
+                sx={{ borderRadius: 2, fontWeight: 800, px: 3 }}
+            >
+                ELIMINAR PERÍODO
+            </Button>
         </DialogActions>
       </Dialog>
     </Box>

@@ -15,6 +15,7 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Tooltip,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -27,6 +28,7 @@ import {
   ViewModule as TemplatesIcon,
   Help as HelpIcon,
   LiveTv as LiveTvIcon,
+  Brush as GraphicsIcon,
 } from '@mui/icons-material';
 import { useHelp } from '../context/HelpContext';
 import ConnectivityStatus from './ConnectivityStatus';
@@ -61,6 +63,7 @@ const menuItems = [
   { text: 'Playlists', icon: <PlaylistPlayIcon />, path: '/playlists' },
   { text: 'Calendário', icon: <CalendarIcon />, path: '/calendar' },
   { text: 'EPG', icon: <LiveTvIcon />, path: '/epg' },
+  { text: 'Graphics', icon: <GraphicsIcon />, path: '/graphics' },
   { text: 'Templates', icon: <TemplatesIcon />, path: '/templates' },
   { text: 'Configurações', icon: <SettingsIcon />, path: '/settings' },
 ];
@@ -119,41 +122,45 @@ export default function Layout({ children }) {
       <List>
         {menuItems.map((item) => (
           <ListItem key={item.text} disablePadding>
-            <ListItemButton
-              selected={location.pathname === item.path}
-              onClick={() => navigate(item.path)}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItemButton>
+            <Tooltip title={item.text} placement="right" arrow>
+              <ListItemButton
+                selected={location.pathname === item.path}
+                onClick={() => navigate(item.path)}
+              >
+                <ListItemIcon>{item.icon}</ListItemIcon>
+                <ListItemText primary={item.text} />
+              </ListItemButton>
+            </Tooltip>
           </ListItem>
         ))}
       </List>
       <Divider />
       <List>
         <ListItem disablePadding>
-          <ListItemButton onClick={handleLogout}>
-            <ListItemIcon>
-              <LogoutIcon />
-            </ListItemIcon>
-            <ListItemText primary="Logout" />
-          </ListItemButton>
+          <Tooltip title="Sair do sistema" placement="right" arrow>
+            <ListItemButton onClick={handleLogout}>
+              <ListItemIcon>
+                <LogoutIcon />
+              </ListItemIcon>
+              <ListItemText primary="Logout" />
+            </ListItemButton>
+          </Tooltip>
         </ListItem>
       </List>
     </div>
   );
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: 'flex', bgcolor: 'background.default', minHeight: '100vh' }}>
       <ConnectivityStatus />
       <AppBar
         position="fixed"
         sx={{
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           ml: { sm: `${drawerWidth}px` },
-          bgcolor: 'background.paper',
-          borderBottom: '1px solid',
-          borderColor: 'divider',
+          bgcolor: 'rgba(10, 11, 16, 0.5)',
+          backdropFilter: 'blur(12px)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
           boxShadow: 'none',
           color: 'text.primary'
         }}
@@ -168,14 +175,15 @@ export default function Layout({ children }) {
             <MenuIcon />
           </IconButton>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, flexGrow: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5 }}>
                     <Typography 
                         variant="h4" 
+                        className="neon-text"
                         sx={{ 
-                            fontFamily: 'monospace', 
-                            fontWeight: 'bold', 
-                            color: 'primary.main',
-                            lineHeight: 1
+                            fontFamily: '"Orbitron", "monospace"', 
+                            fontWeight: '700', 
+                            lineHeight: 1,
+                            fontSize: { xs: '1.5rem', md: '2rem' }
                         }}
                     >
                         {now.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
@@ -184,23 +192,25 @@ export default function Layout({ children }) {
                         variant="subtitle2" 
                         sx={{ 
                             color: 'text.secondary', 
-                            fontWeight: 'medium',
+                            fontWeight: '600',
                             textTransform: 'uppercase',
-                            letterSpacing: 1,
-                            pb: 0.2
+                            letterSpacing: 2,
+                            fontSize: '0.7rem'
                         }}
                     >
                         {formatDate(now)}
                     </Typography>
                 </Box>
             </Box>
-            <IconButton 
-              color="inherit"
-              onClick={() => showHelp()}
-              title="Ajuda"
-            >
-              <HelpIcon />
-            </IconButton>
+            <Tooltip title="Ajuda & Documentação" arrow>
+              <IconButton 
+                color="inherit"
+                onClick={() => showHelp()}
+                sx={{ '&:hover': { color: 'primary.main' } }}
+              >
+                <HelpIcon />
+              </IconButton>
+            </Tooltip>
         </Toolbar>
       </AppBar>
       <Box
@@ -214,7 +224,13 @@ export default function Layout({ children }) {
           ModalProps={{ keepMounted: true }}
           sx={{
             display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            '& .MuiDrawer-paper': { 
+              boxSizing: 'border-box', 
+              width: drawerWidth,
+              backgroundColor: 'rgba(10, 11, 16, 0.9)',
+              backdropFilter: 'blur(20px)',
+              borderRight: '1px solid rgba(255, 255, 255, 0.1)'
+            },
           }}
         >
           {drawer}
@@ -223,7 +239,13 @@ export default function Layout({ children }) {
           variant="permanent"
           sx={{
             display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            '& .MuiDrawer-paper': { 
+              boxSizing: 'border-box', 
+              width: drawerWidth,
+              backgroundColor: 'rgba(10, 11, 16, 0.8)',
+              backdropFilter: 'blur(12px)',
+              borderRight: '1px solid rgba(255, 255, 255, 0.1)'
+            },
           }}
           open
         >
@@ -234,8 +256,9 @@ export default function Layout({ children }) {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
+          p: 4,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
+          background: 'transparent',
         }}
       >
         <Toolbar />
@@ -244,3 +267,4 @@ export default function Layout({ children }) {
     </Box>
   );
 }
+

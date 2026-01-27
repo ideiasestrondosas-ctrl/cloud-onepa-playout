@@ -14,17 +14,18 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  List,
-  ListItem,
-  ListItemText,
-  IconButton,
+  Paper,
+  Divider,
   Chip,
+  Tooltip,
+  IconButton,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
   PlayArrow as PlayIcon,
   Edit as EditIcon,
+  History as HistoryIcon,
 } from '@mui/icons-material';
 
 const PRESET_TEMPLATES = [
@@ -184,141 +185,218 @@ export default function Templates() {
   };
 
   return (
-    <Box>
+    <Box sx={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1">
-          Templates de Playlists
-        </Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateDialogOpen(true)}>
-          Criar Template
+        <Box>
+            <Typography variant="h4" className="neon-text" sx={{ fontWeight: 800 }}>GERADOR DE TEMPLATES</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: 2 }}>CRIE & GIRA ESTRUTURAS DE CONTEÚDO REUTILIZÁVEIS</Typography>
+        </Box>
+        <Button 
+            variant="contained" 
+            startIcon={<AddIcon />} 
+            onClick={() => setCreateDialogOpen(true)}
+            sx={{ borderRadius: 2, fontWeight: 800, px: 3 }}
+        >
+          CRIAR TEMPLATE
         </Button>
       </Box>
 
+      {/* Templates Grid */}
+      <Box sx={{ flexGrow: 1, overflowY: 'auto', pr: 1, '&::-webkit-scrollbar': { width: '8px' }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,255,255,0.05)', borderRadius: '4px' } }}>
+        <Grid container spacing={3}>
+            {templates.map((template) => (
+            <Grid item xs={12} md={6} lg={4} key={template.id}>
+                <Paper className="glass-panel" sx={{ 
+                    p: 2.5, 
+                    height: '100%', 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    transition: '0.3s',
+                    '&:hover': { transform: 'translateY(-4px)', border: '1px solid rgba(0,229,255,0.3)' }
+                }}>
+                    <Box sx={{ mb: 2 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: 0.5, color: 'primary.main' }}>
+                            {(template.name || 'Sem Nome').toUpperCase()}
+                        </Typography>
+                        <Typography variant="caption" sx={{ fontWeight: 600, opacity: 0.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', height: 40 }}>
+                            {template.description}
+                        </Typography>
+                    </Box>
+
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                        <Chip 
+                            icon={<HistoryIcon sx={{ fontSize: '1rem !important' }} />}
+                            label={`${Math.floor(template.duration / 3600)}H ${Math.floor((template.duration % 3600) / 60)}M`}
+                            size="small"
+                            sx={{ fontWeight: 800, borderRadius: 1.5, bgcolor: 'rgba(0,229,255,0.1)', color: 'primary.main', border: '1px solid rgba(0,229,255,0.2)' }}
+                        />
+                        <Chip 
+                            label={`${template.structure.length} BLOCOS`}
+                            size="small"
+                            sx={{ fontWeight: 800, borderRadius: 1.5, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}
+                        />
+                    </Box>
+
+                    <Divider sx={{ mb: 2, opacity: 0.1 }} />
+
+                    <Box sx={{ flexGrow: 1, mb: 3 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 800, opacity: 0.4, mb: 1, display: 'block', fontSize: '0.65rem' }}>ESTRUTURA DA SEQUÊNCIA</Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                            {template.structure.slice(0, 6).map((item, index) => (
+                                <Tooltip key={index} title={`${item.type.toUpperCase()} (${Math.floor(item.duration / 60)} min)`}>
+                                    <Box sx={{ 
+                                        px: 1, py: 0.5, 
+                                        borderRadius: 1, 
+                                        bgcolor: 'rgba(255,255,255,0.03)', 
+                                        border: '1px solid rgba(255,255,255,0.05)',
+                                        fontSize: '0.65rem',
+                                        fontWeight: 700,
+                                        opacity: 0.8
+                                    }}>
+                                        {item.type.toUpperCase()}
+                                    </Box>
+                                </Tooltip>
+                            ))}
+                            {template.structure.length > 6 && (
+                                <Box sx={{ px: 1, py: 0.5, fontSize: '0.65rem', fontWeight: 700, opacity: 0.4 }}>+{template.structure.length - 6}</Box>
+                            )}
+                        </Box>
+                    </Box>
+
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button
+                            fullWidth
+                            variant="contained"
+                            startIcon={<PlayIcon />}
+                            onClick={() => handleUseTemplate(template)}
+                            sx={{ borderRadius: 2, fontWeight: 800 }}
+                        >
+                            USAR
+                        </Button>
+                        {!PRESET_TEMPLATES.find(p => p.id === template.id) && (
+                            <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                <IconButton onClick={() => handleEditTemplate(template)} sx={{ bgcolor: 'rgba(0,229,255,0.05)', borderRadius: 2, color: 'primary.main', '&:hover': { bgcolor: 'rgba(0,229,255,0.1)' } }}>
+                                    <EditIcon sx={{ fontSize: 18 }} />
+                                </IconButton>
+                                <IconButton onClick={() => handleDeleteTemplate(template.id)} sx={{ bgcolor: 'rgba(244,67,54,0.05)', borderRadius: 2, color: 'error.main', '&:hover': { bgcolor: 'rgba(244,67,54,0.1)' } }}>
+                                    <DeleteIcon sx={{ fontSize: 18 }} />
+                                </IconButton>
+                            </Box>
+                        )}
+                    </Box>
+                </Paper>
+            </Grid>
+            ))}
+        </Grid>
+      </Box>
+
       {/* Create New Template Dialog */}
-      <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Criar Novo Template</DialogTitle>
-        <DialogContent>
+      <Dialog 
+        open={createDialogOpen} 
+        onClose={() => setCreateDialogOpen(false)} 
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: 'primary.main', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            {newTemplate.id ? 'EDITAR TEMPLATE' : 'CRIAR NOVO TEMPLATE'}
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
           <TextField
             fullWidth
-            label="Nome do Template"
+            label="NOME DO TEMPLATE"
+            variant="standard"
             sx={{ mt: 2 }}
             value={newTemplate.name}
             onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
+            InputLabelProps={{ shrink: true, sx: { fontWeight: 800 } }}
+            inputProps={{ sx: { fontWeight: 800 } }}
           />
           <TextField
             fullWidth
-            label="Descrição"
-            sx={{ mt: 2 }}
+            label="DESCRIÇÃO"
+            variant="standard"
+            sx={{ mt: 3 }}
             multiline
-            rows={3}
+            rows={2}
             value={newTemplate.description}
             onChange={(e) => setNewTemplate({ ...newTemplate, description: e.target.value })}
+            InputLabelProps={{ shrink: true, sx: { fontWeight: 800 } }}
+            inputProps={{ sx: { fontWeight: 700, fontSize: '0.9rem' } }}
           />
           <TextField
             fullWidth
-            label="Duração Total (segundos)"
+            label="DURAÇÃO TOTAL (SEGUNDOS)"
+            variant="standard"
             type="number"
-            sx={{ mt: 2 }}
+            sx={{ mt: 3 }}
             value={newTemplate.duration}
             onChange={(e) => setNewTemplate({ ...newTemplate, duration: parseInt(e.target.value) })}
+            InputLabelProps={{ shrink: true, sx: { fontWeight: 800 } }}
+            inputProps={{ sx: { fontWeight: 800 } }}
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCreateDialogOpen(false)}>Cancelar</Button>
-          <Button variant="contained" onClick={handleSaveNewTemplate}>Salvar Template</Button>
+        <DialogActions sx={{ p: 3 }}>
+          <Button onClick={() => setCreateDialogOpen(false)} sx={{ fontWeight: 800 }}>CANCELAR</Button>
+          <Button 
+            variant="contained" 
+            onClick={handleSaveNewTemplate}
+            sx={{ borderRadius: 2, fontWeight: 800, px: 4 }}
+          >
+            GUARDAR TEMPLATE
+          </Button>
         </DialogActions>
       </Dialog>
 
-
-      <Grid container spacing={3}>
-        {templates.map((template) => (
-          <Grid item xs={12} md={6} lg={4} key={template.id}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  {template.name}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" paragraph>
-                  {template.description}
-                </Typography>
-                <Chip
-                  label={`${Math.floor(template.duration / 3600)}h`}
-                  size="small"
-                  sx={{ mb: 2 }}
-                />
-                <Box>
-                  <Typography variant="caption" color="text.secondary">
-                    Estrutura:
-                  </Typography>
-                  <List dense>
-                    {template.structure.map((item, index) => (
-                      <ListItem key={index} sx={{ py: 0.5 }}>
-                        <ListItemText
-                          primary={item.type}
-                          secondary={`${Math.floor(item.duration / 60)} min`}
-                        />
-                      </ListItem>
-                    ))}
-                  </List>
-                </Box>
-                <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    startIcon={<PlayIcon />}
-                    onClick={() => handleUseTemplate(template)}
-                  >
-                    Usar
-                  </Button>
-                  {!PRESET_TEMPLATES.find(p => p.id === template.id) && (
-                    <>
-                      <IconButton onClick={() => handleEditTemplate(template)} color="primary" size="small">
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton onClick={() => handleDeleteTemplate(template.id)} color="error" size="small">
-                        <DeleteIcon />
-                      </IconButton>
-                    </>
-                  )}
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-
-      {/* Template Dialog */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Criar Playlist a partir de Template</DialogTitle>
-        <DialogContent>
+      {/* Use Template Dialog */}
+      <Dialog 
+        open={dialogOpen} 
+        onClose={() => setDialogOpen(false)} 
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: 'primary.main', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            GERAR PLAYLIST A PARTIR DE TEMPLATE
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
           {selectedTemplate && (
             <Box>
-              <Typography variant="body1" gutterBottom>
-                Template: <strong>{selectedTemplate.name}</strong>
-              </Typography>
-              <Typography variant="body2" color="text.secondary" paragraph>
-                {selectedTemplate.description}
-              </Typography>
-              <TextField
-                fullWidth
-                label="Nome da Playlist"
-                sx={{ mt: 2 }}
-                placeholder={`Playlist ${selectedTemplate.name}`}
-              />
-              <TextField
-                fullWidth
-                label="Data"
-                type="date"
-                sx={{ mt: 2 }}
-                InputLabelProps={{ shrink: true }}
-              />
+                <Box sx={{ mb: 3 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 800, opacity: 0.4 }}>TEMPLATE SELECIONADO</Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 800, color: 'primary.main' }}>{selectedTemplate.name.toUpperCase()}</Typography>
+                </Box>
+              
+                <TextField
+                    fullWidth
+                    label="NOME DA PLAYLIST"
+                    variant="standard"
+                    sx={{ mt: 2 }}
+                    placeholder={`Playlist ${selectedTemplate.name}`}
+                    InputLabelProps={{ shrink: true, sx: { fontWeight: 800 } }}
+                    inputProps={{ sx: { fontWeight: 800 } }}
+                />
+                <TextField
+                    fullWidth
+                    label="DATA DE EMISSÃO"
+                    type="date"
+                    variant="standard"
+                    sx={{ mt: 3 }}
+                    InputLabelProps={{ shrink: true, sx: { fontWeight: 800 } }}
+                    inputProps={{ sx: { fontWeight: 800 } }}
+                    defaultValue={new Date().toISOString().split('T')[0]}
+                />
             </Box>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>
-          <Button variant="contained" onClick={handleCreatePlaylist}>
-            Criar Playlist
+        <DialogActions sx={{ p: 3 }}>
+          <Button onClick={() => setDialogOpen(false)} sx={{ fontWeight: 800 }}>CANCELAR</Button>
+          <Button 
+            variant="contained" 
+            onClick={handleCreatePlaylist}
+            sx={{ borderRadius: 2, fontWeight: 800, px: 4 }}
+          >
+            GERAR AGORA
           </Button>
         </DialogActions>
       </Dialog>

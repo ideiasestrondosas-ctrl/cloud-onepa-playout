@@ -27,6 +27,12 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  LinearProgress,
+  Tooltip,
+  Stack,
+  ListItemButton,
+  ListItemIcon,
+  CircularProgress,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -39,6 +45,10 @@ import {
   Layers as LoopIcon,
   Shuffle as ShuffleIcon,
   FormatListNumbered as SequentialIcon,
+  Timer as TimerIcon,
+  DoneAll as DoneAllIcon,
+  MoreVert as MoreIcon,
+  Movie as MovieIcon,
 } from '@mui/icons-material';
 import {
   DndContext,
@@ -65,49 +75,96 @@ function SortableClip({ clip, onRemove, isSelected, onToggleSelection }) {
     setNodeRef,
     transform,
     transition,
+    isDragging
   } = useSortable({ id: clip.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    zIndex: isDragging ? 2 : 1,
+    opacity: isDragging ? 0.6 : 1,
   };
 
   return (
     <ListItem
       ref={setNodeRef}
       style={style}
-      secondaryAction={
-        <IconButton edge="end" onClick={() => onRemove(clip.id)}>
-          <DeleteIcon />
-        </IconButton>
-      }
-      sx={{ bgcolor: 'background.paper', mb: 1, borderRadius: 1 }}
+      disablePadding
+      sx={{ mb: 1 }}
     >
-      <Checkbox 
-        checked={isSelected} 
-        onChange={() => onToggleSelection(clip.id)}
-        size="small"
-        sx={{ mr: 1 }}
-      />
-      <Box {...attributes} {...listeners} sx={{ cursor: 'grab', mr: 2 }}>
-        <DragIcon />
-      </Box>
-      <ListItemText
-        primary={clip.filename}
-        secondary={
-          <Box component="span" sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+      <Paper 
+        className="glass-panel"
+        sx={{ 
+          width: '100%',
+          p: 1.5,
+          display: 'flex', 
+          alignItems: 'center',
+          gap: 2,
+          transition: '0.2s',
+          border: isSelected ? '1px solid rgba(0,229,255,0.3)' : '1px solid rgba(255,255,255,0.05)',
+          '&:hover': { bgcolor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.1)' }
+        }}
+      >
+        <Checkbox 
+          checked={isSelected} 
+          onChange={() => onToggleSelection(clip.id)}
+          size="small"
+          sx={{ color: 'rgba(255,255,255,0.3)' }}
+        />
+        
+        <Box 
+          {...attributes} 
+          {...listeners} 
+          sx={{ 
+            cursor: 'grab', 
+            color: 'primary.main',
+            display: 'flex',
+            alignItems: 'center',
+            opacity: 0.5,
+            '&:hover': { opacity: 1, filter: 'drop-shadow(0 0 5px #00e5ff)' }
+          }}
+        >
+          <DragIcon />
+        </Box>
+
+        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+          <Typography variant="body2" sx={{ fontWeight: 800, letterSpacing: 0.5, mb: 0.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {clip.filename.toUpperCase()}
+          </Typography>
+          <Stack direction="row" spacing={1} alignItems="center">
             <Chip 
-              icon={<Box sx={{ width: 8, height: 8, bgcolor: 'primary.main', borderRadius: '50%' }} />}
-              label={clip.start_time || '00:00:00'} 
+              label={clip.start_time} 
               size="small" 
-              variant="outlined" 
+              sx={{ 
+                height: 18, 
+                fontSize: '0.6rem', 
+                fontWeight: 800, 
+                bgcolor: 'rgba(0,229,255,0.1)', 
+                color: 'primary.main',
+                borderRadius: 1
+              }} 
             />
-            <Typography variant="caption" color="text.secondary">
-              Duração: {formatShortDuration(clip.duration)}
+            <Typography variant="caption" sx={{ opacity: 0.5, fontWeight: 600 }}>
+              DURAÇÃO: {formatShortDuration(clip.duration)}
             </Typography>
-          </Box>
-        }
-      />
+            {clip.is_filler && (
+              <Chip label="FILLER" size="small" variant="outlined" color="warning" sx={{ height: 16, fontSize: '0.55rem', fontWeight: 800 }} />
+            )}
+          </Stack>
+        </Box>
+
+        <IconButton 
+          size="small"
+          onClick={() => onRemove(clip.id)}
+          sx={{ 
+            color: 'error.main', 
+            bgcolor: 'rgba(244,67,54,0.05)',
+            '&:hover': { bgcolor: 'rgba(244,67,54,0.15)' }
+          }}
+        >
+          <DeleteIcon sx={{ fontSize: 18 }} />
+        </IconButton>
+      </Paper>
     </ListItem>
   );
 }
@@ -137,13 +194,58 @@ export default function PlaylistEditor() {
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
   const [clips, setClipsState] = useState([]);
   
-  const setClips = (newClips) => {
+  const [history, setHistory] = useState([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+
+  const setClips = (newClips, skipHistory = false) => {
+    let finalClips;
     if (typeof newClips === 'function') {
-      setClipsState(prev => calculateTimings(newClips(prev)));
+      finalClips = calculateTimings(newClips(clips));
     } else {
-      setClipsState(calculateTimings(newClips));
+      finalClips = calculateTimings(newClips);
+    }
+    
+    setClipsState(finalClips);
+    
+    if (!skipHistory) {
+      const newHistory = history.slice(0, historyIndex + 1);
+      newHistory.push(finalClips);
+      if (newHistory.length > 50) newHistory.shift();
+      setHistory(newHistory);
+      setHistoryIndex(newHistory.length - 1);
     }
   };
+
+  const undo = () => {
+    if (historyIndex > 0) {
+      const prevClips = history[historyIndex - 1];
+      setClipsState(prevClips);
+      setHistoryIndex(historyIndex - 1);
+      showSuccess('Desfazer (Undo)');
+    }
+  };
+
+  const redo = () => {
+    if (historyIndex < history.length - 1) {
+      const nextClips = history[historyIndex + 1];
+      setClipsState(nextClips);
+      setHistoryIndex(historyIndex + 1);
+      showSuccess('Refazer (Redo)');
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        if (e.shiftKey) redo();
+        else undo();
+      } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+        redo();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [historyIndex, history]);
 
   const calculateTimings = (clipsList) => {
     let offset = 0;
@@ -347,6 +449,8 @@ export default function PlaylistEditor() {
         showSuccess('Playlist criada com sucesso!');
       }
       await fetchPlaylists();
+      // Skip history during save to avoid duplicate state
+      setClips(clips, true);
     } catch (error) {
       console.error('Failed to save playlist:', error);
       showError('Erro ao salvar playlist');
@@ -382,9 +486,14 @@ export default function PlaylistEditor() {
           media_type: item.media_type || (media ? media.media_type : 'video'),
         };
       });
-      setClips(loadedClips);
+      setClips(loadedClips, true);
+      // Reset history for the newly loaded playlist
+      setHistory([loadedClips]);
+      setHistoryIndex(0);
     } else {
-      setClips([]);
+      setClips([], true);
+      setHistory([[]]);
+      setHistoryIndex(0);
     }
   };
 
@@ -532,141 +641,199 @@ export default function PlaylistEditor() {
 
 
   return (
-    <Box>
+    <Box sx={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* 1. PREMIUM HEADER */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1">
-          Playlist Editor
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box>
+          <Typography variant="h4" className="neon-text" sx={{ fontWeight: 800 }}>PLAYLIST EDITOR</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: 2 }}>GERADOR DE EMISSÃO AUTOMATICA & PROGRAMADA</Typography>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 2 }}>
           {selectedClipIds.length > 0 && (
-            <Button variant="contained" color="error" startIcon={<DeleteIcon />} onClick={handleBulkDelete}>
-              Eliminar ({selectedClipIds.length})
-            </Button>
+            <Tooltip title="Eliminar clips selecionados" arrow>
+              <Button 
+                  variant="contained" 
+                  color="error" 
+                  startIcon={<DeleteIcon />} 
+                  onClick={handleBulkDelete}
+                  sx={{ borderRadius: 2, fontWeight: 800, px: 3 }}
+              >
+                ELIMINAR ({selectedClipIds.length})
+              </Button>
+            </Tooltip>
           )}
-          <Button variant="outlined" color="warning" startIcon={<AutoFixIcon />} onClick={() => setAutomationDialogOpen(true)}>
-            Automação
-          </Button>
-          <Button variant="outlined" onClick={handleNewPlaylist}>
-            Nova Playlist
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<SaveIcon />}
-            onClick={handleSave}
-            disabled={saving || clips.length === 0}
-          >
-            Salvar
-          </Button>
+          <Tooltip title="Gerar playlist automaticamente" arrow>
+            <Button 
+              variant="outlined" 
+              color="warning" 
+              startIcon={<AutoFixIcon />} 
+              onClick={() => setAutomationDialogOpen(true)}
+              sx={{ borderRadius: 2, fontWeight: 800, px: 3 }}
+            >
+              AUTOMAÇÃO
+            </Button>
+          </Tooltip>
+          <Tooltip title="Criar uma nova playlist vazia" arrow>
+            <Button 
+              variant="outlined" 
+              onClick={handleNewPlaylist}
+              sx={{ borderRadius: 2, fontWeight: 800, px: 3 }}
+            >
+              NOVA PLAYLIST
+            </Button>
+          </Tooltip>
+          <Tooltip title="Guardar todas as alterações" arrow>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+              onClick={handleSave}
+              disabled={saving || clips.length === 0}
+              sx={{ 
+                borderRadius: 2, 
+                fontWeight: 800, 
+                px: 4, 
+                filter: 'drop-shadow(0 0 10px rgba(0,229,255,0.3))',
+                minWidth: '140px'
+              }}
+            >
+              {saving ? 'A GUARDAR...' : 'SALVAR'}
+            </Button>
+          </Tooltip>
         </Box>
       </Box>
 
-      <Grid container spacing={3}>
-        {/* Saved Playlists */}
-        <Grid item xs={12} md={3}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Playlists Salvas
-              </Typography>
-              <List>
-                {playlists.map((playlist) => (
-                  <ListItem
-                    key={playlist.id}
-                    button
-                    selected={selectedPlaylist?.id === playlist.id}
-                    onClick={() => handleLoadPlaylist(playlist)}
-                    secondaryAction={
-                      <IconButton 
-                        edge="end" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeletePlaylist(playlist);
-                        }}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    }
+      <Grid container spacing={3} sx={{ flexGrow: 1, overflow: 'hidden' }}>
+        {/* 2. SIDEBAR: LIBRARY */}
+        <Grid item xs={12} md={3} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <Paper className="glass-panel" sx={{ p: 0, flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <Box sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.05)', bgcolor: 'rgba(255,255,255,0.02)' }}>
+              <Typography variant="overline" sx={{ fontWeight: 800, color: 'primary.main' }}>BIBLIOTECA DE PLAYLISTS</Typography>
+            </Box>
+            <List sx={{ flexGrow: 1, overflowY: 'auto', p: 1 }}>
+              {playlists.map((playlist) => (
+                <ListItemButton
+                  key={playlist.id}
+                  selected={selectedPlaylist?.id === playlist.id}
+                  onClick={() => handleLoadPlaylist(playlist)}
+                  sx={{ 
+                    borderRadius: 3, 
+                    mb: 1,
+                    transition: '0.3s',
+                    '&.Mui-selected': { bgcolor: 'rgba(0,229,255,0.1)', border: '1px solid rgba(0,229,255,0.2)' },
+                    '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' }
+                  }}
+                >
+                  <ListItemIcon sx={{ color: 'primary.main', minWidth: 40 }}>
+                    <LoopIcon sx={{ fontSize: 20 }} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={playlist.name.toUpperCase()}
+                    secondary={playlist.date}
+                    primaryTypographyProps={{ sx: { fontWeight: 800, fontSize: '0.75rem', letterSpacing: 0.5 } }}
+                    secondaryTypographyProps={{ sx: { fontSize: '0.65rem', opacity: 0.6 } }}
+                  />
+                  <IconButton 
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeletePlaylist(playlist);
+                    }}
+                    sx={{ color: 'error.main', opacity: 0, '.MuiListItemButton-root:hover &': { opacity: 1 } }}
                   >
-                    <ListItemText
-                      primary={playlist.name}
-                      secondary={playlist.date}
-                    />
-                  </ListItem>
-                ))}
-              </List>
-            </CardContent>
-          </Card>
+                    <DeleteIcon sx={{ fontSize: 16 }} />
+                  </IconButton>
+                </ListItemButton>
+              ))}
+            </List>
+          </Paper>
         </Grid>
 
-        {/* Playlist Editor */}
-        <Grid item xs={12} md={9}>
-          <Card sx={{ mb: 2 }}>
-            <CardContent>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Nome da Playlist"
-                    value={playlistName}
-                    onChange={(e) => setPlaylistName(e.target.value)}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Data"
-                    type="date"
-                    value={playlistDate}
-                    onChange={(e) => setPlaylistDate(e.target.value)}
-                    InputLabelProps={{ shrink: true }}
-                  />
-                </Grid>
+        {/* 3. MAIN EDITOR AREA */}
+        <Grid item xs={12} md={9} sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          {/* DEFINITIONS & VALIDATION */}
+          <Paper className="glass-panel" sx={{ p: 3, mb: 2 }}>
+            <Grid container spacing={3} alignItems="center">
+              <Grid item xs={12} md={6}>
+                <Stack direction="row" spacing={2}>
+                    <TextField
+                        fullWidth label="NOME DA PLAYLIST"
+                        value={playlistName}
+                        onChange={(e) => setPlaylistName(e.target.value)}
+                        variant="standard"
+                        InputLabelProps={{ shrink: true, sx: { fontWeight: 800, fontSize: '0.7rem' } }}
+                        inputProps={{ sx: { fontWeight: 800, fontSize: '0.9rem' } }}
+                    />
+                    <TextField
+                        fullWidth label="DATA DE EMISSÃO" type="date"
+                        value={playlistDate}
+                        onChange={(e) => setPlaylistDate(e.target.value)}
+                        variant="standard"
+                        InputLabelProps={{ shrink: true, sx: { fontWeight: 800, fontSize: '0.7rem' } }}
+                        inputProps={{ sx: { fontWeight: 800, fontSize: '0.9rem' } }}
+                    />
+                </Stack>
               </Grid>
-            </CardContent>
-          </Card>
+              
+              <Grid item xs={12} md={6}>
+                <Box sx={{ p: 2, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3, border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: totalDuration >= 86000 ? 'success.main' : 'warning.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <TimerIcon sx={{ fontSize: 16 }} /> DURAÇÃO TOTAL: {formatDuration(totalDuration)}
+                    </Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 800, opacity: 0.5 }}>META: 24:00:00</Typography>
+                  </Box>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={Math.min((totalDuration / 86400) * 100, 100)} 
+                    sx={{ 
+                        height: 6, 
+                        borderRadius: 3, 
+                        bgcolor: 'rgba(255,255,255,0.05)',
+                        '& .MuiLinearProgress-bar': {
+                            bgcolor: totalDuration >= 86000 ? 'success.main' : 'primary.main',
+                            boxShadow: totalDuration >= 86000 ? '0 0 10px #4caf50' : '0 0 10px #00e5ff'
+                        }
+                    }}
+                  />
+                  {totalDuration < 86300 && totalDuration > 0 && (
+                      <Typography variant="caption" sx={{ color: 'warning.main', fontSize: '0.65rem', mt: 1, display: 'block', fontWeight: 600 }}>
+                          ⚠️ FALTAM {formatDuration(86400 - totalDuration)} PARA COMPLETAR AS 24H
+                      </Typography>
+                  )}
+                  {totalDuration >= 86400 && (
+                      <Typography variant="caption" sx={{ color: 'success.main', fontSize: '0.65rem', mt: 1, display: 'block', fontWeight: 600 }}>
+                          ✅ PLAYLIST PRONTA PARA EMISSÃO (24H COMPLETAS)
+                      </Typography>
+                  )}
+                </Box>
+              </Grid>
+            </Grid>
+          </Paper>
 
-          {/* Validation Status */}
-          <Alert
-            severity={Math.abs(totalDuration - 86400) <= 86400 * 0.05 ? 'success' : 'warning'}
-            icon={Math.abs(totalDuration - 86400) <= 86400 * 0.05 ? <CheckIcon /> : <WarningIcon />}
-            sx={{ mb: 2 }}
-          >
-            <Typography variant="body2">
-              <strong>Duração Total: {formatDuration(totalDuration)} / 24:00:00</strong>
-            </Typography>
-            {Math.abs(totalDuration - 86400) <= 86400 * 0.05 ? (
-              <Typography variant="body2">
-                Playlist válida (~24h ±5%) - Pronta para agendar
-              </Typography>
-            ) : (
-              <Typography variant="body2">
-                {totalDuration < 86400 
-                  ? `Faltam ${formatDuration(86400 - totalDuration)} - Adicione mais clips. Dica: Use fillers para completar tempo restante.`
-                  : `Excede em ${formatDuration(totalDuration - 86400)} - Remova clips.`}
-              </Typography>
-            )}
-          </Alert>
-
-          {/* Clips List */}
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6">
-                  Clips ({clips.length})
-                </Typography>
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={() => setMediaDialogOpen(true)}
-                >
-                  Adicionar Clip
-                </Button>
+          {/* CLIPS GRID */}
+          <Paper className="glass-panel" sx={{ flexGrow: 1, p: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'rgba(255,255,255,0.01)' }}>
+              <Box>
+                <Typography variant="overline" sx={{ fontWeight: 800, color: 'primary.main' }}>GRID DE SEQUÊNCIA ({clips.length} CLIPS)</Typography>
               </Box>
+              <Button
+                variant="outlined"
+                startIcon={<AddIcon />}
+                onClick={() => setMediaDialogOpen(true)}
+                sx={{ borderRadius: 2, fontWeight: 800, fontSize: '0.7rem' }}
+              >
+                ADICIONAR CLIP
+              </Button>
+            </Box>
 
+            <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 2 }}>
               {clips.length === 0 ? (
-                <Alert severity="info">
-                  Nenhum clip adicionado. Clique em "Adicionar Clip" para começar.
-                </Alert>
+                <Box sx={{ height: '100%', display: 'flex', flexFlow: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.3 }}>
+                  <MovieIcon sx={{ fontSize: 60, mb: 2 }} />
+                  <Typography variant="h6" sx={{ fontWeight: 800 }}>PLAYLIST VAZIA</Typography>
+                  <Typography variant="body2">ADICIONE MEDIA DA BIBLIOTECA PARA COMEÇAR</Typography>
+                </Box>
               ) : (
                 <DndContext
                   sensors={sensors}
@@ -677,7 +844,7 @@ export default function PlaylistEditor() {
                     items={clips.map((c) => c.id)}
                     strategy={verticalListSortingStrategy}
                   >
-                    <List>
+                    <List disablePadding>
                       {clips.map((clip) => (
                         <SortableClip
                           key={clip.id}
@@ -691,147 +858,182 @@ export default function PlaylistEditor() {
                   </SortableContext>
                 </DndContext>
               )}
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
         </Grid>
       </Grid>
 
       {/* Media Selection Dialog */}
-      <Dialog open={mediaDialogOpen} onClose={() => { setMediaDialogOpen(false); setSelectedMediaIds([]); }} maxWidth="md" fullWidth>
-        <DialogTitle>Selecionar Media (Multi-seleção)</DialogTitle>
-        <DialogContent>
+      <Dialog 
+        open={mediaDialogOpen} 
+        onClose={() => { setMediaDialogOpen(false); setSelectedMediaIds([]); }} 
+        maxWidth="md" 
+        fullWidth
+        PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: 'primary.main', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            SELECIONAR MEDIA ({availableMedia.filter(m => m.media_type === 'video' || m.media_type === 'audio').length} DISPONÍVEIS)
+        </DialogTitle>
+        <DialogContent sx={{ p: 0 }}>
           {selectedMediaIds.length > 0 && (
-            <Alert severity="info" sx={{ mb: 2 }}>
-              {selectedMediaIds.length} ficheiro(s) selecionado(s)
+            <Alert severity="info" sx={{ m: 2, borderRadius: 2, bgcolor: 'rgba(0,229,255,0.05)', color: 'primary.main', border: '1px solid rgba(0,229,255,0.1)' }}>
+              {selectedMediaIds.length} FICHEIRO(S) SELECIONADO(S) PRONTOS PARA ADICIONAR
             </Alert>
           )}
-          <List>
+          <List sx={{ px: 2 }}>
             {availableMedia.filter((m) => m.media_type === 'video' || m.media_type === 'audio').map((media) => {
               const isSelected = selectedMediaIds.includes(media.id);
               return (
-                <ListItem
+                <ListItemButton
                   key={media.id}
-                  button
                   onClick={() => toggleMediaSelection(media.id)}
+                  sx={{ 
+                    borderRadius: 3, 
+                    mb: 1, 
+                    bgcolor: isSelected ? 'rgba(0,229,255,0.05)' : 'transparent',
+                    border: isSelected ? '1px solid rgba(0,229,255,0.2)' : '1px solid transparent'
+                  }}
                 >
-                  <Checkbox checked={isSelected} sx={{ mr: 1 }} />
+                  <Checkbox checked={isSelected} sx={{ color: isSelected ? 'primary.main' : 'rgba(255,255,255,0.2)' }} />
                   <ListItemText
-                    primary={media.filename}
-                    secondary={`${media.media_type} • ${formatDuration(media.duration)}`}
+                    primary={media.filename.toUpperCase()}
+                    secondary={`${media.media_type.toUpperCase()} • ${formatDuration(media.duration)}`}
+                    primaryTypographyProps={{ sx: { fontWeight: 800, fontSize: '0.8rem' } }}
+                    secondaryTypographyProps={{ sx: { fontSize: '0.65rem', opacity: 0.6 } }}
                   />
-                </ListItem>
+                  {media.is_filler && <Chip label="FILLER" size="small" variant="outlined" color="warning" sx={{ height: 16, fontSize: '0.55rem' }} />}
+                </ListItemButton>
               );
             })}
           </List>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => { setMediaDialogOpen(false); setSelectedMediaIds([]); }}>Cancelar</Button>
+        <DialogActions sx={{ p: 3, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+          <Button onClick={() => { setMediaDialogOpen(false); setSelectedMediaIds([]); }} sx={{ fontWeight: 800 }}>CANCELAR</Button>
           <Button 
             onClick={handleAddSelectedClips} 
             variant="contained"
             disabled={selectedMediaIds.length === 0}
+            sx={{ borderRadius: 2, fontWeight: 800, px: 4 }}
           >
-            Adicionar ({selectedMediaIds.length})
+            ADICIONAR ({selectedMediaIds.length})
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Create Playlist Dialog */}
-      <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Nova Playlist</DialogTitle>
+      <Dialog 
+        open={createDialogOpen} 
+        onClose={() => setCreateDialogOpen(false)} 
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: 'primary.main' }}>NOVA PLAYLIST</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
             margin="dense"
-            label="Nome da Playlist"
+            label="NOME DA PLAYLIST"
             fullWidth
             value={newPlaylistName}
             onChange={(e) => setNewPlaylistName(e.target.value)}
-            placeholder="ex: Playlist Segunda-feira"
-            helperText="Insira um nome descritivo para a playlist"
+            sx={{ mt: 2 }}
+            InputLabelProps={{ shrink: true, sx: { fontWeight: 800 } }}
+            InputProps={{ sx: { borderRadius: 3, fontWeight: 800 } }}
+            placeholder="ex: PLAYLIST SEGUNDA-FEIRA"
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCreateDialogOpen(false)}>Cancelar</Button>
-          <Button onClick={handleCreateNewPlaylist} variant="contained">Criar</Button>
+        <DialogActions sx={{ p: 3 }}>
+          <Button onClick={() => setCreateDialogOpen(false)} sx={{ fontWeight: 800 }}>CANCELAR</Button>
+          <Button variant="contained" onClick={handleCreateNewPlaylist} sx={{ borderRadius: 2, fontWeight: 800, px: 4 }}>CRIAR</Button>
         </DialogActions>
       </Dialog>
       {/* Automation / Fill Dialog */}
-      <Dialog open={automationDialogOpen} onClose={() => setAutomationDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <AutoFixIcon color="warning" /> Automação de Preenchimento
+      <Dialog 
+        open={automationDialogOpen} 
+        onClose={() => setAutomationDialogOpen(false)} 
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+            <AutoFixIcon /> AUTOMAÇÃO DE PREENCHIMENTO
         </DialogTitle>
-        <DialogContent dividers>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-                Escolha como deseja preencher o tempo restante da sua playlist (até 24h).
+        <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+            <Typography variant="caption" sx={{ opacity: 0.6, fontWeight: 600, mb: 3, display: 'block' }}>
+                ESCOLHA O MÉTODO DE PREENCHIMENTO PARA ATINGIR A META DE 24H.
             </Typography>
             
-            <FormControl component="fieldset" sx={{ mt: 2, width: '100%' }}>
+            <FormControl component="fieldset" sx={{ width: '100%' }}>
                 <RadioGroup value={automationType} onChange={(e) => setAutomationType(e.target.value)}>
-                    <Paper variant="outlined" sx={{ p: 2, mb: 1, border: automationType === 'random' ? '2px solid' : '1px solid', borderColor: automationType === 'random' ? 'primary.main' : 'divider' }}>
-                        <FormControlLabel value="random" control={<Radio />} label={
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <ShuffleIcon /> 
-                                <Box>
-                                    <Typography variant="subtitle2">Aleatório da Pasta</Typography>
-                                    <Typography variant="caption" color="text.secondary">Escolhe ficheiros aleatórios da pasta selecionada</Typography>
-                                </Box>
-                            </Box>
-                        } />
-                    </Paper>
-
-                    <Paper variant="outlined" sx={{ p: 2, mb: 1, border: automationType === 'sequential' ? '2px solid' : '1px solid', borderColor: automationType === 'sequential' ? 'primary.main' : 'divider' }}>
-                        <FormControlLabel value="sequential" control={<Radio />} label={
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <SequentialIcon />
-                                <Box>
-                                    <Typography variant="subtitle2">Sequencial da Pasta</Typography>
-                                    <Typography variant="caption" color="text.secondary">Segue a ordem dos ficheiros na pasta selecionada</Typography>
-                                </Box>
-                            </Box>
-                        } />
-                    </Paper>
-
-                    <Paper variant="outlined" sx={{ p: 2, mb: 1, border: automationType === 'loop' ? '2px solid' : '1px solid', borderColor: automationType === 'loop' ? 'primary.main' : 'divider' }}>
-                        <FormControlLabel value="loop" control={<Radio />} label={
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <LoopIcon />
-                                <Box>
-                                    <Typography variant="subtitle2">Loop da Seleção Atual</Typography>
-                                    <Typography variant="caption" color="text.secondary">Repete os vídeos que já estão na playlist</Typography>
-                                </Box>
-                            </Box>
-                        } />
-                    </Paper>
+                    {[
+                        { value: 'random', label: 'ALEATÓRIO DA PASTA', desc: 'Escolhe média aleatória da origem selecionada.', icon: <ShuffleIcon /> },
+                        { value: 'sequential', label: 'SEQUENCIAL DA PASTA', desc: 'Segue a ordem alfabética dos ficheiros.', icon: <SequentialIcon /> },
+                        { value: 'loop', label: 'LOOP DA SELEÇÃO ATUAL', desc: 'Repete os clips já presentes no grid.', icon: <LoopIcon /> }
+                    ].map((mode) => (
+                        <Paper 
+                            key={mode.value}
+                            variant="outlined" 
+                            sx={{ 
+                                p: 1, mb: 1.5, borderRadius: 3, transition: '0.2s',
+                                bgcolor: automationType === mode.value ? 'rgba(0,229,255,0.05)' : 'transparent',
+                                border: automationType === mode.value ? '1px solid rgba(0,229,255,0.3)' : '1px solid rgba(255,255,255,0.05)',
+                                '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' }
+                            }}
+                        >
+                            <FormControlLabel 
+                                value={mode.value} 
+                                control={<Radio size="small" />} 
+                                sx={{ width: '100%', m: 0, px: 1 }}
+                                label={
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: 1 }}>
+                                        <Box sx={{ color: automationType === mode.value ? 'primary.main' : 'inherit', opacity: automationType === mode.value ? 1 : 0.5 }}>
+                                            {mode.icon}
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: '0.75rem' }}>{mode.label}</Typography>
+                                            <Typography variant="caption" sx={{ opacity: 0.5, display: 'block', fontSize: '0.65rem' }}>{mode.desc}</Typography>
+                                        </Box>
+                                    </Box>
+                                } 
+                            />
+                        </Paper>
+                    ))}
                 </RadioGroup>
             </FormControl>
 
             {automationType !== 'loop' && (
-                <Box sx={{ mt: 2 }}>
-                    <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-                        <InputLabel>Pasta de Origem</InputLabel>
+                <Box sx={{ mt: 2, p: 2, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3, border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <FormControl fullWidth variant="standard" sx={{ mb: 2 }}>
+                        <InputLabel shrink sx={{ fontWeight: 800, fontSize: '0.7rem' }}>PASTA DE ORIGEM</InputLabel>
                         <Select 
                             value={selectedFolder} 
-                            label="Pasta de Origem"
                             onChange={(e) => setSelectedFolder(e.target.value)}
+                            sx={{ fontWeight: 800, fontSize: '0.8rem' }}
                         >
-                            <MenuItem value="root">Raiz (Todas as pastas)</MenuItem>
+                            <MenuItem value="root">RAIZ (TODAS AS PASTAS)</MenuItem>
                             {folders.map(f => (
-                                <MenuItem key={f.id} value={f.id}>{f.name}</MenuItem>
+                                <MenuItem key={f.id} value={f.id}>{f.name.toUpperCase()}</MenuItem>
                             ))}
                         </Select>
                     </FormControl>
                     <FormControlLabel 
-                        control={<Checkbox checked={useFillersOnly} onChange={(e) => setUseFillersOnly(e.target.checked)} />} 
-                        label="Usar apenas ficheiros marcados como Filler"
+                        control={<Checkbox checked={useFillersOnly} onChange={(e) => setUseFillersOnly(e.target.checked)} size="small" />} 
+                        label={<Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.8 }}>USAR APENAS FICHEIROS MARCADOS COMO FILLER</Typography>}
                     />
                 </Box>
             )}
         </DialogContent>
-        <DialogActions>
-            <Button onClick={() => setAutomationDialogOpen(false)}>Cancelar</Button>
-            <Button variant="contained" color="warning" onClick={handleRunAutomation} disabled={saving}>
-                Executar Automação
+        <DialogActions sx={{ p: 3 }}>
+            <Button onClick={() => setAutomationDialogOpen(false)} sx={{ fontWeight: 800 }}>CANCELAR</Button>
+            <Button 
+                variant="contained" 
+                color="warning" 
+                onClick={handleRunAutomation} 
+                disabled={saving}
+                sx={{ borderRadius: 2, fontWeight: 800, px: 4, bgcolor: 'warning.main', color: 'black' }}
+            >
+                EXECUTAR AGORA
             </Button>
         </DialogActions>
       </Dialog>
