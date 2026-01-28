@@ -4,7 +4,7 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
-    container_name: onepa-postgres
+    container_name: alpha-postgres
     environment:
       POSTGRES_DB: onepa_playout
       POSTGRES_USER: onepa
@@ -12,9 +12,9 @@ services:
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
     ports:
-      - "5433:5432"
+      - "5534:5432"
     networks:
-      - onepa-network
+      - alpha-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U onepa"]
       interval: 10s
@@ -28,58 +28,54 @@ services:
       dockerfile: ../docker/Dockerfile.backend
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    container_name: onepa-backend
+    container_name: alpha-backend
     environment:
       DATABASE_URL: postgresql://onepa:onepa@postgres:5432/onepa_playout
       SERVER_HOST: 0.0.0.0
-      SERVER_PORT: 8081
+      SERVER_PORT: 8181
       RUST_LOG: debug
       MEDIAMTX_HOST: mediamtx
-      JWT_SECRET: onepa-secret-key-change-in-production
+      JWT_SECRET: alpha-secret-key-change-in-production
       JWT_EXPIRATION: "86400"
     volumes:
-      - ./data/media:/var/lib/onepa-playout/media
-      - ./data/thumbnails:/var/lib/onepa-playout/thumbnails
-      - ./data/playlists:/var/lib/onepa-playout/playlists
-      - ./backend/assets:/var/lib/onepa-playout/assets
+      - ./data/media:/var/lib/alpha-playout/media
+      - ./data/thumbnails:/var/lib/alpha-playout/thumbnails
+      - ./data/playlists:/var/lib/alpha-playout/playlists
+      - ./backend/assets:/var/lib/alpha-playout/assets
     ports:
-      - "8081:8081"
-      - "9900:9900/udp" # SRT Listener port
+      - "8182:8181"
+      - "10901:10900/udp" # SRT Listener port
       - "1235-1250:1235-1250/udp" # UDP Listener range
     networks:
-      - onepa-network
+      - alpha-network
     depends_on:
       postgres:
         condition: service_healthy
       mediamtx:
         condition: service_started
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:8081/api/health || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:8181/api/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 180s  # Allow 3 minutes for initial asset downloads
     restart: unless-stopped
 
   mediamtx:
     image: bluenviron/mediamtx:latest
-    container_name: onepa-mediamtx
+    container_name: alpha-mediamtx
     ports:
-      - "1935:1935" # RTMP
-      - "8888:8888" # HLS
-      - "8889:8889" # WebRTC
-      - "8890:8890/udp" # SRT (fixed mapping)
+      - "2036:2035" # RTMP
+      - "8991:8988" # HLS
+      - "8992:8989" # WebRTC
+      - "8993:8990/udp" # SRT (fixed mapping)
     volumes:
       - ./docker/mediamtx.yml:/mediamtx.yml:ro
     networks:
-      - onepa-network
+      - alpha-network
     depends_on:
       postgres:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "ps aux | grep mediamtx || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   # React Frontend
   frontend:
@@ -88,20 +84,20 @@ services:
       dockerfile: ../docker/Dockerfile.frontend
       args:
         - VITE_API_URL=/api
-    container_name: onepa-frontend
+    container_name: alpha-frontend
     environment:
       VITE_API_URL: /api
     ports:
-      - "3000:80"
+      - "3011:80"
     networks:
-      - onepa-network
+      - alpha-network
     depends_on:
       backend:
-        condition: service_healthy
+        condition: service_started
     restart: unless-stopped
 
 networks:
-  onepa-network:
+  alpha-network:
     driver: bridge
 
 # Volumes are now local bind mounts in ./data

@@ -43,7 +43,7 @@ async fn main() -> std::io::Result<()> {
 
     // Server configuration
     let host = env::var("SERVER_HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
-    let port = env::var("SERVER_PORT").unwrap_or_else(|_| "8081".to_string());
+    let port = env::var("SERVER_PORT").unwrap_or_else(|_| "8181".to_string());
     let bind_address = format!("{}:{}", host, port);
 
     // Ensure HLS directory exists
@@ -128,7 +128,7 @@ async fn main() -> std::io::Result<()> {
                             .to_string();
 
                         // Dashboard heuristic: has ?preview=true OR has dashboard referer
-                        let is_dashboard = is_preview_query || referer.contains(":3000");
+                        let is_dashboard = is_preview_query || referer.contains(":3010");
 
                         let hls_sid = req.cookie("hls_sid").map(|c| c.value().to_string());
                         let path_clone = path.clone();

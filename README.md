@@ -5,7 +5,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB.svg)](https://reactjs.org/)
-[![Version](https://img.shields.io/badge/Version-2.2.0-ALPHA--PRO-blue.svg)]()
+[![Version](https://img.shields.io/badge/Version-2.2.0-ALPHA.1--PRO-blue.svg)]()
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)]()
 
 ## 📖 Sobre
@@ -48,17 +48,18 @@ cd cloud-onepa-playout
 docker-compose up -d --build
 
 # Aceda à interface web
-open http://localhost:3000
+open http://localhost:3010
 
 # Verifique o backend
-curl http://localhost:8081/api/health
+curl http://localhost:8182/api/health
 ```
 
-### Portas Padrão
+### Portas Padrão (Ambiente ALPHA)
 
-- **Frontend**: 3000
-- **Backend API**: 8081 (ajustado para evitar conflitos com Restreamer)
-- **Database**: 5432
+- **Frontend**: 3010 (Local) / 3011 (Docker)
+- **Backend API**: 8181 (Local) / 8182 (Docker)
+- **Database**: 5534 (Docker Host)
+- **MediaMTX RTMP**: 2035 (Local) / 2036 (Docker)
 
 ### Instalação Manual
 
@@ -110,9 +111,9 @@ Este projeto representa um esforço significativo de engenharia para criar uma s
 
 | Métrica          | Detalhe                    | Valor                                     |
 | ---------------- | -------------------------- | ----------------------------------------- |
-| **Código Fonte** | Frontend (React/JSX)       | ~9121 linhas                              |
-|                  | Backend (Rust)             | ~7127 linhas                              |
-|                  | Total                      | **~16248+ linhas**                        |
+| **Código Fonte** | Frontend (React/JSX)       | ~9130 linhas                              |
+|                  | Backend (Rust)             | ~7129 linhas                              |
+|                  | Total                      | **~16259+ linhas**                        |
 | **Arquitetura**  | Módulos Backend (Rust)     | 32                                        |
 |                  | Componentes Visuais        | 25+                                       |
 |                  | Migrações de Base de Dados | 26                                        |

@@ -144,10 +144,12 @@ zip -r "$ZIP_NAME" . \
     -x "tmp/*" \
     -x ".DS_Store" \
     -x "frontend/dist/*" \
+    -x "frontend/build/*" \
+    -x "node_modules/*" \
     -x "*.zip" \
     -x "*.log" \
     -x "**/$EXCLUDE_FILE" \
-    -x "backend/assets/protected/$EXCLUDE_FILE"
+    -x "backend/data/assets/protected/$EXCLUDE_FILE"
 
 if [ -f "$ZIP_NAME" ]; then
     log_success "Archive $ZIP_NAME created successfully (${YELLOW}$(du -h "$ZIP_NAME" | cut -f1)${NC})."

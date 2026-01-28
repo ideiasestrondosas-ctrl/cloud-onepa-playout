@@ -46,7 +46,9 @@ export default function Login() {
       login(user, token);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed. Please try again.');
+      const statusCode = err.response?.status || 'Network Error';
+      const errorMessage = err.response?.data?.error || 'Login failed. Please try again.';
+      setError(`[${statusCode}] ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -112,9 +114,7 @@ export default function Login() {
             <Typography variant="h3" className="neon-text" sx={{ fontWeight: 800, letterSpacing: '-0.05em', mt: -2 }}>
               ONEPA PLAYOUT
             </Typography>
-            <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.5)', letterSpacing: 4, textTransform: 'uppercase', fontWeight: 600 }}>
-              Alpha Intelligence System
-            </Typography>
+
           </Box>
           
           <Paper className="glass-panel" sx={{ p: 4, width: '100%', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: 4 }}>
@@ -123,7 +123,20 @@ export default function Login() {
             </Typography>
             
             {error && (
-              <Alert severity="error" sx={{ mb: 3, borderRadius: 2, bgcolor: 'rgba(244, 67, 54, 0.1)', border: '1px solid rgba(244, 67, 54, 0.2)' }}>
+              <Alert 
+                severity="error" 
+                sx={{ 
+                  mb: 3, 
+                  borderRadius: 2, 
+                  bgcolor: 'rgba(244, 67, 54, 0.15)', 
+                  border: '2px solid rgba(244, 67, 54, 0.5)',
+                  color: '#ff1744',
+                  fontWeight: 700,
+                  '& .MuiAlert-icon': {
+                    color: '#ff1744'
+                  }
+                }}
+              >
                 {error}
               </Alert>
             )}

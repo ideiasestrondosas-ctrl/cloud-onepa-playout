@@ -23,6 +23,7 @@ pub struct PlaylistItem {
 }
 
 impl PlaylistItem {
+    #[allow(dead_code)]
     pub fn get_path(&self) -> String {
         self.path
             .clone()

@@ -48,14 +48,14 @@ RUN mkdir -p /var/lib/onepa-playout/media /var/lib/onepa-playout/thumbnails /var
 WORKDIR /app
 
 # Copy binary from builder
-COPY --from=builder /app/target/release/cloud-onepa-playout /app/
+COPY --from=builder /app/target/release/onepa-playout /app/
 
 # Copy migrations for runtime
 COPY migrations ./migrations
 
-EXPOSE 8081
+EXPOSE 8181
 
 # Ensure binary is executable
-RUN chmod +x /app/cloud-onepa-playout
+RUN chmod +x /app/onepa-playout
 
-CMD ["/app/cloud-onepa-playout"]
+CMD ["/app/onepa-playout"]

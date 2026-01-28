@@ -84,7 +84,7 @@ O sistema pode verificar e instalar atualizações automaticamente sincronizando
 
 | Sintoma                   | Causa Provável         | Solução                                                 |
 | :------------------------ | :--------------------- | :------------------------------------------------------ |
-| **Erro de Porta 3000**    | Outro serviço UI ativo | Pare o serviço ou mude a porta no `docker-compose.yml`. |
+| **Erro de Porta 3010**    | Outro serviço UI ativo | Pare o serviço ou mude a porta no `docker-compose.yml`. |
 | **Transmissão Lenta**     | CPU/GPU insuficiente   | Ajuste os codecs em **Settings -> Playout**.            |
 | **Base de Dados Offline** | Permissões de escrita  | Execute `chmod -R 777 data/postgres`.                   |
 
@@ -92,8 +92,8 @@ O sistema pode verificar e instalar atualizações automaticamente sincronizando
 
 ## 🌐 Acesso ao Painel
 
-- **Dashboard Principal**: [http://localhost:3000](http://localhost:3000)
-- **Documentação Master**: [http://localhost:3000/docs](http://localhost:3000/docs)
-- **Stream HLS**: [http://localhost:3000/hls/stream.m3u8](http://localhost:3000/hls/stream.m3u8)
+- **Dashboard Principal**: [http://localhost:3011](http://localhost:3011)
+- **Documentação Master**: [http://localhost:3011/docs](http://localhost:3011/docs)
+- **Stream HLS**: [http://localhost:3011/hls/stream.m3u8](http://localhost:3011/hls/stream.m3u8)
 
 **Credenciais Padrão:** `admin` / `admin`

@@ -346,7 +346,7 @@ impl FFmpegService {
         let resolution = &settings.resolution;
         let video_bitrate = &settings.video_bitrate;
         let audio_bitrate = &settings.audio_bitrate;
-        let logo_position = settings.logo_position.as_deref();
+        let _logo_position = settings.logo_position.as_deref();
         let overlay_opacity = settings.overlay_opacity;
         let overlay_scale = settings.overlay_scale;
         let overlay_x = settings.overlay_x.unwrap_or(50);
