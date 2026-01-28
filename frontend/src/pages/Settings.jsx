@@ -449,7 +449,7 @@ export default function Settings() {
         dayStart: data.day_start || '06:00',
         defaultImagePath: data.default_image_path || '',
         defaultVideoPath: data.default_video_path || '',
-        version: data.system_version || '2.1.1-PRO', 
+        version: data.system_version || '2.2.0-ALPHA.1', 
         releaseDate: data.release_date || '2026-01-26',
         overlay_enabled: data.overlay_enabled ?? true,
         channelName: data.channel_name || 'Cloud Onepa',
@@ -459,7 +459,7 @@ export default function Settings() {
         srtMode: data.srt_mode || 'caller',
         protectedPath: data.protected_path || '/var/lib/onepa-playout/assets/protected',
         docsPath: data.docs_path || '/app/docs',
-        system_version: data.system_version || '2.1.1-PRO',
+        system_version: data.system_version || '2.2.0-ALPHA.1',
         release_date: data.release_date || '2026-01-26',
         rtmpOutputUrl: data.rtmp_output_url || '',
         srtOutputUrl: data.srt_output_url || '',
@@ -849,7 +849,7 @@ export default function Settings() {
         <Box>
             <Typography variant="h4" className="neon-text" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>Definições</Typography>
             <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: 2, textTransform: 'uppercase' }}>
-                Painel de Controlo do Sistema • v2.1.1-PRO
+                Painel de Controlo do Sistema • v2.2.0-ALPHA.1
             </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 2 }}>
@@ -1405,7 +1405,7 @@ export default function Settings() {
                     </Box>
                     <Grid container spacing={3}>
                         {[
-                            { label: 'VERSÃO DO SISTEMA', value: settings.version || 'v2.1.1-PRO', icon: <WizardIcon /> },
+                            { label: 'VERSÃO DO SISTEMA', value: settings.version || 'v2.2.0-ALPHA.1', icon: <WizardIcon /> },
                             { label: 'ÚLTIMA ATUALIZAÇÃO', value: settings.releaseDate || '2026-01-26', icon: <CheckIcon /> },
                             { label: 'AMBIENTE DE HOST', value: 'MacBook Pro M4 / Proxmox', icon: <PlatformIcon /> },
                             { label: 'DEPLOYMENT', value: 'Docker Container (Linux)', icon: <FolderIcon /> }
@@ -1542,7 +1542,7 @@ export default function Settings() {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <WizardIcon /> NOTAS DE LANÇAMENTO
             </Box>
-            <Typography variant="caption" sx={{ opacity: 0.5 }}>v2.1.1-PRO</Typography>
+            <Typography variant="caption" sx={{ opacity: 0.5 }}>v2.2.0-ALPHA.1</Typography>
         </DialogTitle>
         <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.05)' }}>
             <List sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>

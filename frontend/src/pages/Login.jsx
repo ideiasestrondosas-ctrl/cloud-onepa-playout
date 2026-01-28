@@ -194,7 +194,7 @@ export default function Login() {
             
             <Box sx={{ mt: 4, textAlign: 'center', opacity: 0.6 }}>
               <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                ONEPA TECHNOLOGIES • {version || 'v2.1.1-PRO'}
+                ONEPA TECHNOLOGIES • {version || 'v2.2.0-ALPHA.1'}
               </Typography>
             </Box>
           </Paper>

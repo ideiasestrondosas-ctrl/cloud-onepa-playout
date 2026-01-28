@@ -433,7 +433,7 @@ export default function Dashboard() {
                 {settings?.channel_name || 'Cloud Onepa'}
             </Typography>
             <Chip 
-              label={settings?.system_version || 'v2.1.1-PRO'} 
+              label={settings?.system_version || 'v2.2.0-ALPHA.1'} 
               className="neon-glow"
               sx={{ 
                 bgcolor: 'rgba(0, 229, 255, 0.1)', 

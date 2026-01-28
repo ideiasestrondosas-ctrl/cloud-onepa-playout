@@ -1,6 +1,6 @@
 # ONEPA Playout PRO - User Manual
 
-**Version:** 2.1.1-PRO  
+**Version:** 2.2.0-ALPHA.1  
 **Release Date:** January 2026  
 **Document Version:** 1.0
 
