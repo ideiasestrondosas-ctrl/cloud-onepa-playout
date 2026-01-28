@@ -22,4 +22,4 @@ frontend/build_log*.txt
 /backups/
 /data/
 /exports/
-/backend/assets/protected/big_buck_bunny_1080p_h264.mov
+backend/data/assets/protected/big_buck_bunny_1080p_h264.mov
