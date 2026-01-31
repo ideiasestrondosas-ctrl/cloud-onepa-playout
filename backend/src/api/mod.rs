@@ -1,0 +1,10 @@
+pub mod auth;
+pub mod health;
+pub mod media;
+pub mod playlists;
+pub mod playout;
+pub mod protected;
+pub mod routes;
+pub mod schedule;
+pub mod settings;
+pub mod templates;

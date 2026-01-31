@@ -1,0 +1,2511 @@
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import ReactPlayer from 'react-player';
+import { useNotification } from '../contexts/NotificationContext';
+import { authAPI, settingsAPI, protectedAPI, playoutAPI } from '../services/api';
+import {
+  Box,
+  Typography,
+  Tabs,
+  Tab,
+  Card,
+  CardContent,
+  CardMedia,
+  CardActions,
+  TextField,
+  Button,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Grid,
+  Alert,
+  Divider,
+  List,
+  ListItem,
+  ListItemText,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Chip,
+  ToggleButton,
+  ToggleButtonGroup,
+  ListItemButton,
+  ListItemIcon,
+  Paper,
+  Slider,
+  RadioGroup,
+  Radio,
+  FormControlLabel,
+  Checkbox,
+} from '@mui/material';
+import {
+  Save as SaveIcon,
+  Add as AddIcon,
+  Delete as DeleteIcon,
+  AutoAwesome as WizardIcon,
+  Folder as FolderIcon,
+  Image as ImageIcon,
+  Movie as MovieIcon,
+  CheckCircle as CheckIcon,
+  Visibility as ViewIcon,
+  PlayArrow as PlayIcon,
+  Star as StartIcon,
+  Tv as TvIcon,
+  Dvr as PlatformIcon,
+  Close as CloseIcon,
+  ContentCopy as ContentCopyIcon,
+  Warning as WarningIcon,
+  History as HistoryIcon,
+  Refresh as RefreshIcon,
+  AutoFixHigh as MagicIcon,
+  AspectRatio as AspectRatioIcon,
+  Crop as CropIcon,
+  CloudUpload as UploadIcon,
+} from '@mui/icons-material';
+
+function TabPanel({ children, value, index }) {
+  return (
+    <div hidden={value !== index}>
+      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+    </div>
+  );
+}
+
+function OverlayConverterDialog({ open, onClose, onSave }) {
+  const [file, setFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [dimensions, setDimensions] = useState({ width: 400, height: 200 });
+  const [maintainAspect, setMaintainAspect] = useState(true);
+  const [autoTrim, setAutoTrim] = useState(true);
+  const [processing, setProcessing] = useState(false);
+  const [aspectRatio, setAspectRatio] = useState(1);
+
+  const handleFile = (selectedFile) => {
+    if (selectedFile && selectedFile.type.startsWith('image/')) {
+      setFile(selectedFile);
+      const url = URL.createObjectURL(selectedFile);
+      setPreviewUrl(url);
+      
+      const img = new Image();
+      img.onload = () => {
+        setAspectRatio(img.width / img.height);
+        setDimensions({ width: img.width, height: img.height });
+      };
+      img.src = url;
+    }
+  };
+
+  const handleFileSelect = (e) => {
+    handleFile(e.target.files[0]);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleWidthChange = (val) => {
+    const w = parseInt(val) || 0;
+    if (maintainAspect && aspectRatio) {
+      setDimensions({ width: w, height: Math.round(w / aspectRatio) });
+    } else {
+      setDimensions(prev => ({ ...prev, width: w }));
+    }
+  };
+
+  const handleHeightChange = (val) => {
+    const h = parseInt(val) || 0;
+    if (maintainAspect && aspectRatio) {
+      setDimensions({ width: Math.round(h * aspectRatio), height: h });
+    } else {
+      setDimensions(prev => ({ ...prev, height: h }));
+    }
+  };
+
+  const processAndSave = async () => {
+    setProcessing(true);
+    try {
+      const img = new Image();
+      img.src = previewUrl;
+      await new Promise(resolve => img.onload = resolve);
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d', { alpha: true });
+      canvas.width = dimensions.width;
+      canvas.height = dimensions.height;
+      
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      let finalBlob;
+      if (autoTrim) {
+        finalBlob = await new Promise((resolve) => {
+          const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = pixels.data;
+          let top = canvas.height, bottom = 0, left = canvas.width, right = 0;
+          for (let y = 0; y < canvas.height; y++) {
+            for (let x = 0; x < canvas.width; x++) {
+              if (data[(y * canvas.width + x) * 4 + 3] > 0) {
+                if (y < top) top = y;
+                if (y > bottom) bottom = y;
+                if (x < left) left = x;
+                if (x > right) right = x;
+              }
+            }
+          }
+          const trimW = right - left + 1, trimH = bottom - top + 1;
+          if (trimW > 0 && trimH > 0) {
+            const tCanvas = document.createElement('canvas');
+            tCanvas.width = trimW; tCanvas.height = trimH;
+            tCanvas.getContext('2d').drawImage(canvas, left, top, trimW, trimH, 0, 0, trimW, trimH);
+            tCanvas.toBlob(resolve, 'image/png');
+          } else {
+            canvas.toBlob(resolve, 'image/png');
+          }
+        });
+      } else {
+        finalBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+      }
+
+      const convertedFile = new File([finalBlob], file.name.replace(/\.[^/.]+$/, "") + ".png", { type: 'image/png' });
+      await onSave(file, convertedFile);
+      onClose();
+    } catch (error) {
+      console.error('Processing failed:', error);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>Otimizador de Overlay Pro</DialogTitle>
+      <DialogContent onDragOver={handleDragOver} onDrop={handleDrop}>
+        <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {!file ? (
+            <Button variant="outlined" component="label" startIcon={<UploadIcon />} sx={{ height: 150, borderStyle: 'dashed' }}>
+              Selecionar Imagem Original
+              <input type="file" hidden accept="image/*" onChange={handleFileSelect} />
+            </Button>
+          ) : (
+            <>
+              <Box sx={{ textAlign: 'center', bgcolor: '#f5f5f5', p: 2, borderRadius: 1 }}>
+                <img src={previewUrl} alt="Preview" style={{ maxWidth: '100%', maxHeight: 200, objectFit: 'contain' }} />
+              </Box>
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <TextField fullWidth label="Largura" type="number" value={dimensions.width} onChange={(e) => handleWidthChange(e.target.value)} size="small" />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField fullWidth label="Altura" type="number" value={dimensions.height} onChange={(e) => handleHeightChange(e.target.value)} size="small" />
+                </Grid>
+              </Grid>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <FormControlLabel control={<Radio checked={maintainAspect} onClick={() => setMaintainAspect(!maintainAspect)} />} label="Manter Aspecto" />
+                <FormControlLabel control={<Radio checked={autoTrim} onClick={() => setAutoTrim(!autoTrim)} />} label="Auto-Trim" />
+              </Box>
+              <Button variant="outlined" component="label" size="small">Trocar Imagem<input type="file" hidden accept="image/*" onChange={handleFileSelect} /></Button>
+            </>
+          )}
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancelar</Button>
+        <Button onClick={processAndSave} variant="contained" disabled={!file || processing} startIcon={processing ? <RefreshIcon className="spin" /> : <MagicIcon />}>
+          {processing ? 'A Processar...' : 'Aplicar e Salvar'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+export default function Settings() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { showSuccess, showError, showWarning } = useNotification();
+  const [tabValue, setTabValue] = useState(0);
+  const [settings, setSettings] = useState({
+    outputType: 'rtmp',
+    outputUrl: '',
+    resolution: '1920x1080',
+    fps: '25',
+    videoBitrate: '5000k',
+    audioBitrate: '192k',
+    mediaPath: '',
+    thumbnailsPath: '',
+    playlistsPath: '',
+    fillersPath: '',
+    logoPath: '',
+    logoPosition: 'top-right',
+    epgUrl: '',
+    rtmpOutputUrl: '',
+    srtOutputUrl: '',
+    udpOutputUrl: '',
+    rtmpEnabled: false,
+    srtEnabled: false,
+    udpEnabled: false,
+    hlsEnabled: false,
+    dayStart: '06:00',
+    defaultImagePath: '',
+    defaultVideoPath: '',
+    version: '',
+    releaseDate: '',
+    overlayEnabled: true,
+    channelName: 'Cloud Onepa',
+    brandingType: 'static',
+    overlayOpacity: 1.0,
+    overlayScale: 1.0,
+    srtMode: 'caller',
+    autoStartProtocols: true,
+    udpMode: 'multicast',
+    videoCodec: 'copy',
+    audioCodec: 'copy',
+    epgDays: 7,
+    rtspOutputUrl: '',
+    webrtcOutputUrl: '',
+    mssOutputUrl: '',
+    dashOutputUrl: '',
+    ristOutputUrl: '',
+    protectedPath: '',
+    docsPath: '',
+    dashEnabled:## 🚀 Release v2.1.0-PRO (Feedback Refinements)
+I have applied the following fixes and refinements based on your feedback:
+
+### 📜 Local Version History
+- **Persistent History**: Added a local `RELEASE_HISTORY.json` file on the server.
+- **UI Integration**: The "Release Notes" tab in Settings now fetches this history locally, so you don't need cloud access to see what changed from v1.9.3 to v2.1.0.
+
+### 🔒 Security & Authentication
+- **Default Credentials**: Updated the system to ensure a default admin exists.
+  - **User**: `admin`
+  - **Password**: `onepa2026!`
+- **UI Clean-up**: Removed the "Source" metadata links (TMDB/OMDb) from the Media Library and EPG view as requested, maintaining a cleaner interface.
+
+### 📅 EPG & Persistence
+- **Live Sync**: The EPG details dialog now fetches fresh metadata from the database on every click, ensuring that edits made in the Media Library are immediately reflected without needing a page refresh.
+- **Data Persistence**: Verified that `docker-compose.yml` uses local bind mounts (`./data`). Your data (metadata, users, playlists) will survive container updates and rebuilds as long as the `./data` directory is not deleted.
+
+### 🛠️ Backend & Docs
+- **Compiler Fix**: Resolved the `dead_code` warning for `fallback_metadata`.
+- **README Stats**: Updated the development statistics to reflect the current codebase (~15,800 lines).
+
+---
+**Verification Complete**: Local history tested, default login configured, and UI sanitized.
+rollIntoView({ behavior: 'smooth', block: 'center' });
+            overlaySection.style.backgroundColor = 'rgba(25, 118, 210, 0.1)';
+            setTimeout(() => {
+              overlaySection.style.backgroundColor = '';
+            }, 2000);
+          }
+        }, 300);
+      }
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (showLogsDialog) {
+      fetchLogs();
+      const interval = setInterval(fetchLogs, 2000);
+      return () => clearInterval(interval);
+    }
+  }, [showLogsDialog]);
+
+  const fetchLogs = async () => {
+    try {
+      setIsRefreshingLogs(true);
+      const response = await playoutAPI.getLogs();
+      setLogs(response.data.logs || []);
+    } catch (error) {
+      console.error('Failed to fetch logs:', error);
+    } finally {
+      setIsRefreshingLogs(false);
+    }
+  };
+
+  const handleRetryPlayout = async () => {
+    try {
+      showWarning('Reiniciando transmissão...');
+      await playoutAPI.stop();
+      await new Promise(r => setTimeout(r, 1000));
+      await playoutAPI.start();
+      showSuccess('Transmissão reiniciada!');
+      if (showLogsDialog) fetchLogs();
+    } catch (error) {
+      showError('Erro ao reiniciar!');
+    }
+  };
+
+  const fetchSettings = async () => {
+    try {
+      const response = await settingsAPI.get();
+      const data = response.data;
+      
+      // Determine branding type from logo path extension
+      const isVideoBranding = data.logo_path && (data.logo_path.endsWith('.mp4') || data.logo_path.endsWith('.webm'));
+      
+      setSettings({
+        outputType: data.output_type || 'rtmp',
+        outputUrl: data.output_url || '',
+        resolution: data.resolution || '1920x1080',
+        fps: data.fps || '25',
+        videoBitrate: data.video_bitrate || '5000k',
+        audioBitrate: data.audio_bitrate || '192k',
+        mediaPath: data.media_path || '',
+        thumbnailsPath: data.thumbnails_path || '',
+        playlistsPath: data.playlists_path || '',
+        fillersPath: data.fillers_path || '',
+        logoPath: data.logo_path || '',
+        logoPosition: data.logo_position || 'top-right',
+        epgUrl: data.epg_url || '',
+        dayStart: data.day_start || '06:00',
+        defaultImagePath: data.default_image_path || '',
+        defaultVideoPath: data.default_video_path || '',
+        version: data.system_version || 'v2.0.1-DEBUG', 
+        releaseDate: data.release_date || '2026-01-12',
+        overlayEnabled: data.overlay_enabled ?? true,
+        channelName: data.channel_name || 'Cloud Onepa',
+        brandingType: isVideoBranding ? 'video' : 'static',
+        overlayOpacity: data.overlay_opacity ?? 1.0,
+        overlayScale: data.overlay_scale ?? 1.0,
+        srtMode: data.srt_mode || 'caller',
+        protectedPath: data.protected_path || '/var/lib/onepa-playout/assets/protected',
+        docsPath: data.docs_path || '/app/docs',
+        rtmpOutputUrl: data.rtmp_output_url || '',
+        srtOutputUrl: data.srt_output_url || '',
+        udpOutputUrl: data.udp_output_url || '',
+        rtmpEnabled: data.rtmp_enabled ?? false,
+        srtEnabled: data.srt_enabled ?? false,
+        udpEnabled: data.udp_enabled ?? false,
+        hlsEnabled: data.hls_enabled ?? false,
+        autoStartProtocols: data.auto_start_protocols ?? true,
+        udpMode: data.udp_mode || 'multicast',
+        videoCodec: data.video_codec || 'copy',
+        audioCodec: data.audio_codec || 'copy',
+        epgDays: data.epg_days || 7,
+        rtspOutputUrl: data.rtsp_output_url || '',
+        webrtcOutputUrl: data.webrtc_output_url || '',
+        mssOutputUrl: data.mss_output_url || '',
+        dashOutputUrl: data.dash_output_url || '',
+        ristOutputUrl: data.rist_output_url || '',
+        dashEnabled: data.dash_enabled ?? false,
+        mssEnabled: data.mss_enabled ?? false,
+        ristEnabled: data.rist_enabled ?? false,
+        rtspEnabled: data.rtsp_enabled ?? false,
+        webrtcEnabled: data.webrtc_enabled ?? false,
+        llhlsEnabled: data.llhls_enabled ?? false,
+        display_urls: data.display_urls || {},
+      });
+    } catch (error) {
+      console.error('Failed to fetch settings:', error);
+      showError('Erro ao carregar configurações');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchProtectedAssets = async () => {
+    try {
+      const response = await protectedAPI.list();
+      setProtectedAssets(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      console.error('Failed to fetch protected assets:', error);
+      setProtectedAssets([]);
+    }
+  };
+
+  const setDefaultMedia = async (type, path) => {
+    try {
+      setSaving(true);
+      const updateData = type === 'image' 
+        ? { default_image_path: path || '' }
+        : { default_video_path: path || '' };
+        
+      await settingsAPI.update(updateData);
+      setSettings(prev => ({
+        ...prev,
+        [type === 'image' ? 'defaultImagePath' : 'defaultVideoPath']: path
+      }));
+      showSuccess(`${type === 'image' ? 'Imagem' : 'Vídeo'} padrão atualizado!`);
+    } catch (error) {
+      console.error('Failed to set default media:', error);
+      showError('Erro ao atualizar mídia padrão');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Output Defaults Configuration
+  const OUTPUT_DEFAULTS = {
+    rtmp: { url: 'rtmp://localhost:1935/live_stream', resolution: '1280x720', bitrate: '2500k' },
+    hls: { url: '/hls/stream.m3u8', resolution: '1920x1080', bitrate: '4000k' },
+    srt: { url: 'srt://mediamtx:8890?mode=caller&streamid=publish:live_stream_srt', resolution: '1920x1080', bitrate: '5000k' },
+    udp: { url: 'udp://239.0.0.1:1234', resolution: '1280x720', bitrate: '3000k' },
+    desktop: { url: 'local', resolution: '1920x1080', bitrate: '0' }
+  };
+
+  const handleOutputTypeChange = (type) => {
+    const defaults = OUTPUT_DEFAULTS[type];
+    setSettings(prev => ({
+      ...prev,
+      outputType: type,
+      outputUrl: defaults.url,
+      resolution: defaults.resolution,
+      videoBitrate: defaults.bitrate,
+      // Sync specific protocol URLs
+      rtmpOutputUrl: type === 'rtmp' ? defaults.url : prev.rtmpOutputUrl,
+      srtOutputUrl: type === 'srt' ? defaults.url : prev.srtOutputUrl,
+      udpOutputUrl: type === 'udp' ? defaults.url : prev.udpOutputUrl,
+      srtMode: type === 'srt' ? 'caller' : prev.srtMode
+    }));
+    showSuccess(`Configuração atualizada para ${type.toUpperCase()}`);
+  };
+
+  const handleUdpModeChange = (mode) => {
+      // Define defaults based on protocol and mode
+      let newUrl = mode === 'multicast' ? 'udp://239.0.0.1:1234?ttl=2' : 'udp://@:1234';
+
+      setSettings(prev => ({
+          ...prev,
+          outputUrl: newUrl,
+          udpOutputUrl: newUrl,
+          udpMode: mode
+      }));
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const response = await authAPI.listUsers();
+      setUsers(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+      setUsers([]);
+    }
+  };
+
+  const handleSaveSettings = async (e) => {
+    e?.preventDefault();
+    console.log('handleSaveSettings triggered. Current settings:', settings);
+    
+    if (!window.confirm('Deseja salvar as configurações agora?')) {
+        return;
+    }
+    
+    setSaving(true);
+    try {
+      console.log('--- V2.0.1-DEBUG-SAVES ---');
+      console.log('Sending update request with data:', {
+        udp_enabled: settings.udpEnabled,
+        udp_output_url: settings.udpOutputUrl
+      });
+      await settingsAPI.update({
+        output_type: settings.outputType,
+        output_url: settings.outputUrl,
+        resolution: settings.resolution,
+        fps: settings.fps,
+        video_bitrate: settings.videoBitrate,
+        audio_bitrate: settings.audioBitrate,
+        media_path: settings.mediaPath,
+        thumbnails_path: settings.thumbnailsPath,
+        playlists_path: settings.playlistsPath,
+        fillers_path: settings.fillersPath,
+        logo_path: settings.logoPath,
+        logo_position: settings.logoPosition,
+        epg_url: settings.epgUrl,
+        day_start: settings.dayStart,
+        overlay_enabled: settings.overlayEnabled,
+        channel_name: settings.channelName,
+        overlay_opacity: settings.overlayOpacity,
+        overlay_scale: settings.overlayScale,
+        srt_mode: settings.srtMode,
+        rtmp_output_url: settings.rtmpOutputUrl,
+        srt_output_url: settings.srtOutputUrl,
+        udp_output_url: settings.udpOutputUrl,
+        udp_mode: settings.udpMode,
+        rtmp_enabled: settings.rtmpEnabled,
+        srt_enabled: settings.srtEnabled,
+        udp_enabled: settings.udpEnabled,
+        hls_enabled: settings.hlsEnabled,
+        system_version: settings.version,
+        release_date: settings.releaseDate,
+        auto_start_protocols: settings.autoStartProtocols,
+        video_codec: settings.videoCodec,
+        audio_codec: settings.audioCodec,
+        epg_days: settings.epgDays,
+        dash_enabled: settings.dashEnabled,
+        mss_enabled: settings.mssEnabled,
+        rist_enabled: settings.ristEnabled,
+        rtsp_enabled: settings.rtspEnabled,
+        webrtc_enabled: settings.webrtcEnabled,
+        llhls_enabled: settings.llhlsEnabled,
+        dash_output_url: settings.dashOutputUrl,
+        mss_output_url: settings.mssOutputUrl,
+        rist_output_url: settings.ristOutputUrl,
+        rtsp_output_url: settings.rtspOutputUrl,
+        webrtc_output_url: settings.webrtcOutputUrl,
+      });
+      showSuccess('Configurações salvas! Reiniciando transmissão...');
+      
+      // Auto-start engine with new settings
+      try {
+        await playoutAPI.start();
+        showSuccess('Transmissão reiniciada com sucesso!');
+      } catch (startErr) {
+        console.warn('Auto-start failed/already running:', startErr);
+      }
+
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+      showError('Erro ao salvar configurações');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleLogoUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await settingsAPI.uploadLogo(formData);
+      setSettings({ ...settings, logoPath: response.data.path });
+      showSuccess('Logo carregado com sucesso!');
+    } catch (error) {
+      showError('Erro ao carregar logo');
+    }
+  };
+
+  const handleConverterSave = async (originalFile, convertedFile) => {
+    const formData = new FormData();
+    formData.append('original', originalFile);
+    formData.append('converted', convertedFile);
+
+    try {
+      const response = await settingsAPI.uploadOverlayPair(formData);
+      setSettings({ ...settings, logoPath: response.data.converted_path });
+      showSuccess('Overlay otimizado e salvo com sucesso!');
+      return true;
+    } catch (error) {
+      showError('Erro ao salvar overlay otimizado');
+      return false;
+    }
+  };
+
+  const handleAddUser = async () => {
+    if (!newUser.username || !newUser.password) {
+      showWarning('Preencha nome de utilizador e password');
+      return;
+    }
+    
+    try {
+      await authAPI.register(newUser.username, newUser.password, newUser.role);
+      showSuccess('Utilizador criado com sucesso!');
+      setUserDialogOpen(false);
+      setNewUser({ username: '', password: '', role: 'operator' });
+      fetchUsers();
+    } catch (error) {
+      showError(error.response?.data?.error || 'Erro ao criar utilizador');
+    }
+  };
+
+  const handleDeleteUser = async (id) => {
+    if (!window.confirm('Tem certeza que deseja deletar este utilizador?')) return;
+    try {
+      await authAPI.deleteUser(id);
+      showSuccess('Utilizador removido');
+      fetchUsers();
+    } catch (error) {
+      showError('Erro ao deletar utilizador');
+    }
+  };
+
+  const handleOpenPasswordDialog = (user) => {
+    setSelectedUser(user);
+    setPasswordDialogOpen(true);
+    setNewPassword('');
+  };
+
+  const handleChangePassword = async () => {
+    if (!newPassword || newPassword.length < 8) {
+      showWarning('A password deve ter pelo menos 8 caracteres');
+      return;
+    }
+
+    try {
+      await authAPI.changePassword(selectedUser.id, newPassword);
+      showSuccess('Password alterada com sucesso!');
+      setPasswordDialogOpen(false);
+      setNewPassword('');
+      setSelectedUser(null);
+    } catch (error) {
+      showError('Erro ao alterar password');
+    }
+  };
+
+  // Preset Selection
+  const activePreset = settings.resolution === '1280x720' && settings.videoBitrate === '2500k' ? '720p' :
+                       settings.resolution === '1920x1080' && settings.videoBitrate === '5000k' ? '1080p' :
+                       settings.resolution === '3840x2160' && settings.videoBitrate === '15000k' ? '4k' : 'custom';
+
+  const applyPreset = (preset) => {
+    if (preset === '720p') {
+      setSettings({ ...settings, resolution: '1280x720', videoBitrate: '2500k', fps: '25' });
+    } else if (preset === '1080p') {
+      setSettings({ ...settings, resolution: '1920x1080', videoBitrate: '5000k', fps: '25' });
+    } else if (preset === '4k') {
+      setSettings({ ...settings, resolution: '3840x2160', videoBitrate: '15000k', fps: '30' });
+    }
+    showSuccess(`Preset ${preset} aplicado!`);
+  };
+
+  return (
+    <Box>
+      <Typography variant="h4" component="h1" gutterBottom>
+        Configurações
+      </Typography>
+
+      <Card>
+        {(!settings || typeof settings !== 'object') ? (
+          <Box sx={{ p: 3 }}><Alert severity="error">Erro ao carregar configurações. Tente recarregar a página.</Alert></Box>
+        ) : (
+          <>
+            <Tabs value={tabValue} onChange={(e, v) => setTabValue(v)}>
+              <Tab label="Output" />
+              <Tab label="Caminhos" />
+              <Tab label="Playout" />
+              <Tab label="Assets Protegidos" />
+              <Tab label="Utilizadores" />
+              <Tab label="Presets" />
+              <Tab label="Release Notes" />
+            </Tabs>
+
+            {/* Output Tab */}
+            <TabPanel value={tabValue} index={0}>
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <Typography variant="h6" gutterBottom>
+                    Configuração de Output
+                  </Typography>
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>Tipo de Output</InputLabel>
+                    <Select
+                      value={settings.outputType}
+                      label="Tipo de Output"
+                      onChange={(e) => handleOutputTypeChange(e.target.value)}
+                    >
+                      <MenuItem value="rtmp">RTMP Stream</MenuItem>
+                      <MenuItem value="hls">HLS</MenuItem>
+                      <MenuItem value="srt">SRT</MenuItem>
+                      <MenuItem value="udp">UDP</MenuItem>
+                      <MenuItem value="desktop">Desktop (Preview)</MenuItem>
+                    </Select>
+                  </FormControl>
+
+                   {settings.outputType === 'srt' && (
+                     <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+                        <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>Modo de Operação SRT</Typography>
+                        <FormControl fullWidth sx={{ mt: 1 }}>
+                          <Select
+                             value={settings.srtMode || 'caller'}
+                             onChange={(e) => {
+                               const mode = e.target.value;
+                               const newUrl = mode === 'listener' 
+                                 ? 'srt://0.0.0.0:9900?mode=listener'
+                                 : 'srt://mediamtx:8890?mode=caller&streamid=publish:live_stream_srt';
+                               setSettings({ 
+                                 ...settings, 
+                                 srtMode: mode,
+                                 outputUrl: newUrl,
+                                 srtOutputUrl: newUrl
+                               });
+                             }}
+                          >
+                             <MenuItem value="caller">Caller (Playout conecta ao receptor)</MenuItem>
+                             <MenuItem value="listener">Listener (Playout aguarda conexão)</MenuItem>
+                          </Select>
+                        </FormControl>
+                        <Box sx={{ mt: 1, display: 'flex', gap: 1 }}>
+                           <Button 
+                              size="small" 
+                              variant="outlined" 
+                              startIcon={<HistoryIcon />}
+                              onClick={() => setShowLogsDialog(true)}
+                           >
+                              Ver Logs SRT
+                           </Button>
+                           <Button 
+                              size="small" 
+                              variant="outlined" 
+                              color="warning"
+                              startIcon={<RefreshIcon />}
+                              onClick={handleRetryPlayout}
+                           >
+                              Tentar Novamente
+                           </Button>
+                        </Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                          Escolha <strong>Listener</strong> para o Playout servir o sinal, ou <strong>Caller</strong> para enviar a um servidor.
+                        </Typography>
+                     </Box>
+                   )}
+
+                  {/* UDP Mode Selection (Multicast/Unicast) - Only for UDP */}
+                  {settings.outputType === 'udp' && (
+                    <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+                       <Typography variant="subtitle2" gutterBottom>Modo de Transmissão UDP</Typography>
+                       <RadioGroup 
+                          row 
+                          value={settings.udpMode || (settings.outputUrl.includes('239.') || settings.outputUrl.includes('224.') ? 'multicast' : 'unicast')}
+                          onChange={(e) => handleUdpModeChange(e.target.value)}
+                       >
+                          <FormControlLabel value="unicast" control={<Radio size="small" />} label="Unicast (Local/Direct)" />
+                          <FormControlLabel value="multicast" control={<Radio size="small" />} label="Multicast (Rede Local)" />
+                       </RadioGroup>
+                       <Typography variant="caption" color="text.secondary">
+                          {settings.udpMode === 'multicast' || (settings.outputUrl.includes('239.') || settings.outputUrl.includes('224.'))
+                             ? (
+                               <Box component="span" sx={{ display: 'block', mt: 1 }}>
+                                  <strong style={{ color: '#ff9800' }}>⚠️ Configuração Multicast (Sender):</strong> {settings.outputUrl}<br/>
+                                  <strong style={{ color: '#4caf50' }}>✅ Abrir no VLC (Receiver):</strong> <code>udp://@239.0.0.1:1234</code>
+                               </Box>
+                             )
+                             : (
+                               <Box component="span" sx={{ display: 'block', mt: 1 }}>
+                                  <strong style={{ color: '#2196f3' }}>ℹ️ Configuração Unicast (Sender):</strong> {settings.outputUrl}<br/>
+                                   <strong style={{ color: '#4caf50' }}>✅ Abrir no VLC (Receiver):</strong> <code>{`udp://@${window.location.hostname}:1234`}</code>
+                               </Box>
+                             )
+                          }
+                       </Typography>
+                    </Box>
+                  )}
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    🚀 TRANSMISSÃO MULTI-PROTOCOLO (SIMULTÂNEA)
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} md={4}>
+                      <FormControlLabel
+                        control={<Checkbox size="small" checked={settings.rtmpEnabled || false} onChange={(e) => setSettings({...settings, rtmpEnabled: e.target.checked})} />}
+                        label={<Typography variant="caption" sx={{ fontWeight: 'bold' }}>ATIVAR RTMP Transmissão</Typography>}
+                      />
+                      <TextField
+                        fullWidth
+                        label="URL RTMP"
+                        value={settings.rtmpOutputUrl || ''}
+                        onChange={(e) => setSettings({ ...settings, rtmpOutputUrl: e.target.value })}
+                        placeholder="rtmp://localhost:1935/live_stream"
+                        variant="outlined"
+                        size="small"
+                        helperText="Destino RTMP (Ex: YouTube, Facebook)"
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <FormControlLabel
+                        control={<Checkbox size="small" checked={settings.srtEnabled || false} onChange={(e) => setSettings({...settings, srtEnabled: e.target.checked})} />}
+                        label={<Typography variant="caption" sx={{ fontWeight: 'bold' }}>ATIVAR SRT Transmissão</Typography>}
+                      />
+                      <TextField
+                        fullWidth
+                        label="URL SRT"
+                        value={settings.srtOutputUrl || ''}
+                        onChange={(e) => setSettings({ ...settings, srtOutputUrl: e.target.value })}
+                        placeholder="srt://mediamtx:8890?mode=caller&streamid=publish:live_stream_srt"
+                        variant="outlined"
+                        size="small"
+                        helperText="Destino SRT (Caller ou Listener)"
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <FormControlLabel
+                        control={<Checkbox size="small" checked={settings.udpEnabled || false} onChange={(e) => setSettings({...settings, udpEnabled: e.target.checked})} />}
+                        label={<Typography variant="caption" sx={{ fontWeight: 'bold' }}>ATIVAR UDP Transmissão</Typography>}
+                      />
+                      <TextField
+                        fullWidth
+                        label="URL UDP"
+                        value={settings.udpOutputUrl || ''}
+                        onChange={(e) => setSettings({ ...settings, udpOutputUrl: e.target.value })}
+                        placeholder="udp://239.0.0.1:1234"
+                        variant="outlined"
+                        size="small"
+                        helperText="Destino UDP (Multicast ou Unicast)"
+                      />
+                    </Grid>
+                  </Grid>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mt: 1, mb: 2, color: 'primary.main' }}>
+                    🌐 PROTOCOLOS AVANÇADOS (DISTRIBUIÇÃO)
+                  </Typography>
+                  <Grid container spacing={2}>
+                    {/* DASH */}
+                    <Grid item xs={12} md={6}>
+                       <Box sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                          <FormControlLabel
+                            control={<Checkbox checked={settings.dashEnabled || false} onChange={(e) => setSettings({...settings, dashEnabled: e.target.checked})} />}
+                            label={<Typography variant="body2" sx={{ fontWeight: 'bold' }}>MPEG-DASH</Typography>}
+                          />
+                          <TextField
+                            fullWidth
+                            label="DASH Output Path"
+                            value={settings.dashOutputUrl || ''}
+                            onChange={(e) => setSettings({ ...settings, dashOutputUrl: e.target.value })}
+                            placeholder="/var/lib/onepa-playout/hls/dash.mpd"
+                            variant="outlined"
+                            size="small"
+                            disabled={!settings.dashEnabled}
+                            sx={{ mt: 1 }}
+                          />
+                       </Box>
+                    </Grid>
+                    
+                    {/* MSS */}
+                    <Grid item xs={12} md={6}>
+                       <Box sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                          <FormControlLabel
+                            control={<Checkbox checked={settings.mssEnabled || false} onChange={(e) => setSettings({...settings, mssEnabled: e.target.checked})} />}
+                            label={<Typography variant="body2" sx={{ fontWeight: 'bold' }}>Microsoft Smooth Streaming (MSS)</Typography>}
+                          />
+                          <TextField
+                            fullWidth
+                            label="MSS Output Path"
+                            value={settings.mssOutputUrl || ''}
+                            onChange={(e) => setSettings({ ...settings, mssOutputUrl: e.target.value })}
+                            placeholder="/var/lib/onepa-playout/hls/stream.ism"
+                            variant="outlined"
+                            size="small"
+                            disabled={!settings.mssEnabled}
+                            sx={{ mt: 1 }}
+                          />
+                       </Box>
+                    </Grid>
+
+                    {/* RIST */}
+                    <Grid item xs={12} md={6}>
+                       <Box sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                          <FormControlLabel
+                            control={<Checkbox checked={settings.ristEnabled || false} onChange={(e) => setSettings({...settings, ristEnabled: e.target.checked})} />}
+                            label={<Typography variant="body2" sx={{ fontWeight: 'bold' }}>RIST (Reliable Internet Stream Transport)</Typography>}
+                          />
+                          <TextField
+                            fullWidth
+                            label="RIST URL"
+                            value={settings.ristOutputUrl || ''}
+                            onChange={(e) => setSettings({ ...settings, ristOutputUrl: e.target.value })}
+                            placeholder="rist://127.0.0.1:1234"
+                            variant="outlined"
+                            size="small"
+                            disabled={!settings.ristEnabled}
+                            sx={{ mt: 1 }}
+                          />
+                       </Box>
+                    </Grid>
+
+                    {/* RTSP / WebRTC (Served by MediaMTX) */}
+                    <Grid item xs={12} md={6}>
+                       <Box sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1, height: '100%' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>MediaMTX Services</Typography>
+                          <FormControlLabel
+                            control={<Checkbox checked={settings.rtspEnabled || false} onChange={(e) => setSettings({...settings, rtspEnabled: e.target.checked})} />}
+                            label="RTSP Server"
+                          />
+                          <FormControlLabel
+                            control={<Checkbox checked={settings.webrtcEnabled || false} onChange={(e) => setSettings({...settings, webrtcEnabled: e.target.checked})} />}
+                            label="WebRTC (WHIP/WHEP)"
+                          />
+                          <FormControlLabel
+                            control={<Checkbox checked={settings.llhlsEnabled || false} onChange={(e) => setSettings({...settings, llhlsEnabled: e.target.checked})} />}
+                            label="Low-Latency HLS"
+                          />
+                       </Box>
+                    </Grid>
+                  </Grid>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Grid container spacing={2} sx={{ mt: 1 }}>
+                    <Grid item xs={12} md={12}>
+                      <Alert severity="info" sx={{ mb: 2 }}>
+                        <Typography variant="caption" display="block">
+                          💡 <strong>Dica:</strong> Ative ou desative cada protocolo em tempo real diretamente no <strong>Dashboard</strong> sem precisar reiniciar o playout.
+                        </Typography>
+                      </Alert>
+                  
+                      {/* RTMP Guidance */}
+                      {settings.outputType === 'rtmp' && (
+                        <Alert severity="info" sx={{ mt: 2 }}>
+                          <Typography variant="subtitle2" fontWeight="bold">Servidor RTMP (VLC/OBS)</Typography>
+                          <Typography variant="caption" display="block">
+                            O Playout atua como <strong>Publisher</strong>. Para ver no VLC:
+                          </Typography>
+                          <Paper sx={{ mt: 1, p: 0.5, bgcolor: 'rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>rtmp://{window.location.hostname}:1935/live_stream</code>
+                            <IconButton size="small" onClick={() => { navigator.clipboard.writeText(`rtmp://${window.location.hostname}:1935/live_stream`); showSuccess('Copiado!'); }}>
+                                <ContentCopyIcon fontSize="small" />
+                            </IconButton>
+                          </Paper>
+                          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                            💡 <strong>Dica VLC:</strong> Se der erro de I/O, verifique se o container 'mediamtx' está rodando (porta 1935).
+                          </Typography>
+                        </Alert>
+                      )}
+
+                        {/* SRT Guidance */}
+                        {settings.outputType === 'srt' && (
+                          <Alert severity={settings.srtMode === 'listener' ? "success" : "info"} sx={{ mt: 2 }}>
+                            <Typography variant="subtitle2" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              🛰️ Conexão SRT: {settings.srtMode === 'listener' ? 'Conexão Direta (Playout Listener)' : 'Ponte MediaMTX (Recomendado)'}
+                            </Typography>
+                            
+                            {settings.srtMode === 'caller' ? (
+                              <Box sx={{ mt: 1 }}>
+                                <Typography variant="caption" display="block">
+                                  <strong>Solução de Ponte:</strong> O Playout envia para o MediaMTX interno e você puxa de lá. 
+                                  Isso evita problemas de Firewall no seu Mac.
+                                </Typography>
+                                <Paper sx={{ mt: 1, p: 1, bgcolor: 'rgba(0,0,0,0.1)' }}>
+                                  <Typography variant="caption" display="block" sx={{ fontWeight: 'bold', color: 'primary.main' }}>Passo 1: No Playout (Output URL)</Typography>
+                                  <code>srt://mediamtx:8890?mode=caller&streamid=publish:live_stream_srt</code>
+                                  
+                                  <Typography variant="caption" display="block" sx={{ mt: 1, fontWeight: 'bold', color: 'success.main' }}>Passo 2: No VLC (Fluxo de Rede)</Typography>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <code>{settings.display_urls?.SRT || `srt://${window.location.hostname}:8890?mode=caller&streamid=read:live_stream_srt`}</code>
+                                    <IconButton size="small" onClick={() => { 
+                                        const url = settings.display_urls?.SRT || `srt://${window.location.hostname}:8890?mode=caller&streamid=read:live_stream_srt`;
+                                        navigator.clipboard.writeText(url); 
+                                        showSuccess('Copiado!'); 
+                                    }}>
+                                      <ContentCopyIcon fontSize="small" />
+                                    </IconButton>
+                                  </Box>
+                                </Paper>
+                              </Box>
+                            ) : (
+                              <Box sx={{ mt: 1 }}>
+                                <Typography variant="caption" display="block">
+                                  <strong>Modo Listener Direto:</strong> O Playout aguarda conexão na porta 9900.
+                                </Typography>
+                                <Paper sx={{ mt: 1, p: 1, bgcolor: 'rgba(0,0,0,0.1)' }}>
+                                  <Typography variant="caption" display="block" sx={{ fontWeight: 'bold', color: 'primary.main' }}>Passo 1: No Playout (Output URL)</Typography>
+                                  <code>srt://0.0.0.0:9900?mode=listener</code>
+                                  
+                                  <Typography variant="caption" display="block" sx={{ mt: 1, fontWeight: 'bold', color: 'success.main' }}>Passo 2: No VLC (Fluxo de Rede como Caller)</Typography>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <code>srt://{window.location.hostname}:9900?mode=caller</code>
+                                    <IconButton size="small" onClick={() => { navigator.clipboard.writeText(`srt://${window.location.hostname}:9900?mode=caller`); showSuccess('Copiado!'); }}>
+                                      <ContentCopyIcon fontSize="small" />
+                                    </IconButton>
+                                  </Box>
+                                </Paper>
+                                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                                  💡 <strong>Dica:</strong> Certifique-se que o VLC está no modo <strong>Caller</strong> para conectar ao Playout.
+                                </Typography>
+                              </Box>
+                            )}
+                          </Alert>
+                        )}
+ 
+                        {/* Logs Dialog */}
+                        <Dialog 
+                          open={showLogsDialog} 
+                          onClose={() => setShowLogsDialog(false)}
+                          maxWidth="md"
+                          fullWidth
+                        >
+                          <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            Logs de Transmissão (FFmpeg/SRT)
+                            <IconButton onClick={() => setShowLogsDialog(false)} size="small">
+                              <CloseIcon />
+                            </IconButton>
+                          </DialogTitle>
+                          <DialogContent dividers>
+                            <Box 
+                              sx={{ 
+                                bgcolor: '#1e1e1e', 
+                                color: '#d4d4d4', 
+                                p: 2, 
+                                borderRadius: 1,
+                                fontFamily: 'monospace',
+                                fontSize: '0.85rem',
+                                minHeight: '300px',
+                                maxHeight: '500px',
+                                overflow: 'auto',
+                                whiteSpace: 'pre-wrap'
+                              }}
+                            >
+                                {logs.length > 0 ? (
+                                  logs.slice().reverse().map((log, i) => (
+                                  <div key={i} style={{ 
+                                    borderBottom: '1px solid #333', 
+                                    padding: '2px 0',
+                                    color: log.includes('error') || log.includes('failed') ? '#f44336' : 
+                                           log.includes('warn') ? '#ff9800' : 'inherit'
+                                  }}>
+                                    {log}
+                                  </div>
+                                ))
+                              ) : (
+                                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+                                  Nenhum log disponível no momento.
+                                </Box>
+                              )}
+                            </Box>
+                          </DialogContent>
+                          <DialogActions>
+                            <Button onClick={fetchLogs} disabled={isRefreshingLogs}>
+                              Atualizar Logs
+                            </Button>
+                            <Button onClick={handleRetryPlayout} color="warning">
+                              Reiniciar SRT
+                            </Button>
+                            <Button onClick={() => setShowLogsDialog(false)}>
+                              Fechar
+                            </Button>
+                          </DialogActions>
+                        </Dialog>
+
+                      {/* UDP Guidance */}
+                      {settings.outputType === 'udp' && (
+                        <Alert severity="info" sx={{ mt: 2 }}>
+                          <Typography variant="subtitle2" fontWeight="bold">Configuração UDP</Typography>
+                          
+                          <Typography variant="caption" display="block">ℹ️ Configuração no Playout (Sender):</Typography>
+                          <Paper sx={{ mt: 0.5, p: 0.5, bgcolor: 'rgba(0,0,0,0.1)', mb: 1 }}>
+                            <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{settings.display_urls?.UDP || 'udp://@:1234'}</code>
+                          </Paper>
+
+                          <Typography variant="caption" display="block">✅ Abrir no VLC (Receiver):</Typography>
+                          <Paper sx={{ mt: 0.5, p: 0.5, bgcolor: 'rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <code style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{`udp://@${window.location.hostname}:1234`}</code>
+                            <IconButton size="small" onClick={() => { 
+                                const url = `udp://@${window.location.hostname}:1234`;
+                                navigator.clipboard.writeText(url); 
+                                showSuccess('Copiado!'); 
+                            }}>
+                                <ContentCopyIcon fontSize="small" />
+                            </IconButton>
+                          </Paper>
+                        </Alert>
+                      )}
+
+                      {/* Desktop Preview Guidance */}
+                      {settings.outputType === 'desktop' && (
+                        <Alert severity="warning" sx={{ mt: 2 }}>
+                          <Typography variant="subtitle2" fontWeight="bold">Desktop Preview</Typography>
+                          <Typography variant="caption" display="block">
+                            Esta opção abre uma janela SDL direta no servidor.
+                            <strong> Pode não funcionar em ambientes Docker ou Cloud sem X11 / Display.</strong>
+                          </Typography>
+                        </Alert>
+                      )}
+
+                      {settings.outputType === 'rtmp' && (
+                        <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'primary.main', cursor: 'pointer' }} onClick={() => {
+                              const rtmpUrl = settings.display_urls?.RTMP || `rtmp://${window.location.hostname}:1935/live/stream`;
+                              navigator.clipboard.writeText(rtmpUrl);
+                              showSuccess(`Link RTMP copiado!`);
+                          }}>
+                          Link RTMP para Visualização: {settings.display_urls?.RTMP || `rtmp://${window.location.hostname}:1935/live/stream`}
+                        </Typography>
+                      )}
+
+                      {settings.outputType === 'srt' && (
+                        <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'primary.main', cursor: 'pointer' }} onClick={() => {
+                              const srtUrl = settings.display_urls?.SRT || `srt://${window.location.hostname}:8890?mode=caller`;
+                              navigator.clipboard.writeText(srtUrl);
+                              showSuccess(`Link SRT copiado!`);
+                          }}>
+                          Link SRT (Modo Recetor): {settings.display_urls?.SRT || `srt://${window.location.hostname}:8890?mode=caller`}
+                        </Typography>
+                      )}
+
+                      {settings.outputType === 'udp' && (
+                        <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'primary.main' }}>
+                          Link UDP Ativo: {settings.outputUrl}
+                        </Typography>
+                      )}
+
+                      {settings.outputType === 'hls' && (
+                        <Box sx={{ mt: 1 }}>
+                          <Typography variant="caption" sx={{ display: 'block', color: 'primary.main', cursor: 'pointer' }} onClick={() => {
+                                const hlsUrl = settings.display_urls?.HLS || `${window.location.origin}/hls/stream.m3u8`;
+                                navigator.clipboard.writeText(hlsUrl);
+                                showSuccess(`Link HLS copiado!`);
+                            }}>
+                            Link HLS Público: {settings.display_urls?.HLS || `${window.location.origin}/hls/stream.m3u8`}
+                          </Typography>
+                          <Alert severity="warning" size="small" sx={{ mt: 1, py: 0, '& .MuiAlert-message': { p: 0.5 } }}>
+                             <Typography variant="caption" sx={{ fontSize: '0.65rem' }}>
+                              <strong>Nota:</strong> Este link HLS é destinado a visualização externa (CDN, Players Externos). 
+                              Não tem relação com o HLS interno do Dashboard.
+                             </Typography>
+                          </Alert>
+                        </Box>
+                      )}
+                    </Grid>
+                  </Grid>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Divider sx={{ my: 2 }} />
+                  <Typography variant="h6" gutterBottom>
+                    Qualidade de Vídeo
+                  </Typography>
+                </Grid>
+
+                <Grid item xs={12} sm={4}>
+                  <FormControl fullWidth>
+                    <InputLabel>Resolução</InputLabel>
+                    <Select
+                      value={settings.resolution}
+                      label="Resolução"
+                      onChange={(e) => setSettings({ ...settings, resolution: e.target.value })}
+                    >
+                      <MenuItem value="1280x720">720p (1280x720)</MenuItem>
+                      <MenuItem value="1920x1080">1080p (1920x1080)</MenuItem>
+                      <MenuItem value="3840x2160">4K (3840x2160)</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} sm={4}>
+                  <FormControl fullWidth>
+                    <InputLabel>FPS</InputLabel>
+                    <Select
+                      value={settings.fps}
+                      label="FPS"
+                      onChange={(e) => setSettings({ ...settings, fps: e.target.value })}
+                    >
+                      <MenuItem value="24">24 fps</MenuItem>
+                      <MenuItem value="25">25 fps</MenuItem>
+                      <MenuItem value="30">30 fps</MenuItem>
+                      <MenuItem value="60">60 fps</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} sm={4}>
+                  <FormControl fullWidth>
+                    <InputLabel>Codec de Vídeo</InputLabel>
+                    <Select
+                      value={settings.videoCodec}
+                      label="Codec de Vídeo"
+                      onChange={(e) => setSettings({ ...settings, videoCodec: e.target.value })}
+                    >
+                      <MenuItem value="copy">Original (Copy)</MenuItem>
+                      <MenuItem value="h264">H.264 (AVC)</MenuItem>
+                      <MenuItem value="hevc">H.265 (HEVC)</MenuItem>
+                      <MenuItem value="vp8">VP8</MenuItem>
+                      <MenuItem value="vp9">VP9</MenuItem>
+                      <MenuItem value="av1">AV1</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} sm={4}>
+                  <FormControl fullWidth>
+                    <InputLabel>Codec de Áudio</InputLabel>
+                    <Select
+                      value={settings.audioCodec}
+                      label="Codec de Áudio"
+                      onChange={(e) => setSettings({ ...settings, audioCodec: e.target.value })}
+                    >
+                      <MenuItem value="copy">Original (Copy)</MenuItem>
+                      <MenuItem value="aac">AAC</MenuItem>
+                      <MenuItem value="opus">Opus</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    label="Bitrate de Vídeo"
+                    value={settings.videoBitrate}
+                    onChange={(e) => setSettings({ ...settings, videoBitrate: e.target.value })}
+                    placeholder="5000k"
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    label="Bitrate de Áudio"
+                    value={settings.audioBitrate}
+                    onChange={(e) => setSettings({ ...settings, audioBitrate: e.target.value })}
+                    placeholder="192k"
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Divider sx={{ my: 2 }} />
+                  <Typography variant="h6" gutterBottom>Comportamento de Inicialização</Typography>
+                  <FormControlLabel
+                    control={
+                        <Radio 
+                            checked={settings.autoStartProtocols} 
+                            onClick={() => setSettings({ ...settings, autoStartProtocols: !settings.autoStartProtocols })} 
+                        />
+                    }
+                    label="Iniciar Protocolos de Distribuição (RTMP/SRT/UDP) automaticamente ao iniciar o Playout"
+                  />
+                  <Typography variant="caption" color="text.secondary" display="block" sx={{ ml: 4 }}>
+                    Se desativado, os protocolos marcados como ativos só iniciarão após serem alternados manualmente no Dashboard.
+                  </Typography>
+                </Grid>
+              </Grid>
+            </TabPanel>
+
+            {/* Paths Tab */}
+            <TabPanel value={tabValue} index={1}>
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <Typography variant="h6" gutterBottom>
+                    Caminhos de Armazenamento
+                  </Typography>
+                  <Alert severity="info" sx={{ mb: 2 }}>
+                    Certifique-se de que os diretórios existem e têm permissões adequadas.
+                  </Alert>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Caminho de Media"
+                    value={settings.mediaPath}
+                    onChange={(e) => setSettings({ ...settings, mediaPath: e.target.value })}
+                    helperText="Diretório onde os ficheiros de vídeo/áudio são armazenados"
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Caminho de Thumbnails"
+                    value={settings.thumbnailsPath}
+                    onChange={(e) => setSettings({ ...settings, thumbnailsPath: e.target.value })}
+                    helperText="Diretório para thumbnails gerados automaticamente"
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Caminho de Playlists"
+                    value={settings.playlistsPath}
+                    onChange={(e) => setSettings({ ...settings, playlistsPath: e.target.value })}
+                    helperText="Diretório para ficheiros JSON de playlists"
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Caminho de Fillers"
+                    value={settings.fillersPath}
+                    onChange={(e) => setSettings({ ...settings, fillersPath: e.target.value })}
+                    helperText="Diretório com vídeos para preencher espaços vazios"
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="URL EPG Externo (Importação)"
+                    value={settings.epgUrl}
+                    onChange={(e) => setSettings({ ...settings, epgUrl: e.target.value })}
+                    helperText="URL para importar guia de programação externo (opcional)"
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="EPG Days Ahead"
+                    type="number"
+                    value={settings.epgDays}
+                    onChange={(e) => setSettings({ ...settings, epgDays: parseInt(e.target.value) || 7 })}
+                    helperText="Número de dias de programação a gerar no guia XMLTV"
+                    InputProps={{ inputProps: { min: 1, max: 30 } }}
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="URL Exportação EPG (Para Operadores)"
+                    value={`${window.location.origin}/api/playlists/epg.xml`}
+                    InputProps={{ readOnly: true }}
+                    helperText="URL do guia XMLTV gerado por este playout (Forneça este link aos seus transmissores)"
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Caminho Assets Protegidos"
+                    value={settings.protectedPath}
+                    disabled
+                    helperText="Diretório de segurança (Somente Leitura)"
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Caminho Documentação"
+                    value={settings.docsPath}
+                    disabled
+                    helperText="Localização dos manuais e guias"
+                  />
+                </Grid>
+              </Grid>
+            </TabPanel>
+
+            {/* Playout Tab */}
+            <TabPanel value={tabValue} index={2}>
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <Typography variant="h6" gutterBottom>
+                    Configurações de Playout
+                  </Typography>
+                  <Alert severity="info" sx={{ mb: 2 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="body2">
+                        Precisa de ajuda para configurar o seu canal? Use o assistente de configuração.
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button 
+                          variant="contained" 
+                          startIcon={<WizardIcon />}
+                          onClick={() => navigate('/setup')}
+                        >
+                          Configurar Canal
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          startIcon={<DeleteIcon />}
+                          onClick={() => setResetConfirmOpen(true)}
+                        >
+                          Eliminar Tudo
+                        </Button>
+                      </Box>
+                    </Box>
+                  </Alert>
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Início do Dia"
+                    type="time"
+                    value={settings.dayStart}
+                    onChange={(e) => setSettings({ ...settings, dayStart: e.target.value })}
+                    InputLabelProps={{ shrink: true }}
+                    helperText="Horário de início do dia de programação (ex: 06:00)"
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Typography variant="h6" gutterBottom id="channel-identity">
+                    Identidade do Canal
+                  </Typography>
+                  <FormControl fullWidth sx={{ mb: 2 }}>
+                    <TextField
+                      label="Nome do Canal"
+                      value={settings.channelName}
+                      onChange={(e) => setSettings({ ...settings, channelName: e.target.value })}
+                      helperText="Este nome aparecerá no Dashboard e nos relatórios."
+                    />
+                  </FormControl>
+
+                  <Divider sx={{ my: 2 }} />
+
+                  <Typography variant="h6" gutterBottom id="overlay-section">
+                    Overlay (Marca d'água)
+                  </Typography>
+                  <FormControl fullWidth sx={{ mb: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Box>
+                        <Typography variant="subtitle1">Ativar Overlay de Canal</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Mostra o logotipo e gráficos sobre o vídeo transmitido
+                        </Typography>
+                      </Box>
+                      <Button 
+                        variant={settings.overlay_enabled ? "contained" : "outlined"}
+                        color={settings.overlay_enabled ? "success" : "inherit"}
+                        onClick={() => setSettings({ ...settings, overlay_enabled: !settings.overlay_enabled })}
+                      >
+                        {settings.overlay_enabled ? "ATIVADO" : "DESATIVADO"}
+                      </Button>
+                    </Box>
+                    <Box sx={{ mt: 2 }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Opacidade do Logo ({Math.round(settings.overlayOpacity * 100)}%)
+                      </Typography>
+                      <Slider
+                        value={settings.overlayOpacity || 1.0}
+                        min={0}
+                        max={1}
+                        step={0.1}
+                        onChange={(e, val) => setSettings({ ...settings, overlayOpacity: val })}
+                        valueLabelDisplay="auto"
+                        sx={{ mb: 2 }}
+                      />
+
+                      <Typography variant="subtitle2" gutterBottom>
+                        Escala do Logo ({settings.overlayScale}x)
+                      </Typography>
+                      <Slider
+                        value={settings.overlayScale || 1.0}
+                        min={0.1}
+                        max={2.0}
+                        step={0.1}
+                        onChange={(e, val) => setSettings({ ...settings, overlayScale: val })}
+                        valueLabelDisplay="auto"
+                        sx={{ mb: 2 }}
+                      />
+                    </Box>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} sm={8}>
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1 }}>
+                    <TextField
+                      fullWidth
+                      label="Caminho Absoluto do Logo"
+                      value={settings.logoPath}
+                      onChange={(e) => setSettings({ ...settings, logoPath: e.target.value })}
+                      placeholder="/path/to/logo.png"
+                      helperText="Pode fornecer um caminho local absoluto ou fazer upload"
+                    />
+                    <input
+                      type="file"
+                      id="logo-upload"
+                      hidden
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                    />
+                    <label htmlFor="logo-upload">
+                      <Button variant="contained" component="span" startIcon={<AddIcon />}>
+                        Upload
+                      </Button>
+                    </label>
+                    <IconButton 
+                      color="primary" 
+                      onClick={() => setConverterOpen(true)}
+                      title="Otimizador de Overlay Pro"
+                      sx={{ bgcolor: 'rgba(25, 118, 210, 0.1)', '&:hover': { bgcolor: 'rgba(25, 118, 210, 0.2)' } }}
+                    >
+                      <MagicIcon />
+                    </IconButton>
+                  </Box>
+                </Grid>
+
+                <Grid item xs={12} sm={4}>
+                  <Box 
+                    sx={{ 
+                      border: '1px dashed #ccc', 
+                      borderRadius: 1, 
+                      p: 1, 
+                      textAlign: 'center',
+                      minHeight: 80,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      bgcolor: '#fafafa',
+                      mb: 2
+                    }}
+                  >
+                    {settings.logoPath ? (
+                      <Box sx={{ width: '100%' }}>
+                        <img 
+                          src={`/api/settings/logo?t=${Date.now()}`} 
+                          alt="Logo" 
+                          style={{ maxWidth: '100%', maxHeight: '50px', objectFit: 'contain' }} 
+                        />
+                      </Box>
+                    ) : (
+                      <Typography variant="caption" color="text.secondary">
+                        Sem logo
+                      </Typography>
+                    )}
+                  </Box>
+                  <FormControl fullWidth>
+                    <InputLabel>Posição do Logo</InputLabel>
+                    <Select
+                      value={settings.logoPosition}
+                      label="Posição do Logo"
+                      onChange={(e) => setSettings({ ...settings, logoPosition: e.target.value })}
+                    >
+                      <MenuItem value="top-left">Superior Esquerdo</MenuItem>
+                      <MenuItem value="top-right">Superior Direito</MenuItem>
+                      <MenuItem value="bottom-left">Inferior Esquerdo</MenuItem>
+                      <MenuItem value="bottom-right">Inferior Direito</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+              </Grid>
+              <Divider sx={{ my: 3 }} />
+              <Typography variant="h6" gutterBottom>
+                Branding da Aplicação
+              </Typography>
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
+                Personalize o visual do sistema carregando seu próprio logotipo para a barra lateral (Sidebar) e Login.
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                <Box 
+                  sx={{ 
+                    width: 100, 
+                    height: 100, 
+                    border: '1px solid', 
+                    borderColor: 'divider',
+                    borderRadius: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    bgcolor: 'background.default'
+                  }}
+                >
+                  <img 
+                    src={`/api/settings/app-logo?t=${Date.now()}`}
+                    alt="App Logo" 
+                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                    onError={(e) => { e.target.src = 'https://via.placeholder.com/100?text=APP+LOGO'; }}
+                  />
+                </Box>
+                <Box>
+                  <Button variant="outlined" component="label" startIcon={<AddIcon />}>
+                    Carregar Logo da App
+                    <input
+                      type="file"
+                      hidden
+                      accept="image/*"
+                      onChange={async (e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        try {
+                          await settingsAPI.uploadAppLogo(formData);
+                          showSuccess('Logo da aplicação atualizado!');
+                          // Force refresh
+                          fetchSettings();
+                        } catch (error) {
+                          showError('Erro ao carregar logo da aplicação');
+                        }
+                      }}
+                    />
+                  </Button>
+                  <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+                    Recomendado: SVG ou PNG transparente (512x512px)
+                  </Typography>
+                </Box>
+              </Box>
+            </TabPanel>
+
+            {/* Protected Assets & Branding Tab */}
+            <TabPanel value={tabValue} index={3}>
+              <Typography variant="h6" gutterBottom>
+                Branding & Assets Protegidos
+              </Typography>
+              <Alert severity="info" sx={{ mb: 3 }}>
+                Configure a identidade visual do canal e os ficheiros de contingência (fillers).
+                Os assets protegidos estão em: <code>/var/lib/onepa-playout/assets/protected</code>
+              </Alert>
+
+              {/* Branding Section */}
+              <Paper sx={{ p: 3, mb: 3 }}>
+                 <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <StartIcon /> Identidade Visual (Branding)
+                 </Typography>
+                 <Divider sx={{ mb: 2 }} />
+                 <Grid container spacing={3}>
+                    <Grid item xs={12} md={6}>
+                       <Box sx={{ p: 2, bgcolor: '#000', borderRadius: 1, textAlign: 'center', height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {/* Preview of Branding */}
+                          {(settings.brandingType === 'video' || settings.branding_type === 'video') ? (
+                              <video 
+                                src="/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4" 
+                                autoPlay loop muted playsInline
+                                style={{ maxHeight: '100%', maxWidth: '100%' }}
+                              />
+                          ) : (
+                              <img 
+                                src={`/api/settings/app-logo?t=${Date.now()}`} 
+                                alt="Logo" 
+                                style={{ maxHeight: '100%', maxWidth: '100%' }}
+                              />
+                          )}
+                        </Box>
+                     </Grid>
+
+                     <Grid item xs={12} md={6}>
+                       <Typography variant="subtitle2" gutterBottom>Modo de Exibição</Typography>
+                       <ToggleButtonGroup
+                          value={settings.branding_type || 'static'}
+                          exclusive
+                          onChange={(e, val) => {
+                            if (val) {
+                              const newLogoPath = val === 'video' 
+                                ? '/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4'
+                                : '/assets/protected/Cloud_Onepa_Playout_Infinity_Logo_remodelado.png';
+                              
+                              setSettings({
+                                ...settings, 
+                                branding_type: val,
+                                logoPath: newLogoPath
+                              });
+                            }
+                          }}
+                          fullWidth
+                          sx={{ mb: 3 }}
+                       >
+                          <ToggleButton value="static">
+                             <ImageIcon sx={{ mr: 1 }} /> Logotipo Estático
+                          </ToggleButton>
+                          <ToggleButton value="video">
+                             <MovieIcon sx={{ mr: 1 }} /> Vídeo Animado
+                          </ToggleButton>
+                       </ToggleButtonGroup>
+                       
+                       <Typography variant="subtitle2" gutterBottom>Ficheiro de Vídeo (Branding)</Typography>
+                       <Box sx={{ display: 'flex', gap: 1 }}>
+                          <TextField 
+                             fullWidth 
+                             size="small" 
+                             value="/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4"
+                             disabled
+                          />
+                          {/* Hardcoded for now as per specific request, or could use selector */}
+                       </Box>
+                       <Alert severity="info" sx={{ mt: 2, fontSize: '0.8rem' }}>
+                          A alteração reflete-se no Login e no topo do Dashboard.
+                        </Alert>
+                    </Grid>
+                 </Grid>
+              </Paper>
+
+              <Typography variant="h6" gutterBottom>
+                Assets de Contingência (Padrão)
+              </Typography>
+              <Grid container spacing={2}>
+                 <Grid item xs={12} md={6}>
+                    <Card variant="outlined">
+                       <CardContent>
+                          <Typography color="text.secondary" gutterBottom>Imagem Padrão (Fallback)</Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, my: 2 }}>
+                             <ImageIcon fontSize="large" color="primary" />
+                             <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
+                                <Typography variant="body2" noWrap title={settings.defaultImagePath}>
+                                   {settings.defaultImagePath ? settings.defaultImagePath.split('/').pop() : 'Não definido'}
+                                </Typography>
+                             </Box>
+                          </Box>
+                          <Button 
+                             variant="outlined" 
+                             fullWidth 
+                             startIcon={<FolderIcon />}
+                             onClick={() => { setMediaTypeSelector('image'); setMediaSelectorOpen(true); }}
+                          >
+                             Selecionar Imagem
+                          </Button>
+                       </CardContent>
+                    </Card>
+                 </Grid>
+                 <Grid item xs={12} md={6}>
+                    <Card variant="outlined">
+                       <CardContent>
+                          <Typography color="text.secondary" gutterBottom>Vídeo Padrão (Filler)</Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, my: 2 }}>
+                             <MovieIcon fontSize="large" color="primary" />
+                             <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
+                                <Typography variant="body2" noWrap title={settings.defaultVideoPath}>
+                                   {settings.defaultVideoPath ? settings.defaultVideoPath.split('/').pop() : 'Não definido'}
+                                </Typography>
+                             </Box>
+                          </Box>
+                          <Button 
+                             variant="outlined" 
+                             fullWidth 
+                             startIcon={<FolderIcon />}
+                             onClick={() => { setMediaTypeSelector('video'); setMediaSelectorOpen(true); }}
+                          >
+                             Selecionar Vídeo
+                          </Button>
+                       </CardContent>
+                    </Card>
+                 </Grid>
+              </Grid>
+
+              {/* Enhanced Media Selector Dialog with Preview */}
+              <Dialog 
+                open={mediaSelectorOpen} 
+                onClose={() => { setMediaSelectorOpen(false); setPreviewAsset(null); }} 
+                maxWidth="md" 
+                fullWidth
+              >
+                 <DialogTitle sx={{ borderBottom: '1px solid', borderColor: 'divider', py: 1.5, px: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.paper' }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                       {mediaTypeSelector === 'video' ? 'Selecionar Vídeo' : 'Selecionar Imagem'}
+                    </Typography>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <Button 
+                            variant="outlined" 
+                            color="error" 
+                            size="small"
+                            startIcon={<DeleteIcon />}
+                            onClick={() => {
+                                setDefaultMedia(mediaTypeSelector, null);
+                                setMediaSelectorOpen(false);
+                                setPreviewAsset(null);
+                            }}
+                            sx={{ height: 32, fontSize: '0.75rem' }}
+                        >
+                            LIMPAR (Padrão)
+                        </Button>
+                        <Button 
+                            variant="contained" 
+                            color="primary"
+                            size="small"
+                            disabled={!previewAsset}
+                            onClick={() => {
+                                setDefaultMedia(mediaTypeSelector, previewAsset.path);
+                                setMediaSelectorOpen(false);
+                                setPreviewAsset(null);
+                            }}
+                            sx={{ height: 32, fontSize: '0.75rem' }}
+                        >
+                            CONFIRMAR
+                        </Button>
+                        <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+                        <IconButton onClick={() => { setMediaSelectorOpen(false); setPreviewAsset(null); }} size="small" sx={{ bgcolor: 'rgba(0,0,0,0.05)' }}>
+                           <CloseIcon fontSize="small" />
+                        </IconButton>
+                    </Box>
+                 </DialogTitle>
+                 <DialogContent sx={{ p: 0 }}>
+                    <Grid container sx={{ height: 500 }}>
+                       {/* Left Column: List */}
+                       <Grid item xs={12} md={5} sx={{ borderRight: '1px solid', borderColor: 'divider', overflowY: 'auto' }}>
+                          <List>
+                             {protectedAssets
+                                .filter(a => mediaTypeSelector === 'video' ? a.is_video : !a.is_video)
+                                .map((asset) => (
+                                   <ListItem key={asset.path} disablePadding>
+                                      <ListItemButton 
+                                        selected={previewAsset?.path === asset.path}
+                                        onClick={() => setPreviewAsset(asset)}
+                                      >
+                                         <ListItemIcon>
+                                            {asset.is_video ? <MovieIcon /> : <ImageIcon />}
+                                         </ListItemIcon>
+                                         <ListItemText 
+                                            primary={asset.name} 
+                                            secondary={`${(asset.size / 1024 / 1024).toFixed(2)} MB`} 
+                                            primaryTypographyProps={{ variant: 'body2', fontWeight: 'medium' }}
+                                         />
+                                         {((mediaTypeSelector === 'video' && settings.defaultVideoPath === asset.path) || 
+                                           (mediaTypeSelector === 'image' && settings.defaultImagePath === asset.path)) && (
+                                            <CheckIcon color="success" fontSize="small" />
+                                         )}
+                                      </ListItemButton>
+                                   </ListItem>
+                             ))}
+                             {protectedAssets.filter(a => mediaTypeSelector === 'video' ? a.is_video : !a.is_video).length === 0 && (
+                                <Box sx={{ p: 4, textAlign: 'center', opacity: 0.6 }}>
+                                   <PlatformIcon sx={{ fontSize: 48, mb: 1 }} />
+                                   <Typography variant="body2">Nenhum asset encontrado.</Typography>
+                                </Box>
+                             )}
+                          </List>
+                       </Grid>
+
+                       {/* Right Column: Preview & Confirm */}
+                       <Grid item xs={12} md={7} sx={{ bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
+                          <Box sx={{ flexGrow: 1, p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                             {previewAsset ? (
+                                <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                                   <Typography variant="subtitle2" gutterBottom color="primary">
+                                      PREVIEW: {previewAsset.name}
+                                   </Typography>
+                                   <Box sx={{ 
+                                      flexGrow: 1, 
+                                      bgcolor: '#000', 
+                                      borderRadius: 2, 
+                                      overflow: 'hidden', 
+                                      display: 'flex', 
+                                      alignItems: 'center', 
+                                      justifyContent: 'center',
+                                      boxShadow: 4,
+                                      position: 'relative'
+                                   }}>
+                                      {previewAsset.is_video ? (
+                                         <ReactPlayer
+                                            url={protectedAPI.getStreamUrl(previewAsset.name)}
+                                            width="100%"
+                                            height="100%"
+                                            playing={true}
+                                            controls={true}
+                                            muted={true}
+                                            playsinline
+                                            style={{ maxHeight: '100%' }}
+                                         />
+                                      ) : (
+                                         <img 
+                                            src={protectedAPI.getStreamUrl(previewAsset.name)} 
+                                            alt="Preview" 
+                                            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} 
+                                         />
+                                      )}
+                                   </Box>
+                                </Box>
+                             ) : (
+                                <Box sx={{ textAlign: 'center', opacity: 0.5 }}>
+                                   <TvIcon sx={{ fontSize: 64, mb: 2 }} />
+                                   <Typography>Selecione um ficheiro para pré-visualizar</Typography>
+                                </Box>
+                             )}
+                          </Box>
+
+                           {/* No footer buttons as they were moved to the top */}
+                       </Grid>
+                    </Grid>
+                 </DialogContent>
+              </Dialog>
+            </TabPanel>
+
+            {/* Users Tab */}
+            <TabPanel value={tabValue} index={4}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6">
+                  Utilizadores
+                </Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => setUserDialogOpen(true)}
+                >
+                  Adicionar Utilizador
+                </Button>
+              </Box>
+
+              <List>
+                {Array.isArray(users) && users.map((user) => (
+                  <ListItem
+                    key={user.id}
+                    secondaryAction={
+                      <Box>
+                        <Button 
+                          size="small" 
+                          onClick={() => handleOpenPasswordDialog(user)}
+                          sx={{ mr: 1 }}
+                        >
+                          Alterar Password
+                        </Button>
+                        {user.username !== 'admin' && (
+                          <IconButton edge="end" onClick={() => handleDeleteUser(user.id)} color="error">
+                            <DeleteIcon />
+                          </IconButton>
+                        )}
+                      </Box>
+                    }
+                    sx={{ bgcolor: 'background.paper', mb: 1, borderRadius: 1 }}
+                  >
+                    <ListItemText
+                      primary={user.username}
+                      secondary={`Role: ${user.role}`}
+                    />
+                  </ListItem>
+                ))}
+                {(!users || users.length === 0) && (
+                  <Typography variant="body2" color="text.secondary" sx={{ p: 2, textAlign: 'center' }}>
+                    Nenhum utilizador encontrado.
+                  </Typography>
+                )}
+              </List>
+            </TabPanel>
+
+            {/* Presets Tab */}
+            <TabPanel value={tabValue} index={5}>
+              <Typography variant="h6" gutterBottom>
+                Presets de Configuração
+              </Typography>
+              <Alert severity="info" sx={{ mb: 3 }}>
+                Clique num preset para aplicar configurações pré-definidas
+              </Alert>
+
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6} md={4}>
+                  <Card 
+                    variant="outlined" 
+                    sx={{ 
+                      cursor: 'pointer', 
+                      bgcolor: activePreset === '720p' ? 'action.selected' : 'background.paper',
+                      border: activePreset === '720p' ? '2px solid' : '1px solid',
+                      borderColor: activePreset === '720p' ? 'primary.main' : 'divider'
+                    }}
+                    onClick={() => applyPreset('720p')}
+                  >
+                    <CardContent>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                        <Typography variant="h6">720p Streaming</Typography>
+                        {activePreset === '720p' && <Chip label="ATIVO" color="primary" size="small" />}
+                      </Box>
+                      <Typography variant="body2" color="text.secondary">
+                        1280x720 @ 25fps<br />
+                        Bitrate: 2500k<br />
+                        Ideal para streaming básico
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+
+                <Grid item xs={12} sm={6} md={4}>
+                  <Card 
+                    variant="outlined" 
+                    sx={{ 
+                      cursor: 'pointer', 
+                      bgcolor: activePreset === '1080p' ? 'action.selected' : 'background.paper',
+                      border: activePreset === '1080p' ? '2px solid' : '1px solid',
+                      borderColor: activePreset === '1080p' ? 'primary.main' : 'divider'
+                    }}
+                    onClick={() => applyPreset('1080p')}
+                  >
+                    <CardContent>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                        <Typography variant="h6">1080p HD</Typography>
+                        {activePreset === '1080p' && <Chip label="ATIVO" color="primary" size="small" />}
+                      </Box>
+                      <Typography variant="body2" color="text.secondary">
+                        1920x1080 @ 25fps<br />
+                        Bitrate: 5000k<br />
+                        Qualidade profissional
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+
+                <Grid item xs={12} sm={6} md={4}>
+                  <Card 
+                    variant="outlined" 
+                    sx={{ 
+                      cursor: 'pointer', 
+                      bgcolor: activePreset === '4k' ? 'action.selected' : 'background.paper',
+                      border: activePreset === '4k' ? '2px solid' : '1px solid',
+                      borderColor: activePreset === '4k' ? 'primary.main' : 'divider'
+                    }}
+                    onClick={() => applyPreset('4k')}
+                  >
+                    <CardContent>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                        <Typography variant="h6">4K Ultra HD</Typography>
+                        {activePreset === '4k' && <Chip label="ATIVO" color="primary" size="small" />}
+                      </Box>
+                      <Typography variant="body2" color="text.secondary">
+                        3840x2160 @ 30fps<br />
+                        Bitrate: 15000k<br />
+                        Máxima qualidade
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
+            </TabPanel>
+
+            {/* Release Notes Tab */}
+            <TabPanel value={tabValue} index={6}>
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <Typography variant="h6" gutterBottom>
+                    Informação do Sistema
+                  </Typography>
+                  <Card variant="outlined" sx={{ mb: 3 }}>
+                    <CardContent>
+                      <Grid container spacing={2}>
+                        <Grid item xs={12} sm={3}>
+                          <Typography variant="subtitle2" color="text.secondary">Versão do Sistema</Typography>
+                          <Typography variant="body1" fontWeight="bold">{settings.version ? (settings.version.startsWith('v') ? settings.version : 'v' + settings.version) : 'v1.9.2-PRO'}</Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={3}>
+                          <Typography variant="subtitle2" color="text.secondary">Última Atualização</Typography>
+                          <Typography variant="body1">{settings.releaseDate}</Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={3}>
+                          <Typography variant="subtitle2" color="text.secondary">Frontend</Typography>
+                          <Typography variant="body1">React 18.3 + Vite 5.4</Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={3}>
+                          <Typography variant="subtitle2" color="text.secondary">Backend</Typography>
+                          <Typography variant="body1">Rust + Actix-web</Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={3}>
+                          <Typography variant="subtitle2" color="text.secondary">Base de Dados</Typography>
+                          <Typography variant="body1">PostgreSQL 16</Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={3}>
+                          <Typography variant="subtitle2" color="text.secondary">Sistema Operativo</Typography>
+                          <Typography variant="body1">Docker Container (Linux)</Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={3}>
+                          <Typography variant="subtitle2" color="text.secondary">FFmpeg</Typography>
+                          <Typography variant="body1">7.2+</Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={3}>
+                          <Typography variant="subtitle2" color="text.secondary">Ambiente</Typography>
+                          <Typography variant="body1">Production</Typography>
+                        </Grid>
+                      </Grid>
+                      <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+                        <Button 
+                          variant="outlined" 
+                          size="small"
+                          onClick={() => window.open('https://github.com/ideiasestrondosas-ctrl/cloud-onepa-playout/blob/master/RELEASE_NOTES.md', '_blank')}
+                        >
+                          Ver Release Notes Completas
+                        </Button>
+                        <Button 
+                          variant="outlined" 
+                          size="small"
+                          onClick={() => window.open('https://github.com/ideiasestrondosas-ctrl/cloud-onepa-playout', '_blank')}
+                        >
+                          GitHub Repository
+                        </Button>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Typography variant="h6" gutterBottom>
+                    Histórico de Versões
+                  </Typography>
+                  <List>
+                    <ListItem>
+                      <ListItemText
+                        primary={<Typography variant="subtitle1"><strong>v1.9.3-PRO</strong> - 2026-01-20</Typography>}
+                        secondary={
+                          <Box component="span">
+                            • EPG Expansion: Support for Genre, Rating, Keywords, Cast, and Director<br />
+                            • Fix: UDP/HLS Session Counting and Master Feed sync<br />
+                            • Fix: Metadata saving error in Media Library<br />
+                            • Fix: Playlist deletion using database schedule check<br />
+                            • Added: External EPG XML Export URL in Settings
+                          </Box>
+                        }
+                      />
+                    </ListItem>
+                    <Divider />
+                    <ListItem>
+                      <ListItemText
+                        primary={<Typography variant="subtitle1"><strong>v1.9.2-PRO</strong> - 2026-01-12</Typography>}
+                        secondary={
+                          <Box component="span">
+                            • Intermediary RTMP Server Integration (VLC Support)<br />
+                            • Smart Media Deletion (Usage check & Replacement)<br />
+                            • Friendly Media Copy (Cópia naming convention)<br />
+                            • Calendar Event Deletion Fixes<br />
+                            • Improved Output Configuration UI
+                          </Box>
+                        }
+                      />
+                    </ListItem>
+                    <Divider />
+                    <ListItem>
+                      <ListItemText
+                        primary={<Typography variant="subtitle1"><strong>v1.9.0-PRO</strong> - 2026-01-12</Typography>}
+                        secondary={
+                          <Box component="span">
+                            • Áudio Standardizado (EBU R128 / Loudnorm)<br />
+                            • Controlos de Overlay em Tempo Real (Opacidade/Escala)<br />
+                            • Função Skip Instantâneo no Dashboard<br />
+                            • Smart Launcher VLC com deteção de OS e Diagnóstico<br />
+                            • Manual Visual e Ajuda Integrada
+                          </Box>
+                        }
+                      />
+                    </ListItem>
+                    <Divider />
+                    <ListItem>
+                      <ListItemText
+                        primary={<Typography variant="subtitle1"><strong>v1.8.1-EXP</strong> - 2026-01-11</Typography>}
+                        secondary={
+                          <Box component="span">
+                            • Setup Wizard para configuração inicial<br />
+                            • Melhorias na página de Settings (HLS links, Logo público)
+                          </Box>
+                        }
+                      />
+                    </ListItem>
+                    <Divider />
+                    <ListItem>
+                      <ListItemText
+                        primary={<Typography variant="subtitle1"><strong>v1.0.0</strong> - 2025-12-31</Typography>}
+                        secondary={
+                          <Box component="span">
+                            • Lançamento inicial<br />
+                            • Sistema de playout completo<br />
+                            • Gestão de media, playlists e agendamento<br />
+                            • Suporte HLS e RTMP
+                          </Box>
+                        }
+                      />
+                    </ListItem>
+                  </List>
+                </Grid>
+              </Grid>
+            </TabPanel>
+
+            {/* Version Info Section */}
+            <Divider />
+            <Box sx={{ p: 2, bgcolor: 'rgba(0,0,0,0.02)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary">Versão do Sistema</Typography>
+                <TextField 
+                  variant="standard" 
+                  value={settings.version} 
+                  onChange={(e) => setSettings({...settings, version: e.target.value})}
+                  sx={{ width: 150 }}
+                />
+              </Box>
+              <Box sx={{ textAlign: 'right' }}>
+                <Typography variant="subtitle2" color="text.secondary">Última Atualização</Typography>
+                <TextField 
+                  variant="standard" 
+                  value={settings.releaseDate} 
+                  onChange={(e) => setSettings({...settings, releaseDate: e.target.value})}
+                  sx={{ width: 150 }}
+                />
+              </Box>
+              <Button size="small" color="primary" variant="outlined" onClick={() => setReleaseNotesOpen(true)}>Release Notes</Button>
+            </Box>
+
+            <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end', borderTop: 1, borderColor: 'divider' }}>
+              <Button
+                type="button"
+                variant="contained"
+                startIcon={<SaveIcon />}
+                onClick={handleSaveSettings}
+                disabled={saving}
+              >
+                {saving ? 'A Guardar...' : 'Guardar Configurações'}
+              </Button>
+            </Box>
+          </>
+        )}
+      </Card>
+
+      {/* Add User Dialog */}
+      <Dialog open={userDialogOpen} onClose={() => setUserDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Adicionar Utilizador</DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            label="Username"
+            value={newUser.username}
+            onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
+            sx={{ mt: 2 }}
+            placeholder="ex: joao.silva"
+            helperText="Nome de utilizador único"
+            InputLabelProps={{ shrink: true }}
+          />
+          <TextField
+            fullWidth
+            label="Password"
+            type="password"
+            value={newUser.password}
+            onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+            sx={{ mt: 2 }}
+            placeholder="Mínimo 8 caracteres"
+            helperText="Use letras, números e símbolos"
+            InputLabelProps={{ shrink: true }}
+          />
+          <FormControl fullWidth sx={{ mt: 2 }}>
+            <InputLabel>Role</InputLabel>
+            <Select
+              value={newUser.role}
+              label="Role"
+              onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+            >
+              <MenuItem value="admin">Admin</MenuItem>
+              <MenuItem value="operator">Operator</MenuItem>
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setUserDialogOpen(false)}>Cancelar</Button>
+          <Button variant="contained" onClick={handleAddUser}>
+            Adicionar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+
+      {/* Change Password Dialog */}
+      <Dialog open={passwordDialogOpen} onClose={() => setPasswordDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Alterar Password: {selectedUser?.username}</DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            label="Nova Password"
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            sx={{ mt: 2 }}
+            placeholder="Mínimo 8 caracteres"
+            helperText="A nova password para este utilizador"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPasswordDialogOpen(false)}>Cancelar</Button>
+          <Button variant="contained" onClick={handleChangePassword}>
+            Alterar
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Release Notes Dialog */}
+      <Dialog 
+        open={releaseNotesOpen} 
+        onClose={() => setReleaseNotesOpen(false)} 
+        maxWidth="md" 
+        fullWidth
+        scroll="paper"
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <WizardIcon color="primary" /> Notas de Lançamento - {settings.version ? (settings.version.startsWith('v') ? settings.version : 'v' + settings.version) : 'v1.9.2-PRO'}
+          </Box>
+          <Chip label="PRO-RELEASE" color="success" size="small" />
+        </DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h6" color="primary" gutterBottom>Destaques da Versão {settings.version || '2.0.1-DEBUG'}</Typography>
+            <Typography variant="body2" paragraph>
+              Esta versão foca na padronização absoluta das saídas de transmissão e na sincronização em tempo real entre o Dashboard e as Configurações.
+            </Typography>
+            
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'primary.main' }}>
+                  <Typography variant="subtitle2" fontWeight="bold">📡 Padronização de Saídas</Typography>
+                  <Typography variant="caption">• Fonte Única de Verdade para URLs (RTMP/SRT/UDP/HLS)</Typography><br />
+                  <Typography variant="caption">• Sincronização Bi-direcional Dashboard ↔ Configurações</Typography><br />
+                  <Typography variant="caption">• Guia dinâmico para receptores VLC e OBS</Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'success.main' }}>
+                  <Typography variant="subtitle2" fontWeight="bold">📅 EPG & Timeline (v2.0)</Typography>
+                  <Typography variant="caption">• Gerador Automático de XMLTV (Guia de Programação)</Typography><br />
+                  <Typography variant="caption">• Timeline Gráfica Profissional no modo EPG View</Typography><br />
+                  <Typography variant="caption">• Suporte a Metadados Expandidos (Género, Classificação)</Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'warning.main' }}>
+                  <Typography variant="subtitle2" fontWeight="bold">🛡️ Persistência e Fixes</Typography>
+                  <Typography variant="caption">• Fix: Protocolos mantêm estado ON/OFF após reiniciar</Typography><br />
+                  <Typography variant="caption">• Fix: SRT URLs com streamid=read para visualização</Typography><br />
+                  <Typography variant="caption">• Docker: Pinning de dependências (Cargo.lock)</Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, height: '100%', borderLeft: '4px solid', borderColor: 'secondary.main' }}>
+                  <Typography variant="subtitle2" fontWeight="bold">📞 Conectividade SRT/UDP</Typography>
+                  <Typography variant="caption">• SRT: Novos modos Caller/Listener simplificados</Typography><br />
+                  <Typography variant="caption">• UDP: Guia visual de IP para Receptores Unicast</Typography><br />
+                  <Typography variant="caption">• Logs de transmissão integrados na UI</Typography>
+                </Box>
+              </Grid>
+            </Grid>
+          </Box>
+
+          <Divider sx={{ my: 3 }} />
+
+          <Typography variant="h6" gutterBottom>Histórico de Versões</Typography>
+          <List dense>
+            <ListItem>
+              <ListItemText 
+                primary="v2.0.1-DEBUG (2026-01-24)" 
+                secondary="Padronização de Saídas, Persistência de Protocolos, UDP Listener" 
+              />
+            </ListItem>
+            <ListItem>
+              <ListItemText 
+                primary="v2.0.0-PRO (2026-01-23)" 
+                secondary="EPG Intelligence, Timeline Gráfica, Session Accuracy" 
+              />
+            </ListItem>
+            <ListItem>
+              <ListItemText 
+                primary="v1.9.5-PRO (2026-01-19)" 
+                secondary="MediaMTX Security, Recurring Markers, HLS Standardization" 
+              />
+            </ListItem>
+            <ListItem>
+              <ListItemText 
+                primary="v1.9.4-PRO (2026-01-17)" 
+                secondary="Setup Wizard, VLC Launcher, Safari Fixes, Upload Stability" 
+              />
+            </ListItem>
+            <ListItem>
+              <ListItemText 
+                primary="v1.9.3-PRO (2026-01-16)" 
+                secondary="SQL Injection Prevention, SRT Caller v2, Diagnostics Suite" 
+              />
+            </ListItem>
+          </List>
+
+          <Divider sx={{ my: 3 }} />
+
+          <Typography variant="h6" gutterBottom>Próximos Passos (Roadmap)</Typography>
+          <List dense>
+            <ListItem>
+              <ListItemText primary="📡 Fase 22: Conectividade & Live Inputs" secondary="WebRTC, NDI, SDI, Streaming nativo para YouTube/Facebook Live, SRT Support" />
+            </ListItem>
+            <ListItem>
+              <ListItemText primary="📅 Fase 23: EPG & Metadata Engine" secondary="Gerador de EPG, Exportação Web, Compliance XMLTV/DVB-EIT" />
+            </ListItem>
+            <ListItem>
+              <ListItemText primary="🎨 Fase 24: Graphics & Visual Experience" secondary="Editor Drag-and-Drop, HTML5 Graphics, Mobile Responsive Layout" />
+            </ListItem>
+            <ListItem>
+              <ListItemText primary="🏢 Fase 25: Enterprise & Compliance" secondary="Multi-user (RBAC), Audit Logs, As-Run Logs, SCTE-35 Support" />
+            </ListItem>
+            <ListItem>
+              <ListItemText primary="🚀 Fase 26: Future Tech" secondary="AI Integration, Multi-Channel Core, High Availability" />
+            </ListItem>
+          </List>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setReleaseNotesOpen(false)}>Fechar</Button>
+          <Button 
+            variant="contained" 
+            onClick={() => {
+              setReleaseNotesOpen(false);
+              showSuccess('Obrigado pelo seu feedback!');
+            }}
+          >
+            Entendido
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Preview Dialog */}
+      <Dialog 
+        open={previewOpen} 
+        onClose={() => setPreviewOpen(false)} 
+        maxWidth="md" 
+        fullWidth
+        PaperProps={{ sx: { bgcolor: '#000', color: '#fff' } }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: '#222' }}>
+          <Typography variant="h6">{previewAsset?.name}</Typography>
+          <IconButton onClick={() => setPreviewOpen(false)} sx={{ color: '#fff' }}>
+            <AddIcon sx={{ transform: 'rotate(45deg)' }} />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+          {previewAsset && (
+            previewAsset.is_video ? (
+              <ReactPlayer
+                url={protectedAPI.getStreamUrl(previewAsset.name)}
+                playing
+                controls
+                width="100%"
+                height="100%"
+                style={{ maxHeight: '70vh' }}
+              />
+            ) : (
+              <img 
+                src={protectedAPI.getStreamUrl(previewAsset.name)} 
+                alt={previewAsset.name} 
+                style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain' }} 
+              />
+            )
+          )}
+        </DialogContent>
+        <DialogActions sx={{ bgcolor: '#222' }}>
+          <Button onClick={() => setPreviewOpen(false)} sx={{ color: '#fff' }}>Fechar</Button>
+          {previewAsset && (
+            <Button 
+              variant="contained" 
+              color="primary"
+              onClick={() => {
+                setDefaultMedia(previewAsset.is_video ? 'video' : 'image', previewAsset.path);
+                setPreviewOpen(false);
+              }}
+            >
+              Definir como Padrão
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
+      {/* Factory Reset Confirmation Dialog */}
+      <Dialog open={resetConfirmOpen} onClose={() => setResetConfirmOpen(false)}>
+        <DialogTitle sx={{ color: 'error.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <WarningIcon /> Confirmar Factory Reset
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" gutterBottom>
+            Tem a certeza que deseja eliminar <strong>TODOS</strong> os dados deste canal?
+          </Typography>
+          <Typography variant="body2" color="error" sx={{ fontWeight: 'bold' }}>
+            Esta ação irá apagar permanentemente todas as playlists, agendamentos do calendário e restaurar as definições padrão. Não há volta atrás!
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setResetConfirmOpen(false)}>Cancelar</Button>
+          <Button 
+            variant="contained" 
+            color="error" 
+            autoFocus
+            onClick={async () => {
+              try {
+                setSaving(true);
+                await settingsAPI.resetAll();
+                showSuccess('Canal resetado com sucesso!');
+                setResetConfirmOpen(false);
+                fetchSettings(); // Refresh to see defaults
+              } catch (error) {
+                showError('Erro ao realizar reset do canal');
+              } finally {
+                setSaving(false);
+              }
+            }}
+          >
+            Sim, Eliminar Tudo
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <OverlayConverterDialog 
+        open={converterOpen} 
+        onClose={() => setConverterOpen(false)} 
+        onSave={handleConverterSave} 
+      />
+    </Box>
+  );
+}

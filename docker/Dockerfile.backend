@@ -1,0 +1,61 @@
+# Multi-stage build for Rust backend
+FROM rust:alpine as builder
+
+# Install dependencies required for building
+RUN apk add --no-cache \
+    pkgconf \
+    openssl-dev \
+    libpq-dev \
+    clang \
+    clang-libclang \
+    ffmpeg-dev \
+    musl-dev \
+    make \
+    gcc
+
+WORKDIR /app
+
+# Copy dependency files first
+COPY Cargo.toml Cargo.lock ./
+
+# (Simplified build: remove dummy main to avoid binary confusion)
+
+# Copy migrations (needed at compile time for sqlx::migrate!)
+COPY migrations ./migrations
+
+# Copy source code
+COPY src ./src
+
+# Build the real application
+RUN cargo build --release
+
+# Runtime stage
+FROM alpine:latest
+
+# Install runtime dependencies
+RUN apk add --no-cache \
+    libpq \
+    ffmpeg \
+    libssl3 \
+    ca-certificates \
+    curl \
+    iproute2 \
+    net-tools
+
+# Create storage directories
+RUN mkdir -p /var/lib/onepa-playout/media /var/lib/onepa-playout/thumbnails /var/lib/onepa-playout/playlists
+
+WORKDIR /app
+
+# Copy binary from builder
+COPY --from=builder /app/target/release/onepa-playout /app/
+
+# Copy migrations for runtime
+COPY migrations ./migrations
+
+EXPOSE 8181
+
+# Ensure binary is executable
+RUN chmod +x /app/onepa-playout
+
+CMD ["/app/onepa-playout"]

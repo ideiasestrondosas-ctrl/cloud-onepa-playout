@@ -1,0 +1,27 @@
+# Cloud Onepa Playout (Back & Front)
+/target
+/backend/target
+/node_modules
+/frontend/node_modules
+/.env
+/dist
+/frontend/dist
+/build
+*.log
+.DS_Store
+/coverage
+/.idea
+/.vscode
+*.swp
+/media
+/thumbnails
+/playlists
+/fillers
+frontend/build_log*.txt
+*.zip
+/backups/
+/data/
+/exports/
+backend/data/assets/protected/big_buck_bunny_1080p_h264.mov
+big_buck_bunny_1080p_h264.mov
+**/big_buck_bunny_1080p_h264.mov

@@ -1,0 +1,342 @@
+use actix_web::{web, HttpResponse, Responder};
+use chrono::Datelike;
+use serde::Deserialize;
+use sqlx::PgPool;
+use uuid::Uuid;
+
+use crate::models::schedule::{CreateSchedule, Schedule};
+
+#[derive(Deserialize)]
+pub struct ScheduleQuery {
+    pub start_date: Option<String>,
+    pub end_date: Option<String>,
+}
+
+async fn list_schedule(
+    query: web::Query<ScheduleQuery>,
+    pool: web::Data<PgPool>,
+) -> impl Responder {
+    let mut query_builder: sqlx::QueryBuilder<sqlx::Postgres> = sqlx::QueryBuilder::new(
+        "SELECT s.*, p.name as playlist_name 
+         FROM schedule s 
+         JOIN playlists p ON s.playlist_id = p.id 
+         WHERE 1=1",
+    );
+
+    if let Some(ref start_date) = query.start_date {
+        if let Ok(date) = chrono::NaiveDate::parse_from_str(start_date, "%Y-%m-%d") {
+            query_builder.push(" AND s.date >= ");
+            query_builder.push_bind(date);
+        }
+    }
+
+    if let Some(ref end_date) = query.end_date {
+        if let Ok(date) = chrono::NaiveDate::parse_from_str(end_date, "%Y-%m-%d") {
+            query_builder.push(" AND s.date <= ");
+            query_builder.push_bind(date);
+        }
+    }
+
+    query_builder.push(" ORDER BY s.date ASC");
+
+    let result = query_builder
+        .build_query_as::<Schedule>()
+        .fetch_all(pool.get_ref())
+        .await;
+
+    match result {
+        Ok(schedules) => HttpResponse::Ok().json(serde_json::json!({
+            "schedules": schedules
+        })),
+        Err(e) => {
+            log::error!("Failed to fetch schedule: {}", e);
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": "Failed to fetch schedule"}))
+        }
+    }
+}
+
+#[derive(Deserialize)]
+pub struct CreateScheduleRequest {
+    pub playlist_id: Uuid,
+    pub date: String,
+    pub start_time: Option<String>,
+    pub repeat_pattern: Option<String>,
+}
+
+async fn create_schedule(
+    req: web::Json<CreateScheduleRequest>,
+    pool: web::Data<PgPool>,
+) -> impl Responder {
+    // Verify playlist exists
+    let playlist_check = sqlx::query("SELECT id FROM playlists WHERE id = $1")
+        .bind(&req.playlist_id)
+        .fetch_optional(pool.get_ref())
+        .await;
+
+    if playlist_check.is_err() || playlist_check.unwrap().is_none() {
+        return HttpResponse::BadRequest().json(serde_json::json!({"error": "Playlist not found"}));
+    }
+
+    let date = match chrono::NaiveDate::parse_from_str(&req.date, "%Y-%m-%d") {
+        Ok(d) => d,
+        Err(_) => {
+            return HttpResponse::BadRequest()
+                .json(serde_json::json!({"error": "Invalid date format. Use YYYY-MM-DD"}))
+        }
+    };
+
+    let start_time = req.start_time.as_ref().and_then(|t| {
+        chrono::NaiveTime::parse_from_str(t, "%H:%M:%S")
+            .ok()
+            .or_else(|| chrono::NaiveTime::parse_from_str(t, "%H:%M").ok())
+    });
+
+    let result = sqlx::query_as::<_, Schedule>(
+        "INSERT INTO schedule (playlist_id, date, start_time, repeat_pattern) 
+         VALUES ($1, $2, $3, $4) 
+         RETURNING *",
+    )
+    .bind(&req.playlist_id)
+    .bind(date)
+    .bind(start_time)
+    .bind(&req.repeat_pattern)
+    .fetch_one(pool.get_ref())
+    .await;
+
+    match result {
+        Ok(schedule) => HttpResponse::Created().json(schedule),
+        Err(e) => {
+            log::error!("Failed to create schedule: {}", e);
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": "Failed to create schedule"}))
+        }
+    }
+}
+
+async fn delete_schedule(schedule_id: web::Path<Uuid>, pool: web::Data<PgPool>) -> impl Responder {
+    let id = schedule_id.into_inner();
+    log::info!("Deleting schedule item: {}", id);
+    let result = sqlx::query("DELETE FROM schedule WHERE id = $1")
+        .bind(id)
+        .execute(pool.get_ref())
+        .await;
+
+    match result {
+        Ok(res) if res.rows_affected() > 0 => {
+            log::info!("Schedule item {} deleted successfully", id);
+            HttpResponse::Ok().json(serde_json::json!({"message": "Schedule deleted successfully"}))
+        }
+        Ok(_) => {
+            log::warn!("Schedule item {} not found", id);
+            HttpResponse::NotFound().json(serde_json::json!({"error": "Schedule not found"}))
+        }
+        Err(e) => {
+            log::error!("Failed to delete schedule {}: {}", id, e);
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": format!("Failed to delete schedule: {}", e)}))
+        }
+    }
+}
+
+#[derive(Deserialize)]
+pub struct BulkDeleteRequest {
+    pub start_date: String,
+    pub end_date: String,
+}
+
+async fn delete_bulk(req: web::Json<BulkDeleteRequest>, pool: web::Data<PgPool>) -> impl Responder {
+    let start = match chrono::NaiveDate::parse_from_str(&req.start_date, "%Y-%m-%d") {
+        Ok(d) => d,
+        Err(_) => {
+            return HttpResponse::BadRequest()
+                .json(serde_json::json!({"error": "Invalid start_date"}))
+        }
+    };
+    let end = match chrono::NaiveDate::parse_from_str(&req.end_date, "%Y-%m-%d") {
+        Ok(d) => d,
+        Err(_) => {
+            return HttpResponse::BadRequest()
+                .json(serde_json::json!({"error": "Invalid end_date"}))
+        }
+    };
+
+    let result = sqlx::query("DELETE FROM schedule WHERE date >= $1 AND date <= $2")
+        .bind(start)
+        .bind(end)
+        .execute(pool.get_ref())
+        .await;
+
+    match result {
+        Ok(res) => HttpResponse::Ok().json(serde_json::json!({
+            "message": format!("Deleted {} schedule items", res.rows_affected())
+        })),
+        Err(e) => {
+            HttpResponse::InternalServerError().json(serde_json::json!({"error": e.to_string()}))
+        }
+    }
+}
+
+async fn update_schedule(
+    schedule_id: web::Path<Uuid>,
+    schedule_data: web::Json<CreateSchedule>,
+    pool: web::Data<PgPool>,
+) -> impl Responder {
+    let result = sqlx::query(
+        "UPDATE schedule 
+         SET playlist_id = $1, date = $2, start_time = $3, repeat_pattern = $4 
+         WHERE id = $5",
+    )
+    .bind(schedule_data.playlist_id)
+    .bind(schedule_data.date)
+    .bind(schedule_data.start_time)
+    .bind(&schedule_data.repeat_pattern)
+    .bind(schedule_id.into_inner())
+    .execute(pool.get_ref())
+    .await;
+
+    match result {
+        Ok(res) if res.rows_affected() > 0 => {
+            HttpResponse::Ok().json(serde_json::json!({"message": "Schedule updated successfully"}))
+        }
+        Ok(_) => HttpResponse::NotFound().json(serde_json::json!({"error": "Schedule not found"})),
+        Err(e) => {
+            log::error!("Failed to update schedule: {}", e);
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": "Failed to update schedule"}))
+        }
+    }
+}
+
+#[derive(Deserialize)]
+pub struct GetPlaylistForDateRequest {
+    pub date: String,
+}
+
+async fn get_playlist_for_date(
+    req: web::Query<GetPlaylistForDateRequest>,
+    pool: web::Data<PgPool>,
+) -> impl Responder {
+    let date = match chrono::NaiveDate::parse_from_str(&req.date, "%Y-%m-%d") {
+        Ok(d) => d,
+        Err(_) => {
+            return HttpResponse::BadRequest()
+                .json(serde_json::json!({"error": "Invalid date format. Use YYYY-MM-DD"}))
+        }
+    };
+
+    // First, try to find a direct schedule for this date
+    let direct_schedule = sqlx::query(
+        "SELECT p.* FROM playlists p 
+         JOIN schedule s ON p.id = s.playlist_id 
+         WHERE s.date = $1 AND s.repeat_pattern IS NULL 
+         LIMIT 1",
+    )
+    .bind(date)
+    .fetch_optional(pool.get_ref())
+    .await;
+
+    if let Ok(Some(_)) = direct_schedule {
+        return HttpResponse::Ok().json(serde_json::json!({
+            "found": true,
+            "source": "direct_schedule"
+        }));
+    }
+
+    // Check for repeating schedules
+    let day_of_week = date.weekday().num_days_from_monday();
+
+    // Check daily repeats
+    let daily_schedule = sqlx::query(
+        "SELECT p.* FROM playlists p 
+         JOIN schedule s ON p.id = s.playlist_id 
+         WHERE s.repeat_pattern = 'daily' AND s.date <= $1 
+         ORDER BY s.date DESC 
+         LIMIT 1",
+    )
+    .bind(date)
+    .fetch_optional(pool.get_ref())
+    .await;
+
+    if let Ok(Some(_)) = daily_schedule {
+        return HttpResponse::Ok().json(serde_json::json!({
+            "found": true,
+            "source": "daily_repeat"
+        }));
+    }
+
+    // Check weekly repeats (same day of week)
+    let weekly_schedule = sqlx::query(
+        "SELECT p.* FROM playlists p 
+         JOIN schedule s ON p.id = s.playlist_id 
+         WHERE s.repeat_pattern = 'weekly' 
+         AND EXTRACT(DOW FROM s.date) = $1 
+         AND s.date <= $2 
+         ORDER BY s.date DESC 
+         LIMIT 1",
+    )
+    .bind(day_of_week as i32)
+    .bind(date)
+    .fetch_optional(pool.get_ref())
+    .await;
+
+    if let Ok(Some(_)) = weekly_schedule {
+        return HttpResponse::Ok().json(serde_json::json!({
+            "found": true,
+            "source": "weekly_repeat"
+        }));
+    }
+
+    HttpResponse::Ok().json(serde_json::json!({
+        "found": false,
+        "message": "No playlist scheduled for this date"
+    }))
+}
+
+#[derive(Deserialize)]
+pub struct CreateExceptionRequest {
+    pub schedule_id: Uuid,
+    pub date: String,
+}
+
+async fn add_exception(
+    req: web::Json<CreateExceptionRequest>,
+    pool: web::Data<PgPool>,
+) -> impl Responder {
+    let date = match chrono::NaiveDate::parse_from_str(&req.date, "%Y-%m-%d") {
+        Ok(d) => d,
+        Err(_) => {
+            return HttpResponse::BadRequest()
+                .json(serde_json::json!({"error": "Invalid date format. Use YYYY-MM-DD"}))
+        }
+    };
+
+    let result = sqlx::query(
+        "INSERT INTO schedule_exceptions (schedule_id, exception_date) 
+         VALUES ($1, $2) 
+         ON CONFLICT (schedule_id, exception_date) DO NOTHING",
+    )
+    .bind(&req.schedule_id)
+    .bind(date)
+    .execute(pool.get_ref())
+    .await;
+
+    match result {
+        Ok(_) => HttpResponse::Created().json(serde_json::json!({"message": "Exception added"})),
+        Err(e) => {
+            log::error!("Failed to add schedule exception: {}", e);
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": "Failed to add exception"}))
+        }
+    }
+}
+
+pub fn configure(cfg: &mut web::ServiceConfig) {
+    cfg.route("", web::get().to(list_schedule))
+        .route("", web::post().to(create_schedule))
+        .route("/bulk", web::post().to(delete_bulk))
+        .route("/exception", web::post().to(add_exception))
+        .route("/{id}", web::delete().to(delete_schedule))
+        .route("/{id}", web::put().to(update_schedule))
+        .route("/playlist", web::get().to(get_playlist_for_date));
+}

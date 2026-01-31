@@ -1,0 +1,43 @@
+# MediaMTX Configuration for ONEPA Playout PRO
+
+# Global authentication
+authMethod: internal
+authInternalUsers:
+  - user: backend
+    pass: backend
+    permissions:
+      - action: api
+      - action: read
+      - action: publish
+  - user: any
+    permissions:
+      - action: read
+
+# Listeners
+rtmp: yes
+hls: yes
+webrtc: yes
+srt: yes
+rtsp: yes
+
+# Listener ports
+rtmpAddress: :2035
+hlsAddress: :8988
+webrtcAddress: :8989
+srtAddress: :8990
+
+# HLS settings
+hlsVariant: lowLatency
+hlsSegmentCount: 5
+hlsSegmentDuration: 2s
+hlsPartDuration: 200ms
+
+# API settings
+api: yes
+apiAddress: :9997
+
+# Path settings
+paths:
+  all:
+    # Global default: source is publisher
+    source: publisher
