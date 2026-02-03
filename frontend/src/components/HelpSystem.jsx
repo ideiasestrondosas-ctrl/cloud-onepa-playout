@@ -1,12 +1,12 @@
 import React, { useEffect } from 'react';
-import { 
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
-  DialogActions, 
-  Button, 
-  Typography, 
-  Box, 
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Typography,
+  Box,
   IconButton,
   Tabs,
   Tab
@@ -44,7 +44,23 @@ const HOW_TO_BROADCAST = `
 4. **Dashboard**: Clique no botão **START**. 
    * A cor do indicador deve mudar para **ON AIR**.
    * O **Live Preview** começará a mostrar a emissão em alguns segundos.
-5. **VLC**: Para ver externamente, use o endereço RTMP configurado (ex: \`rtmp://localhost:1935/stream\`).
+5. **VLC**: Para ver externamente, use o endereço RTMP configurado (ex: \`rtmp://YOUR_IP:1935/live/stream\`).
+`;
+
+const SYSTEM_CONFIG = `
+# Configuração do Sistema & RBAC
+
+**Identidade Visual:**
+* Aceda a **Settings -> Caminhos & Media** para definir a localização dos assets de branding.
+* Em **Settings -> Playout & Presets -> Overlay**, ajuste a opacidade (Padrão: 60%) e escala (Padrão: 0.6x).
+
+**Gestão de Utilizadores (RBAC):**
+* **Admin**: Acesso total ao sistema.
+* **Editor**: Pode gerir media, playlists e agendamentos, mas não toca em configurações sensíveis.
+* **Viewer**: Apenas visualiza o estado do playout.
+
+**Permissões Granulares:**
+Ao criar um utilizador, pode atribuir permissões específicas (READ, WRITE, DELETE, EXECUTE) para afinar o acesso.
 `;
 
 export default function HelpSystem() {
@@ -84,46 +100,49 @@ export default function HelpSystem() {
           </IconButton>
         </DialogTitle>
         <DialogContent dividers>
-            {helpContent?.content ? (
-                 <Typography>{helpContent.content}</Typography>
-            ) : (
-                <Box>
-                    <Tabs value={tabIndex} onChange={(e, v) => setTabIndex(v)}>
-                        <Tab label="Como Emitir" />
-                        <Tab label="Manual de Operações" />
-                        <Tab label="Guia de Testes" />
-                    </Tabs>
-                    <Box sx={{ 
-                        mt: 2, 
-                        p: 2, 
-                        bgcolor: '#1a1a1a', 
-                        color: '#ffffff',
-                        borderRadius: 1, 
-                        minHeight: '300px',
-                        maxHeight: '400px',
-                        overflowY: 'auto'
-                    }}>
-                        <ReactMarkdown>
-                            {tabIndex === 0 ? HOW_TO_BROADCAST : (tabIndex === 1 ? OPS_MANUAL : TESTING_GUIDE)}
-                        </ReactMarkdown>
-                    </Box>
-                </Box>
-            )}
+          {helpContent?.content ? (
+            <Typography>{helpContent.content}</Typography>
+          ) : (
+            <Box>
+              <Tabs value={tabIndex} onChange={(e, v) => setTabIndex(v)}>
+                <Tab label="Como Emitir" />
+                <Tab label="Manual de Operações" />
+                <Tab label="System Config & RBAC" />
+                <Tab label="Guia de Testes" />
+              </Tabs>
+              <Box sx={{
+                mt: 2,
+                p: 2,
+                bgcolor: '#1a1a1a',
+                color: '#ffffff',
+                borderRadius: 1,
+                minHeight: '300px',
+                maxHeight: '400px',
+                overflowY: 'auto'
+              }}>
+                <ReactMarkdown>
+                  {tabIndex === 0 ? HOW_TO_BROADCAST :
+                    tabIndex === 1 ? OPS_MANUAL :
+                      tabIndex === 2 ? SYSTEM_CONFIG : TESTING_GUIDE}
+                </ReactMarkdown>
+              </Box>
+            </Box>
+          )}
         </DialogContent>
         <DialogActions sx={{ justifyContent: 'space-between' }}>
-            {helpMode && (
-                <Button 
-                    variant="outlined" 
-                    color="warning" 
-                    onClick={() => {
-                        toggleHelpMode();
-                        closeHelp();
-                    }}
-                >
-                    Desativar Modo de Ajuda
-                </Button>
-            )}
-            <Button onClick={closeHelp} variant="contained">Fechar</Button>
+          {helpMode && (
+            <Button
+              variant="outlined"
+              color="warning"
+              onClick={() => {
+                toggleHelpMode();
+                closeHelp();
+              }}
+            >
+              Desativar Modo de Ajuda
+            </Button>
+          )}
+          <Button onClick={closeHelp} variant="contained">Fechar</Button>
         </DialogActions>
       </Dialog>
     </>

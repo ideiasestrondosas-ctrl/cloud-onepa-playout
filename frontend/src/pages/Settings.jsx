@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import ReactPlayer from 'react-player';
+import axios from 'axios';
 import { useNotification } from '../contexts/NotificationContext';
 import { authAPI, settingsAPI, protectedAPI, playoutAPI } from '../services/api';
 import {
@@ -44,6 +45,7 @@ import {
   Stack,
   Tooltip,
   CircularProgress,
+  ListSubheader,
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -69,7 +71,42 @@ import {
   Crop as CropIcon,
   CloudUpload as UploadIcon,
   Person as UserIcon,
+  Settings as SettingsIcon,
+  BugReport as BugIcon // Added for ErrorBoundary
 } from '@mui/icons-material';
+
+// --- Error Boundary for Safety ---
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null, errorInfo: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("Settings UI Crash:", error, errorInfo);
+    this.setState({ error, errorInfo });
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <Box sx={{ p: 5, color: '#fff', textAlign: 'center' }}>
+          <BugIcon sx={{ fontSize: 60, color: 'error.main', mb: 2 }} />
+          <Typography variant="h5" gutterBottom>Algo correu mal nas Definições.</Typography>
+          <Typography variant="body2" sx={{ fontFamily: 'monospace', bgcolor: 'rgba(0,0,0,0.5)', p: 2, borderRadius: 2, mb: 3 }}>
+            {this.state.error && this.state.error.toString()}
+          </Typography>
+          <Button variant="contained" onClick={() => window.location.reload()}>Recarregar Página</Button>
+        </Box>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 function TabPanel({ children, value, index }) {
   return (
@@ -280,7 +317,7 @@ function OverlayConverterDialog({ open, onClose, onSave }) {
   );
 }
 
-export default function Settings() {
+function Settings() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { showSuccess, showError, showWarning } = useNotification();
@@ -339,12 +376,16 @@ export default function Settings() {
   const [protectedAssets, setProtectedAssets] = useState([]);
   const [users, setUsers] = useState([]);
   const [userDialogOpen, setUserDialogOpen] = useState(false);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [newPassword, setNewPassword] = useState('');
-  const [newUser, setNewUser] = useState({ username: '', password: '', role: 'operator' });
+  const [profiles, setProfiles] = useState([]);
+  const [viewMode, setViewMode] = useState('users'); // 'users' or 'profiles'
+  const [newUser, setNewUser] = useState({ username: '', password: '', profile_id: '' });
+  const [currentProfile, setCurrentProfile] = useState({ name: '', permissions: [] });
   const [saving, setSaving] = useState(false);
   const [releaseNotesOpen, setReleaseNotesOpen] = useState(false);
+  const [autoConfigOpen, setAutoConfigOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewAsset, setPreviewAsset] = useState(null);
   const [mediaSelectorOpen, setMediaSelectorOpen] = useState(false);
@@ -362,6 +403,7 @@ export default function Settings() {
   });
   const [releaseHistory, setReleaseHistory] = useState([]);
   const [udpConfirmOpen, setUdpConfirmOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
 
   useEffect(() => {
     fetchSettings();
@@ -388,6 +430,11 @@ export default function Settings() {
           }
         }, 300);
       }
+    }
+
+    // Handle Wizard Auto-Open
+    if (searchParams.get('wizard') === 'true') {
+      setAutoConfigOpen(true);
     }
   }, [searchParams]);
 
@@ -451,8 +498,8 @@ export default function Settings() {
         defaultImagePath: data.default_image_path || '',
 
         defaultVideoPath: data.default_video_path || '',
-        version: data.system_version || '2.2.0-ALPHA.2-PRO',
-        releaseDate: data.release_date || '2026-01-30',
+        version: data.system_version || 'v2.2.0-ALPHA.3-PRO',
+        releaseDate: data.release_date || '2026-01-31',
         overlay_enabled: data.overlay_enabled ?? true,
         channelName: data.channel_name || 'Cloud Onepa',
         branding_type: brandingType,
@@ -461,8 +508,8 @@ export default function Settings() {
         srtMode: data.srt_mode || 'caller',
         protectedPath: data.protected_path || '/var/lib/onepa-playout/assets/protected',
         docsPath: data.docs_path || '/app/docs',
-        system_version: data.system_version || '2.2.0-ALPHA.2-PRO',
-        release_date: data.release_date || '2026-01-30',
+        system_version: data.system_version || 'v2.2.0-ALPHA.3-PRO',
+        release_date: data.release_date || '2026-01-31',
         rtmpOutputUrl: data.rtmp_output_url || '',
         srtOutputUrl: data.srt_output_url || '',
         udpOutputUrl: data.udp_output_url || '',
@@ -528,7 +575,7 @@ export default function Settings() {
   // Output Defaults Configuration
   const OUTPUT_DEFAULTS = {
     rtmp: { url: 'rtmp://localhost:1935/live_stream', resolution: '1280x720', bitrate: '2500k' },
-    hls: { url: '/hls/stream.m3u8', resolution: '1920x1080', bitrate: '4000k' },
+    hls: { url: 'http://YOUR_SERVER_IP:8181/hls/stream.m3u8', resolution: '1920x1080', bitrate: '4000k' },
     srt: { url: 'srt://mediamtx:8890?mode=caller&streamid=publish:live_stream_srt', resolution: '1920x1080', bitrate: '5000k' },
     udp: { url: 'udp://239.0.0.1:1234', resolution: '1280x720', bitrate: '3000k' },
     desktop: { url: 'local', resolution: '1920x1080', bitrate: '0' }
@@ -573,37 +620,46 @@ export default function Settings() {
     }
   };
 
-  const fetchReleaseHistory = () => {
-    // Hardcoded history from RELEASE_NOTES.md per user request
-    setReleaseHistory([
-      {
-        version: 'v2.2.0-ALPHA.2-PRO',
-        date: '2026-01-30',
-        changes: [
-          '🚀 Release Highlights: Automated Release - Version bump and statistics update',
-          '📝 Documentation: Synced README.md and version history'
-        ]
-      },
-      {
-        version: 'v2.2.0-ALPHA.2-PRO',
-        date: '2026-01-28',
-        changes: [
-          '🚀 Alpha Environment Migration: Port Migration (FE:3011, BE:8181), Docker-Only Workflow, Consolidated Dev Environment',
-          '🐛 Bug Fixes: Fixed Login 401 Silent Failures, Enhanced Error Alerts, Removed "Intelligence" subtitle',
-          '🐛 Backend Stability: DB Migration Checksum Fix, HLS Permission Fixes',
-          '📦 Infrastructure: Unified Rebuild Script (rebuild_alpha_docker.sh), Release Automation Improvements'
-        ]
-      },
-      {
-        version: 'v2.1.0-BETA',
-        date: '2025-12-15',
-        changes: [
-          '✨ Graphics Module: New Overlay System, Drag & Drop Editor',
-          '🔊 Audio: LUFS Meter Implementation, Safari Audio Context Fixes',
-          '🌐 Networking: SRT Caller/Listener Modes, Multi-Protocol Sync'
-        ]
-      }
-    ]);
+  const fetchProfiles = async () => {
+    try {
+      const response = await authAPI.listProfiles();
+      setProfiles(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch profiles:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (tabValue === 3) {
+      fetchUsers();
+      fetchProfiles();
+    }
+  }, [tabValue]);
+
+  const fetchReleaseHistory = async () => {
+    try {
+      const response = await axios.get('https://api.github.com/repos/ideiasestrondosas-ctrl/cloud-onepa-playout/releases');
+
+      if (!Array.isArray(response.data)) throw new Error('Invalid GitHub response');
+
+      const releases = response.data.map(r => ({
+        version: r.tag_name,
+        date: new Date(r.published_at).toLocaleDateString(),
+        // Split body by newlines and filter empty or standard boilerplate
+        changes: r.body ? r.body.split('\n').filter(line => line.trim().startsWith('-') || line.trim().startsWith('*')).map(line => line.replace(/^[-*]\s*/, '')) : ['Atualização do sistema']
+      }));
+      setReleaseHistory(releases);
+    } catch (error) {
+      console.warn('Failed to fetch GitHub releases, using fallback.', error);
+      // Fallback
+      setReleaseHistory([
+        {
+          version: 'v2.2.0-ALPHA.5',
+          date: new Date().toLocaleDateString(),
+          changes: ['Autonated Release Notes Unavailable (Offline Mode)']
+        }
+      ]);
+    }
   };
 
   const handleSaveSettings = async () => {
@@ -698,7 +754,12 @@ export default function Settings() {
   };
 
   const handleApplyDefaults = async () => {
-    if (!window.confirm('Isto irá substituir as suas chaves API atuais pelas recomendadas. Continuar?')) return;
+    // Replaced window.confirm with Dialog
+    setAutoConfigOpen(true);
+  };
+
+  const confirmApplyDefaults = async () => {
+    setAutoConfigOpen(false);
     try {
       setSaving(true);
       const response = await settingsAPI.applyDefaults();
@@ -785,10 +846,15 @@ export default function Settings() {
     }
 
     try {
-      await authAPI.register(newUser.username, newUser.password, newUser.role);
+      // Find selected profile to get role name for compatibility, or just send empty/default role
+      // The backend will mostly rely on profile_id now.
+      const selectedProfile = profiles.find(p => p.id === newUser.profile_id);
+      const roleName = selectedProfile ? selectedProfile.name.toLowerCase() : 'viewer';
+
+      await authAPI.register(newUser.username, newUser.password, roleName, [], newUser.profile_id);
       showSuccess('Utilizador criado com sucesso!');
       setUserDialogOpen(false);
-      setNewUser({ username: '', password: '', role: 'operator' });
+      setNewUser({ username: '', password: '', profile_id: '' });
       fetchUsers();
     } catch (error) {
       showError(error.response?.data?.error || 'Erro ao criar utilizador');
@@ -803,6 +869,37 @@ export default function Settings() {
       fetchUsers();
     } catch (error) {
       showError('Erro ao deletar utilizador');
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!currentProfile.name) {
+      showWarning('Nome do perfil é obrigatório');
+      return;
+    }
+    try {
+      if (currentProfile.id) {
+        await authAPI.updateProfile(currentProfile.id, currentProfile.permissions);
+        showSuccess('Perfil atualizado!');
+      } else {
+        await authAPI.createProfile(currentProfile.name, currentProfile.permissions);
+        showSuccess('Perfil criado!');
+      }
+      setProfileDialogOpen(false);
+      fetchProfiles();
+    } catch (error) {
+      showError(error.response?.data?.error || 'Erro ao salvar perfil');
+    }
+  };
+
+  const handleDeleteProfile = async (id) => {
+    if (!window.confirm('Tem certeza? Users associados a este perfil podem perder acesso.')) return; // Use custom dialog ideally
+    try {
+      await authAPI.deleteProfile(id);
+      showSuccess('Perfil removido');
+      fetchProfiles();
+    } catch (error) {
+      showError(error.response?.data?.error || 'Erro ao remover perfil');
     }
   };
 
@@ -1081,7 +1178,8 @@ export default function Settings() {
                   { label: 'MEDIA & VIDEO', value: settings.mediaPath, key: 'mediaPath', helper: 'Armazenamento principal de conteúdos' },
                   { label: 'THUMBNAILS', value: settings.thumbnailsPath, key: 'thumbnailsPath', helper: 'Cache de miniaturas geradas' },
                   { label: 'PLAYLISTS DB', value: settings.playlistsPath, key: 'playlistsPath', helper: 'Base de dados das programações' },
-                  { label: 'FILLERS & LOOPS', value: settings.fillersPath, key: 'fillersPath', helper: 'Conteúdos de preenchimento automático' }
+                  { label: 'FILLERS & LOOPS', value: settings.fillersPath, key: 'fillersPath', helper: 'Conteúdos de preenchimento automático' },
+                  { label: 'BRANDING & ASSETS PROTEGIDOS', value: settings.protectedPath, key: 'protectedPath', helper: 'Localização de logos e vídeos institucionais' }
                 ].map(field => (
                   <Grid item xs={12} key={field.key}>
                     <TextField
@@ -1320,12 +1418,12 @@ export default function Settings() {
                 </Box>
                 <Grid container spacing={4}>
                   <Grid item xs={12} md={6}>
-                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', mb: 1, display: 'block' }}>OPACIDADE ({Math.round(settings.overlayOpacity * 100)}%)</Typography>
-                    <Slider value={settings.overlayOpacity || 1.0} min={0} max={1} step={0.1} onChange={(e, v) => setSettings({ ...settings, overlayOpacity: v })} />
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', mb: 1, display: 'block' }}>OPACIDADE ({Math.round((settings.overlayOpacity ?? 0.6) * 100)}%)</Typography>
+                    <Slider value={settings.overlayOpacity ?? 0.6} min={0} max={1} step={0.1} onChange={(e, v) => setSettings({ ...settings, overlayOpacity: v })} />
                   </Grid>
                   <Grid item xs={12} md={6}>
-                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', mb: 1, display: 'block' }}>ESCALA ({settings.overlayScale}x)</Typography>
-                    <Slider value={settings.overlayScale || 1.0} min={0.1} max={2.0} step={0.1} onChange={(e, v) => setSettings({ ...settings, overlayScale: v })} />
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', mb: 1, display: 'block' }}>ESCALA ({settings.overlayScale ?? 0.6}x)</Typography>
+                    <Slider value={settings.overlayScale ?? 0.6} min={0.1} max={2.0} step={0.1} onChange={(e, v) => setSettings({ ...settings, overlayScale: v })} />
                   </Grid>
                 </Grid>
               </Box>
@@ -1333,11 +1431,19 @@ export default function Settings() {
               <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                 <TextField
                   fullWidth
-                  label="CAMINHO DO LOGO"
+                  label="LOGO DE OVERLAY (STREAM OUTPUT)"
                   value={settings.logoPath}
                   onChange={(e) => setSettings({ ...settings, logoPath: e.target.value })}
                   InputProps={{ sx: { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3 } }}
+                  helperText="Padrão: /assets/protected/Cloud_Onepa_Playout_Infinity_Logo_remodelado.png"
                 />
+                <Button
+                  size="small"
+                  onClick={() => setSettings({ ...settings, logoPath: '/assets/protected/Cloud_Onepa_Playout_Infinity_Logo_remodelado.png' })}
+                  sx={{ mt: 1, fontSize: '0.7rem' }}
+                >
+                  USAR PADRÃO
+                </Button>
                 <Button variant="contained" component="label" startIcon={<AddIcon />} sx={{ height: 56, borderRadius: 3, minWidth: 140, fontWeight: 800 }}>UPLOAD</Button>
                 <IconButton onClick={() => setConverterOpen(true)} sx={{ width: 56, height: 56, bgcolor: 'rgba(0,229,255,0.1)', color: 'primary.main', borderRadius: 3 }}><MagicIcon /></IconButton>
               </Box>
@@ -1373,64 +1479,137 @@ export default function Settings() {
             </Paper>
           </TabPanel>
 
-          {/* CATEGORY 3: UTILIZADORES */}
+          {/* CATEGORY 3: UTILIZADORES & PERFIS */}
           <TabPanel value={tabValue} index={3}>
             <Paper className="glass-panel" sx={{ p: 4 }}>
               <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Box>
                   <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>GESTÃO DE ACESSOS</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>UTILIZADORES COM ACESSO AO PAINEL</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>UTILIZADORES E PERFIS DE ACESSO</Typography>
                 </Box>
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={() => setUserDialogOpen(true)}
-                  sx={{ borderRadius: 3, fontWeight: 800, px: 3 }}
-                >
-                  ADICIONAR USER
-                </Button>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <ToggleButtonGroup
+                    value={viewMode}
+                    exclusive
+                    onChange={(e, newMode) => newMode && setViewMode(newMode)}
+                    size="small"
+                    sx={{ height: 36 }}
+                  >
+                    <ToggleButton value="users" sx={{ fontWeight: 800 }}>UTILIZADORES</ToggleButton>
+                    <ToggleButton value="profiles" sx={{ fontWeight: 800 }}>PERFIS</ToggleButton>
+                  </ToggleButtonGroup>
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={() => {
+                      if (viewMode === 'users') setUserDialogOpen(true);
+                      else {
+                        setCurrentProfile({ name: '', permissions: [] });
+                        setProfileDialogOpen(true);
+                      }
+                    }}
+                    sx={{ borderRadius: 3, fontWeight: 800, px: 3 }}
+                  >
+                    {viewMode === 'users' ? 'ADICIONAR USER' : 'CRIAR PERFIL'}
+                  </Button>
+                </Box>
               </Box>
 
-              <List sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {Array.isArray(users) && users.map((user) => (
-                  <ListItem
-                    key={user.id}
-                    sx={{
-                      bgcolor: 'rgba(255,255,255,0.02)',
-                      borderRadius: 4,
-                      border: '1px solid rgba(255,255,255,0.05)',
-                      p: 2,
-                      transition: '0.3s',
-                      '&:hover': { bgcolor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.1)' }
-                    }}
-                  >
-                    <ListItemIcon sx={{ color: 'primary.main', minWidth: 50 }}>
-                      <UserIcon />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={user.username.toUpperCase()}
-                      secondary={`NÍVEL DE ACESSO: ${user.role.toUpperCase()}`}
-                      primaryTypographyProps={{ sx: { fontWeight: 800, letterSpacing: 1 } }}
-                      secondaryTypographyProps={{ sx: { fontWeight: 600, fontSize: '0.65rem', opacity: 0.6 } }}
-                    />
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => handleOpenPasswordDialog(user)}
-                        sx={{ borderRadius: 2, fontWeight: 800, fontSize: '0.7rem' }}
-                      >
-                        REPOR PASSWORD
-                      </Button>
-                      {user.username !== 'admin' && (
-                        <IconButton onClick={() => handleDeleteUser(user.id)} color="error" sx={{ bgcolor: 'rgba(244,67,54,0.1)', borderRadius: 2 }}>
-                          <DeleteIcon />
-                        </IconButton>
-                      )}
-                    </Box>
-                  </ListItem>
-                ))}
-              </List>
+              {viewMode === 'users' ? (
+                <List sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {Array.isArray(users) && users.map((user) => (
+                    <ListItem
+                      key={user.id}
+                      sx={{
+                        bgcolor: 'rgba(255,255,255,0.02)',
+                        borderRadius: 4,
+                        border: '1px solid rgba(255,255,255,0.05)',
+                        p: 2,
+                        transition: '0.3s',
+                        '&:hover': { bgcolor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.1)' }
+                      }}
+                    >
+                      <ListItemIcon sx={{ color: 'primary.main', minWidth: 50 }}>
+                        <UserIcon />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={user.username.toUpperCase()}
+                        secondary={
+                          <Box component="span">
+                            PERFIL: {
+                              user.profile_name
+                                ? user.profile_name.toUpperCase()
+                                : (profiles.find(p => p.id === user.profile_id)?.name?.toUpperCase() || (user.role || '').toUpperCase())
+                            } | PERMISSÕES: {user.permissions?.join(', ').toUpperCase() || 'N/A'}
+                          </Box>
+                        }
+                        primaryTypographyProps={{ sx: { fontWeight: 800, letterSpacing: 1 } }}
+                        secondaryTypographyProps={{ sx: { fontWeight: 600, fontSize: '0.65rem', opacity: 0.6 }, component: 'div' }}
+                      />
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => handleOpenPasswordDialog(user)}
+                          sx={{ borderRadius: 2, fontWeight: 800, fontSize: '0.7rem' }}
+                        >
+                          REPOR PASSWORD
+                        </Button>
+                        {user.username !== 'admin' && (
+                          <IconButton onClick={() => handleDeleteUser(user.id)} color="error" sx={{ bgcolor: 'rgba(244,67,54,0.1)', borderRadius: 2 }}>
+                            <DeleteIcon />
+                          </IconButton>
+                        )}
+                      </Box>
+                    </ListItem>
+                  ))}
+                </List>
+              ) : (
+                <List sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {Array.isArray(profiles) && profiles.map((profile) => (
+                    <ListItem
+                      key={profile.id}
+                      sx={{
+                        bgcolor: 'rgba(255,255,255,0.02)',
+                        borderRadius: 4,
+                        border: '1px solid rgba(255,255,255,0.05)',
+                        p: 2
+                      }}
+                    >
+                      <ListItemIcon sx={{ color: 'secondary.main', minWidth: 50 }}>
+                        <SettingsIcon />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          {profile.name.toUpperCase()}
+                          {profile.is_system && <Chip label="SISTEMA" size="small" color="info" sx={{ height: 20, fontSize: '0.6rem', fontWeight: 800 }} />}
+                        </Box>}
+                        secondary={`PERMISSÕES: ${(profile.permissions || []).join(', ').toUpperCase()}`}
+                        primaryTypographyProps={{ sx: { fontWeight: 800, letterSpacing: 1 } }}
+                        secondaryTypographyProps={{ sx: { fontWeight: 600, fontSize: '0.65rem', opacity: 0.6 } }}
+                      />
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => {
+                            setCurrentProfile(profile);
+                            setProfileDialogOpen(true);
+                          }}
+                          sx={{ borderRadius: 2, fontWeight: 800, fontSize: '0.7rem' }}
+                        >
+                          EDITAR
+                        </Button>
+                        {!profile.is_system && (
+                          <IconButton onClick={() => handleDeleteProfile(profile.id)} color="error" sx={{ bgcolor: 'rgba(244,67,54,0.1)', borderRadius: 2 }}>
+                            <DeleteIcon />
+                          </IconButton>
+                        )}
+                      </Box>
+                    </ListItem>
+                  ))}
+                </List>
+              )}
             </Paper>
           </TabPanel>
 
@@ -1443,8 +1622,8 @@ export default function Settings() {
               </Box>
               <Grid container spacing={3}>
                 {[
-                  { label: 'VERSÃO DO SISTEMA', value: settings.system_version || settings.version || 'v2.2.0-ALPHA.2-PRO', icon: <WizardIcon /> },
-                  { label: 'ÚLTIMA ATUALIZAÇÃO', value: settings.release_date || settings.releaseDate || '2026-01-30', icon: <CheckIcon /> },
+                  { label: 'VERSÃO DO SISTEMA', value: settings.system_version || settings.version || 'v2.2.0-ALPHA.3-PRO', icon: <WizardIcon /> },
+                  { label: 'ÚLTIMA ATUALIZAÇÃO', value: settings.release_date || settings.releaseDate || '2026-01-31', icon: <CheckIcon /> },
                   { label: 'DEPLOYMENT', value: 'Docker Container (Linux)', icon: <FolderIcon /> }
                 ].map((item, id) => (
                   <Grid item xs={12} sm={6} md={4} key={id}>
@@ -1461,7 +1640,17 @@ export default function Settings() {
               <Box sx={{ mt: 4, display: 'flex', gap: 2 }}>
                 <Button
                   variant="outlined"
-                  onClick={() => window.open(`https://github.com/onepa-playout/cloud/tree/${settings.system_version || settings.version || 'v2.2.0-ALPHA.2-PRO'}`, '_blank')}
+                  onClick={() => {
+                    // Determine tag: if version starts with 'v', use it; else fallback to 'alpha'
+                    const tag = settings.version && settings.version.startsWith('v') ? settings.version : 'alpha';
+                    // If it's a dev version like v2.2.0-ALPHA.4, it might be a tag.
+                    // The user requested: /tree/alpha specifically if it's alpha.
+                    // Let's use logic: if it contains "ALPHA", link to alpha branch? 
+                    // Or just default to the tag. 
+                    // User said: "should analyze the version and use the tag in question, in this case, the alpha tag"
+                    const targetRef = settings.version?.includes('ALPHA') ? 'alpha' : (settings.version || 'main');
+                    window.open(`https://github.com/ideiasestrondosas-ctrl/cloud-onepa-playout/tree/${targetRef}`, '_blank');
+                  }}
                   sx={{ borderRadius: 2, fontWeight: 800 }}
                 >
                   GITHUB REPO
@@ -1528,16 +1717,19 @@ export default function Settings() {
             InputLabelProps={{ shrink: true }}
           />
           <FormControl fullWidth sx={{ mt: 3 }}>
-            <InputLabel shrink>NÍVEL DE ACESSO</InputLabel>
+            <InputLabel shrink>PERFIL DE ACESSO</InputLabel>
             <Select
-              value={newUser.role}
-              label="NÍVEL DE ACESSO"
-              onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+              value={newUser.profile_id}
+              label="PERFIL DE ACESSO"
+              onChange={(e) => setNewUser({ ...newUser, profile_id: e.target.value })}
               sx={{ borderRadius: 3 }}
               notched
             >
-              <MenuItem value="admin">ADMINISTRADOR</MenuItem>
-              <MenuItem value="operator">OPERADOR</MenuItem>
+              {profiles.map(p => (
+                <MenuItem key={p.id} value={p.id}>
+                  {p.name.toUpperCase()} {p.is_system && '(SISTEMA)'}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
         </DialogContent>
@@ -1584,7 +1776,7 @@ export default function Settings() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <WizardIcon /> NOTAS DE LANÇAMENTO
           </Box>
-          <Typography variant="caption" sx={{ opacity: 0.5 }}>v2.2.0-ALPHA.2-PRO</Typography>
+          <Typography variant="caption" sx={{ opacity: 0.5 }}>v2.2.0-ALPHA.3-PRO</Typography>
         </DialogTitle>
         <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.05)' }}>
           <List sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -1610,6 +1802,80 @@ export default function Settings() {
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
           <Button variant="contained" onClick={() => setReleaseNotesOpen(false)} sx={{ borderRadius: 2, fontWeight: 800, px: 4 }}>ENTENDIDO</Button>
+        </DialogActions>
+      </Dialog>
+      {/* Profile Dialog */}
+      <Dialog
+        open={profileDialogOpen}
+        onClose={() => setProfileDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: 'primary.main' }}>
+          {currentProfile.id ? 'EDITAR PERFIL' : 'NOVO PERFIL'}
+        </DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth label="NOME DO PERFIL"
+            value={currentProfile.name}
+            onChange={(e) => setCurrentProfile({ ...currentProfile, name: e.target.value })}
+            sx={{ mt: 2 }}
+            InputProps={{ sx: { borderRadius: 3 }, readOnly: currentProfile.is_system }} // System profiles name read-only? Default Admin should be protected completely maybe.
+            InputLabelProps={{ shrink: true }}
+            helperText={currentProfile.is_system ? "Perfis de sistema não podem ser renomeados." : ""}
+          />
+          <FormControl fullWidth sx={{ mt: 3 }}>
+            <InputLabel shrink>PERMISSÕES</InputLabel>
+            <Select
+              multiple
+              value={currentProfile.permissions || []}
+              label="PERMISSÕES"
+              onChange={(e) => setCurrentProfile({ ...currentProfile, permissions: typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value })}
+              sx={{ borderRadius: 3 }}
+              notched
+              renderValue={(selected) => selected.join(', ').toUpperCase()}
+            >
+              <MenuItem value="read">READ</MenuItem>
+              <MenuItem value="write">WRITE</MenuItem>
+              <MenuItem value="delete">DELETE</MenuItem>
+              <MenuItem value="execute">EXECUTE</MenuItem>
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button onClick={() => setProfileDialogOpen(false)} sx={{ fontWeight: 800 }}>CANCELAR</Button>
+          <Button variant="contained" onClick={handleSaveProfile} sx={{ borderRadius: 2, fontWeight: 800, px: 4 }}>GUARDAR</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Auto-Config Dialog */}
+      <Dialog
+        open={autoConfigOpen}
+        onClose={() => setAutoConfigOpen(false)}
+        PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
+      >
+        <DialogTitle sx={{ color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <MagicIcon /> Configuração Automática
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            Esta ação irá configurar automaticamente as chaves de API recomendadas para:
+          </Typography>
+          <List dense>
+            <ListItem><ListItemText primary="• CineOne Database (TMDB)" /></ListItem>
+            <ListItem><ListItemText primary="• Open Movie Database (OMDB)" /></ListItem>
+            <ListItem><ListItemText primary="• TVMaze Metadata" /></ListItem>
+          </List>
+          <Alert severity="warning" sx={{ mt: 1 }}>
+            As suas chaves atuais serão substituídas. Deseja continuar?
+          </Alert>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setAutoConfigOpen(false)} sx={{ fontWeight: 800 }}>CANCELAR</Button>
+          <Button variant="contained" onClick={confirmApplyDefaults} sx={{ borderRadius: 2, fontWeight: 800, px: 4 }}>
+            CONFIRMAR
+          </Button>
         </DialogActions>
       </Dialog>
       {/* Preview Dialog */}
@@ -1714,6 +1980,14 @@ export default function Settings() {
         }}
       />
     </Box>
+  );
+}
+
+export default function SafeSettings() {
+  return (
+    <ErrorBoundary>
+      <Settings />
+    </ErrorBoundary>
   );
 }
 

@@ -37,19 +37,25 @@ api.interceptors.response.use(
 export const authAPI = {
   login: (username, password) =>
     api.post('/auth/login', { username, password }),
-  
+
   logout: () =>
     api.post('/auth/logout'),
-  
-  register: (username, password, role) =>
-    api.post('/auth/register', { username, password, role }),
+
+  register: (username, password, role, permissions, profile_id) =>
+    api.post('/auth/register', { username, password, role, permissions, profile_id }),
 
   changePassword: (id, password) =>
     api.put(`/auth/users/${id}/password`, { password }),
 
   listUsers: () => api.get('/auth/users'),
-  
+
   deleteUser: (id) => api.delete(`/auth/users/${id}`),
+
+  // Profile Endpoints
+  listProfiles: () => api.get('/auth/profiles'),
+  createProfile: (name, permissions) => api.post('/auth/profiles', { name, permissions }),
+  updateProfile: (id, permissions) => api.put(`/auth/profiles/${id}`, { permissions }),
+  deleteProfile: (id) => api.delete(`/auth/profiles/${id}`),
 };
 
 // Media endpoints

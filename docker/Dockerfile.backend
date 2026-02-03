@@ -18,7 +18,11 @@ WORKDIR /app
 # Copy dependency files first
 COPY Cargo.toml Cargo.lock ./
 
-# (Simplified build: remove dummy main to avoid binary confusion)
+# Create a dummy project to cache dependencies
+RUN mkdir src && \
+    echo "fn main() {println!(\"dummy\")}" > src/main.rs && \
+    cargo build --release && \
+    rm -rf src
 
 # Copy migrations (needed at compile time for sqlx::migrate!)
 COPY migrations ./migrations
@@ -27,7 +31,8 @@ COPY migrations ./migrations
 COPY src ./src
 
 # Build the real application
-RUN cargo build --release
+# Touch the main file to ensure cargo rebuilds the application code
+RUN touch src/main.rs && cargo build --release
 
 # Runtime stage
 FROM alpine:latest
@@ -52,6 +57,9 @@ COPY --from=builder /app/target/release/onepa-playout /app/
 
 # Copy migrations for runtime
 COPY migrations ./migrations
+
+# Copy data directory (api defaults)
+COPY data ./data
 
 EXPOSE 8181
 

@@ -1,10 +1,18 @@
 # Release Notes - Cloud Onepa Playout
 
+## v2.2.0-ALPHA.4-PRO (2026-02-03)
+
+### 🚀 Release Highlights
+- **Automated Release**: Version bump and statistics update.
+- **Documentation**: Synced README.md and version history.
+
 ## v2.2.0-ALPHA.3-PRO (2026-01-31)
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.
 - **Documentation**: Synced README.md and version history.
+- **Logo Alignment**: Synchronized graphics assignment with system logo.
+- **Version Sync**: Updated system information with GitHub Cloud history.
 
 ## v2.2.0-ALPHA.3-PRO (2026-01-31)
 

@@ -22,6 +22,7 @@ import {
   Search as SearchIcon,
   Info as InfoIcon,
   Warning as WarningIcon,
+  AutoAwesome as WizardIcon,
   PlayArrow as PlayIcon,
   Stop as StopIcon,
   SkipNext as SkipIcon,
@@ -101,6 +102,7 @@ export default function Dashboard() {
     srt: true,
     udp: true
   });
+  const [isValidating, setIsValidating] = useState(false);
 
   const playerRef = useRef(null);
   const audioCtxRef = useRef(null);
@@ -109,8 +111,11 @@ export default function Dashboard() {
   const sourceNodeRef = useRef(null);
 
 
+  const [scheduleAlertOpen, setScheduleAlertOpen] = useState(false);
+
   useEffect(() => {
     fetchStatus();
+    // checkSchedule(); // MOVED TO START BUTTON
     const interval = setInterval(fetchStatus, 2000);
     return () => {
       clearInterval(interval);
@@ -118,6 +123,17 @@ export default function Dashboard() {
       if (audioCtxRef.current) audioCtxRef.current.close().catch(e => console.warn('AudioContext close failed:', e));
     };
   }, []);
+
+  const checkSchedule = async () => {
+    try {
+      const response = await playoutAPI.diagnose();
+      if (!response.data.has_active_schedule) {
+        setScheduleAlertOpen(true);
+      }
+    } catch (error) {
+      console.warn('Failed to validate schedule:', error);
+    }
+  };
 
   // Auto-reload preview when engine starts or fails
   useEffect(() => {
@@ -268,6 +284,17 @@ export default function Dashboard() {
   };
 
   const handleStart = async () => {
+    // 1. Strict Validation: Check Playlist & Schedule
+    try {
+      const diag = await playoutAPI.diagnose();
+      if (!diag.data.has_active_schedule) {
+        setScheduleAlertOpen(true);
+        return; // BLOCK START
+      }
+    } catch (e) {
+      console.warn('Diagnostic check failed, proceeding with caution...', e);
+    }
+
     try {
       setStartSteps([]);
       const addStep = (msg, type = 'info') => setStartSteps(prev => [...prev, { msg, type, time: new Date() }]);
@@ -487,22 +514,39 @@ export default function Dashboard() {
           <Paper className="glass-panel" sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
             <Button
               variant="contained"
-              onClick={() => {
+              disabled={isValidating}
+              onClick={async () => {
                 if (isPlaying) {
                   handleStop();
                 } else {
-                  if (settings) {
-                    setRestartOptions({
-                      auto_start: settings.auto_start_protocols,
-                      rtmp: settings.rtmp_enabled,
-                      srt: settings.srt_enabled,
-                      udp: settings.udp_enabled
-                    });
+                  setIsValidating(true);
+                  console.log('Initiating diagnostic check before start...');
+                  try {
+                    const diag = await playoutAPI.diagnose();
+                    console.log('Diagnostic result:', diag.data);
+                    if (!diag.data.has_active_schedule || !diag.data.has_playlist) {
+                      setScheduleAlertOpen(true);
+                      return;
+                    }
+
+                    if (settings) {
+                      setRestartOptions({
+                        auto_start: settings.auto_start_protocols,
+                        rtmp: settings.rtmp_enabled,
+                        srt: settings.srt_enabled,
+                        udp: settings.udp_enabled
+                      });
+                    }
+                    setRestartDialogOpen(true);
+                  } catch (e) {
+                    console.error('Validation failed:', e);
+                    showError('Erro ao validar agendamento');
+                  } finally {
+                    setIsValidating(false);
                   }
-                  setRestartDialogOpen(true);
                 }
               }}
-              startIcon={isPlaying ? <StopIcon /> : <PlayIcon />}
+              startIcon={isValidating ? <CircularProgress size={20} color="inherit" /> : (isPlaying ? <StopIcon /> : <PlayIcon />)}
               sx={{
                 fontWeight: '800',
                 py: 1,
@@ -515,7 +559,7 @@ export default function Dashboard() {
                 }
               }}
             >
-              {isPlaying ? 'PARAR' : 'INICIAR'}
+              {isValidating ? 'A VALIDAR...' : (isPlaying ? 'PARAR' : 'INICIAR')}
             </Button>
             <Box sx={{ display: 'flex', gap: 1 }}>
               <Button variant="outlined" onClick={handleSkip} disabled={!isPlaying} size="small" sx={{ flexGrow: 1, fontSize: '0.7rem' }}>SKIP</Button>
@@ -1093,6 +1137,44 @@ export default function Dashboard() {
             }
           }}>
             Iniciar Engine
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Schedule Validation Alert */}
+      <Dialog
+        open={scheduleAlertOpen}
+        onClose={() => setScheduleAlertOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          className: 'glass-panel',
+          sx: { border: '1px solid rgba(244, 67, 54, 0.3)', boxShadow: '0 0 30px rgba(244, 67, 54, 0.1)' }
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'error.main', fontWeight: 800 }}>
+          <WarningIcon /> ATENÇÃO: ERRO DE AGENDAMENTO
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ fontWeight: 600, mb: 2 }}>
+            Não existe nenhuma playlist ativa ou agendada para hoje.
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            O motor de playout não pode iniciar sem conteúdos. Por favor, utilize o Assistente de Configuração ou aceda ao Calendário para agendar uma playlist.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button onClick={() => setScheduleAlertOpen(false)} sx={{ fontWeight: 800 }}>FECHAR</Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => {
+              setScheduleAlertOpen(false);
+              navigate('/settings?tab=playout&wizard=true');
+            }}
+            startIcon={<WizardIcon />}
+            sx={{ fontWeight: 800 }}
+          >
+            ABRIR ASSISTENTE
           </Button>
         </DialogActions>
       </Dialog>

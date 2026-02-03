@@ -87,8 +87,8 @@ async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
                 overlay_anchor: Some("top-right".to_string()),
                 srt_mode: Some("caller".to_string()),
                 updated_at: chrono::Utc::now(),
-                system_version: Some("v2.2.0-ALPHA.2-PRO".to_string()),
-                release_date: Some("2026-01-30".to_string()),
+                system_version: Some("v2.2.0-ALPHA.3-PRO".to_string()),
+                release_date: Some("2026-01-31".to_string()),
                 protected_path: Some(protected_path),
                 docs_path: Some(docs_path),
                 rtmp_enabled: false,
@@ -365,8 +365,17 @@ async fn upload_app_logo(mut payload: Multipart, pool: web::Data<PgPool>) -> imp
                 original_filename
             );
 
-            // We'll save it in the media directory for now or a dedicated logo dir
-            let upload_dir = "/var/lib/onepa-playout/media";
+            // Fetch protected_path from settings
+            let row: Option<(String,)> = sqlx::query_as("SELECT protected_path FROM settings WHERE id = TRUE")
+                .fetch_optional(pool.get_ref())
+                .await
+                .unwrap_or(None);
+
+            let upload_dir = row.map(|r| r.0).unwrap_or("/var/lib/onepa-playout/assets/protected".to_string());
+            
+            // Ensure directory exists
+            std::fs::create_dir_all(&upload_dir).unwrap_or_else(|e| log::warn!("Failed to create dir: {}", e));
+
             filepath = format!("{}/{}", upload_dir, filename);
 
             let mut f = match std::fs::File::create(&filepath) {
@@ -407,7 +416,17 @@ async fn upload_app_logo(mut payload: Multipart, pool: web::Data<PgPool>) -> imp
 async fn upload_overlay_pair(mut payload: Multipart, pool: web::Data<PgPool>) -> impl Responder {
     let mut original_path = String::new();
     let mut converted_path = String::new();
-    let upload_dir = "/var/lib/onepa-playout/media";
+    
+    // Fetch protected_path from settings
+    let row: Option<(String,)> = sqlx::query_as("SELECT protected_path FROM settings WHERE id = TRUE")
+        .fetch_optional(pool.get_ref())
+        .await
+        .unwrap_or(None);
+
+    let upload_dir = row.map(|r| r.0).unwrap_or("/var/lib/onepa-playout/assets/protected".to_string());
+    
+    // Ensure directory exists
+    std::fs::create_dir_all(&upload_dir).unwrap_or_else(|e| log::warn!("Failed to create dir: {}", e));
     let timestamp = chrono::Utc::now().timestamp();
 
     while let Ok(Some(mut field)) = payload.try_next().await {
@@ -608,7 +627,7 @@ async fn test_api_keys(req: web::Json<TestApiRequest>) -> impl Responder {
 }
 
 async fn apply_defaults(pool: web::Data<PgPool>) -> impl Responder {
-    let defaults_path = Path::new("backend/data/api_defaults.enc");
+    let defaults_path = Path::new("data/api_defaults.enc");
     if !defaults_path.exists() {
         return HttpResponse::NotFound()
             .json(serde_json::json!({"error": "Defaults file not found"}));

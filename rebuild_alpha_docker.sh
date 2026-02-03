@@ -14,35 +14,17 @@ echo -e "${CYAN}║   ONEPA PLAYOUT - ALPHA DOCKER REBUILD SCRIPT             �
 echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
-# 1. Rebuild Backend
-echo -e "${BLUE}>>> Compiling Rust Backend (Release)...${NC}"
-cd backend
-# Check if cargo is installed
-if ! command -v cargo &> /dev/null; then
-    echo -e "${RED}Error: cargo not found. Please install Rust.${NC}"
-    exit 1
-fi
-cargo build --release
-cd ..
-echo -e "${GREEN}✓ Backend compilation complete${NC}"
-
-# 2. Build Frontend
-echo -e "${BLUE}>>> Building React Frontend...${NC}"
-cd frontend
-# Check if npm is installed
-if ! command -v npm &> /dev/null; then
-    echo -e "${RED}Error: npm not found. Please install Node.js.${NC}"
-    exit 1
-fi
-npm install
-npm run build
-cd ..
-echo -e "${GREEN}✓ Frontend build complete${NC}"
+# 1. & 2. Build Backend and Frontend (Deferred to Docker)
+echo -e "${BLUE}>>> Preparing build context...${NC}"
+# The compilation now happens inside Docker to ensure a clean environment 
+# and utilize optimized dependency caching.
+echo -e "${GREEN}✓ Build context ready${NC}"
 
 # 3. Docker Rebuild & Restart
 echo -e "${BLUE}>>> Rebuilding Docker Containers...${NC}"
-# Use --no-cache to ensure we pick up the new binaries we just built
-docker-compose build --no-cache
+# Use Docker's native caching mechanism.
+# Dependencies are cached in the Dockerfile layers for rapid rebuilds.
+docker-compose build
 
 echo -e "${CYAN}  → Starting all containers...${NC}"
 docker-compose up -d
