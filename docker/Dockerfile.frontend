@@ -16,7 +16,15 @@ COPY . .
 # Build application
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
-RUN npm run build
+
+# Diagnostic: check dependencies
+RUN ls -la node_modules/.bin/vite || (echo "Vite not found!" && exit 1)
+
+# Run build with verbose output
+RUN npm run build -- --logLevel info
+
+# Diagnostic: verify output
+RUN ls -la /app/dist || (echo "Build failed: dist folder not created!" && exit 1)
 
 # Production stage
 FROM nginx:alpine
