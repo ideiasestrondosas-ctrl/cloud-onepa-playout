@@ -92,11 +92,14 @@ Para garantir que as correções locais cheguem ao servidor Linux de produção,
 2.  **Release (Versionamento)**: Commit e Push para o GitHub.
     - Execute: `./scripts/release.sh`
     - Selecione a branch (ex: `alpha`).
-3.  **Deploy (Linux Box)**: Baixe e instale a versão atualizada.
-    - Comando Único:
+3.  **Deploy (Linux Box)**: Baixe e instale a versão atualizada com limpeza total.
+    - Comando Único (com --full-reset):
       ```bash
       wget https://raw.githubusercontent.com/ideiasestrondosas-ctrl/cloud-onepa-playout/alpha/scripts/install.sh -O install.sh && chmod +x install.sh && ./install.sh --full-reset
       ```
+
+> [!IMPORTANT]
+> A flag `--full-reset` é CRÍTICA após atualizações profundas para limpar caches antigos do Docker e garantir que todos os arquivos sejam regenerados corretamente.
 
 > [!IMPORTANT]
 > Sem executar o **Passo 2 (Release)**, o servidor Linux continuará baixando a versão antiga do código, ignorando suas correções locais.

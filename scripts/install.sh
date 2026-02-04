@@ -231,7 +231,11 @@ if [ "$LOCAL_MODE" = false ]; then
     mv .env ../
     mv scripts ../ 2>/dev/null || true
     cd ..
-    rm -rf "$TEMP_DIR"
+    # Try normal remove, if fails (permission denied), try sudo
+    if ! rm -rf "$TEMP_DIR" 2>/dev/null; then
+        log_warn "Permissão negada ao limpar $TEMP_DIR. Tentando com sudo..."
+        sudo rm -rf "$TEMP_DIR"
+    fi
 else
     log_info "Modo Local: Mantendo arquivos de origem."
 fi
