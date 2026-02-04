@@ -36,6 +36,12 @@ if [ "$FULL_RESET" = true ]; then
     fi
 fi
 
+# --- 0.1 Resources ---
+FREE_SPACE=$(df -k / | tail -1 | awk '{print $4}' 2>/dev/null || echo "10000000")
+if [ "$FREE_SPACE" -lt 5242880 ]; then
+    echo -e "${YELLOW}[WARN] Pouco espaço em disco ($((FREE_SPACE/1024))MB).${NC}"
+fi
+
 # Check for Git
 if ! command -v git &> /dev/null; then
     echo -e "${RED}❌ Git não encontrado. Instale o Git para continuar a atualização.${NC}"
@@ -76,6 +82,7 @@ echo -e "\n${YELLOW}🏗️ Reconstruindo Contentores...${NC}"
 cp "$TEMP_DIR/docker-compose.yml" ./
 cp -r "$TEMP_DIR/scripts" ./
 
+# Build Config
 DOCKER_CMD="docker compose"
 # Permission Check (Linux)
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
@@ -85,7 +92,13 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     fi
 fi
 
-$DOCKER_CMD build --pull
+BUILD_OPTS=""
+if [ "$FULL_RESET" = true ]; then
+    BUILD_OPTS="--no-cache"
+    export CACHE_BUST=$(date +%s)
+fi
+
+$DOCKER_CMD build $BUILD_OPTS --pull
 $DOCKER_CMD up -d
 
 # 4. Cleanup

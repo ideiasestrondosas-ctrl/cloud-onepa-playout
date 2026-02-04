@@ -28,6 +28,9 @@ if "%FULL_RESET%"=="true" (
     echo [INFO] Sistema limpo. Iniciando do zero...
 )
 
+REM --- 0.2 Resources ---
+powershell -Command "$drive = Get-PSDrive C; if ($drive.Free -lt 5GB) { Write-Host '[WARN] Pouco espaco em disco detectado (C:). Build pode falhar.' -ForegroundColor Yellow }"
+
 REM --- 1. Dependency Auto-Installation ---
 echo 🔍 Verificando Dependencias...
 
@@ -98,8 +101,14 @@ if not exist .env (
 
 REM --- 5. Launch Docker ---
 echo 🏗️  Iniciando Contentores... (Isso pode demorar)
+set BUILD_OPTS=
+if "%FULL_RESET%"=="true" (
+    set BUILD_OPTS=--no-cache
+    set CACHE_BUST=%date%%time%
+)
+
 docker compose down --remove-orphans >nul 2>&1
-docker compose build --pull
+docker compose build %BUILD_OPTS% --pull
 docker compose up -d
 
 REM --- 6. Cleanup ---

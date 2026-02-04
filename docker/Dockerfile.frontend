@@ -8,22 +8,27 @@ COPY package*.json ./
 
 # Install dependencies
 ENV NODE_ENV=development
-# Aggressive install including devDependencies
-RUN npm install --include=dev && npm list --depth=0
+# Cache buster to force a clean install if needed
+ARG CACHE_BUST=1
+RUN npm cache clean --force && \
+    npm install --include=dev --loglevel info && \
+    npm list --depth=0
 
 # Copy source code
 COPY . .
 
-# Diagnostic: check Vite binary existence
-RUN ls -la node_modules/.bin/vite || (echo "Vite binary MISSING after install!" && exit 1)
+# Diagnostic: Extremely verbose binary check
+RUN echo "Checking bin directory content..." && \
+    ls -la node_modules/.bin/ && \
+    find node_modules -name vite -type f -executable
 
-# Build application with forced binary path and verbose logging
+# Build application with direct binary call and forced environment
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 RUN ./node_modules/.bin/vite build --logLevel info
 
 # Diagnostic: verify dist directory
-RUN ls -la /app/dist && [ -d "/app/dist" ] || (echo "Build failed: dist folder not created!" && exit 1)
+RUN ls -d /app/dist && ls -la /app/dist || (echo "FATAL: dist folder not found!" && exit 1)
 
 # Production stage
 FROM nginx:alpine

@@ -26,6 +26,9 @@ if "%FULL_RESET%"=="true" (
     if exist .env del .env
 )
 
+REM Resources Check
+powershell -Command "$drive = Get-PSDrive C; if ($drive.Free -lt 5GB) { Write-Host '[WARN] Espaco em disco limitado.' -ForegroundColor Yellow }"
+
 REM Check Git
 git --version >nul 2>&1
 if %errorlevel% neq 0 (
@@ -77,7 +80,13 @@ echo 🏗️ Reconstruindo Contentores...
 copy /Y %TEMP_DIR%\docker-compose.yml .\ >nul
 xcopy /E /I /Y %TEMP_DIR%\scripts .\scripts >nul
 
-docker compose build --pull
+set BUILD_OPTS=
+if "%FULL_RESET%"=="true" (
+    set BUILD_OPTS=--no-cache
+    set CACHE_BUST=%date%%time%
+)
+
+docker compose build %BUILD_OPTS% --pull
 docker compose up -d
 
 REM 4. Cleanup

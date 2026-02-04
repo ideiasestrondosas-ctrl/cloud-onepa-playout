@@ -55,6 +55,13 @@ if [ "$FULL_RESET" = true ]; then
     fi
 fi
 
+# --- 0.2 Hardware Verification ---
+echo -e "\n${YELLOW}📊 Verificando Recursos do Sistema...${NC}"
+FREE_SPACE=$(df -k / | tail -1 | awk '{print $4}')
+if [ "$FREE_SPACE" -lt 5242880 ]; then # < 5GB
+    log_warn "Pouco espaço em disco detectado ($((FREE_SPACE/1024))MB). O build pode falhar."
+fi
+
 # --- 1. Dependency Auto-Installation ---
 echo -e "\n${YELLOW}🔍 Verificando Dependências...${NC}"
 
@@ -155,8 +162,28 @@ if [ "$OS_TYPE" == "linux" ]; then
     fi
 fi
 
+# --- 5. Launch Docker ---
+log_info "Iniciando Docker Compose (Build)..."
+DOCKER_CMD="docker compose"
+if ! $DOCKER_CMD version &> /dev/null; then DOCKER_CMD="docker-compose"; fi
+
+# Permission Check (Linux)
+if [ "$OS_TYPE" == "linux" ]; then
+    if ! docker ps &> /dev/null; then
+        log_warn "Permissão negada ao socket do Docker. Usando 'sudo'..."
+        DOCKER_CMD="sudo $DOCKER_CMD"
+    fi
+fi
+
+# Build Args
+BUILD_OPTS=""
+if [ "$FULL_RESET" = true ]; then
+    BUILD_OPTS="--no-cache"
+    export CACHE_BUST=$(date +%s)
+fi
+
 $DOCKER_CMD down --remove-orphans 2>/dev/null || true
-$DOCKER_CMD build --pull
+$DOCKER_CMD build $BUILD_OPTS --pull
 $DOCKER_CMD up -d
 
 # --- 6. Cleanup ---

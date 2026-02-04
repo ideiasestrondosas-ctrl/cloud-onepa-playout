@@ -86,6 +86,7 @@ services:
       dockerfile: ../docker/Dockerfile.frontend
       args:
         - VITE_API_URL=/api
+        - CACHE_BUST=${CACHE_BUST:-1}
     container_name: alpha-frontend
     environment:
       VITE_API_URL: /api
