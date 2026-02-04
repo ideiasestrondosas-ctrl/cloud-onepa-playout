@@ -59,17 +59,17 @@ CURRENT_VERSION=$(grep '"version":' frontend/package.json | awk -F '"' '{print $
 echo -e "Current detected version: ${YELLOW}$CURRENT_VERSION${NC}"
 
 # Auto-increment logic
-if [[ "$CURRENT_VERSION" =~ (.*[^0-9])([0-9]+)$ ]]; then
+# Enhanced Auto-increment logic (Handles ALPHA, PRO, and complex suffixes)
+if [[ "$CURRENT_VERSION" =~ (.*[^0-9])([0-9]+)([^0-9]*)$ ]]; then
     prefix="${BASH_REMATCH[1]}"
     last_num="${BASH_REMATCH[2]}"
-    next_num=$((last_num + 1))
-    SUGGESTED_VERSION="${prefix}${next_num}"
-elif [[ "$CURRENT_VERSION" =~ (.*)-ALPHA$ ]]; then
-    SUGGESTED_VERSION="${CURRENT_VERSION}.1"
+    suffix="${BASH_REMATCH[3]}"
+    # Force base 10 to prevent octal interpretation of 08, 09
+    next_num=$((10#$last_num + 1)) 
+    SUGGESTED_VERSION="${prefix}${next_num}${suffix}"
 else
-    # Fallback for semantic versioning X.Y.Z
-    IFS='.' read -r major minor patch <<< "$CURRENT_VERSION"
-    SUGGESTED_VERSION="$major.$minor.$((patch + 1))"
+    # Minimal fallback
+    SUGGESTED_VERSION="${CURRENT_VERSION}.1"
 fi
 
 read -p "Enter new version (Press ENTER for $SUGGESTED_VERSION): " NEW_VERSION
