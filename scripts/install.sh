@@ -123,6 +123,14 @@ log_info "Iniciando Docker Compose (Build)..."
 DOCKER_CMD="docker compose"
 if ! $DOCKER_CMD version &> /dev/null; then DOCKER_CMD="docker-compose"; fi
 
+# Permission Check (Linux)
+if [ "$OS_TYPE" == "linux" ]; then
+    if ! docker ps &> /dev/null; then
+        log_warn "Permissão negada ao socket do Docker. Usando 'sudo'..."
+        DOCKER_CMD="sudo $DOCKER_CMD"
+    fi
+fi
+
 $DOCKER_CMD down --remove-orphans 2>/dev/null || true
 $DOCKER_CMD build --pull
 $DOCKER_CMD up -d

@@ -53,8 +53,17 @@ echo -e "\n${YELLOW}🏗️ Reconstruindo Contentores...${NC}"
 cp "$TEMP_DIR/docker-compose.yml" ./
 cp -r "$TEMP_DIR/scripts" ./
 
-docker compose build --pull
-docker compose up -d
+DOCKER_CMD="docker compose"
+# Permission Check (Linux)
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    if ! docker ps &> /dev/null; then
+        echo -e "${YELLOW}[WARN] Permissão negada ao socket do Docker. Usando 'sudo'...${NC}"
+        DOCKER_CMD="sudo $DOCKER_CMD"
+    fi
+fi
+
+$DOCKER_CMD build --pull
+$DOCKER_CMD up -d
 
 # 4. Cleanup
 echo -e "\n${YELLOW}🧹 Finalizando limpeza...${NC}"
