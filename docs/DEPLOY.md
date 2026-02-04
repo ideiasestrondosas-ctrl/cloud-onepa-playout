@@ -27,7 +27,8 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ideiasestrondosas-ctrl
 
 ## 🛠️ O que os scripts fazem automaticamente:
 
-1. **GitHub Auth**: Solicita seu Token (PAT) e Branch.
+1. **Auto-Dependências**: Detecta e instala **Docker** e **Git** automaticamente se estiverem faltando (via Homebrew no Mac, apt no Linux e winget no Windows).
+2. **GitHub Auth**: Solicita seu Token (PAT) e Branch.
 2. **Clonagem**: Baixa a versão exata que você escolheu.
 3. **Docker Build**: Constrói as imagens otimizadas para o seu hardware.
 4. **Cleanup**: Remove o código-fonte (`src`) após a construção para manter o servidor leve e seguro.

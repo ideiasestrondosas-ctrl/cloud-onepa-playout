@@ -13,6 +13,18 @@ NC='\033[0m'
 
 echo -e "${GREEN}🔄 Iniciando Atualização do Sistema...${NC}"
 
+# Check for Git
+if ! command -v git &> /dev/null; then
+    echo -e "${RED}❌ Git não encontrado. Instale o Git para continuar a atualização.${NC}"
+    exit 1
+fi
+
+# Check for Docker
+if ! command -v docker &> /dev/null; then
+    echo -e "${RED}❌ Docker não encontrado. Verifique se o Docker Desktop está rodando.${NC}"
+    exit 1
+fi
+
 # Check for .env
 if [ ! -f .env ]; then
     echo -e "${RED}❌ Arquivo .env não encontrado. Execute o install.sh primeiro.${NC}"

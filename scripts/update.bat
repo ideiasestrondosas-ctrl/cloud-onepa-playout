@@ -7,6 +7,22 @@ echo --------------------------------------------------
 echo 🔄 Iniciando Atualizacao do Sistema...
 echo --------------------------------------------------
 
+REM Check Git
+git --version >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [ERROR] Git nao encontrado. Instale o Git para continuar.
+    pause
+    exit /b 1
+)
+
+REM Check Docker
+docker --version >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [ERROR] Docker nao encontrado. Verifique se o Docker Desktop esta aberto.
+    pause
+    exit /b 1
+)
+
 REM 1. Load .env variables
 if not exist .env (
     echo ❌ Arquivo .env nao encontrado. Execute o install.bat primeiro.
