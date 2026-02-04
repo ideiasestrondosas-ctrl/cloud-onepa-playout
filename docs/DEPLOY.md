@@ -1,12 +1,12 @@
-# Cloud Onepa Playout - Guia de Deploy Rápido
+# Cloud Onepa Playout - Guia de Deploy Profissional
 
-Este guia descreve como instalar e atualizar o sistema **ONEPA Playout PRO** automaticamente via GitHub Cloud e Docker.
+Este guia descreve como instalar, atualizar e recuperar o sistema **ONEPA Playout PRO** automaticamente via GitHub Cloud e Docker.
 
 ---
 
 ## 🚀 Instalação Rápida (One-Liner)
 
-Selecione o comando abaixo conforme o seu sistema operacional para baixar o instalador e iniciar o processo.
+Selecione o comando abaixo conforme o seu sistema operacional para iniciar o processo "Zero-Touch".
 
 ### 🍎 macOS
 ```bash
@@ -25,48 +25,61 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ideiasestrondosas-ctrl
 
 ---
 
-## 🛠️ O que os scripts fazem automaticamente:
+## 🛠️ Automação Inteligente
 
-1. **Auto-Dependências**: Detecta e instala **Docker** e **Git** automaticamente se estiverem faltando (via Homebrew no Mac, apt no Linux e winget no Windows).
-2. **GitHub Auth**: Solicita seu Token (PAT) e Branch.
-2. **Clonagem**: Baixa a versão exata que você escolheu.
-3. **Docker Build**: Constrói as imagens otimizadas para o seu hardware.
-4. **Cleanup**: Remove o código-fonte (`src`) após a construção para manter o servidor leve e seguro.
-5. **Logs**: Gera um arquivo `install.log` com todos os detalhes.
+1. **Auto-Dependências**: Detecta e instala **Docker** e **Git** (via Homebrew, apt ou winget).
+2. **Permissões Inteligentes**: No Linux, o script detecta se você precisa de `sudo` para o Docker e aplica automaticamente.
+3. **Purity Build**: Otimizado para evitar erros de compilação (como "Vite not found") garantindo isolamento total.
+4. **Cleanup**: Remove o código-fonte (`src`) após o build para máxima segurança.
 
 ---
 
 ## 🔄 Como Atualizar
 
-Após a instalação, você terá uma pasta `scripts/` no seu diretório raiz. Para buscar a versão mais recente da sua branch:
+Após a instalação, use a pasta `scripts/` para manter o sistema em dia:
+
+**Unix:** `./scripts/update.sh` | **Windows:** `scripts\update.bat`
+
+---
+
+## ⚠️ Recuperação e Full Reset (Começar do Zero)
+
+Se o sistema apresentar erros persistentes ou se você desejar limpar tudo e começar uma nova instalação (apagando volumes e dados):
 
 **Unix (Linux/macOS):**
 ```bash
-./scripts/update.sh
+./install.sh --full-reset
+# ou para apenas atualizar do zero:
+./scripts/update.sh --full-reset
 ```
 
 **Windows:**
 ```batch
-scripts\update.bat
+install.bat --full-reset
+# ou
+scripts\update.bat --full-reset
 ```
+
+> [!CAUTION]
+> O `--full-reset` apaga **TODOS** os dados, configurações e containers. Use com cuidado!
 
 ---
 
 ## 🌐 Informações de Acesso
 
-Ao finalizar, o sistema estará disponível em:
-
-- **Frontend**: [http://localhost:3011](http://localhost:3011)
-- **API (Externa)**: [http://localhost:8181](http://localhost:8181)
-- **Credenciais Padrão**: `admin` / `admin`
+- **URL**: [http://localhost:3011](http://localhost:3011)
+- **Painel Backend**: [http://localhost:8182](http://localhost:8182)
+- **Credenciais**: `admin` / `admin`
 
 ---
 
-## 📦 Requisitos Mínimos
+## 🔧 Solução de Problemas (Troubleshooting)
 
-- **Docker Desktop** (Mac/Windows) ou **Docker Engine** (Linux) instalado.
-- **Git** instalado.
-- **GitHub PAT** (Personal Access Token) com permissões de leitura ao repositório.
+### "Vite not found" no build do Frontend
+Isto ocorre geralmente por cache corrompido do Docker. Execute `./scripts/update.sh --full-reset` para forçar uma limpeza total e reconstrução pura.
+
+### Erro de Permissão no Docker (Linux)
+Nossos scripts agora lidam com isso via `sudo` automático. Se o erro persistir, certifique-se de que o serviço Docker está ativo: `sudo systemctl start docker`.
 
 ---
 

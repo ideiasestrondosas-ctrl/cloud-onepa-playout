@@ -7,6 +7,25 @@ echo --------------------------------------------------
 echo 🔄 Iniciando Atualizacao do Sistema...
 echo --------------------------------------------------
 
+REM --- 0. Parameters ---
+set FULL_RESET=false
+if "%~1"=="--full-reset" set FULL_RESET=true
+
+if "%FULL_RESET%"=="true" (
+    echo [WARN] MODO FULL RESET ATIVADO!
+    echo Isso ira apagar TODOS os dados e volumes persistentes.
+    set /p confirm="Tem certeza? (s/N): "
+    if /i not "!confirm!"=="s" (
+        echo Reset cancelado.
+        pause
+        exit /b 0
+    )
+    echo [INFO] Limpando volumes e containers...
+    docker compose down -v --remove-orphans >nul 2>&1
+    if exist data rmdir /s /q data
+    if exist .env del .env
+)
+
 REM Check Git
 git --version >nul 2>&1
 if %errorlevel% neq 0 (

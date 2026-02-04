@@ -23,12 +23,36 @@ echo -e "${GREEN}🚀 ONEPA Playout PRO - Universal Installer${NC}"
 echo "--------------------------------------------------"
 echo "Log: $LOG_FILE | Date: $(date)"
 
-# --- 0. OS Detection ---
+# --- 0. OS Detection & Parameters ---
+FULL_RESET=false
+if [[ "$1" == "--full-reset" ]]; then
+    FULL_RESET=true
+fi
+
 OS_TYPE="unknown"
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     OS_TYPE="linux"
 elif [[ "$OSTYPE" == "darwin"* ]]; then
     OS_TYPE="macos"
+fi
+
+# --- 0.1 Full Reset Logic ---
+if [ "$FULL_RESET" = true ]; then
+    log_warn "⚠️ MODO FULL RESET ATIVADO!"
+    echo "Isso irá apagar TODOS os dados, containers, volumes e configurações."
+    read -p "Tem certeza que deseja continuar? (s/N): " confirm
+    if [[ $confirm == [sS] ]]; then
+        log_info "Limpando sistema existente..."
+        DOCKER_CMD="docker compose"
+        if ! $DOCKER_CMD version &> /dev/null; then DOCKER_CMD="docker-compose"; fi
+        
+        $DOCKER_CMD down -v --remove-orphans 2>/dev/null || true
+        rm -rf data .env install.log 2>/dev/null || true
+        log_info "Sistema limpo. Iniciando do zero..."
+    else
+        log_info "Reset cancelado."
+        exit 0
+    fi
 fi
 
 # --- 1. Dependency Auto-Installation ---

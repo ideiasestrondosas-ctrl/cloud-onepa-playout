@@ -8,6 +8,26 @@ echo --------------------------------------------------
 echo 🚀 ONEPA Playout PRO - Windows Setup
 echo --------------------------------------------------
 
+REM --- 0. Parameters ---
+set FULL_RESET=false
+if "%~1"=="--full-reset" set FULL_RESET=true
+
+if "%FULL_RESET%"=="true" (
+    echo [WARN] MODO FULL RESET ATIVADO!
+    echo Isso ira apagar TODOS os dados, containers, volumes e configuracoes.
+    set /p confirm="Tem certeza que deseja continuar? (s/N): "
+    if /i not "!confirm!"=="s" (
+        echo Reset cancelado.
+        pause
+        exit /b 0
+    )
+    echo [INFO] Limpando sistema existente...
+    docker compose down -v --remove-orphans >nul 2>&1
+    if exist data rmdir /s /q data
+    if exist .env del .env
+    echo [INFO] Sistema limpo. Iniciando do zero...
+)
+
 REM --- 1. Dependency Auto-Installation ---
 echo 🔍 Verificando Dependencias...
 

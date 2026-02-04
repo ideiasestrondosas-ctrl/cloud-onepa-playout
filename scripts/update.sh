@@ -11,7 +11,30 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
+# Parameters
+FULL_RESET=false
+if [[ "$1" == "--full-reset" ]]; then
+    FULL_RESET=true
+fi
+
 echo -e "${GREEN}🔄 Iniciando Atualização do Sistema...${NC}"
+
+# --- 0. Full Reset Logic ---
+if [ "$FULL_RESET" = true ]; then
+    echo -e "${RED}⚠️ MODO FULL RESET ATIVADO!${NC}"
+    echo "Isso irá apagar TODOS os dados e volumes persistentes."
+    read -p "Tem certeza? (s/N): " confirm
+    if [[ $confirm == [sS] ]]; then
+        echo -e "${YELLOW}🧹 Limpando volumes e containers...${NC}"
+        DOCKER_CMD="docker compose"
+        if ! $DOCKER_CMD version &> /dev/null; then DOCKER_CMD="docker-compose"; fi
+        $DOCKER_CMD down -v --remove-orphans 2>/dev/null || true
+        rm -rf data .env 2>/dev/null || true
+    else
+        echo "Reset cancelado."
+        exit 0
+    fi
+fi
 
 # Check for Git
 if ! command -v git &> /dev/null; then
