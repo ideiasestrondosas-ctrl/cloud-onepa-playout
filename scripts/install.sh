@@ -220,6 +220,17 @@ if [ "$FULL_RESET" = true ]; then
     export CACHE_BUST=$(date +%s)
 fi
 
+# --- 5.1 Pre-Launch Cleanup (Force Conflict Resolution) ---
+log_info "Verificando conflitos de containers..."
+CONTAINERS=("alpha-postgres" "alpha-backend" "alpha-frontend" "alpha-mediamtx")
+
+for container in "${CONTAINERS[@]}"; do
+    if docker ps -a --format '{{.Names}}' | grep -q "^${container}$"; then
+        log_warn "Removendo container conflitante detectado: $container"
+        $DOCKER_CMD rm -f "$container" 2>/dev/null || true
+    fi
+done
+
 $DOCKER_CMD down --remove-orphans 2>/dev/null || true
 $DOCKER_CMD build $BUILD_OPTS --pull
 $DOCKER_CMD up -d
