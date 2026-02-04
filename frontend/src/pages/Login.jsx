@@ -235,7 +235,7 @@ export default function Login() {
                 border: '1px solid rgba(255, 255, 255, 0.2)'
               }}>
                 <Typography variant="caption" sx={{ color: 'white', fontWeight: 900, letterSpacing: 1.5, textTransform: 'uppercase', fontSize: '0.6rem' }}>
-                  ALPHA TEST MODE - {version || 'v2.2.0-ALPHA.3-PRO'}
+                  ALPHA TEST MODE - {version || 'v2.2.0-ALPHA.4-PRO'}
                 </Typography>
               </Box>
             </Box>

@@ -498,8 +498,8 @@ function Settings() {
         defaultImagePath: data.default_image_path || '',
 
         defaultVideoPath: data.default_video_path || '',
-        version: data.system_version || 'v2.2.0-ALPHA.3-PRO',
-        releaseDate: data.release_date || '2026-01-31',
+        version: data.system_version || 'v2.2.0-ALPHA.4-PRO',
+        releaseDate: data.release_date || '2026-02-03',
         overlay_enabled: data.overlay_enabled ?? true,
         channelName: data.channel_name || 'Cloud Onepa',
         branding_type: brandingType,
@@ -508,8 +508,8 @@ function Settings() {
         srtMode: data.srt_mode || 'caller',
         protectedPath: data.protected_path || '/var/lib/onepa-playout/assets/protected',
         docsPath: data.docs_path || '/app/docs',
-        system_version: data.system_version || 'v2.2.0-ALPHA.3-PRO',
-        release_date: data.release_date || '2026-01-31',
+        system_version: data.system_version || 'v2.2.0-ALPHA.4-PRO',
+        release_date: data.release_date || '2026-02-03',
         rtmpOutputUrl: data.rtmp_output_url || '',
         srtOutputUrl: data.srt_output_url || '',
         udpOutputUrl: data.udp_output_url || '',
@@ -1622,8 +1622,8 @@ function Settings() {
               </Box>
               <Grid container spacing={3}>
                 {[
-                  { label: 'VERSÃO DO SISTEMA', value: settings.system_version || settings.version || 'v2.2.0-ALPHA.3-PRO', icon: <WizardIcon /> },
-                  { label: 'ÚLTIMA ATUALIZAÇÃO', value: settings.release_date || settings.releaseDate || '2026-01-31', icon: <CheckIcon /> },
+                  { label: 'VERSÃO DO SISTEMA', value: settings.system_version || settings.version || 'v2.2.0-ALPHA.4-PRO', icon: <WizardIcon /> },
+                  { label: 'ÚLTIMA ATUALIZAÇÃO', value: settings.release_date || settings.releaseDate || '2026-02-03', icon: <CheckIcon /> },
                   { label: 'DEPLOYMENT', value: 'Docker Container (Linux)', icon: <FolderIcon /> }
                 ].map((item, id) => (
                   <Grid item xs={12} sm={6} md={4} key={id}>
@@ -1776,7 +1776,7 @@ function Settings() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <WizardIcon /> NOTAS DE LANÇAMENTO
           </Box>
-          <Typography variant="caption" sx={{ opacity: 0.5 }}>v2.2.0-ALPHA.3-PRO</Typography>
+          <Typography variant="caption" sx={{ opacity: 0.5 }}>v2.2.0-ALPHA.4-PRO</Typography>
         </DialogTitle>
         <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.05)' }}>
           <List sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>

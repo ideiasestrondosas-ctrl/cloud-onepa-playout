@@ -1,5 +1,14 @@
 [
   {
+    "version": "2.2.0-ALPHA.4-PRO",
+    "date": "2026-02-03",
+    "changes": [
+      "Automated Release: Version bump and statistics update.",
+      "Documentation: Synced README.md and version history.",
+      "Graphics Engine: Added 'Coming Soon' placeholder for Multi-Layer Graphics."
+    ]
+  },
+  {
     "version": "2.2.0-ALPHA.3-PRO",
     "date": "2026-01-31",
     "changes": [

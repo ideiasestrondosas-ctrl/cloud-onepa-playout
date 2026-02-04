@@ -8,3 +8,4 @@ pub mod routes;
 pub mod schedule;
 pub mod settings;
 pub mod templates;
+pub mod graphics_layers;

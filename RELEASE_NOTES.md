@@ -1,10 +1,19 @@
 # Release Notes - Cloud Onepa Playout
 
+## v2.2.0-ALPHA.5-PRO (2026-02-04)
+
+### 🚀 Release Highlights
+- **Automated Release**: Version bump and statistics update.
+- **Documentation**: Synced README.md and version history.
+
 ## v2.2.0-ALPHA.4-PRO (2026-02-03)
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.
 - **Documentation**: Synced README.md and version history.
+- **Graphics Engine**: Added "Coming Soon" placeholder for Multi-Layer Graphics (Clocks, Lower Thirds, Marquees).
+
+
 
 ## v2.2.0-ALPHA.3-PRO (2026-01-31)
 

@@ -19,14 +19,13 @@ import {
   LogoDev as LogoIcon,
   Brush as BrushIcon,
   Save as SaveIcon,
+  Restore as ResetIcon,
   Settings as SettingsIcon,
   Visibility as VisibilityIcon,
   DragIndicator as DragIcon,
-  Help as HelpIcon,
-  Replay as ResetIcon
+  Help as HelpIcon
 } from '@mui/icons-material';
 import { settingsAPI } from '../services/api';
-import graphicsLayersAPI from '../services/graphicsLayersAPI';
 import { useNotification } from '../contexts/NotificationContext';
 import LayerManager from '../components/GraphicsLayers/LayerManager';
 import LayerPreview from '../components/GraphicsLayers/LayerPreview';
@@ -48,14 +47,9 @@ export default function GraphicsEditor() {
   const logoRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [graphicsLayers, setGraphicsLayers] = useState([]);
-  const [layerToEdit, setLayerToEdit] = useState(null);
-  const [selectedLayerId, setSelectedLayerId] = useState(null);
-
-  const selectedLayer = graphicsLayers.find(l => l.id === selectedLayerId);
 
   useEffect(() => {
     fetchSettings();
-    fetchLayers();
   }, []);
 
   const fetchSettings = async () => {
@@ -71,16 +65,6 @@ export default function GraphicsEditor() {
       showError('Falha ao carregar as configurações de gráficos');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchLayers = async () => {
-    try {
-      const response = await graphicsLayersAPI.list();
-      setGraphicsLayers(response.data);
-    } catch (error) {
-      console.error('Failed to load graphics layers:', error);
-      showError('Falha ao carregar camadas de gráficos');
     }
   };
 
@@ -286,36 +270,6 @@ export default function GraphicsEditor() {
                   X: {logoPos.x} PX | Y: {logoPos.y} PX | ANCHOR: {anchor.toUpperCase()}
                 </Typography>
               </Box>
-
-              {/* Graphics Layers Preview */}
-              <LayerPreview
-                layers={graphicsLayers}
-                selectedLayerId={selectedLayerId}
-                onLayerSelect={(id) => {
-                  setSelectedLayerId(id);
-                }}
-                onLayerDoubleClick={(layer) => {
-                  setLayerToEdit(layer);
-                  setActiveTab(2); // Switch to LAYER tab
-                }}
-                onLayerMove={async (id, x, y, isFinished) => {
-                  // Update local state for real-time preview
-                  setGraphicsLayers(prev => prev.map(l =>
-                    l.id === id ? { ...l, position_x: x, position_y: y } : l
-                  ));
-
-                  // Update backend on drag end
-                  if (isFinished) {
-                    try {
-                      await graphicsLayersAPI.updatePosition(id, { position_x: x, position_y: y });
-                      showSuccess('Layer position updated');
-                    } catch (error) {
-                      const msg = error.response?.data?.error || error.message;
-                      showError(`Failed to save layer position: ${msg}`);
-                    }
-                  }
-                }}
-              />
             </Box>
           </Paper>
         </Grid>
@@ -332,73 +286,23 @@ export default function GraphicsEditor() {
             {activeTab === 0 && (
               <Stack spacing={4}>
                 <Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                      PONTO DE ANCORAGEM
-                    </Typography>
-                    <Chip
-                      label={selectedLayer ? `CAMADA: ${selectedLayer.name.toUpperCase()}` : "LOGO PRINCIPAL"}
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                      sx={{ fontWeight: 800, height: 20, fontSize: '0.6rem' }}
-                      onDelete={selectedLayer ? () => setSelectedLayerId(null) : undefined}
-                      deleteIcon={selectedLayer ? <ResetIcon sx={{ fontSize: '10px !important' }} /> : undefined}
-                    />
-                  </Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2 }}>PONTO DE ANCORAGEM</Typography>
                   <Grid container spacing={1}>
-                    {['top-left', 'top-right', 'bottom-left', 'bottom-right'].map(pos => {
-                      const isCurrent = (selectedLayer ? selectedLayer.anchor : anchor) === pos;
-                      return (
-                        <Grid item xs={6} key={pos}>
-                          <Tooltip title={`Ancorar ao canto ${pos.replace('-', ' ')}`} arrow>
-                            <Button
-                              fullWidth
-                              variant={isCurrent ? "contained" : "outlined"}
-                              onClick={async () => {
-                                if (selectedLayer) {
-                                  try {
-                                    const response = await graphicsLayersAPI.update(selectedLayerId, { anchor: pos });
-                                    const updatedLayer = response.data;
-                                    setGraphicsLayers(prev => prev.map(l =>
-                                      l.id === updatedLayer.id ? updatedLayer : l
-                                    ));
-                                    showSuccess('Layer anchor updated');
-                                  } catch (error) {
-                                    showError('Failed to update anchor');
-                                  }
-                                } else {
-                                  setAnchor(pos);
-                                }
-                              }}
-                              sx={{ borderRadius: 2, fontWeight: 800, fontSize: '0.7rem' }}
-                            >
-                              {pos.replace('-', ' ').toUpperCase()}
-                            </Button>
-                          </Tooltip>
-                        </Grid>
-                      );
-                    })}
+                    {['top-left', 'top-right', 'bottom-left', 'bottom-right'].map(pos => (
+                      <Grid item xs={6} key={pos}>
+                        <Tooltip title={`Ancorar ao canto ${pos.replace('-', ' ')}`} arrow>
+                          <Button
+                            fullWidth
+                            variant={anchor === pos ? "contained" : "outlined"}
+                            onClick={() => setAnchor(pos)}
+                            sx={{ borderRadius: 2, fontWeight: 800, fontSize: '0.7rem' }}
+                          >
+                            {pos.replace('-', ' ').toUpperCase()}
+                          </Button>
+                        </Tooltip>
+                      </Grid>
+                    ))}
                   </Grid>
-
-                  {!selectedLayer && graphicsLayers.length > 0 && (
-                    <Box sx={{ mt: 3 }}>
-                      <Typography variant="caption" sx={{ fontWeight: 800, opacity: 0.6, mb: 1, display: 'block' }}>
-                        OU SELECIONE UMA CAMADA ATIVA:
-                      </Typography>
-                      <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
-                        {graphicsLayers.filter(l => l.enabled).map(layer => (
-                          <Chip
-                            key={layer.id}
-                            label={layer.name}
-                            size="small"
-                            onClick={() => setSelectedLayerId(layer.id)}
-                            sx={{ fontWeight: 700, fontSize: '0.65rem' }}
-                          />
-                        ))}
-                      </Stack>
-                    </Box>
-                  )}
                 </Box>
 
                 <Divider sx={{ opacity: 0.1 }} />
@@ -406,67 +310,21 @@ export default function GraphicsEditor() {
                 <Box>
                   <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 3 }}>AJUSTE FINO (OFFSET)</Typography>
                   <Box sx={{ mb: 3 }}>
-                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', mb: 1, display: 'block' }}>
-                      EIXO X ({selectedLayer ? selectedLayer.position_x : logoPos.x}px)
-                    </Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', mb: 1, display: 'block' }}>EIXO X ({logoPos.x}px)</Typography>
                     <Slider
-                      value={selectedLayer ? selectedLayer.position_x : logoPos.x}
+                      value={logoPos.x}
                       min={0}
-                      max={1920}
-                      onChange={(e, v) => {
-                        if (selectedLayer) {
-                          setGraphicsLayers(prev => prev.map(l => l.id === selectedLayerId ? { ...l, position_x: v } : l));
-                        } else {
-                          setLogoPos({ ...logoPos, x: v });
-                        }
-                      }}
-                      onChangeCommitted={async (e, v) => {
-                        if (selectedLayer) {
-                          try {
-                            const response = await graphicsLayersAPI.updatePosition(selectedLayerId, {
-                              position_x: v,
-                              position_y: selectedLayer.position_y
-                            });
-                            // Use server response to ensure sync
-                            const updatedLayer = response.data;
-                            setGraphicsLayers(prev => prev.map(l => l.id === updatedLayer.id ? updatedLayer : l));
-                          } catch (err) {
-                            showError('Failed to sync position');
-                          }
-                        }
-                      }}
+                      max={1000}
+                      onChange={(e, v) => setLogoPos({ ...logoPos, x: v })}
                     />
                   </Box>
                   <Box>
-                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', mb: 1, display: 'block' }}>
-                      EIXO Y ({selectedLayer ? selectedLayer.position_y : logoPos.y}px)
-                    </Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', mb: 1, display: 'block' }}>EIXO Y ({logoPos.y}px)</Typography>
                     <Slider
-                      value={selectedLayer ? selectedLayer.position_y : logoPos.y}
+                      value={logoPos.y}
                       min={0}
-                      max={1080}
-                      onChange={(e, v) => {
-                        if (selectedLayer) {
-                          setGraphicsLayers(prev => prev.map(l => l.id === selectedLayerId ? { ...l, position_y: v } : l));
-                        } else {
-                          setLogoPos({ ...logoPos, y: v });
-                        }
-                      }}
-                      onChangeCommitted={async (e, v) => {
-                        if (selectedLayer) {
-                          try {
-                            const response = await graphicsLayersAPI.updatePosition(selectedLayerId, {
-                              position_x: selectedLayer.position_x,
-                              position_y: v
-                            });
-                            // Use server response to ensure sync
-                            const updatedLayer = response.data;
-                            setGraphicsLayers(prev => prev.map(l => l.id === updatedLayer.id ? updatedLayer : l));
-                          } catch (err) {
-                            showError('Failed to sync position');
-                          }
-                        }
-                      }}
+                      max={1000}
+                      onChange={(e, v) => setLogoPos({ ...logoPos, y: v })}
                     />
                   </Box>
                 </Box>
@@ -476,30 +334,16 @@ export default function GraphicsEditor() {
             {activeTab === 1 && (
               <Stack spacing={4}>
                 <Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>ESCALA & DIMENSÃO</Typography>
-                    <Chip
-                      label={selectedLayer ? `CAMADA: ${selectedLayer.name.toUpperCase()}` : "LOGO PRINCIPAL"}
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                      sx={{ fontWeight: 800, height: 20, fontSize: '0.6rem' }}
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 3 }}>ESCALA & DIMENSÃO</Typography>
+                  <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', mb: 1, display: 'block' }}>MAGNITUDE ({Math.round(logoScale * 100)}%)</Typography>
+                  <Tooltip title="Aumentar ou diminuir o tamanho do logo" arrow placement="left">
+                    <Slider
+                      value={logoScale}
+                      min={0.1}
+                      max={3.0}
+                      step={0.05}
+                      onChange={(e, v) => setLogoScale(v)}
                     />
-                  </Box>
-                  <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', mb: 1, display: 'block' }}>
-                    MAGNITUDE ({selectedLayer ? 'FIXED' : Math.round(logoScale * 100) + '%'})
-                  </Typography>
-                  <Tooltip title={selectedLayer ? "Tamanho gerido nas definições da camada" : "Aumentar ou diminuir o tamanho do logo"} arrow placement="left">
-                    <span>
-                      <Slider
-                        value={selectedLayer ? 1.0 : logoScale}
-                        min={0.1}
-                        max={3.0}
-                        step={0.05}
-                        disabled={!!selectedLayer}
-                        onChange={(e, v) => setLogoScale(v)}
-                      />
-                    </span>
                   </Tooltip>
                 </Box>
 
@@ -507,31 +351,14 @@ export default function GraphicsEditor() {
 
                 <Box>
                   <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 3 }}>OPACIDADE DA CAMADA</Typography>
-                  <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', mb: 1, display: 'block' }}>
-                    ALFA ({Math.round((selectedLayer ? selectedLayer.opacity : logoOpacity) * 100)}%)
-                  </Typography>
-                  <Tooltip title="Ajustar a transparência" arrow placement="left">
+                  <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', mb: 1, display: 'block' }}>ALFA ({Math.round(logoOpacity * 100)}%)</Typography>
+                  <Tooltip title="Ajustar a transparência da camada" arrow placement="left">
                     <Slider
-                      value={selectedLayer ? selectedLayer.opacity : logoOpacity}
+                      value={logoOpacity}
                       min={0.1}
                       max={1.0}
                       step={0.05}
-                      onChange={(e, v) => {
-                        if (selectedLayer) {
-                          setGraphicsLayers(prev => prev.map(l => l.id === selectedLayerId ? { ...l, opacity: v } : l));
-                        } else {
-                          setLogoOpacity(v);
-                        }
-                      }}
-                      onChangeCommitted={async (e, v) => {
-                        if (selectedLayer) {
-                          try {
-                            await graphicsLayersAPI.update(selectedLayerId, { opacity: v });
-                          } catch (err) {
-                            showError('Failed to sync opacity');
-                          }
-                        }
-                      }}
+                      onChange={(e, v) => setLogoOpacity(v)}
                     />
                   </Tooltip>
                 </Box>
@@ -539,13 +366,47 @@ export default function GraphicsEditor() {
             )}
 
             {activeTab === 2 && (
-              <LayerManager
-                layers={graphicsLayers}
-                onLayersChange={setGraphicsLayers}
-                onRefresh={fetchLayers}
-                initialEditLayer={layerToEdit}
-                onEditClose={() => setLayerToEdit(null)}
-              />
+              <Box sx={{ py: 6, textAlign: 'center' }}>
+                <Box sx={{ mb: 4, position: 'relative', display: 'inline-block' }}>
+                  <BrushIcon sx={{ fontSize: 64, opacity: 0.1 }} />
+                  <SettingsIcon sx={{
+                    fontSize: 24,
+                    position: 'absolute',
+                    bottom: -5,
+                    right: -5,
+                    color: 'primary.main',
+                    animation: 'spin 10s linear infinite',
+                    opacity: 0.5
+                  }} />
+                </Box>
+                <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: 1, mb: 1, color: 'primary.main' }}>
+                  COMING SOON: MULTI-LAYER GRAPHICS
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, mb: 4, maxWidth: '80%', mx: 'auto' }}>
+                  Expand your broadcast with Clocks, Lower Thirds, and Dynamic Text Marquees (Crawlers).
+                </Typography>
+
+                <Stack spacing={2} sx={{ maxWidth: '90%', mx: 'auto' }}>
+                  {[
+                    { label: 'Dynamic Lower Thirds', status: 'In Development' },
+                    { label: 'Real-time Station Clocks', status: 'Planned' },
+                    { label: 'EAS & News Marquees', status: 'Planned' }
+                  ].map((item, idx) => (
+                    <Paper key={idx} sx={{
+                      p: 2,
+                      bgcolor: 'rgba(255,255,255,0.03)',
+                      border: '1px dashed rgba(255,255,255,0.1)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      borderRadius: 2
+                    }}>
+                      <Typography variant="caption" sx={{ fontWeight: 700, letterSpacing: 1 }}>{item.label.toUpperCase()}</Typography>
+                      <Chip label={item.status.toUpperCase()} size="small" variant="outlined" sx={{ fontSize: '0.5rem', height: 18, opacity: 0.5 }} />
+                    </Paper>
+                  ))}
+                </Stack>
+              </Box>
             )}
 
             <Box sx={{ mt: 'auto', pt: 4 }}>
@@ -554,9 +415,7 @@ export default function GraphicsEditor() {
                   <HelpIcon sx={{ fontSize: 16 }} /> DICA ALPHA
                 </Typography>
                 <Typography variant="caption" sx={{ display: 'block', mt: 1, opacity: 0.7 }}>
-                  {selectedLayer
-                    ? `A editar camada "${selectedLayer.name}". Clique no fundo do preview para voltar ao Logo.`
-                    : "Arraste o logo diretamente no preview para um posicionamento intuitivo. Utilize os sliders para precisão milimétrica."}
+                  Arraste o logo diretamente no preview para um posicionamento intuitivo. Utilize os sliders para precisão milimétrica.
                 </Typography>
               </Paper>
             </Box>

@@ -11,6 +11,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .service(web::scope("/schedule").configure(crate::api::schedule::configure))
             .service(web::scope("/settings").configure(crate::api::settings::configure))
             .service(web::scope("/templates").configure(crate::api::templates::configure))
+            .service(web::scope("/graphics-layers").configure(crate::api::graphics_layers::configure))
             .service(web::scope("/protected").configure(crate::api::protected::configure)),
     );
 }
