@@ -1,51 +1,53 @@
 #!/bin/bash
 
-# ONEPA Playout PRO - Update & Reset Script
-# Use: ./scripts/update.sh [--reset]
+# ONEPA Playout PRO - Update Script
+# Version: 2.2.0-ALPHA.5-PRO
 
 set -e
 
-RESET_MODE=false
-if [[ "$1" == "--reset" ]]; then
-    RESET_MODE=true
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+echo -e "${GREEN}🔄 Iniciando Atualização do Sistema...${NC}"
+
+# Check for .env
+if [ ! -f .env ]; then
+    echo -e "${RED}❌ Arquivo .env não encontrado. Execute o install.sh primeiro.${NC}"
+    exit 1
 fi
 
-if [ "$RESET_MODE" = true ]; then
-    echo "⚠️ AVISO: MODO RESET ATIVADO!"
-    echo "Isto irá apagar todos os dados, playlists e configurações."
-    read -p "Tem certeza? (s/N): " confirm
-    if [[ $confirm != [sS] ]]; then
-        echo "Cancelado."
-        exit 0
-    fi
-fi
+# Load variables
+source .env
+BRANCH=${DEPLOY_BRANCH:-"alpha"}
+REPO=${DEPLOY_REPO:-"ideiasestrondosas-ctrl/cloud-onepa-playout"}
 
-echo "🔄 Iniciando atualização..."
+echo -e "Configuração: Branch ${YELLOW}$BRANCH${NC} do repositório ${YELLOW}$REPO${NC}"
 
-if [ "$RESET_MODE" = true ]; then
-    echo "🧹 Parando serviços e limpando dados..."
-    docker compose down -v
-    sudo rm -rf ./data
-else
-    echo "🛑 Parando serviços..."
-    docker compose stop
-fi
+# 1. Cleanup old source if exists
+TEMP_DIR="onepa_update_$(date +%s)"
+mkdir -p "$TEMP_DIR"
 
-# Pull latest code (if in git)
-if [ -d .git ]; then
-    echo "⬇️ Baixando as últimas alterações..."
-    git pull
-fi
+# 2. Get latest code
+echo -e "\n${YELLOW}⬇️ Buscando atualizações...${NC}"
+# Note: This assumes the user has set up SSH or a credential helper for Git
+git clone -b "$BRANCH" "https://github.com/$REPO.git" "$TEMP_DIR"
 
-echo "🏗️ Reconstruindo containers..."
-docker compose build
+# 3. Apply Updates
+echo -e "\n${YELLOW}🏗️ Reconstruindo Contentores...${NC}"
+# Copy new docker-compose and scripts to root
+cp "$TEMP_DIR/docker-compose.yml" ./
+cp -r "$TEMP_DIR/scripts" ./
 
-echo "⚡ Iniciando serviços..."
+docker compose build --pull
 docker compose up -d
 
+# 4. Cleanup
+echo -e "\n${YELLOW}🧹 Finalizando limpeza...${NC}"
+rm -rf "$TEMP_DIR"
+
+echo -e "\n${GREEN}✨ Sistema atualizado com sucesso!${NC}"
+echo "🌐 Acesso: http://localhost:3011"
 echo ""
-echo "✨ Sistema atualizado com sucesso!"
-if [ "$RESET_MODE" = true ]; then
-    echo "♻️ O sistema foi resetado para as configurações padrão."
-fi
-echo "🌐 Acesso: http://localhost:3000"

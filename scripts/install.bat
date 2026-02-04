@@ -1,51 +1,70 @@
 @echo off
-setlocal
-REM ONEPA Playout PRO - Enhanced Windows Installer (Total Automation)
+setlocal enabledelayedexpansion
+REM ONEPA Playout PRO - Enhanced Windows Installer
+REM Version: 2.2.0-ALPHA.5-PRO
 
 echo --------------------------------------------------
-echo 🚀 ONEPA Playout PRO - Windows Setup
+echo 🚀 ONEPA Playout PRO - Windows Total Automation
 echo --------------------------------------------------
 
-REM 1. Check for Docker
-docker --version >nul 2>&1
+REM 1. GitHub Credentials
+echo.
+echo 🔑 Configuracao do GitHub Cloud
+set /p GH_PAT="GitHub Private Access Token (PAT): "
+set /p GH_REPO="Repositorio (ex: user/repo) [ENTER p/ padrao]: "
+if "%GH_REPO%"=="" set GH_REPO=ideiasestrondosas-ctrl/cloud-onepa-playout
+set /p GH_BRANCH="Branch para Deploy (main, alpha, stable) [ENTER p/ alpha]: "
+if "%GH_BRANCH%"=="" set GH_BRANCH=alpha
+
+REM 2. Clone Repository
+set TEMP_DIR=onepa_install_%random%
+echo.
+echo ⬇️ Clonando repositorio (%GH_BRANCH%)...
+
+git clone -b %GH_BRANCH% https://%GH_PAT%@github.com/%GH_REPO%.git %TEMP_DIR%
 if %errorlevel% neq 0 (
-    echo ❌ Docker nao encontrado.
-    echo Por favor, instale o Docker Desktop: https://docs.docker.com/desktop/install/windows/
+    echo ❌ Falha ao clonar o repositorio. Verifique o seu TOKEN e Branch.
     pause
     exit /b 1
 )
-echo ✅ Docker detetado.
 
-REM 2. Environment Setup (Auto-Generate .env via PowerShell)
-if not exist .env (
-    echo ⚙️  Gerando arquivo .env seguro...
-    powershell -Command "$hex = -join ((1..32) | ForEach-Object { '%02x' -f (Get-Random -Minimum 0 -Maximum 255) }); $content = 'POSTGRES_USER=onepa' + [Environment]::NewLine + 'POSTGRES_PASSWORD=' + $hex + [Environment]::NewLine + 'POSTGRES_DB=onepa_playout' + [Environment]::NewLine + 'JWT_SECRET=' + $hex + [Environment]::NewLine + 'MEDIA_PATH=/var/lib/onepa-playout/media' + [Environment]::NewLine + 'THUMBNAILS_PATH=/var/lib/onepa-playout/thumbnails'; Set-Content .env $content"
-    echo ✅ Arquivo .env criado.
-) else (
-    echo ✅ Arquivo .env ja existe.
+cd %TEMP_DIR%
+
+REM 3. Pre-flight Checks
+docker --version >nul 2>&1
+if %errorlevel% neq 0 (
+    echo ❌ Docker nao encontrado.
+    pause
+    exit /b 1
 )
 
-REM 3. Directory Setup
-echo 📁 Verificando diretorios...
-if not exist data\postgres mkdir data\postgres
-if not exist data\media mkdir data\media
-if not exist data\thumbnails mkdir data\thumbnails
-if not exist data\playlists mkdir data\playlists
-if not exist data\assets\protected mkdir data\assets\protected
+REM 4. Environment Setup
+if not exist .env (
+    echo ⚙️  Gerando arquivo .env...
+    powershell -Command "$hex1 = -join ((1..32) | ForEach-Object { '%02x' -f (Get-Random -Minimum 0 -Maximum 255) }); $hex2 = -join ((1..32) | ForEach-Object { '%02x' -f (Get-Random -Minimum 0 -Maximum 255) }); $content = 'POSTGRES_USER=onepa' + [Environment]::NewLine + 'POSTGRES_PASSWORD=' + $hex1 + [Environment]::NewLine + 'POSTGRES_DB=onepa_playout' + [Environment]::NewLine + 'JWT_SECRET=' + $hex2 + [Environment]::NewLine + 'MEDIA_PATH=/var/lib/onepa-playout/media' + [Environment]::NewLine + 'THUMBNAILS_PATH=/var/lib/onepa-playout/thumbnails' + [Environment]::NewLine + 'DEPLOY_BRANCH=%GH_BRANCH%' + [Environment]::NewLine + 'DEPLOY_REPO=%GH_REPO%'; Set-Content .env $content"
+)
 
-REM 4. Launch
-echo 🏗️  Construindo e iniciando... (Isso pode demorar)
+REM 5. Launch
+echo 🏗️  Construindo e iniciando contentores... (Isso pode demorar)
 docker compose down --remove-orphans >nul 2>&1
 docker compose build --pull
 docker compose up -d
 
+REM 6. Cleanup
+echo.
+echo 🧹 Limpando codigo-fonte...
+move docker-compose.yml ..\ >nul 2>&1
+move .env ..\ >nul 2>&1
+xcopy /E /I scripts ..\scripts >nul 2>&1
+cd ..
+rmdir /s /q %TEMP_DIR%
+
 echo.
 echo ✅ Instalacao Concluida!
 echo --------------------------------------------------
-echo 🌐 Frontend: http://localhost:3000
-echo 🔧 Backend:  http://localhost:8081
-echo 📡 Stream:   http://localhost:3000/hls/stream.m3u8
+echo 🌐 URL:       http://localhost:3011
+echo 🔑 Login:      admin / admin
 echo --------------------------------------------------
-echo 🔑 Login padrao: admin / admin
+echo Para atualizar futuramente, use: scripts\update.bat
 echo.
 pause
