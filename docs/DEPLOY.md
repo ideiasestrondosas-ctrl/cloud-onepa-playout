@@ -83,4 +83,24 @@ Nossos scripts agora lidam com isso via `sudo` automático. Se o erro persistir,
 
 ---
 
+## 🔁 Ciclo de Desenvolvimento e Release (Dev Workflow)
+
+Para garantir que as correções locais cheguem ao servidor Linux de produção, siga este ciclo rigoroso:
+
+1.  **Desenvolvimento (Local)**: Aplique correções e edite arquivos.
+    - Teste localmente com: `./scripts/install.sh --local --full-reset`
+2.  **Release (Versionamento)**: Commit e Push para o GitHub.
+    - Execute: `./scripts/release.sh`
+    - Selecione a branch (ex: `alpha`).
+3.  **Deploy (Linux Box)**: Baixe e instale a versão atualizada.
+    - Comando Único:
+      ```bash
+      wget https://raw.githubusercontent.com/ideiasestrondosas-ctrl/cloud-onepa-playout/alpha/scripts/install.sh -O install.sh && chmod +x install.sh && ./install.sh --full-reset
+      ```
+
+> [!IMPORTANT]
+> Sem executar o **Passo 2 (Release)**, o servidor Linux continuará baixando a versão antiga do código, ignorando suas correções locais.
+
+---
+
 **Última atualização:** 2026-02-04 (v2.2.0-ALPHA.5-PRO)

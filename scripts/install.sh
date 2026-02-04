@@ -129,33 +129,48 @@ else
 fi
 
 # --- 2. GitHub Credentials & Guided PAT ---
-echo -e "\n${YELLOW}🔑 Configuração do GitHub Cloud${NC}"
-echo "--------------------------------------------------"
-echo "DICA: Você precisa de um 'Personal Access Token' (PAT) com permissão 'repo'."
-echo "Crie um em: https://github.com/settings/tokens"
-echo "--------------------------------------------------"
-
-read -p "GitHub Private Access Token (PAT): " GH_PAT
-if [ -z "$GH_PAT" ]; then
-    log_err "O Token é obrigatório para deploy via nuvem."
-    exit 1
+LOCAL_MODE=false
+if [[ "$@" == *"--local"* ]]; then
+    LOCAL_MODE=true
+    log_info "⚠️ MODO LOCAL ATIVADO: Usando arquivos locais em vez de clonar do GitHub."
 fi
 
-read -p "Repositório (ex: user/repo) [ENTER p/ padrão]: " GH_REPO
-GH_REPO=${GH_REPO:-"ideiasestrondosas-ctrl/cloud-onepa-playout"}
-read -p "Branch para Deploy (main, alpha, stable) [ENTER p/ alpha]: " GH_BRANCH
-GH_BRANCH=${GH_BRANCH:-"alpha"}
-
-# --- 3. Clone Repository ---
-TEMP_DIR="onepa_install_$(date +%s)"
-log_info "Clonando $GH_REPO ($GH_BRANCH)..."
-
-if ! git clone -b "$GH_BRANCH" "https://$GH_PAT@github.com/$GH_REPO.git" "$TEMP_DIR"; then
-    log_err "Falha na clonagem. Verifique Token/Branch."
-    exit 1
+if [ "$LOCAL_MODE" = false ]; then
+    echo -e "\n${YELLOW}🔑 Configuração do GitHub Cloud${NC}"
+    # ... (Keep existing prompt logic) ...
+    read -p "GitHub Private Access Token (PAT): " GH_PAT
+    # ...
+    read -p "Repositório (ex: user/repo) [ENTER p/ padrão]: " GH_REPO
+    GH_REPO=${GH_REPO:-"ideiasestrondosas-ctrl/cloud-onepa-playout"}
+    read -p "Branch para Deploy (main, alpha, stable) [ENTER p/ alpha]: " GH_BRANCH
+    GH_BRANCH=${GH_BRANCH:-"alpha"}
+    
+    # --- 3. Clone Repository ---
+    TEMP_DIR="onepa_install_$(date +%s)"
+    log_info "Clonando $GH_REPO ($GH_BRANCH)..."
+    
+    if ! git clone -b "$GH_BRANCH" "https://$GH_PAT@github.com/$GH_REPO.git" "$TEMP_DIR"; then
+        log_err "Falha na clonagem. Verifique Token/Branch."
+        exit 1
+    fi
+    cd "$TEMP_DIR"
+else
+    # Local Mode: Use current directory
+    TEMP_DIR="."
+    # cd "$TEMP_DIR" # Already in root effectively if running from root, but script might be in scripts/
+    # We assume script is run as ./install.sh (from scripts sync) or ./scripts/install.sh
+    # If run as ./install.sh (from curl), we are in root.
+    # If run as ./scripts/install.sh, we are in root. 
+    # Let's ensure we are in the project root.
+    if [ -d "frontend" ] && [ -d "backend" ]; then
+        log_info "Diretório do projeto detectado."
+    else
+        log_err "Erro: --local deve ser executado na raiz do projeto."
+        exit 1
+    fi
 fi
 
-cd "$TEMP_DIR"
+# --- 4. Environment (.env) ---
 
 # --- 4. Environment (.env) ---
 log_info "Configurando ambiente..."
@@ -210,12 +225,16 @@ $DOCKER_CMD build $BUILD_OPTS --pull
 $DOCKER_CMD up -d
 
 # --- 6. Cleanup ---
-log_info "Limpando arquivos temporários..."
-mv docker-compose.yml ../
-mv .env ../
-mv scripts ../ 2>/dev/null || true
-cd ..
-rm -rf "$TEMP_DIR"
+if [ "$LOCAL_MODE" = false ]; then
+    log_info "Limpando arquivos temporários..."
+    mv docker-compose.yml ../
+    mv .env ../
+    mv scripts ../ 2>/dev/null || true
+    cd ..
+    rm -rf "$TEMP_DIR"
+else
+    log_info "Modo Local: Mantendo arquivos de origem."
+fi
 
 echo -e "\n${GREEN}✅ Instalação Concluída com Sucesso!${NC}"
 echo "--------------------------------------------------"
