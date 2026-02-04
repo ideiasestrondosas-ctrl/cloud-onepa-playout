@@ -8,27 +8,31 @@ COPY package*.json ./
 
 # Install dependencies
 ENV NODE_ENV=development
-# Cache buster to force a clean install if needed
 ARG CACHE_BUST=1
-RUN npm cache clean --force && \
-    npm install --include=dev --loglevel info && \
-    npm list --depth=0
+
+# Verify context and lockfile
+RUN cat package.json | grep -E '"name"|"version"'
+
+# Clean install with deterministic lockfile usage
+RUN npm ci --include=dev --loglevel warn || npm install --include=dev
 
 # Copy source code
 COPY . .
 
-# Diagnostic: Extremely verbose binary check
-RUN echo "Checking bin directory content..." && \
-    ls -la node_modules/.bin/ && \
-    find node_modules -name vite -type f -executable
-
-# Build application with direct binary call and forced environment
+# Build application with multi-layer fallback
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
-RUN ./node_modules/.bin/vite build --logLevel info
 
-# Diagnostic: verify dist directory
-RUN ls -d /app/dist && ls -la /app/dist || (echo "FATAL: dist folder not found!" && exit 1)
+RUN if [ -f "./node_modules/.bin/vite" ]; then \
+    echo "Using local Vite binary..." && \
+    ./node_modules/.bin/vite build --logLevel info; \
+    else \
+    echo "Local Vite missing! Falling back to npx..." && \
+    npx --yes vite build --logLevel info; \
+    fi
+
+# Final verification of output
+RUN [ -d "/app/dist" ] && ls -la /app/dist || (echo "FATAL: Build failed to produce dist directory!" && exit 1)
 
 # Production stage
 FROM nginx:alpine

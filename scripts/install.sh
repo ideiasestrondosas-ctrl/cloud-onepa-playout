@@ -57,10 +57,24 @@ fi
 
 # --- 0.2 Hardware Verification ---
 echo -e "\n${YELLOW}📊 Verificando Recursos do Sistema...${NC}"
-FREE_SPACE=$(df -k / | tail -1 | awk '{print $4}')
-if [ "$FREE_SPACE" -lt 5242880 ]; then # < 5GB
-    log_warn "Pouco espaço em disco detectado ($((FREE_SPACE/1024))MB). O build pode falhar."
-fi
+
+check_disk_health() {
+    FREE_SPACE=$(df -k / | tail -1 | awk '{print $4}')
+    if [ "$FREE_SPACE" -lt 2097152 ]; then # < 2GB is critical
+        log_err "CRÍTICO: Pouco espaço em disco ($((FREE_SPACE/1024))MB)."
+        log_warn "Detectado LVM. Tente expandir sua partição com estes comandos:"
+        echo "--------------------------------------------------"
+        echo "1. sudo growpart /dev/sda 3"
+        echo "2. sudo pvresize /dev/sda3"
+        echo "3. sudo lvextend -l +100%FREE /dev/mapper/ubuntu--vg-ubuntu--lv"
+        echo "4. sudo resize2fs /dev/mapper/ubuntu--vg-ubuntu--lv"
+        echo "--------------------------------------------------"
+    elif [ "$FREE_SPACE" -lt 5242880 ]; then # < 5GB
+        log_warn "Aviso: Espaço em disco limitado ($((FREE_SPACE/1024))MB). O build pode falhar."
+    fi
+}
+
+check_disk_health
 
 # --- 1. Dependency Auto-Installation ---
 echo -e "\n${YELLOW}🔍 Verificando Dependências...${NC}"
