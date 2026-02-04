@@ -11,10 +11,20 @@ COPY package*.json ./
 
 # Force non-cached dependency install using the CACHE_BUST argument
 ARG CACHE_BUST=1
-RUN echo "FORCE REBUILD TRIGGER: $CACHE_BUST" && \
+RUN echo "FORCE REBUILD TRIGGER: $CACHE_BUST"
+
+# Diagnostic: Check tools
+RUN set -x && node --version && npm --version
+
+# Install dependencies (broken down for debugging)
+RUN set -x && \
     npm cache clean --force && \
-    (npm ci --include=dev --loglevel warn || npm install --include=dev --no-audit) && \
-    ls -la node_modules/.bin/vite
+    npm install --include=dev --loglevel verbose
+
+# Diagnostic: Check installation result
+RUN set -x && \
+    ls -la node_modules || echo "node_modules missing!" && \
+    ls -la node_modules/.bin || echo "node_modules/.bin missing!"
 
 # Copy source code
 COPY . .
