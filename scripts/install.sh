@@ -170,7 +170,27 @@ else
     fi
 fi
 
-# --- 4. Environment (.env) ---
+# --- 4.1 Asset Verification & Download ---
+log_info "Verificando assets protegidos..."
+ASSET_DIR="backend/assets/protected"
+BBB_FILE="$ASSET_DIR/big_buck_bunny_1080p_h264.mov"
+BBB_URL="http://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_1080p_h264.mov"
+
+if [ ! -d "$ASSET_DIR" ]; then
+    log_info "Criando diretório de assets: $ASSET_DIR"
+    mkdir -p "$ASSET_DIR"
+fi
+
+if [ ! -f "$BBB_FILE" ]; then
+    log_warn "Asset 'Big Buck Bunny' não encontrado. Baixando (Isso pode demorar)..."
+    if curl -L "$BBB_URL" -o "$BBB_FILE"; then
+        log_info "Download concluído com sucesso."
+    else
+        log_err "Falha ao baixar o asset. O sistema continuará, mas o vídeo padrão pode falhar."
+    fi
+else
+    log_info "Asset 'Big Buck Bunny' já existe. Pulando download."
+fi
 
 # --- 4. Environment (.env) ---
 log_info "Configurando ambiente..."
