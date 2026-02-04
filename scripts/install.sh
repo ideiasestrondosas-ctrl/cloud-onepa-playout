@@ -39,7 +39,7 @@ fi
 # --- 0.1 Full Reset Logic ---
 if [ "$FULL_RESET" = true ]; then
     log_warn "⚠️ MODO FULL RESET ATIVADO!"
-    echo "Isso irá apagar TODOS os dados, containers, volumes e configurações."
+    echo "Isso irá apagar TODOS os dados, containers, volumes e imagens órfãs."
     read -p "Tem certeza que deseja continuar? (s/N): " confirm
     if [[ $confirm == [sS] ]]; then
         log_info "Limpando sistema existente..."
@@ -47,6 +47,10 @@ if [ "$FULL_RESET" = true ]; then
         if ! $DOCKER_CMD version &> /dev/null; then DOCKER_CMD="docker-compose"; fi
         
         $DOCKER_CMD down -v --remove-orphans 2>/dev/null || true
+        docker system prune -f 2>/dev/null || true
+        docker volume prune -f 2>/dev/null || true
+        # Specific image pruning to ensure no corrupt base layers
+        docker rmi -f $(docker images -q *frontend*) 2>/dev/null || true
         rm -rf data .env install.log 2>/dev/null || true
         log_info "Sistema limpo. Iniciando do zero..."
     else
@@ -59,18 +63,23 @@ fi
 echo -e "\n${YELLOW}📊 Verificando Recursos do Sistema...${NC}"
 
 check_disk_health() {
+    # Get free space in KB for root
     FREE_SPACE=$(df -k / | tail -1 | awk '{print $4}')
-    if [ "$FREE_SPACE" -lt 2097152 ]; then # < 2GB is critical
-        log_err "CRÍTICO: Pouco espaço em disco ($((FREE_SPACE/1024))MB)."
-        log_warn "Detectado LVM. Tente expandir sua partição com estes comandos:"
-        echo "--------------------------------------------------"
+    
+    if [ "$FREE_SPACE" -lt 1048576 ]; then # < 1GB is a hard stop
+        log_err "CRÍTICO: Espaço insuficiente em disco ($((FREE_SPACE/1024))MB)."
+        log_warn "O build do Docker IRÁ falhar nesta condição."
+        log_warn "Você PRECISA expandir seu LVM imediatamente:"
+        echo "----------------------------------------------------------------"
+        echo "COMANDOS DE RECUPERAÇÃO (Copie e cole):"
         echo "1. sudo growpart /dev/sda 3"
         echo "2. sudo pvresize /dev/sda3"
         echo "3. sudo lvextend -l +100%FREE /dev/mapper/ubuntu--vg-ubuntu--lv"
         echo "4. sudo resize2fs /dev/mapper/ubuntu--vg-ubuntu--lv"
-        echo "--------------------------------------------------"
-    elif [ "$FREE_SPACE" -lt 5242880 ]; then # < 5GB
-        log_warn "Aviso: Espaço em disco limitado ($((FREE_SPACE/1024))MB). O build pode falhar."
+        echo "----------------------------------------------------------------"
+        exit 1
+    elif [ "$FREE_SPACE" -lt 5242880 ]; then # < 5GB is a warning
+        log_warn "Aviso: Espaço limitado ($((FREE_SPACE/1024))MB). Recomenda-se expandir o LVM."
     fi
 }
 

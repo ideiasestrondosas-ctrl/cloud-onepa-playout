@@ -1,43 +1,47 @@
 # Build stage
 FROM node:20-alpine as builder
 
+# Absolute start with space check
+RUN echo "BUILD START - DISK STATUS:" && df -h
+
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-ENV NODE_ENV=development
+# Force non-cached dependency install using the CACHE_BUST argument
 ARG CACHE_BUST=1
-
-# Verify context and lockfile
-RUN cat package.json | grep -E '"name"|"version"'
-
-# Clean install with deterministic lockfile usage
-RUN npm ci --include=dev --loglevel warn || npm install --include=dev
+RUN echo "FORCE REBUILD TRIGGER: $CACHE_BUST" && \
+    npm cache clean --force && \
+    (npm ci --include=dev --loglevel warn || npm install --include=dev --no-audit) && \
+    ls -la node_modules/.bin/vite
 
 # Copy source code
 COPY . .
 
-# Build application with multi-layer fallback
+# Diagnostic: Verify source integrity
+RUN echo "SOURCE STATUS:" && ls -laR | grep -v node_modules | head -n 50
+
+# Build application with raw error capture and env audit
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 
-RUN if [ -f "./node_modules/.bin/vite" ]; then \
-    echo "Using local Vite binary..." && \
-    ./node_modules/.bin/vite build --logLevel info; \
-    else \
-    echo "Local Vite missing! Falling back to npx..." && \
-    npx --yes vite build --logLevel info; \
-    fi
+RUN echo "ENVIRONMENT AUDIT:" && env | grep -E "VITE|NODE" && \
+    echo "FILE STRUCTURE AUDIT:" && ls -la && \
+    set -e; \
+    echo "Starting deterministic Vite build..." && \
+    ./node_modules/.bin/vite build --logLevel info
 
-# Final verification of output
-RUN [ -d "/app/dist" ] && ls -la /app/dist || (echo "FATAL: Build failed to produce dist directory!" && exit 1)
+# Final Forensic Check
+RUN echo "BUILD FINISHED - OUTPUT VERIFICATION:" && \
+    ls -d /app/dist && \
+    ls -la /app/dist && \
+    [ "$(ls -A /app/dist)" ] || (echo "FATAL: dist folder IS EMPTY!" && exit 1)
 
 # Production stage
 FROM nginx:alpine
 
-# Copy built files
+# Copy built files from builder
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Copy nginx configuration

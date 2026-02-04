@@ -88,6 +88,8 @@ services:
         - VITE_API_URL=/api
         - CACHE_BUST=${CACHE_BUST:-1}
     container_name: alpha-frontend
+    # Build Isolation: No volumes are mounted here to ensure the container build is pure.
+    # Persisted volumes are only for the runtime stage (nginx) if needed.
     environment:
       VITE_API_URL: /api
     ports:
