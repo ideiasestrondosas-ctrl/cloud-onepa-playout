@@ -15,7 +15,7 @@ services:
     networks:
       - alpha-network
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-onepa}" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-onepa} -d ${POSTGRES_DB:-onepa_playout}" ]
       interval: 10s
       timeout: 5s
       retries: 5

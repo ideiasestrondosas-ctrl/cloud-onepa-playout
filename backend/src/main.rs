@@ -17,14 +17,28 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
     env_logger::init();
 
-    // Database connection
+    // Database connection with retry loop
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect(&database_url)
-        .await
-        .expect("Failed to connect to database");
+    let mut retry_count = 0;
+    let max_retries = 30;
+    
+    let pool = loop {
+        match PgPoolOptions::new()
+            .max_connections(5)
+            .connect(&database_url)
+            .await 
+        {
+            Ok(pool) => break pool,
+            Err(e) => {
+                retry_count += 1;
+                if retry_count >= max_retries {
+                    panic!("Failed to connect to database after {} attempts: {}", max_retries, e);
+                }
+                log::warn!("Database connection failed (attempt {}/{}). Retrying in 1s...", retry_count, max_retries);
+                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+            }
+        }
+    };
 
     log::info!("Database connected successfully");
 
