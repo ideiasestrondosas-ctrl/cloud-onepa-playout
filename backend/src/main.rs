@@ -20,7 +20,7 @@ async fn main() -> std::io::Result<()> {
     // Database connection with retry loop
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let mut retry_count = 0;
-    let max_retries = 30;
+    let max_retries = 60;
     
     let pool = loop {
         match PgPoolOptions::new()
