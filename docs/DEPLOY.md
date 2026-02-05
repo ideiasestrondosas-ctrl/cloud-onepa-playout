@@ -102,6 +102,9 @@ Para garantir que as correções locais cheguem ao servidor Linux de produção,
 > A flag `--full-reset` é CRÍTICA após atualizações profundas para limpar caches antigos do Docker e garantir que todos os arquivos sejam regenerados corretamente.
 
 > [!IMPORTANT]
+> **Sync Rule:** Always execute `./scripts/release.sh` (or `git push`) on your Mac before running `install.sh` on Linux. The Linux box pulls from GitHub, not your local machine.
+
+> [!IMPORTANT]
 > Sem executar o **Passo 2 (Release)**, o servidor Linux continuará baixando a versão antiga do código, ignorando suas correções locais.
 
 ---
