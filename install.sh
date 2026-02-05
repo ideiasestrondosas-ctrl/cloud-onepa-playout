@@ -171,14 +171,20 @@ if [ "$LOCAL_MODE" = false ]; then
     GH_BRANCH=${GH_BRANCH:-"alpha"}
     
     # --- 3. Clone Repository ---
-    TEMP_DIR="onepa_install_$(date +%s)"
+    TEMP_DIR="onepa_repo_tmp"
+    rm -rf "$TEMP_DIR" 2>/dev/null
     log_info "Clonando $GH_REPO ($GH_BRANCH)..."
     
     if ! git clone -b "$GH_BRANCH" "https://$GH_PAT@github.com/$GH_REPO.git" "$TEMP_DIR"; then
         log_err "Falha na clonagem. Verifique Token/Branch."
         exit 1
     fi
-    cd "$TEMP_DIR"
+    
+    log_info "Movendo arquivos para a pasta permanente..."
+    # Move all files from temp to current dir, including hidden ones
+    cp -r "$TEMP_DIR/." .
+    rm -rf "$TEMP_DIR"
+    TEMP_DIR="."
 else
     TEMP_DIR="."
     log_info "Usando arquivos locais."
@@ -244,15 +250,7 @@ $DOCKER_CMD build --pull
 $DOCKER_CMD up -d
 
 # --- 7. Cleanup ---
-if [ "$LOCAL_MODE" = false ] && [ "$TEMP_DIR" != "." ]; then
-    log_info "Limpando arquivos temporários..."
-    cp docker-compose.yml ../ 2>/dev/null || true
-    cp .env ../ 2>/dev/null || true
-    cp -r scripts ../ 2>/dev/null || true
-    cp install.sh ../ 2>/dev/null || true
-    cd ..
-    rm -rf "$TEMP_DIR" 2>/dev/null || sudo rm -rf "$TEMP_DIR" 2>/dev/null || true
-fi
+# No cleanup needed as we moved files before starting
 
 echo -e "\n${GREEN}✅ Instalação Concluída com Sucesso!${NC}"
 echo "--------------------------------------------------"
