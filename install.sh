@@ -55,7 +55,13 @@ nuclear_cleanup() {
     if [ "$FULL_RESET" = true ]; then
         log_warn "💣 Deep Prune: Limpando cache e volumes globais..."
         docker system prune -af --volumes 2>/dev/null || sudo docker system prune -af --volumes 2>/dev/null || true
-        rm -rf data .env install.log 2>/dev/null || true
+        
+        # Ensure we use sudo to remove data folder if on Linux
+        if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            sudo rm -rf data .env install.log 2>/dev/null || true
+        else
+            rm -rf data .env install.log 2>/dev/null || true
+        fi
     fi
 }
 
