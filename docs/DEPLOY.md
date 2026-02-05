@@ -75,6 +75,26 @@ scripts\update.bat --full-reset
 
 ## 🔧 Solução de Problemas (Troubleshooting)
 
+#### Remoção Total (Uninstaller)
+
+Se você precisar remover **completamente** o sistema (incluindo todo o banco de dados, vídeos e containers) para uma limpeza total:
+
+**Docker (Linux/macOS):**
+```bash
+chmod +x uninstall.sh
+./uninstall.sh
+```
+
+**Windows:**
+```cmd
+uninstall.bat
+```
+
+> [!CAUTION]
+> **ESTA OPERAÇÃO É FINAL.** O script apagará a própria pasta onde ele está e todos os dados. Use com cuidado.
+
+## Suporte
+
 ### "Vite not found" no build do Frontend
 Isto ocorre geralmente por cache corrompido do Docker. Execute `./scripts/update.sh --full-reset` para forçar uma limpeza total e reconstrução pura.
 
