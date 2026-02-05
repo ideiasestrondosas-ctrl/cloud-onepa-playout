@@ -8,24 +8,26 @@ Este guia descreve como instalar, atualizar e recuperar o sistema **ONEPA Playou
 
 Selecione o comando abaixo conforme o seu sistema operacional para iniciar o processo "Zero-Touch".
 
-### 🍎 macOS
-```bash
-curl -O https://raw.githubusercontent.com/ideiasestrondosas-ctrl/cloud-onepa-alpha/alpha/install.sh && chmod +x install.sh && ./install.sh
-```
+### One-Liner Installers (Recomendado)
 
-### 🐧 Linux (Ubuntu/Debian/CentOS)
+Escolha o comando para o seu sistema:
+
+**Linux / macOS (Docker):**
 ```bash
 wget https://raw.githubusercontent.com/ideiasestrondosas-ctrl/cloud-onepa-alpha/alpha/install.sh -O install.sh && chmod +x install.sh && ./install.sh
 ```
 
-### 🪟 Windows (PowerShell)
+**Windows (PowerShell):**
 ```powershell
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ideiasestrondosas-ctrl/cloud-onepa-playout/alpha/scripts/install.bat" -OutFile "install.bat"; .\install.bat
+curl.exe -L https://raw.githubusercontent.com/ideiasestrondosas-ctrl/cloud-onepa-alpha/alpha/install.bat -o install.bat; .\install.bat
 ```
+
+> [!TIP]
+> Em caso de erros persistentes ou se estiver reinstalando, adicione a flag `--full-reset` ao final do comando para uma limpeza total do ambiente.
 
 ---
 
-## 🛠️ Automação Inteligente
+## 🛠️ Detalhes da Automação Inteligente
 
 3. **Nuclear Ghost Cleanup**: Detecta e remove containers "zumbis" ou órfãos de instalações anteriores automaticamente.
 4. **Purity Build**: Otimizado para evitar erros de compilação (como "Vite not found") garantindo isolamento total.
