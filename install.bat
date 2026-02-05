@@ -1,134 +1,134 @@
 @echo off
 setlocal enabledelayedexpansion
 
-:: ==============================================================================
-:: ONEPA Playout PRO - Total Automation Installer (Windows)
-:: Version: 2.3.0-ALPHA.9.2-PRO
-:: Pure ASCII Version for maximum compatibility
-:: ==============================================================================
+REM ==============================================================================
+REM ONEPA Playout PRO - Windows Setup (ASCII Robust Version)
+REM ==============================================================================
 
-echo --------------------------------------------------
-echo [INFO] ONEPA Playout PRO - Windows Setup
-echo --------------------------------------------------
+echo [INFO] Starting Setup...
 
-:: --- 0. Parameters ---
+REM --- 0. Parameters ---
 set "FULL_RESET=false"
 set "LOCAL_MODE=false"
 
-:: Parse arguments manually to avoid for-loop issues in some CMD versions
-:parse_args
-if "%~1"=="" goto end_parse
 if "%~1"=="--full-reset" set "FULL_RESET=true"
 if "%~1"=="--local" set "LOCAL_MODE=true"
-shift
-goto parse_args
-:end_parse
+if "%~2"=="--full-reset" set "FULL_RESET=true"
+if "%~2"=="--local" set "LOCAL_MODE=true"
 
-:: --- 0.1 Check for Project Root ---
-if exist frontend if exist backend if exist docker-compose.yml (
-    echo [INFO] Project root detected. Activating Local Mode.
-    set "LOCAL_MODE=true"
+REM --- 1. Path Synchronization ---
+echo [INFO] Checking environment paths...
+
+REM Force common Git paths into session
+if exist "C:\Program Files\Git\cmd\git.exe" (
+    set "PATH=%PATH%;C:\Program Files\Git\cmd"
+)
+if exist "C:\Program Files\Git\bin\git.exe" (
+    set "PATH=%PATH%;C:\Program Files\Git\bin"
 )
 
-:: --- 0.2 Check Docker (Early check to avoid loop errors) ---
-where docker >nul 2>&1
-set "DOCKER_FOUND=%errorlevel%"
-
-:: --- 1. Cleanup ---
-if %DOCKER_FOUND% equ 0 (
-    echo [INFO] Checking for container conflicts...
-    for /f "tokens=*" %%i in ('docker ps -aq --filter "name=alpha" --filter "name=onepa"') do (
-        echo [INFO] Removing container: %%i
-        docker rm -f %%i >nul 2>&1
-    )
-    docker network rm alpha-network >nul 2>&1
-) else (
-    echo [WARN] Docker not found in PATH yet. Skipping container cleanup.
+REM Force common Docker paths into session
+if exist "C:\Program Files\Docker\Docker\resources\bin\docker.exe" (
+    set "PATH=%PATH%;C:\Program Files\Docker\Docker\resources\bin"
 )
 
-if "%FULL_RESET%"=="true" (
-    echo [WARN] NUCLEAR RESET ENABLED!
-    set /p "confirm=Delete ALL data and volumes? (s/N): "
-    if /i "!confirm!"=="s" (
-        echo [INFO] Cleaning volumes and cache...
-        if %DOCKER_FOUND% equ 0 (
-            docker system prune -af --volumes >nul 2>&1
-        )
-        if exist data rd /s /q data
-        if exist .env del .env
-    )
-)
+REM --- 2. Dependency Check ---
 
-:: --- 2. Dependencies (winget) ---
-echo.
-echo [INFO] Checking Dependencies...
-
+REM Check Git
 git --version >nul 2>&1
-if !errorlevel! neq 0 (
-    echo [INFO] Installing Git via winget...
+if %errorlevel% neq 0 (
+    echo [INFO] Git not found. Attempting install via winget...
     winget install --id Git.Git -e --source winget --accept-package-agreements --accept-source-agreements
+    
+    REM Re-check paths after install
+    if exist "C:\Program Files\Git\cmd\git.exe" set "PATH=%PATH%;C:\Program Files\Git\cmd"
+    
     git --version >nul 2>&1
     if !errorlevel! neq 0 (
-        echo [ERROR] Git installation failed. Please install manually: https://git-scm.com/
+        echo [ERROR] Git install failed or not in PATH. Please install manually: https://git-scm.com/
         pause & exit /b 1
     )
 ) else (
-    echo [OK] Git found.
+    echo [OK] Git is ready.
 )
 
-if %DOCKER_FOUND% neq 0 (
-    echo [INFO] Docker not found. Checking C:\Program Files\Docker...
-    if exist "C:\Program Files\Docker\Docker\resources\bin\docker.exe" (
-        set "PATH=%PATH%;C:\Program Files\Docker\Docker\resources\bin"
-        echo [OK] Docker path added to session.
-    ) else (
-        echo [INFO] Installing Docker Desktop via winget...
-        winget install --id Docker.DockerDesktop -e --source winget --accept-package-agreements --accept-source-agreements
-        echo [WARN] Docker installed. Please RESTART your PC and open Docker Desktop.
-        pause & exit /b 0
+REM Check Docker
+docker --version >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [INFO] Docker not found. Attempting install via winget...
+    winget install --id Docker.DockerDesktop -e --source winget --accept-package-agreements --accept-source-agreements
+    
+    echo [WARN] If Docker was just installed, you MUST restart your PC.
+    echo [WARN] If already installed, ensure Docker Desktop is RUNNING.
+    pause
+    
+    REM Final check
+    docker --version >nul 2>&1
+    if !errorlevel! neq 0 (
+        echo [ERROR] Docker still not found. Restart your PC and try again.
+        pause & exit /b 1
     )
 ) else (
-    echo [OK] Docker found.
+    echo [OK] Docker is ready.
 )
 
-:: --- 3. GitHub & Clone ---
-if "%LOCAL_MODE%"=="false" (
-    echo.
-    echo [INFO] GitHub Configuration
-    set /p "GH_PAT=GitHub Private Access Token (PAT): "
-    if "!GH_PAT!"=="" (echo [ERROR] Token required. & pause & exit /b 1)
+REM --- 3. Context & Project Detection ---
+if exist frontend if exist backend if exist docker-compose.yml (
+    set "LOCAL_MODE=true"
+    echo [INFO] Project root detected. local mode active.
+)
 
+REM --- 4. Cleanup ---
+echo [INFO] Cleaning up container conflicts...
+docker ps -aq --filter "name=alpha" --filter "name=onepa" > containers_tmp.txt
+for /f "tokens=*" %%i in (containers_tmp.txt) do (
+    echo [INFO] Removing container: %%i
+    docker rm -f %%i >nul 2>&1
+)
+del containers_tmp.txt
+docker network rm alpha-network >nul 2>&1
+
+if "%FULL_RESET%"=="true" (
+    echo [WARN] FULL RESET MODE...
+    echo [INFO] Pruning Docker system...
+    docker system prune -af --volumes >nul 2>&1
+    if exist data rd /s /q data
+    if exist .env del .env
+)
+
+REM --- 5. GitHub & Clone ---
+if "%LOCAL_MODE%"=="false" (
+    echo [INFO] GitHub Sync...
+    set /p "GH_PAT=Enter GitHub Token (PAT): "
+    if "!GH_PAT!"=="" (echo [ERROR] Token required. & pause & exit /b 1)
+    
     set "GH_REPO=ideiasestrondosas-ctrl/cloud-onepa-alpha"
     set "GH_BRANCH=alpha"
-
-    echo [INFO] Cloning !GH_REPO! (!GH_BRANCH!)...
-    set "TEMP_DIR=onepa_repo_tmp"
-    if exist !TEMP_DIR! rd /s /q !TEMP_DIR!
     
-    git clone -b !GH_BRANCH! https://!GH_PAT!@github.com/!GH_REPO!.git !TEMP_DIR!
-    if !errorlevel! neq 0 (echo [ERROR] Clone failed. & pause & exit /b 1)
-
-    echo [INFO] Moving files to permanent folder...
-    xcopy /E /I /Y "!TEMP_DIR!\*" . >nul
-    rd /s /q !TEMP_DIR!
+    echo [INFO] Cloning repository...
+    if exist onepa_tmp rd /s /q onepa_tmp
+    git clone -b !GH_BRANCH! https://!GH_PAT!@github.com/!GH_REPO!.git onepa_tmp
+    if !errorlevel! neq 0 (echo [ERROR] Clone failed.Verify Token. & pause & exit /b 1)
+    
+    echo [INFO] Deploying files...
+    xcopy /E /I /Y "onepa_tmp\*" . >nul
+    rd /s /q onepa_tmp
 )
 
-:: --- 4. Asset Verification ---
-echo [INFO] Verifying protected assets...
-set "ASSET_DIR=backend\assets\protected"
-if not exist "!ASSET_DIR!" mkdir "!ASSET_DIR!"
-
-set "LOGO_FILE=!ASSET_DIR!\Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4"
+REM --- 6. Assets ---
+echo [INFO] Checking protected assets...
+if not exist backend\assets\protected mkdir backend\assets\protected
+set "LOGO_FILE=backend\assets\protected\Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4"
 set "LOGO_URL=https://github.com/ideiasestrondosas-ctrl/cloud-onepa-alpha/raw/alpha/backend/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4"
 
 if not exist "!LOGO_FILE!" (
-    echo [INFO] Downloading Login Page Logo...
+    echo [INFO] Downloading Login Logo...
     powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri '!LOGO_URL!' -OutFile '!LOGO_FILE!'"
 )
 
-:: --- 5. Environment (.env) ---
+REM --- 7. Env ---
 if not exist .env (
-    echo [INFO] Configuring environment...
+    echo [INFO] Creating .env...
     (
     echo POSTGRES_USER=onepa
     echo POSTGRES_PASSWORD=admin
@@ -141,21 +141,15 @@ if not exist .env (
     ) > .env
 )
 
-:: --- 6. Launch Docker ---
-echo [INFO] Starting Docker Compose...
+REM --- 8. Launch ---
+echo [INFO] Starting Docker...
 docker compose build --pull
-if !errorlevel! neq 0 (
-    echo [ERROR] Build failed. Please restart your terminal/PC if Docker was just installed.
-    pause & exit /b 1
-)
+if !errorlevel! neq 0 (echo [ERROR] Build failed. & pause & exit /b 1)
 
 docker compose up -d
-if !errorlevel! neq 0 (echo [ERROR] Failed to start containers. & pause & exit /b 1)
+if !errorlevel! neq 0 (echo [ERROR] Start failed. & pause & exit /b 1)
 
-echo.
-echo [OK] Installation Completed Successfully!
-echo --------------------------------------------------
-echo URL:       http://localhost:3011
-echo Login:     admin / admin
-echo --------------------------------------------------
+echo [OK] SETUP COMPLETE.
+echo URL: http://localhost:3011
+echo Login: admin / admin
 pause
