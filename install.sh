@@ -182,8 +182,14 @@ if [ "$LOCAL_MODE" = false ]; then
     
     log_info "Movendo arquivos para a pasta permanente..."
     # Move all files from temp to current dir, including hidden ones
-    cp -r "$TEMP_DIR/." .
-    rm -rf "$TEMP_DIR"
+    # We use sudo here because the current dir might contain root-owned files from Docker
+    if [ "$OS_TYPE" == "linux" ]; then
+        sudo cp -r "$TEMP_DIR/." .
+        sudo rm -rf "$TEMP_DIR"
+    else
+        cp -r "$TEMP_DIR/." .
+        rm -rf "$TEMP_DIR"
+    fi
     TEMP_DIR="."
 else
     TEMP_DIR="."
