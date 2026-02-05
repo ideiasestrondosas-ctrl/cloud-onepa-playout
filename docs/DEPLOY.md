@@ -10,12 +10,12 @@ Selecione o comando abaixo conforme o seu sistema operacional para iniciar o pro
 
 ### 🍎 macOS
 ```bash
-curl -O https://raw.githubusercontent.com/ideiasestrondosas-ctrl/cloud-onepa-playout/alpha/scripts/install.sh && chmod +x install.sh && ./install.sh
+curl -O https://raw.githubusercontent.com/ideiasestrondosas-ctrl/cloud-onepa-alpha/alpha/install.sh && chmod +x install.sh && ./install.sh
 ```
 
 ### 🐧 Linux (Ubuntu/Debian/CentOS)
 ```bash
-wget https://raw.githubusercontent.com/ideiasestrondosas-ctrl/cloud-onepa-playout/alpha/scripts/install.sh -O install.sh && chmod +x install.sh && ./install.sh
+wget https://raw.githubusercontent.com/ideiasestrondosas-ctrl/cloud-onepa-alpha/alpha/install.sh -O install.sh && chmod +x install.sh && ./install.sh
 ```
 
 ### 🪟 Windows (PowerShell)
@@ -95,7 +95,7 @@ Para garantir que as correções locais cheguem ao servidor Linux de produção,
 3.  **Deploy (Linux Box)**: Baixe e instale a versão atualizada com limpeza total.
     - Comando Único (com --full-reset):
       ```bash
-      wget https://raw.githubusercontent.com/ideiasestrondosas-ctrl/cloud-onepa-playout/alpha/scripts/install.sh -O install.sh && chmod +x install.sh && ./install.sh --full-reset
+      wget https://raw.githubusercontent.com/ideiasestrondosas-ctrl/cloud-onepa-alpha/alpha/install.sh -O install.sh && chmod +x install.sh && ./install.sh --full-reset
       ```
 
 > [!IMPORTANT]
@@ -109,4 +109,4 @@ Para garantir que as correções locais cheguem ao servidor Linux de produção,
 
 ---
 
-**Última atualização:** 2026-02-04 (v2.2.0-ALPHA.5-PRO)
+**Última atualização:** 2026-02-05 (v2.3.0-ALPHA.6-PRO)
