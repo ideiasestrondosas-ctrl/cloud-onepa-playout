@@ -27,10 +27,10 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ideiasestrondosas-ctrl
 
 ## 🛠️ Automação Inteligente
 
-1. **Auto-Dependências**: Detecta e instala **Docker** e **Git** (via Homebrew, apt ou winget).
-2. **Permissões Inteligentes**: No Linux, o script detecta se você precisa de `sudo` para o Docker e aplica automaticamente.
-3. **Purity Build**: Otimizado para evitar erros de compilação (como "Vite not found") garantindo isolamento total.
-4. **Cleanup**: Remove o código-fonte (`src`) após o build para máxima segurança.
+3. **Nuclear Ghost Cleanup**: Detecta e remove containers "zumbis" ou órfãos de instalações anteriores automaticamente.
+4. **Purity Build**: Otimizado para evitar erros de compilação (como "Vite not found") garantindo isolamento total.
+5. **Cleanup**: Remove o código-fonte (`src`) após o build para máxima segurança.
+
 
 ---
 
@@ -80,6 +80,10 @@ Isto ocorre geralmente por cache corrompido do Docker. Execute `./scripts/update
 
 ### Erro de Permissão no Docker (Linux)
 Nossos scripts agora lidam com isso via `sudo` automático. Se o erro persistir, certifique-se de que o serviço Docker está ativo: `sudo systemctl start docker`.
+
+### Containers Conflitantes ("Ghost Containers")
+Se você receber erros de `Conflict. The container name is already in use`, o novo installer (`v2.3.0+`) resolve isso automaticamente via **Nuclear Cleanup**. Basta rodar `./install.sh` novamente.
+
 
 ---
 
