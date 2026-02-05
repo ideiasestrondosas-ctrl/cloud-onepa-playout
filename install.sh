@@ -184,19 +184,29 @@ else
     log_info "Usando arquivos locais."
 fi
 
-# --- 4. Asset Verification & Download ---
+# --- 4.1 Asset Verification & Download ---
 log_info "Verificando assets protegidos..."
 ASSET_DIR="backend/assets/protected"
+mkdir -p "$ASSET_DIR"
+
+# Big Buck Bunny (Default Sample)
 BBB_FILE="$ASSET_DIR/big_buck_bunny_1080p_h264.mov"
 BBB_URL="https://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_1080p_h264.mov"
 
-mkdir -p "$ASSET_DIR"
+# Infinity Logo Video (Login Page)
+LOGO_FILE="$ASSET_DIR/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4"
+LOGO_URL="https://github.com/ideiasestrondosas-ctrl/cloud-onepa-alpha/raw/alpha/backend/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4"
 
 if [ ! -f "$BBB_FILE" ]; then
     log_warn "Asset 'Big Buck Bunny' não encontrado. Baixando..."
     if ! curl -L "$BBB_URL" -o "$BBB_FILE"; then
-        log_err "Falha ao baixar assets. O sistema continuará, mas alguns vídeos podem falhar."
+        log_err "Falha ao baixar assets. O sistema continuará."
     fi
+fi
+
+if [ ! -f "$LOGO_FILE" ]; then
+    log_info "Baixando Logo Video da Login Page..."
+    curl -L "$LOGO_URL" -o "$LOGO_FILE" || true
 fi
 
 # --- 5. Environment (.env) ---
