@@ -1,9 +1,9 @@
--- Set default admin user with password 'onepa2026!'
--- The hash below is for 'onepa2026!' using bcrypt
+-- Set default admin user with password 'admin'
+-- The hash below is for 'admin' using bcrypt (cost 5)
 UPDATE users 
-SET password_hash = '$2b$12$gsKXwYvQNBXPNXAlt1Z02OlzM8im8il14R9yGpRO2dWivngZ/xqIi' 
+SET password_hash = '$2y$05$IJ1yULEbPMcwHzziYiqp6eQjAlTrPWPyez4IhogK4DcLMBaasPJwe' 
 WHERE username = 'admin';
 
 INSERT INTO users (username, password_hash, role) 
-SELECT 'admin', '$2b$12$gsKXwYvQNBXPNXAlt1Z02OlzM8im8il14R9yGpRO2dWivngZ/xqIi', 'admin'
+SELECT 'admin', '$2y$05$IJ1yULEbPMcwHzziYiqp6eQjAlTrPWPyez4IhogK4DcLMBaasPJwe', 'admin'
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'admin');

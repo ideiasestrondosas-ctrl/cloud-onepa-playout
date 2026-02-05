@@ -174,7 +174,7 @@ fi
 log_info "Verificando assets protegidos..."
 ASSET_DIR="backend/assets/protected"
 BBB_FILE="$ASSET_DIR/big_buck_bunny_1080p_h264.mov"
-BBB_URL="http://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_1080p_h264.mov"
+BBB_URL="https://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_1080p_h264.mov"
 
 if [ ! -d "$ASSET_DIR" ]; then
     log_info "Criando diretório de assets: $ASSET_DIR"
