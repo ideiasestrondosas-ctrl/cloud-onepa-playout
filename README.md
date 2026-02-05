@@ -185,7 +185,7 @@ _Focus: Innovation and High Availability_
 
 Ver [RELEASE_NOTES.md](RELEASE_NOTES.md) para detalhes completos.
 
-### Versão Atual: v2.2.0-ALPHA.5-PRO-PRO (2026-02-04)
+### Versão Atual: v2.2.0-ALPHA.5-PRO-PRO (2026-02-05)
 
 **Principais Novidades:**
 

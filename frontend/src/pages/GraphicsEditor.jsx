@@ -26,7 +26,7 @@ import {
   Replay as ResetIcon
 } from '@mui/icons-material';
 import { settingsAPI } from '../services/api';
-import graphicsLayersAPI from '../services/graphicsLayersAPI';
+import graphicsService from '../services/graphicsLayersAPI';
 import { useNotification } from '../contexts/NotificationContext';
 import LayerManager from '../components/GraphicsLayers/LayerManager';
 import LayerPreview from '../components/GraphicsLayers/LayerPreview';
@@ -76,7 +76,7 @@ export default function GraphicsEditor() {
 
   const fetchLayers = async () => {
     try {
-      const response = await graphicsLayersAPI.list();
+      const response = await graphicsService.list();
       setGraphicsLayers(response.data);
     } catch (error) {
       console.error('Failed to load graphics layers:', error);
@@ -307,7 +307,7 @@ export default function GraphicsEditor() {
                   // Update backend on drag end
                   if (isFinished) {
                     try {
-                      await graphicsLayersAPI.updatePosition(id, { position_x: x, position_y: y });
+                      await graphicsService.updatePosition(id, { position_x: x, position_y: y });
                       showSuccess('Layer position updated');
                     } catch (error) {
                       const msg = error.response?.data?.error || error.message;
@@ -358,7 +358,7 @@ export default function GraphicsEditor() {
                               onClick={async () => {
                                 if (selectedLayer) {
                                   try {
-                                    const response = await graphicsLayersAPI.update(selectedLayerId, { anchor: pos });
+                                    const response = await graphicsService.update(selectedLayerId, { anchor: pos });
                                     const updatedLayer = response.data;
                                     setGraphicsLayers(prev => prev.map(l =>
                                       l.id === updatedLayer.id ? updatedLayer : l
@@ -423,7 +423,7 @@ export default function GraphicsEditor() {
                       onChangeCommitted={async (e, v) => {
                         if (selectedLayer) {
                           try {
-                            const response = await graphicsLayersAPI.updatePosition(selectedLayerId, {
+                            const response = await graphicsService.updatePosition(selectedLayerId, {
                               position_x: v,
                               position_y: selectedLayer.position_y
                             });

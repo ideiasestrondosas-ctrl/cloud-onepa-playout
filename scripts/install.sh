@@ -209,28 +209,37 @@ fi
 
 # --- 5. Launch Docker ---
 log_info "Iniciando Docker Compose (Build)..."
-DOCKER_CMD="docker compose"
-if ! $DOCKER_CMD version &> /dev/null; then DOCKER_CMD="docker-compose"; fi
 
-# Permission Check (Linux)
-if [ "$OS_TYPE" == "linux" ]; then
-    if ! docker ps &> /dev/null; then
-        log_warn "Permissão negada ao socket do Docker. Usando 'sudo'..."
-        DOCKER_CMD="sudo $DOCKER_CMD"
+# Initial Docker Executable Definition
+DOCKER_EXEC="docker"
+DOCKER_COMPOSE_SUB="compose" # Modern docker compose
+
+# Check if 'docker compose' exists, else fallback to 'docker-compose'
+if ! docker compose version &> /dev/null; then
+    if command -v docker-compose &> /dev/null; then
+        DOCKER_EXEC="docker-compose"
+        DOCKER_COMPOSE_SUB="" # Empty because it's a standalone binary
     fi
 fi
 
-# --- 5. Launch Docker ---
-log_info "Iniciando Docker Compose (Build)..."
-DOCKER_CMD="docker compose"
-if ! $DOCKER_CMD version &> /dev/null; then DOCKER_CMD="docker-compose"; fi
-
 # Permission Check (Linux)
 if [ "$OS_TYPE" == "linux" ]; then
     if ! docker ps &> /dev/null; then
         log_warn "Permissão negada ao socket do Docker. Usando 'sudo'..."
-        DOCKER_CMD="sudo $DOCKER_CMD"
+        # If using sudo, we prepend it to the executable
+        if [ "$DOCKER_EXEC" == "docker" ]; then
+             DOCKER_EXEC="sudo docker"
+        else
+             DOCKER_EXEC="sudo docker-compose"
+        fi
     fi
+fi
+
+# Construct the final build command
+if [ -n "$DOCKER_COMPOSE_SUB" ]; then
+    DOCKER_CMD="$DOCKER_EXEC $DOCKER_COMPOSE_SUB"
+else
+    DOCKER_CMD="$DOCKER_EXEC"
 fi
 
 # Build Args
@@ -241,14 +250,34 @@ if [ "$FULL_RESET" = true ]; then
 fi
 
 # --- 5.1 Pre-Launch Cleanup (Force Conflict Resolution) ---
-log_info "Verificando conflitos de containers..."
+log_info "Forçando remoção de containers conflitantes..."
 CONTAINERS=("alpha-postgres" "alpha-backend" "alpha-frontend" "alpha-mediamtx")
 
+# Use DOCKER_EXEC (which might be 'sudo docker') to force remove
+# We use 'docker' logic even if using docker-compose legacy because rm is similar, 
+# but strictly speaking 'docker-compose rm' is different. 
+# However, the conflict is GLOBAL container names. 
+# So we MUST use the base 'docker' or 'sudo docker' CLI, not docker-compose.
+
+# Re-evaluate CLEANUP_CMD for pure container removal
+if [[ "$DOCKER_EXEC" == *"docker-compose"* ]]; then
+     # Specical case: if we fell back to docker-compose binary, we still need 'docker' for global rm
+     # Assuming 'docker' is in path. If sudo was needed for docker-compose, it's needed for docker.
+     if [[ "$DOCKER_EXEC" == "sudo"* ]]; then
+         CLEANUP_CMD="sudo docker"
+     else
+         CLEANUP_CMD="docker"
+     fi
+else
+     # Modern 'docker compose' or 'sudo docker compose'
+     # DOCKER_EXEC is 'docker' or 'sudo docker'
+     CLEANUP_CMD="$DOCKER_EXEC"
+fi
+
 for container in "${CONTAINERS[@]}"; do
-    if docker ps -a --format '{{.Names}}' | grep -q "^${container}$"; then
-        log_warn "Removendo container conflitante detectado: $container"
-        $DOCKER_CMD rm -f "$container" 2>/dev/null || true
-    fi
+    # Blindly remove. Redirect stderr to suppress "No such container" noise, or keep it for debug?
+    # Keeping verbose for safety.
+    $CLEANUP_CMD rm -f "$container" 2>/dev/null || true
 done
 
 $DOCKER_CMD down --remove-orphans 2>/dev/null || true
