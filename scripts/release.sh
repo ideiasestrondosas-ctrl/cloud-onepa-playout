@@ -44,7 +44,7 @@ trap error_handler ERR
 
 # --- Configuration ---
 PROJECT_NAME="onepa-playout"
-GITHUB_REPO="ideiasestrondosas-ctrl/cloud-onepa-playout"
+GITHUB_REPO="ideiasestrondosas-ctrl/cloud-onepa-alpha"
 EXCLUDE_FILE="big_buck_bunny_1080p_h264.mov"
 
 echo -e "${GREEN}"
@@ -156,8 +156,13 @@ log_step "Synchronizing with GitHub Cloud"
 echo "Staging changes and committing..."
 git add .
 git commit -m "chore(release): bump version to $NEW_VERSION and update stats" || echo "No changes to commit"
-echo "Pushing current HEAD to remote '$TARGET_BRANCH' branch..."
-git push origin HEAD:"$TARGET_BRANCH"
+
+# Detect correct remote for $GITHUB_REPO (e.g. cloud-alpha vs origin)
+REMOTE=$(git remote -v | grep "$GITHUB_REPO" | head -n 1 | awk '{print $1}')
+REMOTE=${REMOTE:-"origin"}
+
+echo "Pushing current HEAD to remote '$REMOTE' on branch '$TARGET_BRANCH'..."
+git push "$REMOTE" HEAD:"$TARGET_BRANCH"
 log_success "GitHub $TARGET_BRANCH branch is synchronized."
 
 # 7. Professional Archiving

@@ -138,10 +138,11 @@ if [ -d "data/thumbnails" ]; then
     echo -e "  🖼️ Thumbnails: ${GREEN}${THUMB_COUNT} ficheiros${NC}"
 fi
 
-# --- 4. Stop running services gracefully ---
+# --- 4. Stop and remove services to prevent name conflicts ---
 echo -e "\n${YELLOW}[4/7] Parando serviços em execução...${NC}"
-$DOCKER_CMD stop 2>/dev/null || true
-echo -e "  ${GREEN}Serviços parados ✓${NC}"
+# Use down instead of stop to properly remove containers (preserving volumes)
+$DOCKER_CMD down 2>/dev/null || true
+echo -e "  ${GREEN}Serviços removidos ✓${NC}"
 
 # --- 5. Pull or Re-clone latest code ---
 echo -e "\n${YELLOW}[5/7] Atualizando código...${NC}"
