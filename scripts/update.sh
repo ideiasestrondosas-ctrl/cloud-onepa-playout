@@ -103,6 +103,20 @@ fi
 source .env
 BRANCH=${DEPLOY_BRANCH:-"alpha"}
 REPO=${DEPLOY_REPO:-"ideiasestrondosas-ctrl/cloud-onepa-playout"}
+
+# Fallback for "local" misconfiguration (applies to both pull and clean clone)
+if [ "$BRANCH" == "local" ] || [ -z "$BRANCH" ]; then
+    if [ -d ".git" ]; then
+        DETECTED_BRANCH=$(git branch --show-current 2>/dev/null)
+        BRANCH=${DETECTED_BRANCH:-"alpha"}
+    else
+        BRANCH="alpha"
+    fi
+fi
+if [ "$REPO" == "local" ] || [ -z "$REPO" ]; then
+    REPO="ideiasestrondosas-ctrl/cloud-onepa-playout"
+fi
+
 echo -e "  Branch: ${CYAN}$BRANCH${NC} | Repo: ${CYAN}$REPO${NC}"
 
 # --- 3. Backup info ---
@@ -143,7 +157,7 @@ if [ "$CLEAN_UPDATE" = true ]; then
     TEMP_DIR="onepa_clean_$(date +%s)"
     git clone -b "$BRANCH" "https://github.com/$REPO.git" "$TEMP_DIR"
     
-    log_info "Restaurando ficheiros da nova versão..."
+    echo "Restaurando ficheiros da nova versão..."
     cp -r "$TEMP_DIR/." .
     rm -rf "$TEMP_DIR"
     
@@ -155,13 +169,6 @@ elif [ -d ".git" ]; then
     # We're in a git repo, just pull
     echo -e "  Repositório Git detectado. A fazer pull..."
     
-    # Fallback for "local" branch misconfiguration (common in manual installs)
-    if [ "$BRANCH" == "local" ]; then
-        DETECTED_BRANCH=$(git branch --show-current 2>/dev/null || echo "alpha")
-        BRANCH=${DETECTED_BRANCH:-"alpha"}
-        echo -e "  Branch 'local' detectada no .env. Auto-detectado: ${CYAN}$BRANCH${NC}"
-    fi
-
     # Ensure remote origin exists
     if ! git remote get-url origin &>/dev/null; then
         echo -e "  ${YELLOW}⚠️  Remote 'origin' não encontrado. Usando primeiro remote disponível...${NC}"
