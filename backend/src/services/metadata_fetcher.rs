@@ -27,7 +27,10 @@ pub struct MetadataFetcherService {
 impl MetadataFetcherService {
     pub fn new(tmdb_key: String, omdb_key: String, tvmaze_key: String) -> Self {
         Self {
-            client: Client::new(),
+            client: Client::builder()
+                .timeout(std::time::Duration::from_secs(10))
+                .build()
+                .unwrap_or_else(|_| Client::new()),
             tmdb_api_key: tmdb_key,
             omdb_api_key: omdb_key,
             tvmaze_api_key: tvmaze_key,

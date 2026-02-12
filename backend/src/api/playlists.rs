@@ -47,25 +47,16 @@ async fn list_playlists(
             let dow = date.weekday().num_days_from_monday() as i32;
 
             // 1. Fetch all relevant scheduled slots joined with playlist data
-            // We need individual slots to calculate exact start times for recurring events
-            // 1. Fetch all relevant scheduled slots joined with playlist data
-            // We use UNION to combine specific date matches with recurring pattern matches
-            // This ensures we only get playlists that are ACTUAL scheduled for this day
             let rows = sqlx::query_as::<_, (Uuid, String, serde_json::Value, f64, chrono::NaiveTime, String)>(
                 "SELECT p.id, p.name, p.content, p.total_duration, s.start_time, s.repeat_pattern
                  FROM playlists p
                  JOIN schedule s ON p.id = s.playlist_id
                  WHERE 
-                    -- Single date match
                     (s.repeat_pattern = 'none' AND s.date = $1)
                     OR
-                    -- Daily match (started on or before today)
                     (s.repeat_pattern = 'daily' AND s.date <= $1)
                     OR
-                    -- Weekly match (same day of week, started on or before today)
                     (s.repeat_pattern = 'weekly' AND (EXTRACT(DOW FROM s.date) + 6)::int % 7 = $2 AND s.date <= $1)
-                 
-                 -- Filter out potential duplicates or inactive if we had an active flag (we rely on date logic)
                  ORDER BY s.start_time ASC",
             )
             .bind(date)
@@ -75,15 +66,12 @@ async fn list_playlists(
 
             match rows {
                 Ok(rows) => {
-                    // Group by Playlist ID to merge multiple occurrences into one "EPG Row"
-                    // key: playlist_id, value: (PlaylistBase, Vec<PlaylistItem>)
                     let mut playlist_map: std::collections::HashMap<
                         Uuid,
                         (String, f64, Vec<PlaylistItem>),
                     > = std::collections::HashMap::new();
 
                     for (id, name, content_val, total_dur, start_time, _) in rows {
-                        // Parse content
                         let items = if let Ok(c) =
                             serde_json::from_value::<PlaylistContent>(content_val.clone())
                         {
@@ -96,7 +84,6 @@ async fn list_playlists(
                             vec![]
                         };
 
-                        // Calculate items with absolute time for this slot
                         let base_dt = chrono::NaiveDateTime::new(date, start_time);
                         let mut current_dt = base_dt;
 
@@ -107,8 +94,6 @@ async fn list_playlists(
                                 current_dt + chrono::Duration::seconds(duration as i64);
 
                             let mut new_item = item.clone();
-                            // Generate a unique ID for React keys by appending a suffix
-                            // We use Uuid since rand is not in dependencies
                             let suffix = uuid::Uuid::new_v4().to_string();
                             let suffix = &suffix[0..6];
 
@@ -132,7 +117,6 @@ async fn list_playlists(
                         entry.2.extend(scheduled_items);
                     }
 
-                    // Convert map back to Vec<Playlist>
                     let mut playlists: Vec<Playlist> = playlist_map
                         .into_iter()
                         .map(|(id, (name, total_duration, items))| {
@@ -143,15 +127,13 @@ async fn list_playlists(
                                 content: serde_json::to_value(PlaylistContent { program: items })
                                     .unwrap_or(json!({})),
                                 total_duration,
-                                created_at: Utc::now(), // dummy
-                                updated_at: Utc::now(), // dummy
+                                created_at: Utc::now(),
+                                updated_at: Utc::now(),
                             }
                         })
                         .collect();
 
-                    // Sort by name for consistency
                     playlists.sort_by(|a, b| a.name.cmp(&b.name));
-
                     Ok(playlists)
                 }
                 Err(e) => {
@@ -160,12 +142,10 @@ async fn list_playlists(
                 }
             }
         } else {
-            // If date parsing fails, log it and return empty rather than raw playlists
             log::warn!("Invalid date format received for EPG: {:?}", query.date);
             Ok(vec![])
         }
     } else {
-        // This is the standard "List All Playlists" for the Playlists sidebar
         sqlx::query_as::<_, Playlist>("SELECT * FROM playlists ORDER BY name ASC")
             .fetch_all(pool.get_ref())
             .await
@@ -260,7 +240,6 @@ async fn update_playlist(
 }
 
 async fn delete_playlist(pool: web::Data<PgPool>, id: web::Path<Uuid>) -> impl Responder {
-    // Check if playlist is in use in schedule
     let count: i64 =
         match sqlx::query_scalar("SELECT COUNT(*) FROM schedule WHERE playlist_id = $1")
             .bind(*id)
@@ -293,7 +272,7 @@ async fn delete_playlist(pool: web::Data<PgPool>, id: web::Path<Uuid>) -> impl R
 
 async fn validate_playlist(req: web::Json<ValidatePlaylistRequest>) -> impl Responder {
     let total_duration = calculate_duration_from_json(&req.content);
-    let target_duration = 24.0 * 3600.0; // 24 hours in seconds
+    let target_duration = 24.0 * 3600.0;
 
     let is_valid = (total_duration - target_duration).abs() < 1.0;
     HttpResponse::Ok().json(json!({
@@ -356,7 +335,7 @@ async fn get_epg(pool: web::Data<PgPool>) -> impl Responder {
         let dow = current_date.weekday().num_days_from_monday() as i32;
 
         let query = "
-            SELECT s.*, p.name as playlist_name 
+            SELECT s.*, p.name as playlist_name, p.content as playlist_content
             FROM schedule s
             LEFT JOIN playlists p ON s.playlist_id = p.id
             WHERE (s.date = $1 
@@ -388,19 +367,13 @@ async fn get_epg(pool: web::Data<PgPool>) -> impl Responder {
                     current_date
                 );
                 for schedule in schedules {
-                    if let Ok(Some(playlist)) =
-                        sqlx::query_as::<_, Playlist>("SELECT * FROM playlists WHERE id = $1")
-                            .bind(schedule.playlist_id)
-                            .fetch_optional(pool.get_ref())
-                            .await
-                    {
+                    if let Some(content) = schedule.playlist_content.as_ref() {
                         let start_time = schedule
                             .start_time
                             .unwrap_or_else(|| chrono::NaiveTime::from_hms_opt(0, 0, 0).unwrap());
                         let schedule_start = chrono::NaiveDateTime::new(current_date, start_time);
 
-                        let duration = calculate_duration_from_json(&playlist.content);
-                        // Defensive: If parsing failed or empty, default to 1 hour to ensure visibility
+                        let duration = calculate_duration_from_json(content);
                         let effective_duration = if duration < 1.0 { 3600.0 } else { duration };
 
                         let schedule_end =
@@ -408,15 +381,13 @@ async fn get_epg(pool: web::Data<PgPool>) -> impl Responder {
 
                         let is_active = now_naive >= schedule_start && now_naive < schedule_end;
 
-                        // Only skip if it's a FUTURE day AND the schedule is in the past (sanity check)
-                        // For day_offset 0 (today), we show everything scheduled for today for completeness.
                         if day_offset > 0 && schedule_end < now_naive {
                             continue;
                         }
 
                         log::debug!(
                             "[EPG] XML Entry: Playlist={}, Start={}, End={}, Active={}",
-                            playlist.name,
+                            schedule.playlist_name.as_deref().unwrap_or("Untitled"),
                             schedule_start,
                             schedule_end,
                             is_active
@@ -424,7 +395,8 @@ async fn get_epg(pool: web::Data<PgPool>) -> impl Responder {
 
                         append_playlist_to_xml(
                             &mut xml,
-                            &playlist,
+                            schedule.playlist_name.as_deref().unwrap_or("Untitled"),
+                            content,
                             &schedule,
                             is_active,
                             now_naive,
@@ -446,26 +418,26 @@ async fn get_epg(pool: web::Data<PgPool>) -> impl Responder {
 
 fn append_playlist_to_xml(
     xml: &mut String,
-    playlist: &Playlist,
+    playlist_name: &str,
+    playlist_content: &serde_json::Value,
     schedule: &Schedule,
     _is_active: bool,
     _now: chrono::NaiveDateTime,
     current_date: chrono::NaiveDate,
     timezone_offset: &str,
 ) {
-    // Try parsing as PlaylistContent (object with 'program' field) or fallback to raw Vec<PlaylistItem> (raw array)
     let program = if let Ok(content) =
-        serde_json::from_value::<PlaylistContent>(playlist.content.clone())
+        serde_json::from_value::<PlaylistContent>(playlist_content.clone())
     {
         content.program
-    } else if let Ok(items) = serde_json::from_value::<Vec<PlaylistItem>>(playlist.content.clone())
+    } else if let Ok(items) = serde_json::from_value::<Vec<PlaylistItem>>(playlist_content.clone())
     {
         items
     } else {
         log::error!(
-            "[EPG] Failed to parse playlist content for ID: {}. Content: {}",
-            playlist.id,
-            playlist.content
+            "[EPG] Failed to parse playlist content for Schedule ID: {}. Content: {}",
+            schedule.id,
+            playlist_content
         );
         return;
     };
@@ -477,7 +449,6 @@ fn append_playlist_to_xml(
     let mut current_start = chrono::NaiveDateTime::new(current_date, base_start_time);
 
     if program.is_empty() {
-        // Fallback for empty playlist: show a single 1-hour block so it's not invisible
         let current_end = current_start + chrono::Duration::hours(1);
         let start_fmt = current_start.format("%H%M%S").to_string();
         let end_fmt = current_end.format("%H%M%S").to_string();
@@ -488,7 +459,7 @@ fn append_playlist_to_xml(
         ));
         xml.push_str(&format!(
             "    <title lang=\"pt\">{} (Vazio)</title>\n",
-            escape_xml(&playlist.name)
+            escape_xml(playlist_name)
         ));
         xml.push_str("    <desc lang=\"pt\">Playlist sem clips configurados</desc>\n");
         xml.push_str("  </programme>\n");
@@ -517,7 +488,7 @@ fn append_playlist_to_xml(
             ));
             xml.push_str(&format!(
                 "    <desc lang=\"pt\">Clip da playlist: {}</desc>\n",
-                escape_xml(&playlist.name)
+                escape_xml(playlist_name)
             ));
             xml.push_str("  </programme>\n");
 

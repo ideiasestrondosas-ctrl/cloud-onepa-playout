@@ -1,9 +1,11 @@
 use actix_cors::Cors;
 use actix_web::{dev::Service, middleware, web, App, HttpServer};
 use dotenv::dotenv;
+use flexi_logger::{FileSpec, Logger, Criterion, Naming, Cleanup};
 use futures::future::FutureExt;
 use sqlx::postgres::PgPoolOptions;
 use std::env;
+
 
 mod api;
 mod config;
@@ -15,7 +17,27 @@ mod utils;
 async fn main() -> std::io::Result<()> {
     // Load environment variables
     dotenv().ok();
-    env_logger::init();
+
+    // Setup logging with flexi_logger (50MB rotation, 5 files limit)
+    let log_path = env::var("LOG_PATH").unwrap_or_else(|_| "/var/log/onepa".to_string());
+    
+    let _logger = Logger::try_with_env_or_str("info")
+        .unwrap()
+        .log_to_file(
+            FileSpec::default()
+                .directory(&log_path)
+                .basename("playout")
+        )
+        .rotate(
+            Criterion::Size(50 * 1024 * 1024), // 50 MB
+            Naming::Numbers,
+            Cleanup::KeepLogFiles(5), // Keep last 5 files
+        )
+        .write_mode(flexi_logger::WriteMode::Async)
+        .start()
+        .expect("Failed to initialize logger");
+
+    log::info!("Logging initialized with rotation (50MB, 5 files) in: {}", log_path);
 
     // Database connection with retry loop
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");

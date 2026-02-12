@@ -1,7 +1,16 @@
 #!/bin/bash
 
-# ONEPA Playout PRO - Update Script
+# ============================================================================
+# ONEPA Playout PRO - Update Script (Existing VM)
 # Version: 2.2.0-ALPHA.5-PRO
+#
+# Usage:
+#   bash update.sh              # Standard update (preserves data)
+#   bash update.sh --full-reset # Full reset (DELETES ALL DATA)
+#
+# This script updates the application on an existing running VM.
+# It preserves all media, database, thumbnails, and playlists.
+# ============================================================================
 
 set -e
 
@@ -9,6 +18,7 @@ set -e
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
+CYAN='\033[0;36m'
 NC='\033[0m'
 
 # Parameters
@@ -17,80 +27,128 @@ if [[ "$1" == "--full-reset" ]]; then
     FULL_RESET=true
 fi
 
-echo -e "${GREEN}🔄 Iniciando Atualização do Sistema...${NC}"
+echo -e "${CYAN}╔══════════════════════════════════════════╗${NC}"
+echo -e "${CYAN}║  ONEPA Playout PRO — Update System       ║${NC}"
+echo -e "${CYAN}╚══════════════════════════════════════════╝${NC}"
+echo ""
 
 # --- 0. Full Reset Logic ---
 if [ "$FULL_RESET" = true ]; then
-    echo -e "${RED}⚠️ MODO FULL RESET ATIVADO!${NC}"
-    echo "Isso irá apagar TODOS os dados e volumes persistentes."
+    echo -e "${RED}⚠️  MODO FULL RESET ATIVADO!${NC}"
+    echo -e "${RED}Isto irá APAGAR TODOS os dados: media, base de dados, thumbnails.${NC}"
     read -p "Tem certeza? (s/N): " confirm
     if [[ $confirm == [sS] ]]; then
-        echo -e "${YELLOW}🧹 Limpando volumes e containers...${NC}"
+        echo -e "${YELLOW}🧹 Parando e removendo containers e volumes...${NC}"
         DOCKER_CMD="docker compose"
         if ! $DOCKER_CMD version &> /dev/null; then DOCKER_CMD="docker-compose"; fi
+        if ! docker ps &> /dev/null 2>&1; then DOCKER_CMD="sudo $DOCKER_CMD"; fi
         $DOCKER_CMD down -v --remove-orphans 2>/dev/null || true
-        rm -rf data .env 2>/dev/null || true
+        rm -rf data 2>/dev/null || true
+        echo -e "${GREEN}Reset completo. A continuar com instalação limpa...${NC}"
     else
         echo "Reset cancelado."
         exit 0
     fi
 fi
 
-# --- 0.1 Resources ---
-FREE_SPACE=$(df -k / | tail -1 | awk '{print $4}' 2>/dev/null || echo "10000000")
-if [ "$FREE_SPACE" -lt 5242880 ]; then
-    echo -e "${YELLOW}[WARN] Pouco espaço em disco ($((FREE_SPACE/1024))MB).${NC}"
+# --- 1. Pre-flight checks ---
+echo -e "${YELLOW}[1/7] Verificações de pré-voo...${NC}"
+
+# Check disk space
+FREE_SPACE_KB=$(df -k / | tail -1 | awk '{print $4}' 2>/dev/null || echo "10000000")
+FREE_SPACE_MB=$((FREE_SPACE_KB / 1024))
+if [ "$FREE_SPACE_MB" -lt 5120 ]; then
+    echo -e "${YELLOW}  ⚠️ Pouco espaço em disco (${FREE_SPACE_MB}MB). Recomendado: 5GB+${NC}"
 fi
 
-# Check for Git
+# Check Git
 if ! command -v git &> /dev/null; then
-    echo -e "${RED}❌ Git não encontrado. Instale o Git para continuar a atualização.${NC}"
+    echo -e "${RED}❌ Git não encontrado. Instale: sudo apt install git${NC}"
     exit 1
 fi
+echo -e "  Git: ${GREEN}✓${NC}"
 
-# Check for Docker
+# Check Docker
 if ! command -v docker &> /dev/null; then
-    echo -e "${RED}❌ Docker não encontrado. Verifique se o Docker Desktop está rodando.${NC}"
+    echo -e "${RED}❌ Docker não encontrado. Execute deploy_new_vm.sh primeiro.${NC}"
     exit 1
 fi
+echo -e "  Docker: ${GREEN}✓${NC}"
 
-# Check for .env
+# Determine docker compose command
+DOCKER_CMD="docker compose"
+if ! $DOCKER_CMD version &> /dev/null 2>&1; then
+    DOCKER_CMD="docker-compose"
+fi
+if ! docker ps &> /dev/null 2>&1; then
+    DOCKER_CMD="sudo $DOCKER_CMD"
+fi
+
+# --- 2. Check .env ---
+echo -e "\n${YELLOW}[2/7] Verificando configuração...${NC}"
 if [ ! -f .env ]; then
-    echo -e "${RED}❌ Arquivo .env não encontrado. Execute o install.sh primeiro.${NC}"
-    exit 1
+    echo -e "${YELLOW}  .env não encontrado. Criando com valores padrão...${NC}"
+    cat > .env << 'ENV'
+POSTGRES_DB=onepa_playout
+POSTGRES_USER=onepa
+POSTGRES_PASSWORD=onepa
+JWT_SECRET=onepa-production-secret-change-me
+DEPLOY_REPO=ideiasestrondosas-ctrl/cloud-onepa-playout
+DEPLOY_BRANCH=alpha
+ENV
 fi
-
-# Load variables
 source .env
 BRANCH=${DEPLOY_BRANCH:-"alpha"}
 REPO=${DEPLOY_REPO:-"ideiasestrondosas-ctrl/cloud-onepa-playout"}
+echo -e "  Branch: ${CYAN}$BRANCH${NC} | Repo: ${CYAN}$REPO${NC}"
 
-echo -e "Configuração: Branch ${YELLOW}$BRANCH${NC} do repositório ${YELLOW}$REPO${NC}"
-
-# 1. Cleanup old source if exists
-TEMP_DIR="onepa_update_$(date +%s)"
-mkdir -p "$TEMP_DIR"
-
-# 2. Get latest code
-echo -e "\n${YELLOW}⬇️ Buscando atualizações...${NC}"
-# Note: This assumes the user has set up SSH or a credential helper for Git
-git clone -b "$BRANCH" "https://github.com/$REPO.git" "$TEMP_DIR"
-
-# 3. Apply Updates
-echo -e "\n${YELLOW}🏗️ Reconstruindo Contentores...${NC}"
-# Copy new docker-compose and scripts to root
-cp "$TEMP_DIR/docker-compose.yml" ./
-cp -r "$TEMP_DIR/scripts" ./
-
-# Build Config
-DOCKER_CMD="docker compose"
-# Permission Check (Linux)
-if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    if ! docker ps &> /dev/null; then
-        echo -e "${YELLOW}[WARN] Permissão negada ao socket do Docker. Usando 'sudo'...${NC}"
-        DOCKER_CMD="sudo $DOCKER_CMD"
-    fi
+# --- 3. Backup info ---
+echo -e "\n${YELLOW}[3/7] Dados preservados (NÃO serão apagados):${NC}"
+if [ -d "data/media" ]; then
+    MEDIA_COUNT=$(find data/media -type f 2>/dev/null | wc -l)
+    echo -e "  📁 Media: ${GREEN}${MEDIA_COUNT} ficheiros${NC}"
 fi
+if [ -d "data/postgres" ]; then
+    PG_SIZE=$(du -sh data/postgres 2>/dev/null | cut -f1)
+    echo -e "  🗄️ Database: ${GREEN}${PG_SIZE}${NC}"
+fi
+if [ -d "data/thumbnails" ]; then
+    THUMB_COUNT=$(find data/thumbnails -type f 2>/dev/null | wc -l)
+    echo -e "  🖼️ Thumbnails: ${GREEN}${THUMB_COUNT} ficheiros${NC}"
+fi
+
+# --- 4. Stop running services gracefully ---
+echo -e "\n${YELLOW}[4/7] Parando serviços em execução...${NC}"
+$DOCKER_CMD stop 2>/dev/null || true
+echo -e "  ${GREEN}Serviços parados ✓${NC}"
+
+# --- 5. Pull latest code ---
+echo -e "\n${YELLOW}[5/7] Atualizando código...${NC}"
+if [ -d ".git" ]; then
+    # We're in a git repo, just pull
+    echo -e "  Repositório Git detectado. A fazer pull..."
+    git fetch origin "$BRANCH"
+    git reset --hard "origin/$BRANCH"
+    echo -e "  ${GREEN}Código atualizado via git pull ✓${NC}"
+else
+    # No git repo, clone into temp and copy
+    echo -e "  Sem repositório Git. A clonar código atualizado..."
+    TEMP_DIR="onepa_update_$(date +%s)"
+    git clone -b "$BRANCH" "https://github.com/$REPO.git" "$TEMP_DIR"
+    
+    # Copy new files (preserve data directories)
+    cp "$TEMP_DIR/docker-compose.yml" ./
+    cp -r "$TEMP_DIR/docker" ./
+    cp -r "$TEMP_DIR/backend" ./
+    cp -r "$TEMP_DIR/frontend" ./
+    cp -r "$TEMP_DIR/scripts" ./
+    
+    rm -rf "$TEMP_DIR"
+    echo -e "  ${GREEN}Código copiado ✓${NC}"
+fi
+
+# --- 6. Rebuild and restart ---
+echo -e "\n${YELLOW}[6/7] Reconstruindo containers...${NC}"
 
 BUILD_OPTS=""
 if [ "$FULL_RESET" = true ]; then
@@ -98,13 +156,75 @@ if [ "$FULL_RESET" = true ]; then
     export CACHE_BUST=$(date +%s)
 fi
 
-$DOCKER_CMD build $BUILD_OPTS --pull
+$DOCKER_CMD build $BUILD_OPTS
+echo -e "  ${GREEN}Build concluído ✓${NC}"
+
+echo -e "\n${YELLOW}  Iniciando serviços...${NC}"
 $DOCKER_CMD up -d
+echo -e "  ${GREEN}Serviços iniciados ✓${NC}"
 
-# 4. Cleanup
-echo -e "\n${YELLOW}🧹 Finalizando limpeza...${NC}"
-rm -rf "$TEMP_DIR"
+# --- 7. Health checks ---
+echo -e "\n${YELLOW}[7/7] Verificações de saúde...${NC}"
+sleep 5
 
-echo -e "\n${GREEN}✨ Sistema atualizado com sucesso!${NC}"
-echo "🌐 Acesso: http://localhost:3011"
+echo -n "  PostgreSQL: "
+for i in $(seq 1 15); do
+    if $DOCKER_CMD exec alpha-postgres pg_isready -U "${POSTGRES_USER:-onepa}" &> /dev/null; then
+        echo -e "${GREEN}✓${NC}"
+        break
+    fi
+    if [ $i -eq 15 ]; then echo -e "${YELLOW}⏳ Ainda a iniciar${NC}"; fi
+    sleep 2
+done
+
+echo -n "  Backend: "
+for i in $(seq 1 45); do
+    if curl -sf http://localhost:8182/api/health &> /dev/null; then
+        echo -e "${GREEN}✓${NC}"
+        break
+    fi
+    if [ $i -eq 45 ]; then echo -e "${YELLOW}⏳ Ainda a iniciar (ver: $DOCKER_CMD logs backend)${NC}"; fi
+    sleep 2
+done
+
+echo -n "  Frontend: "
+if curl -sf http://localhost:3011 &> /dev/null; then
+    echo -e "${GREEN}✓${NC}"
+else
+    echo -e "${YELLOW}⏳ Ainda a iniciar${NC}"
+fi
+
+echo -n "  RTMP (1935): "
+if timeout 2 bash -c "echo > /dev/tcp/localhost/1935" 2>/dev/null; then
+    echo -e "${GREEN}✓${NC}"
+else
+    echo -e "${YELLOW}⏳ Ainda não acessível${NC}"
+fi
+
+echo -n "  HLS (8888): "
+if curl -sf http://localhost:8888 &> /dev/null; then
+    echo -e "${GREEN}✓${NC}"
+else
+    echo -e "${YELLOW}⏳ Ainda não acessível${NC}"
+fi
+
+echo -n "  SRT (8890): "
+if timeout 2 bash -c "echo > /dev/udp/localhost/8890" 2>/dev/null; then
+    echo -e "${GREEN}✓${NC}"
+else
+    echo -e "${YELLOW}⏳ UDP — verificação limitada${NC}"
+fi
+
+# --- Summary ---
+echo ""
+echo -e "${GREEN}╔══════════════════════════════════════════╗${NC}"
+echo -e "${GREEN}║  ✅ Atualização Concluída!                ║${NC}"
+echo -e "${GREEN}╚══════════════════════════════════════════╝${NC}"
+echo ""
+echo -e "  🌐 Aplicação:     ${CYAN}http://$(hostname -I 2>/dev/null | awk '{print $1}' || echo 'localhost'):3011${NC}"
+echo -e "  📡 RTMP:          ${CYAN}rtmp://$(hostname -I 2>/dev/null | awk '{print $1}' || echo 'localhost'):1935/live/master${NC}"
+echo -e "  📺 HLS:           ${CYAN}http://$(hostname -I 2>/dev/null | awk '{print $1}' || echo 'localhost'):8888/hls/stream.m3u8${NC}"
+echo -e "  🔗 SRT:           ${CYAN}srt://$(hostname -I 2>/dev/null | awk '{print $1}' || echo 'localhost'):8890${NC}"
+echo ""
+echo -e "  ${YELLOW}Rollback: git checkout HEAD~1 && $DOCKER_CMD build && $DOCKER_CMD up -d${NC}"
 echo ""

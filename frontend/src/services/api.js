@@ -62,9 +62,10 @@ export const authAPI = {
 export const mediaAPI = {
   list: (params) => api.get('/media', { params }),
   get: (id) => api.get(`/media/${id}`),
-  upload: (formData, onProgress) => api.post('/media/upload', formData, {
+  upload: (formData, onProgress, signal) => api.post('/media/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
-    onUploadProgress: onProgress
+    onUploadProgress: onProgress,
+    signal: signal
   }),
   delete: (id) => api.delete(`/media/${id}`),
   update: (id, data) => api.put(`/media/${id}`, data),

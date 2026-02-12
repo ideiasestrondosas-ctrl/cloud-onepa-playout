@@ -21,10 +21,10 @@ srt: yes
 rtsp: yes
 
 # Listener ports
-rtmpAddress: :2035
-hlsAddress: :8988
+rtmpAddress: :1935
+hlsAddress: :8888
 webrtcAddress: :8989
-srtAddress: :8990
+srtAddress: :8890
 
 # HLS settings
 hlsVariant: lowLatency

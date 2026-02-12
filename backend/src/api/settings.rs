@@ -47,7 +47,7 @@ async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
         Ok(None) => {
             // Insert default settings
             let _ = sqlx::query(
-                "INSERT INTO settings (id, output_url) VALUES (TRUE, 'rtmp://localhost:2035/stream')"
+                "INSERT INTO settings (id, output_url) VALUES (TRUE, 'rtmp://localhost:1935/stream')"
             )
             .execute(pool.get_ref())
             .await;
@@ -56,7 +56,7 @@ async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
             HttpResponse::Ok().json(Settings {
                 id: true,
                 output_type: "rtmp".to_string(),
-                output_url: "rtmp://localhost:2035/stream".to_string(),
+                output_url: "rtmp://localhost:1935/stream".to_string(),
                 resolution: "1920x1080".to_string(),
                 fps: "30".to_string(),
                 video_bitrate: "5000".to_string(),
@@ -96,11 +96,11 @@ async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
                 srt_enabled: false,
                 udp_enabled: false,
                 rtmp_output_url: Some(format!(
-                    "rtmp://{}:2035/live/stream",
+                    "rtmp://{}:1935/live/stream",
                     std::env::var("MEDIAMTX_HOST").unwrap_or_else(|_| "localhost".to_string())
                 )),
                 srt_output_url: Some(format!(
-                    "srt://{}:8990?mode=caller&streamid=publish:live/stream",
+                    "srt://{}:8890?mode=caller&streamid=publish:live/stream",
                     std::env::var("MEDIAMTX_HOST").unwrap_or_else(|_| "localhost".to_string())
                 )),
                 udp_output_url: Some("udp://@239.0.0.1:1234".to_string()),

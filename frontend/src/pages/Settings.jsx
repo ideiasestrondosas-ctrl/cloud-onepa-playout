@@ -733,6 +733,7 @@ function Settings() {
       }
 
       await settingsAPI.update(payload);
+      await fetchSettings(); // Re-sync state from DB to prevent stale overwrites
       showSuccess(`Configurações da aba ${['Output', 'Caminhos', 'Playout'][tabValue] || ''} salvas!`);
 
       // Auto-restart engine with new settings if in Output tab

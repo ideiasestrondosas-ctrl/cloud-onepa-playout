@@ -7,7 +7,7 @@ const { exec } = require('child_process');
  * Usage: node scripts/watch_stream.js
  */
 
-const STREAM_URL = 'http://localhost:3000/hls/stream.m3u8';
+const STREAM_URL = 'http://localhost:8888/hls/stream.m3u8';
 
 function findVLC() {
     return new Promise((resolve, reject) => {
@@ -31,7 +31,7 @@ async function launch() {
         const vlcPath = await findVLC();
         console.log(`🚀 Launching VLC from: ${vlcPath}`);
         console.log(`📺 Stream URL: ${STREAM_URL}`);
-        
+
         const vlc = cp.spawn(vlcPath, [STREAM_URL, '--network-caching=1000'], {
             detached: true,
             stdio: 'ignore'

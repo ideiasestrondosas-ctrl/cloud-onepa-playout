@@ -55,6 +55,9 @@ pub struct PlayoutEngine {
     skip_requested: Arc<Mutex<bool>>,
     last_overlay_opacity: Arc<Mutex<f32>>,
     last_overlay_scale: Arc<Mutex<f32>>,
+    last_overlay_x: Arc<Mutex<i32>>,
+    last_overlay_y: Arc<Mutex<i32>>,
+    last_overlay_anchor: Arc<Mutex<String>>,
     last_output_url: Arc<Mutex<String>>,
     last_resolution: Arc<Mutex<String>>,
     last_video_bitrate: Arc<Mutex<String>>,
@@ -94,6 +97,9 @@ impl PlayoutEngine {
             skip_requested: Arc::new(Mutex::new(false)),
             last_overlay_opacity: Arc::new(Mutex::new(1.0)),
             last_overlay_scale: Arc::new(Mutex::new(1.0)),
+            last_overlay_x: Arc::new(Mutex::new(50)),
+            last_overlay_y: Arc::new(Mutex::new(50)),
+            last_overlay_anchor: Arc::new(Mutex::new("top-right".to_string())),
             last_output_url: Arc::new(Mutex::new("".to_string())),
             last_resolution: Arc::new(Mutex::new("1920x1080".to_string())),
             last_video_bitrate: Arc::new(Mutex::new("5000k".to_string())),
@@ -619,8 +625,11 @@ impl PlayoutEngine {
 
             let mut current_id = self.current_clip_id.lock().await;
             let mut proc_lock = self.current_process.lock().await;
-            let mut last_opacity = self.last_overlay_opacity.lock().await;
-            let mut last_scale = self.last_overlay_scale.lock().await;
+            let mut last_overlay_opacity = self.last_overlay_opacity.lock().await;
+            let mut last_overlay_scale = self.last_overlay_scale.lock().await;
+            let mut last_overlay_x = self.last_overlay_x.lock().await;
+            let mut last_overlay_y = self.last_overlay_y.lock().await;
+            let mut last_overlay_anchor = self.last_overlay_anchor.lock().await;
             let mut last_url = self.last_output_url.lock().await;
             let mut last_res = self.last_resolution.lock().await;
             let mut last_vb = self.last_video_bitrate.lock().await;
@@ -628,11 +637,17 @@ impl PlayoutEngine {
 
             let current_opacity = settings.overlay_opacity.unwrap_or(1.0);
             let current_scale = settings.overlay_scale.unwrap_or(1.0);
+            let current_x = settings.overlay_x.unwrap_or(50);
+            let current_y = settings.overlay_y.unwrap_or(50);
+            let current_anchor = settings.overlay_anchor.clone().unwrap_or_else(|| "top-right".to_string());
 
             // Detect overlay changes
             let overlay_changed = settings.overlay_enabled
-                && ((current_opacity - *last_opacity).abs() > 0.01
-                    || (current_scale - *last_scale).abs() > 0.01);
+                && ((current_opacity - *last_overlay_opacity).abs() > 0.01
+                    || (current_scale - *last_overlay_scale).abs() > 0.01
+                    || current_x != *last_overlay_x
+                    || current_y != *last_overlay_y
+                    || current_anchor != *last_overlay_anchor);
 
             // Detect output settings changes (Restart required)
             let settings_changed = settings.output_url != *last_url
@@ -642,13 +657,17 @@ impl PlayoutEngine {
 
             if overlay_changed || settings_changed {
                 log::info!(
-                    "Stream settings changed (URL: {}->{}, Res: {}->{}, Bitrate: {}/{}->{}/{}). Restarting stream.",
+                    "Stream settings changed (URL: {}->{}, Res: {}->{}, Bitrate: {}/{}->{}/{}, Overlay: {}/{}). Restarting stream.",
                     *last_url, settings.output_url,
                     *last_res, settings.resolution,
-                    *last_vb, *last_ab, settings.video_bitrate, settings.audio_bitrate
+                    *last_vb, *last_ab, settings.video_bitrate, settings.audio_bitrate,
+                    current_x, current_y
                 );
-                *last_opacity = current_opacity;
-                *last_scale = current_scale;
+                *last_overlay_opacity = current_opacity;
+                *last_overlay_scale = current_scale;
+                *last_overlay_x = current_x;
+                *last_overlay_y = current_y;
+                *last_overlay_anchor = current_anchor;
                 *last_url = settings.output_url.clone();
                 *last_res = settings.resolution.clone();
                 *last_vb = settings.video_bitrate.clone();
@@ -1020,7 +1039,7 @@ impl PlayoutEngine {
                 "idle".to_string()
             },
             sessions: hls_count,
-            details: "http://localhost:3000/hls/stream.m3u8".to_string(),
+            details: "http://localhost:8888/hls/stream.m3u8".to_string(),
         });
 
         // 3. SRT Status

@@ -193,8 +193,10 @@ export default function Calendar() {
   };
 
   const handleDeleteSchedule = async (idOrOccurrence) => {
-    // Parse ID if it's an occurrence (UUID-YYYY-MM-DD)
-    const id = idOrOccurrence.toString().split('-')[0];
+    // UUIDs are 36 chars (8-4-4-4-12). Occurrence IDs append `-YYYY-MM-DD` (11 chars)
+    // We cannot split on '-' because UUIDs contain hyphens
+    const idStr = idOrOccurrence.toString();
+    const id = idStr.length > 36 ? idStr.substring(0, 36) : idStr;
 
     if (!id) {
       showError('Erro: ID do agendamento não encontrado');
@@ -210,7 +212,8 @@ export default function Calendar() {
   };
 
   const handleDeleteOnlyToday = async (idOrOccurrence, date) => {
-    const id = idOrOccurrence.toString().split('-')[0];
+    const idStr = idOrOccurrence.toString();
+    const id = idStr.length > 36 ? idStr.substring(0, 36) : idStr;
     if (!id || !date) {
       showError('Erro: Dados insuficientes para remover ocorrência');
       return;

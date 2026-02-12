@@ -73,10 +73,10 @@ services:
     container_name: alpha-mediamtx
     hostname: mediamtx
     ports:
-      - "2036:2035" # RTMP
-      - "8991:8988" # HLS
+      - "1935:1935" # RTMP
+      - "8888:8888" # HLS
       - "8992:8989" # WebRTC
-      - "8993:8990/udp" # SRT
+      - "8890:8890/udp" # SRT
     volumes:
       - ./docker/mediamtx.yml:/mediamtx.yml:ro
     networks:

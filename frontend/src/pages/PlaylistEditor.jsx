@@ -92,12 +92,12 @@ function SortableClip({ clip, onRemove, isSelected, onToggleSelection }) {
       disablePadding
       sx={{ mb: 1 }}
     >
-      <Paper 
+      <Paper
         className="glass-panel"
-        sx={{ 
+        sx={{
           width: '100%',
           p: 1.5,
-          display: 'flex', 
+          display: 'flex',
           alignItems: 'center',
           gap: 2,
           transition: '0.2s',
@@ -105,18 +105,18 @@ function SortableClip({ clip, onRemove, isSelected, onToggleSelection }) {
           '&:hover': { bgcolor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.1)' }
         }}
       >
-        <Checkbox 
-          checked={isSelected} 
+        <Checkbox
+          checked={isSelected}
           onChange={() => onToggleSelection(clip.id)}
           size="small"
           sx={{ color: 'rgba(255,255,255,0.3)' }}
         />
-        
-        <Box 
-          {...attributes} 
-          {...listeners} 
-          sx={{ 
-            cursor: 'grab', 
+
+        <Box
+          {...attributes}
+          {...listeners}
+          sx={{
+            cursor: 'grab',
             color: 'primary.main',
             display: 'flex',
             alignItems: 'center',
@@ -132,17 +132,17 @@ function SortableClip({ clip, onRemove, isSelected, onToggleSelection }) {
             {clip.filename.toUpperCase()}
           </Typography>
           <Stack direction="row" spacing={1} alignItems="center">
-            <Chip 
-              label={clip.start_time} 
-              size="small" 
-              sx={{ 
-                height: 18, 
-                fontSize: '0.6rem', 
-                fontWeight: 800, 
-                bgcolor: 'rgba(0,229,255,0.1)', 
+            <Chip
+              label={clip.start_time}
+              size="small"
+              sx={{
+                height: 18,
+                fontSize: '0.6rem',
+                fontWeight: 800,
+                bgcolor: 'rgba(0,229,255,0.1)',
                 color: 'primary.main',
                 borderRadius: 1
-              }} 
+              }}
             />
             <Typography variant="caption" sx={{ opacity: 0.5, fontWeight: 600 }}>
               DURAÇÃO: {formatShortDuration(clip.duration)}
@@ -153,11 +153,11 @@ function SortableClip({ clip, onRemove, isSelected, onToggleSelection }) {
           </Stack>
         </Box>
 
-        <IconButton 
+        <IconButton
           size="small"
           onClick={() => onRemove(clip.id)}
-          sx={{ 
-            color: 'error.main', 
+          sx={{
+            color: 'error.main',
             bgcolor: 'rgba(244,67,54,0.05)',
             '&:hover': { bgcolor: 'rgba(244,67,54,0.15)' }
           }}
@@ -193,7 +193,7 @@ export default function PlaylistEditor() {
   const [playlists, setPlaylists] = useState([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
   const [clips, setClipsState] = useState([]);
-  
+
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
 
@@ -204,9 +204,9 @@ export default function PlaylistEditor() {
     } else {
       finalClips = calculateTimings(newClips);
     }
-    
+
     setClipsState(finalClips);
-    
+
     if (!skipHistory) {
       const newHistory = history.slice(0, historyIndex + 1);
       newHistory.push(finalClips);
@@ -381,9 +381,20 @@ export default function PlaylistEditor() {
   };
 
   const toggleMediaSelection = (mediaId) => {
-    setSelectedMediaIds(prev => 
+    setSelectedMediaIds(prev =>
       prev.includes(mediaId) ? prev.filter(id => id !== mediaId) : [...prev, mediaId]
     );
+  };
+
+  const handleSelectAllMedia = (checked) => {
+    if (checked) {
+      const allFilteredIds = availableMedia
+        .filter((m) => m.media_type === 'video' || m.media_type === 'audio')
+        .map(m => m.id);
+      setSelectedMediaIds(allFilteredIds);
+    } else {
+      setSelectedMediaIds([]);
+    }
   };
 
   const handleRemoveClip = (id) => {
@@ -392,7 +403,7 @@ export default function PlaylistEditor() {
   };
 
   const toggleSelection = (id) => {
-    setSelectedClipIds(prev => 
+    setSelectedClipIds(prev =>
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
   };
@@ -464,7 +475,7 @@ export default function PlaylistEditor() {
     setClips([]);
     setSelectedClipIds([]);
     setValidation(null);
-    
+
     setSelectedPlaylist(playlist);
     setPlaylistName(playlist.name);
     setPlaylistDate(playlist.date || '');
@@ -514,53 +525,53 @@ export default function PlaylistEditor() {
     try {
       setSaving(true);
       let candidates = [];
-      
+
       if (automationType === 'loop') {
-          if (clips.length === 0) {
-              showError('Adicione pelo menos um clip como base para o loop.');
-              setSaving(false);
-              return;
-          }
-          candidates = [...clips];
+        if (clips.length === 0) {
+          showError('Adicione pelo menos um clip como base para o loop.');
+          setSaving(false);
+          return;
+        }
+        candidates = [...clips];
       } else {
-          const params = {
-              folder_id: selectedFolder,
-              limit: 500
-          };
-          if (useFillersOnly) params.is_filler = true;
-          
-          const response = await mediaAPI.list(params);
-          candidates = response.data.media || [];
-          
-          if (candidates.length === 0) {
-              showError(`Nenhum ficheiro encontrado na pasta selecionada${useFillersOnly ? ' com flag de filler' : ''}.`);
-              setSaving(false);
-              return;
-          }
+        const params = {
+          folder_id: selectedFolder,
+          limit: 500
+        };
+        if (useFillersOnly) params.is_filler = true;
+
+        const response = await mediaAPI.list(params);
+        candidates = response.data.media || [];
+
+        if (candidates.length === 0) {
+          showError(`Nenhum ficheiro encontrado na pasta selecionada${useFillersOnly ? ' com flag de filler' : ''}.`);
+          setSaving(false);
+          return;
+        }
       }
 
       let currentGap = gap;
       const addedClips = [];
-      
+
       if (automationType === 'random') {
-          candidates = [...candidates].sort(() => Math.random() - 0.5);
+        candidates = [...candidates].sort(() => Math.random() - 0.5);
       }
-      
+
       let index = 0;
       // We loop until gap is filled or we tried many times
       while (currentGap > 10 && index < 200) {
-          const item = candidates[index % candidates.length];
-          if (item.duration <= currentGap + 3600) { // Allow slight overshoot for final item
-             addedClips.push({
-                 ...item,
-                 id: `auto-${Date.now()}-${addedClips.length}`
-             });
-             currentGap -= item.duration;
-          }
-          index++;
-          
-          // Safety break if we are looping and items are too small
-          if (index > 1000) break;
+        const item = candidates[index % candidates.length];
+        if (item.duration <= currentGap + 3600) { // Allow slight overshoot for final item
+          addedClips.push({
+            ...item,
+            id: `auto-${Date.now()}-${addedClips.length}`
+          });
+          currentGap -= item.duration;
+        }
+        index++;
+
+        // Safety break if we are looping and items are too small
+        if (index > 1000) break;
       }
 
       if (addedClips.length > 0) {
@@ -583,7 +594,7 @@ export default function PlaylistEditor() {
       showWarning('Por favor, insira um nome para a nova playlist');
       return;
     }
-    
+
     try {
       setSaving(true);
       const content = {
@@ -591,17 +602,17 @@ export default function PlaylistEditor() {
         date: new Date().toISOString().split('T')[0],
         program: [],
       };
-      
+
       const response = await playlistAPI.create({
         name: newPlaylistName,
         date: content.date,
         content,
       });
-      
+
       await fetchPlaylists();
       // Auto-load and select the newly created playlist
       handleLoadPlaylist(response.data);
-      
+
       setCreateDialogOpen(false);
       setNewPlaylistName('');
       showSuccess('Playlist criada com sucesso! Adicione clips e salve as alterações.');
@@ -651,22 +662,22 @@ export default function PlaylistEditor() {
         <Box sx={{ display: 'flex', gap: 2 }}>
           {selectedClipIds.length > 0 && (
             <Tooltip title="Eliminar clips selecionados" arrow>
-              <Button 
-                  variant="contained" 
-                  color="error" 
-                  startIcon={<DeleteIcon />} 
-                  onClick={handleBulkDelete}
-                  sx={{ borderRadius: 2, fontWeight: 800, px: 3 }}
+              <Button
+                variant="contained"
+                color="error"
+                startIcon={<DeleteIcon />}
+                onClick={handleBulkDelete}
+                sx={{ borderRadius: 2, fontWeight: 800, px: 3 }}
               >
                 ELIMINAR ({selectedClipIds.length})
               </Button>
             </Tooltip>
           )}
           <Tooltip title="Gerar playlist automaticamente" arrow>
-            <Button 
-              variant="outlined" 
-              color="warning" 
-              startIcon={<AutoFixIcon />} 
+            <Button
+              variant="outlined"
+              color="warning"
+              startIcon={<AutoFixIcon />}
               onClick={() => setAutomationDialogOpen(true)}
               sx={{ borderRadius: 2, fontWeight: 800, px: 3 }}
             >
@@ -674,8 +685,8 @@ export default function PlaylistEditor() {
             </Button>
           </Tooltip>
           <Tooltip title="Criar uma nova playlist vazia" arrow>
-            <Button 
-              variant="outlined" 
+            <Button
+              variant="outlined"
               onClick={handleNewPlaylist}
               sx={{ borderRadius: 2, fontWeight: 800, px: 3 }}
             >
@@ -689,10 +700,10 @@ export default function PlaylistEditor() {
               startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
               onClick={handleSave}
               disabled={saving || clips.length === 0}
-              sx={{ 
-                borderRadius: 2, 
-                fontWeight: 800, 
-                px: 4, 
+              sx={{
+                borderRadius: 2,
+                fontWeight: 800,
+                px: 4,
                 filter: 'drop-shadow(0 0 10px rgba(0,229,255,0.3))',
                 minWidth: '140px'
               }}
@@ -716,8 +727,8 @@ export default function PlaylistEditor() {
                   key={playlist.id}
                   selected={selectedPlaylist?.id === playlist.id}
                   onClick={() => handleLoadPlaylist(playlist)}
-                  sx={{ 
-                    borderRadius: 3, 
+                  sx={{
+                    borderRadius: 3,
                     mb: 1,
                     transition: '0.3s',
                     '&.Mui-selected': { bgcolor: 'rgba(0,229,255,0.1)', border: '1px solid rgba(0,229,255,0.2)' },
@@ -733,7 +744,7 @@ export default function PlaylistEditor() {
                     primaryTypographyProps={{ sx: { fontWeight: 800, fontSize: '0.75rem', letterSpacing: 0.5 } }}
                     secondaryTypographyProps={{ sx: { fontSize: '0.65rem', opacity: 0.6 } }}
                   />
-                  <IconButton 
+                  <IconButton
                     size="small"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -756,55 +767,55 @@ export default function PlaylistEditor() {
             <Grid container spacing={3} alignItems="center">
               <Grid item xs={12} md={6}>
                 <Stack direction="row" spacing={2}>
-                    <TextField
-                        fullWidth label="NOME DA PLAYLIST"
-                        value={playlistName}
-                        onChange={(e) => setPlaylistName(e.target.value)}
-                        variant="standard"
-                        InputLabelProps={{ shrink: true, sx: { fontWeight: 800, fontSize: '0.7rem' } }}
-                        inputProps={{ sx: { fontWeight: 800, fontSize: '0.9rem' } }}
-                    />
-                    <TextField
-                        fullWidth label="DATA DE EMISSÃO" type="date"
-                        value={playlistDate}
-                        onChange={(e) => setPlaylistDate(e.target.value)}
-                        variant="standard"
-                        InputLabelProps={{ shrink: true, sx: { fontWeight: 800, fontSize: '0.7rem' } }}
-                        inputProps={{ sx: { fontWeight: 800, fontSize: '0.9rem' } }}
-                    />
+                  <TextField
+                    fullWidth label="NOME DA PLAYLIST"
+                    value={playlistName}
+                    onChange={(e) => setPlaylistName(e.target.value)}
+                    variant="standard"
+                    InputLabelProps={{ shrink: true, sx: { fontWeight: 800, fontSize: '0.7rem' } }}
+                    inputProps={{ sx: { fontWeight: 800, fontSize: '0.9rem' } }}
+                  />
+                  <TextField
+                    fullWidth label="DATA DE EMISSÃO" type="date"
+                    value={playlistDate}
+                    onChange={(e) => setPlaylistDate(e.target.value)}
+                    variant="standard"
+                    InputLabelProps={{ shrink: true, sx: { fontWeight: 800, fontSize: '0.7rem' } }}
+                    inputProps={{ sx: { fontWeight: 800, fontSize: '0.9rem' } }}
+                  />
                 </Stack>
               </Grid>
-              
+
               <Grid item xs={12} md={6}>
                 <Box sx={{ p: 2, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3, border: '1px solid rgba(255,255,255,0.05)' }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                     <Typography variant="caption" sx={{ fontWeight: 800, color: totalDuration >= 86000 ? 'success.main' : 'warning.main', display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <TimerIcon sx={{ fontSize: 16 }} /> DURAÇÃO TOTAL: {formatDuration(totalDuration)}
+                      <TimerIcon sx={{ fontSize: 16 }} /> DURAÇÃO TOTAL: {formatDuration(totalDuration)}
                     </Typography>
                     <Typography variant="caption" sx={{ fontWeight: 800, opacity: 0.5 }}>META: 24:00:00</Typography>
                   </Box>
-                  <LinearProgress 
-                    variant="determinate" 
-                    value={Math.min((totalDuration / 86400) * 100, 100)} 
-                    sx={{ 
-                        height: 6, 
-                        borderRadius: 3, 
-                        bgcolor: 'rgba(255,255,255,0.05)',
-                        '& .MuiLinearProgress-bar': {
-                            bgcolor: totalDuration >= 86000 ? 'success.main' : 'primary.main',
-                            boxShadow: totalDuration >= 86000 ? '0 0 10px #4caf50' : '0 0 10px #00e5ff'
-                        }
+                  <LinearProgress
+                    variant="determinate"
+                    value={Math.min((totalDuration / 86400) * 100, 100)}
+                    sx={{
+                      height: 6,
+                      borderRadius: 3,
+                      bgcolor: 'rgba(255,255,255,0.05)',
+                      '& .MuiLinearProgress-bar': {
+                        bgcolor: totalDuration >= 86000 ? 'success.main' : 'primary.main',
+                        boxShadow: totalDuration >= 86000 ? '0 0 10px #4caf50' : '0 0 10px #00e5ff'
+                      }
                     }}
                   />
                   {totalDuration < 86300 && totalDuration > 0 && (
-                      <Typography variant="caption" sx={{ color: 'warning.main', fontSize: '0.65rem', mt: 1, display: 'block', fontWeight: 600 }}>
-                          ⚠️ FALTAM {formatDuration(86400 - totalDuration)} PARA COMPLETAR AS 24H
-                      </Typography>
+                    <Typography variant="caption" sx={{ color: 'warning.main', fontSize: '0.65rem', mt: 1, display: 'block', fontWeight: 600 }}>
+                      ⚠️ FALTAM {formatDuration(86400 - totalDuration)} PARA COMPLETAR AS 24H
+                    </Typography>
                   )}
                   {totalDuration >= 86400 && (
-                      <Typography variant="caption" sx={{ color: 'success.main', fontSize: '0.65rem', mt: 1, display: 'block', fontWeight: 600 }}>
-                          ✅ PLAYLIST PRONTA PARA EMISSÃO (24H COMPLETAS)
-                      </Typography>
+                    <Typography variant="caption" sx={{ color: 'success.main', fontSize: '0.65rem', mt: 1, display: 'block', fontWeight: 600 }}>
+                      ✅ PLAYLIST PRONTA PARA EMISSÃO (24H COMPLETAS)
+                    </Typography>
                   )}
                 </Box>
               </Grid>
@@ -864,15 +875,26 @@ export default function PlaylistEditor() {
       </Grid>
 
       {/* Media Selection Dialog */}
-      <Dialog 
-        open={mediaDialogOpen} 
-        onClose={() => { setMediaDialogOpen(false); setSelectedMediaIds([]); }} 
-        maxWidth="md" 
+      <Dialog
+        open={mediaDialogOpen}
+        onClose={() => { setMediaDialogOpen(false); setSelectedMediaIds([]); }}
+        maxWidth="md"
         fullWidth
         PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
       >
-        <DialogTitle sx={{ fontWeight: 800, color: 'primary.main', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-            SELECIONAR MEDIA ({availableMedia.filter(m => m.media_type === 'video' || m.media_type === 'audio').length} DISPONÍVEIS)
+        <DialogTitle sx={{ fontWeight: 800, color: 'primary.main', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box>SELECIONAR MEDIA ({availableMedia.filter(m => m.media_type === 'video' || m.media_type === 'audio').length} DISPONÍVEIS)</Box>
+          <FormControlLabel
+            control={
+              <Checkbox
+                size="small"
+                indeterminate={selectedMediaIds.length > 0 && selectedMediaIds.length < availableMedia.filter(m => m.media_type === 'video' || m.media_type === 'audio').length}
+                checked={selectedMediaIds.length > 0 && selectedMediaIds.length === availableMedia.filter(m => m.media_type === 'video' || m.media_type === 'audio').length}
+                onChange={(e) => handleSelectAllMedia(e.target.checked)}
+              />
+            }
+            label={<Typography variant="caption" sx={{ fontWeight: 800 }}>SELECIONAR TODOS</Typography>}
+          />
         </DialogTitle>
         <DialogContent sx={{ p: 0 }}>
           {selectedMediaIds.length > 0 && (
@@ -887,9 +909,9 @@ export default function PlaylistEditor() {
                 <ListItemButton
                   key={media.id}
                   onClick={() => toggleMediaSelection(media.id)}
-                  sx={{ 
-                    borderRadius: 3, 
-                    mb: 1, 
+                  sx={{
+                    borderRadius: 3,
+                    mb: 1,
                     bgcolor: isSelected ? 'rgba(0,229,255,0.05)' : 'transparent',
                     border: isSelected ? '1px solid rgba(0,229,255,0.2)' : '1px solid transparent'
                   }}
@@ -909,8 +931,8 @@ export default function PlaylistEditor() {
         </DialogContent>
         <DialogActions sx={{ p: 3, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
           <Button onClick={() => { setMediaDialogOpen(false); setSelectedMediaIds([]); }} sx={{ fontWeight: 800 }}>CANCELAR</Button>
-          <Button 
-            onClick={handleAddSelectedClips} 
+          <Button
+            onClick={handleAddSelectedClips}
             variant="contained"
             disabled={selectedMediaIds.length === 0}
             sx={{ borderRadius: 2, fontWeight: 800, px: 4 }}
@@ -921,10 +943,10 @@ export default function PlaylistEditor() {
       </Dialog>
 
       {/* Create Playlist Dialog */}
-      <Dialog 
-        open={createDialogOpen} 
-        onClose={() => setCreateDialogOpen(false)} 
-        maxWidth="sm" 
+      <Dialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        maxWidth="sm"
         fullWidth
         PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
       >
@@ -949,92 +971,92 @@ export default function PlaylistEditor() {
         </DialogActions>
       </Dialog>
       {/* Automation / Fill Dialog */}
-      <Dialog 
-        open={automationDialogOpen} 
-        onClose={() => setAutomationDialogOpen(false)} 
-        maxWidth="sm" 
+      <Dialog
+        open={automationDialogOpen}
+        onClose={() => setAutomationDialogOpen(false)}
+        maxWidth="sm"
         fullWidth
         PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
       >
         <DialogTitle sx={{ fontWeight: 800, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
-            <AutoFixIcon /> AUTOMAÇÃO DE PREENCHIMENTO
+          <AutoFixIcon /> AUTOMAÇÃO DE PREENCHIMENTO
         </DialogTitle>
         <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.05)' }}>
-            <Typography variant="caption" sx={{ opacity: 0.6, fontWeight: 600, mb: 3, display: 'block' }}>
-                ESCOLHA O MÉTODO DE PREENCHIMENTO PARA ATINGIR A META DE 24H.
-            </Typography>
-            
-            <FormControl component="fieldset" sx={{ width: '100%' }}>
-                <RadioGroup value={automationType} onChange={(e) => setAutomationType(e.target.value)}>
-                    {[
-                        { value: 'random', label: 'ALEATÓRIO DA PASTA', desc: 'Escolhe média aleatória da origem selecionada.', icon: <ShuffleIcon /> },
-                        { value: 'sequential', label: 'SEQUENCIAL DA PASTA', desc: 'Segue a ordem alfabética dos ficheiros.', icon: <SequentialIcon /> },
-                        { value: 'loop', label: 'LOOP DA SELEÇÃO ATUAL', desc: 'Repete os clips já presentes no grid.', icon: <LoopIcon /> }
-                    ].map((mode) => (
-                        <Paper 
-                            key={mode.value}
-                            variant="outlined" 
-                            sx={{ 
-                                p: 1, mb: 1.5, borderRadius: 3, transition: '0.2s',
-                                bgcolor: automationType === mode.value ? 'rgba(0,229,255,0.05)' : 'transparent',
-                                border: automationType === mode.value ? '1px solid rgba(0,229,255,0.3)' : '1px solid rgba(255,255,255,0.05)',
-                                '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' }
-                            }}
-                        >
-                            <FormControlLabel 
-                                value={mode.value} 
-                                control={<Radio size="small" />} 
-                                sx={{ width: '100%', m: 0, px: 1 }}
-                                label={
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: 1 }}>
-                                        <Box sx={{ color: automationType === mode.value ? 'primary.main' : 'inherit', opacity: automationType === mode.value ? 1 : 0.5 }}>
-                                            {mode.icon}
-                                        </Box>
-                                        <Box>
-                                            <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: '0.75rem' }}>{mode.label}</Typography>
-                                            <Typography variant="caption" sx={{ opacity: 0.5, display: 'block', fontSize: '0.65rem' }}>{mode.desc}</Typography>
-                                        </Box>
-                                    </Box>
-                                } 
-                            />
-                        </Paper>
-                    ))}
-                </RadioGroup>
-            </FormControl>
+          <Typography variant="caption" sx={{ opacity: 0.6, fontWeight: 600, mb: 3, display: 'block' }}>
+            ESCOLHA O MÉTODO DE PREENCHIMENTO PARA ATINGIR A META DE 24H.
+          </Typography>
 
-            {automationType !== 'loop' && (
-                <Box sx={{ mt: 2, p: 2, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3, border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <FormControl fullWidth variant="standard" sx={{ mb: 2 }}>
-                        <InputLabel shrink sx={{ fontWeight: 800, fontSize: '0.7rem' }}>PASTA DE ORIGEM</InputLabel>
-                        <Select 
-                            value={selectedFolder} 
-                            onChange={(e) => setSelectedFolder(e.target.value)}
-                            sx={{ fontWeight: 800, fontSize: '0.8rem' }}
-                        >
-                            <MenuItem value="root">RAIZ (TODAS AS PASTAS)</MenuItem>
-                            {folders.map(f => (
-                                <MenuItem key={f.id} value={f.id}>{f.name.toUpperCase()}</MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                    <FormControlLabel 
-                        control={<Checkbox checked={useFillersOnly} onChange={(e) => setUseFillersOnly(e.target.checked)} size="small" />} 
-                        label={<Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.8 }}>USAR APENAS FICHEIROS MARCADOS COMO FILLER</Typography>}
-                    />
-                </Box>
-            )}
+          <FormControl component="fieldset" sx={{ width: '100%' }}>
+            <RadioGroup value={automationType} onChange={(e) => setAutomationType(e.target.value)}>
+              {[
+                { value: 'random', label: 'ALEATÓRIO DA PASTA', desc: 'Escolhe média aleatória da origem selecionada.', icon: <ShuffleIcon /> },
+                { value: 'sequential', label: 'SEQUENCIAL DA PASTA', desc: 'Segue a ordem alfabética dos ficheiros.', icon: <SequentialIcon /> },
+                { value: 'loop', label: 'LOOP DA SELEÇÃO ATUAL', desc: 'Repete os clips já presentes no grid.', icon: <LoopIcon /> }
+              ].map((mode) => (
+                <Paper
+                  key={mode.value}
+                  variant="outlined"
+                  sx={{
+                    p: 1, mb: 1.5, borderRadius: 3, transition: '0.2s',
+                    bgcolor: automationType === mode.value ? 'rgba(0,229,255,0.05)' : 'transparent',
+                    border: automationType === mode.value ? '1px solid rgba(0,229,255,0.3)' : '1px solid rgba(255,255,255,0.05)',
+                    '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' }
+                  }}
+                >
+                  <FormControlLabel
+                    value={mode.value}
+                    control={<Radio size="small" />}
+                    sx={{ width: '100%', m: 0, px: 1 }}
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: 1 }}>
+                        <Box sx={{ color: automationType === mode.value ? 'primary.main' : 'inherit', opacity: automationType === mode.value ? 1 : 0.5 }}>
+                          {mode.icon}
+                        </Box>
+                        <Box>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: '0.75rem' }}>{mode.label}</Typography>
+                          <Typography variant="caption" sx={{ opacity: 0.5, display: 'block', fontSize: '0.65rem' }}>{mode.desc}</Typography>
+                        </Box>
+                      </Box>
+                    }
+                  />
+                </Paper>
+              ))}
+            </RadioGroup>
+          </FormControl>
+
+          {automationType !== 'loop' && (
+            <Box sx={{ mt: 2, p: 2, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3, border: '1px solid rgba(255,255,255,0.05)' }}>
+              <FormControl fullWidth variant="standard" sx={{ mb: 2 }}>
+                <InputLabel shrink sx={{ fontWeight: 800, fontSize: '0.7rem' }}>PASTA DE ORIGEM</InputLabel>
+                <Select
+                  value={selectedFolder}
+                  onChange={(e) => setSelectedFolder(e.target.value)}
+                  sx={{ fontWeight: 800, fontSize: '0.8rem' }}
+                >
+                  <MenuItem value="root">RAIZ (TODAS AS PASTAS)</MenuItem>
+                  {folders.map(f => (
+                    <MenuItem key={f.id} value={f.id}>{f.name.toUpperCase()}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControlLabel
+                control={<Checkbox checked={useFillersOnly} onChange={(e) => setUseFillersOnly(e.target.checked)} size="small" />}
+                label={<Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.8 }}>USAR APENAS FICHEIROS MARCADOS COMO FILLER</Typography>}
+              />
+            </Box>
+          )}
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
-            <Button onClick={() => setAutomationDialogOpen(false)} sx={{ fontWeight: 800 }}>CANCELAR</Button>
-            <Button 
-                variant="contained" 
-                color="warning" 
-                onClick={handleRunAutomation} 
-                disabled={saving}
-                sx={{ borderRadius: 2, fontWeight: 800, px: 4, bgcolor: 'warning.main', color: 'black' }}
-            >
-                EXECUTAR AGORA
-            </Button>
+          <Button onClick={() => setAutomationDialogOpen(false)} sx={{ fontWeight: 800 }}>CANCELAR</Button>
+          <Button
+            variant="contained"
+            color="warning"
+            onClick={handleRunAutomation}
+            disabled={saving}
+            sx={{ borderRadius: 2, fontWeight: 800, px: 4, bgcolor: 'warning.main', color: 'black' }}
+          >
+            EXECUTAR AGORA
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

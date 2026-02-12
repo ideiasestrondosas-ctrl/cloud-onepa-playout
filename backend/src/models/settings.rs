@@ -116,10 +116,10 @@ impl Settings {
         };
         urls.insert("UDP".to_string(), udp_final);
 
-        // 4. HLS
+        // 4. HLS (via MediaMTX)
         urls.insert(
             "HLS".to_string(),
-            format!("http://{}:3000/hls/stream.m3u8", host),
+            format!("http://{}:8888/hls/stream.m3u8", host),
         );
 
         // 5. MASTER

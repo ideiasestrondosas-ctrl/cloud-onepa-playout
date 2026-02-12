@@ -11,6 +11,7 @@ pub struct Schedule {
     pub start_time: Option<chrono::NaiveTime>,
     pub repeat_pattern: Option<String>, // daily, weekly, monthly
     pub playlist_name: Option<String>,
+    pub playlist_content: Option<serde_json::Value>,
     pub created_at: DateTime<Utc>,
 }
 
