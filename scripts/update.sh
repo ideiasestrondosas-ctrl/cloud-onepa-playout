@@ -140,8 +140,21 @@ fi
 
 # --- 4. Stop and remove services to prevent name conflicts ---
 echo -e "\n${YELLOW}[4/7] Parando serviços em execução...${NC}"
+
+# Function to remove all onepa/alpha containers regardless of project
+nuclear_ghost_cleanup() {
+    log_warn "🧪 Realizando limpeza de containers antigos..."
+    GHOSTS=$(docker ps -aq --filter name=alpha --filter name=onepa)
+    if [ -n "$GHOSTS" ]; then
+        echo -e "  Removendo containers encontrados: $GHOSTS"
+        docker rm -f $GHOSTS 2>/dev/null || sudo docker rm -f $GHOSTS 2>/dev/null || true
+    fi
+}
+
 # Use down instead of stop to properly remove containers (preserving volumes)
 $DOCKER_CMD down 2>/dev/null || true
+nuclear_ghost_cleanup
+
 echo -e "  ${GREEN}Serviços removidos ✓${NC}"
 
 # --- 5. Pull or Re-clone latest code ---
