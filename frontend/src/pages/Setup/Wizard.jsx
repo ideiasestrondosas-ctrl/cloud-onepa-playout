@@ -251,7 +251,8 @@ export default function SetupWizard() {
             }
           });
 
-          const playlistId = playlistRes?.id || playlistRes?.data?.id;
+          // Correctly extract ID from Axios response
+          const playlistId = playlistRes?.data?.id || playlistRes?.id;
 
           if (playlistId) {
             try {

@@ -705,7 +705,12 @@ export default function PlaylistEditor() {
                 fontWeight: 800,
                 px: 4,
                 filter: 'drop-shadow(0 0 10px rgba(0,229,255,0.3))',
-                minWidth: '140px'
+                minWidth: '140px',
+                '&:hover': {
+                  bgcolor: 'primary.main',
+                  color: '#000', // Dark text on highlight as requested
+                  filter: 'drop-shadow(0 0 15px rgba(0,229,255,0.5))'
+                }
               }}
             >
               {saving ? 'A GUARDAR...' : 'SALVAR'}

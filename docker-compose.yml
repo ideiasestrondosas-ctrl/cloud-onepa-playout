@@ -48,6 +48,7 @@ services:
       - ./data/thumbnails:/var/lib/onepa-playout/thumbnails
       - ./data/playlists:/var/lib/onepa-playout/playlists
       - ./data/hls:/var/lib/onepa-playout/hls
+      - ./data/logs:/var/log/onepa
       - ./backend/assets:/var/lib/onepa-playout/assets
     ports:
       - "8182:8181"

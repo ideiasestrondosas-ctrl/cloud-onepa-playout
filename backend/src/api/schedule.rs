@@ -1,7 +1,7 @@
 use actix_web::{web, HttpResponse, Responder};
 use chrono::Datelike;
 use serde::Deserialize;
-use sqlx::PgPool;
+use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
 use crate::models::schedule::{CreateSchedule, Schedule};
@@ -17,7 +17,7 @@ async fn list_schedule(
     pool: web::Data<PgPool>,
 ) -> impl Responder {
     let mut query_builder: sqlx::QueryBuilder<sqlx::Postgres> = sqlx::QueryBuilder::new(
-        "SELECT s.*, p.name as playlist_name 
+        "SELECT s.*, p.name as playlist_name, p.content as playlist_content 
          FROM schedule s 
          JOIN playlists p ON s.playlist_id = p.id 
          WHERE 1=1",
@@ -92,10 +92,10 @@ async fn create_schedule(
             .or_else(|| chrono::NaiveTime::parse_from_str(t, "%H:%M").ok())
     });
 
-    let result = sqlx::query_as::<_, Schedule>(
+    let result = sqlx::query(
         "INSERT INTO schedule (playlist_id, date, start_time, repeat_pattern) 
          VALUES ($1, $2, $3, $4) 
-         RETURNING *",
+         RETURNING id",
     )
     .bind(&req.playlist_id)
     .bind(date)
@@ -105,7 +105,24 @@ async fn create_schedule(
     .await;
 
     match result {
-        Ok(schedule) => HttpResponse::Created().json(schedule),
+        Ok(row) => {
+            let id: Uuid = row.get("id");
+            // Fetch the full schedule with playlist name for the frontend
+            let full_schedule = sqlx::query_as::<_, Schedule>(
+                "SELECT s.*, p.name as playlist_name 
+                 FROM schedule s 
+                 JOIN playlists p ON s.playlist_id = p.id 
+                 WHERE s.id = $1"
+            )
+            .bind(id)
+            .fetch_one(pool.get_ref())
+            .await;
+
+            match full_schedule {
+                Ok(s) => HttpResponse::Created().json(s),
+                Err(_) => HttpResponse::InternalServerError().json(serde_json::json!({"error": "Created but failed to re-fetch"})),
+            }
+        },
         Err(e) => {
             log::error!("Failed to create schedule: {}", e);
             HttpResponse::InternalServerError()
@@ -244,7 +261,6 @@ async fn get_playlist_for_date(
     }
 
     // Check for repeating schedules
-    let day_of_week = date.weekday().num_days_from_monday();
 
     // Check daily repeats
     let daily_schedule = sqlx::query(
@@ -266,16 +282,20 @@ async fn get_playlist_for_date(
     }
 
     // Check weekly repeats (same day of week)
+    // Postgres DOW: 0 (Sun) to 6 (Sat)
+    // Rust number_from_sunday: 1 (Sun) to 7 (Sat)
+    let dow = date.weekday().number_from_sunday();
+
     let weekly_schedule = sqlx::query(
         "SELECT p.* FROM playlists p 
          JOIN schedule s ON p.id = s.playlist_id 
          WHERE s.repeat_pattern = 'weekly' 
-         AND EXTRACT(DOW FROM s.date) = $1 
+         AND (EXTRACT(DOW FROM s.date))::int = ($1 - 1) 
          AND s.date <= $2 
          ORDER BY s.date DESC 
          LIMIT 1",
     )
-    .bind(day_of_week as i32)
+    .bind(dow as i32)
     .bind(date)
     .fetch_optional(pool.get_ref())
     .await;

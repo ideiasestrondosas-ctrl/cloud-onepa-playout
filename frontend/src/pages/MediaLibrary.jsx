@@ -91,8 +91,8 @@ export default function MediaLibrary() {
     season: '',
     genre: '',
     rating: '',
-    cast: '',
     director: '',
+    writer: '',
     poster_url: '',
     keywords: '',
     resolution: '',
@@ -105,6 +105,9 @@ export default function MediaLibrary() {
   const [isReviewMode, setIsReviewMode] = useState(false);
   const [metadataSource, setMetadataSource] = useState(null);
   const [uploadControllers, setUploadControllers] = useState({}); // { fileId: AbortController }
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedItemIds, setSelectedItemIds] = useState([]);
+  const [performingBulkAction, setPerformingBulkAction] = useState(false);
 
   // Debounce search
   useEffect(() => {
@@ -216,6 +219,7 @@ export default function MediaLibrary() {
       rating: item.metadata?.rating || '',
       cast: Array.isArray(item.metadata?.cast) ? item.metadata?.cast.join(', ') : (item.metadata?.cast || ''),
       director: item.metadata?.director || '',
+      writer: item.metadata?.writer || '',
       poster_url: item.metadata?.poster_url || item.metadata?.poster || '',
       resolution: item.metadata?.resolution || `${item.width || 0}x${item.height || 0}`,
       fps: item.metadata?.fps || '',
@@ -446,7 +450,11 @@ export default function MediaLibrary() {
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: { 'video/*': [], 'audio/*': [], 'image/*': [] }
+    accept: {
+      'video/*': ['.mp4', '.mov', '.avi', '.mkv', '.ts', '.webm'],
+      'audio/*': ['.mp3', '.wav', '.m4a', '.aac'],
+      'image/*': ['.jpg', '.jpeg', '.png', '.webp']
+    }
   });
 
   const formatDuration = (seconds) => {
@@ -471,6 +479,41 @@ export default function MediaLibrary() {
     } else {
       // Just remove from pending
       setUploadFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'error', error: 'Cancelado' } : f));
+    }
+  };
+
+  const toggleItemSelection = (id) => {
+    setSelectedItemIds(prev =>
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAllInView = () => {
+    const allIds = media.map(m => m.id);
+    setSelectedItemIds(allIds);
+  };
+
+  const handleClearSelection = () => {
+    setSelectedItemIds([]);
+    setSelectionMode(false);
+  };
+
+  const handleBulkSetFiller = async (isFiller) => {
+    if (selectedItemIds.length === 0) return;
+    setPerformingBulkAction(true);
+    try {
+      showInfo(`Aplicando acção a ${selectedItemIds.length} ficheiros...`);
+      // We do this in sequence or parallel depending on backend capability.
+      // Assuming a loop for now if no bulk endpoint exists.
+      await Promise.all(selectedItemIds.map(id => mediaAPI.setFiller(id, isFiller)));
+      showSuccess('Acção concluída com sucesso');
+      setSelectedItemIds([]);
+      setSelectionMode(false);
+      fetchMedia();
+    } catch (error) {
+      showError('Erro ao aplicar acção em massa');
+    } finally {
+      setPerformingBulkAction(false);
     }
   };
 
@@ -508,6 +551,13 @@ export default function MediaLibrary() {
             }}
           />
           <Button
+            variant="outlined"
+            onClick={() => { setSelectionMode(!selectionMode); setSelectedItemIds([]); }}
+            sx={{ fontWeight: 800, border: '1px solid rgba(255,255,255,0.1)', color: selectionMode ? 'primary.main' : 'text.secondary' }}
+          >
+            {selectionMode ? 'Cancelar Seleção' : 'Seleção Múltipla'}
+          </Button>
+          <Button
             variant="contained"
             startIcon={<NewFolderIcon />}
             onClick={() => setNewFolderOpen(true)}
@@ -521,6 +571,35 @@ export default function MediaLibrary() {
           </Button>
         </Stack>
       </Box>
+
+      {selectionMode && (
+        <Paper className="glass-panel" sx={{ mb: 3, p: 2, bgcolor: 'rgba(0, 229, 255, 0.1)', border: '1px solid rgba(0, 229, 255, 0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{selectedItemIds.length} selecionados</Typography>
+            <Button size="small" onClick={handleSelectAllInView}>Selecionar Todos</Button>
+          </Stack>
+          <Stack direction="row" spacing={1}>
+            <Button
+              variant="contained"
+              size="small"
+              color="primary"
+              disabled={performingBulkAction || selectedItemIds.length === 0}
+              onClick={() => handleBulkSetFiller(true)}
+            >
+              Marcar como Filler
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              sx={{ color: 'text.secondary' }}
+              disabled={performingBulkAction || selectedItemIds.length === 0}
+              onClick={() => handleBulkSetFiller(false)}
+            >
+              Marcar como Prog
+            </Button>
+          </Stack>
+        </Paper>
+      )}
 
       <Grid container spacing={3}>
         {/* Sidebar Folders */}
@@ -751,6 +830,21 @@ export default function MediaLibrary() {
                         fontWeight: 800
                       }}>
                         FILLER
+                      </Box>
+                    )}
+                    {selectionMode && (
+                      <Box sx={{ position: 'absolute', top: 8, left: 8, zIndex: 2 }}>
+                        <Checkbox
+                          checked={selectedItemIds.includes(item.id)}
+                          onChange={() => toggleItemSelection(item.id)}
+                          sx={{
+                            color: 'primary.main',
+                            bgcolor: 'rgba(0,0,0,0.4)',
+                            p: 0.5,
+                            '&:hover': { bgcolor: 'rgba(0,0,0,0.6)' },
+                            '&.Mui-checked': { color: 'primary.main' }
+                          }}
+                        />
                       </Box>
                     )}
                   </Box>
@@ -1044,10 +1138,16 @@ export default function MediaLibrary() {
               helperText="Separados por vírgula"
             />
             <TextField
-              label="Realizador / Produtor"
+              label="Realizador / Diretor"
               fullWidth
               value={metadataForm.director}
               onChange={e => setMetadataForm({ ...metadataForm, director: e.target.value })}
+            />
+            <TextField
+              label="Escritor / Roteirista (Writer)"
+              fullWidth
+              value={metadataForm.writer}
+              onChange={e => setMetadataForm({ ...metadataForm, writer: e.target.value })}
             />
             <Divider><Chip label="Dados Técnicos" size="small" /></Divider>
             <Stack direction="row" spacing={2}>
