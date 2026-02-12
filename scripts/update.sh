@@ -127,9 +127,29 @@ echo -e "\n${YELLOW}[5/7] Atualizando código...${NC}"
 if [ -d ".git" ]; then
     # We're in a git repo, just pull
     echo -e "  Repositório Git detectado. A fazer pull..."
-    git fetch origin "$BRANCH"
-    git reset --hard "origin/$BRANCH"
-    echo -e "  ${GREEN}Código atualizado via git pull ✓${NC}"
+    
+    # Fallback for "local" branch misconfiguration (common in manual installs)
+    if [ "$BRANCH" == "local" ]; then
+        DETECTED_BRANCH=$(git branch --show-current 2>/dev/null || echo "alpha")
+        BRANCH=${DETECTED_BRANCH:-"alpha"}
+        echo -e "  Branch 'local' detectada no .env. Auto-detectado: ${CYAN}$BRANCH${NC}"
+    fi
+
+    # Ensure remote origin exists
+    if ! git remote get-url origin &>/dev/null; then
+        echo -e "  ${YELLOW}⚠️  Remote 'origin' não encontrado. Usando primeiro remote disponível...${NC}"
+        REMOTE=$(git remote | head -n 1)
+        if [ -z "$REMOTE" ]; then
+            echo -e "  ${RED}❌ Nenhum remote git encontrado.${NC}"
+            exit 1
+        fi
+    else
+        REMOTE="origin"
+    fi
+
+    git fetch "$REMOTE" "$BRANCH"
+    git reset --hard "$REMOTE/$BRANCH"
+    echo -e "  ${GREEN}Código atualizado via git pull ($REMOTE/$BRANCH) ✓${NC}"
 else
     # No git repo, clone into temp and copy
     echo -e "  Sem repositório Git. A clonar código atualizado..."

@@ -232,8 +232,8 @@ POSTGRES_DB=onepa_playout
 JWT_SECRET=$(openssl rand -hex 16)
 MEDIA_PATH=/var/lib/onepa-playout/media
 THUMBNAILS_PATH=/var/lib/onepa-playout/thumbnails
-DEPLOY_BRANCH=${GH_BRANCH:-"local"}
-DEPLOY_REPO=${GH_REPO:-"local"}
+DEPLOY_BRANCH=${GH_BRANCH:-"alpha"}
+DEPLOY_REPO=${GH_REPO:-"ideiasestrondosas-ctrl/cloud-onepa-playout"}
 EOF
 fi
 
