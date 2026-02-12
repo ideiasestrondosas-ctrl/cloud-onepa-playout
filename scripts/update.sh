@@ -2,14 +2,15 @@
 
 # ============================================================================
 # ONEPA Playout PRO - Update Script (Existing VM)
-# Version: 2.2.0-ALPHA.5-PRO
+# Version: 2.2.0-ALPHA.6-PRO
 #
 # Usage:
 #   bash update.sh              # Standard update (preserves data)
+#   bash update.sh --clean      # Clean software update (purges code, preserves data)
 #   bash update.sh --full-reset # Full reset (DELETES ALL DATA)
 #
 # This script updates the application on an existing running VM.
-# It preserves all media, database, thumbnails, and playlists.
+# It preserves all media, database, thumbnails, and playlists (unless --full-reset).
 # ============================================================================
 
 set -e
@@ -23,9 +24,11 @@ NC='\033[0m'
 
 # Parameters
 FULL_RESET=false
-if [[ "$1" == "--full-reset" ]]; then
-    FULL_RESET=true
-fi
+CLEAN_UPDATE=false
+for arg in "$@"; do
+    if [[ "$arg" == "--full-reset" ]]; then FULL_RESET=true; fi
+    if [[ "$arg" == "--clean" ]]; then CLEAN_UPDATE=true; fi
+done
 
 echo -e "${CYAN}╔══════════════════════════════════════════╗${NC}"
 echo -e "${CYAN}║  ONEPA Playout PRO — Update System       ║${NC}"
@@ -122,9 +125,33 @@ echo -e "\n${YELLOW}[4/7] Parando serviços em execução...${NC}"
 $DOCKER_CMD stop 2>/dev/null || true
 echo -e "  ${GREEN}Serviços parados ✓${NC}"
 
-# --- 5. Pull latest code ---
+# --- 5. Pull or Re-clone latest code ---
 echo -e "\n${YELLOW}[5/7] Atualizando código...${NC}"
-if [ -d ".git" ]; then
+
+if [ "$CLEAN_UPDATE" = true ]; then
+    echo -e "${RED}⚠️  MODO CLEAN UPDATE: Purgando ficheiros da aplicação (preservando dados)...${NC}"
+    # Backup .env safely
+    if [ -f .env ]; then cp .env .env.bak; fi
+    
+    # Remove everything except data/, .env.bak and update.sh
+    # We use a safer approach: remove specific known directories
+    rm -rf backend frontend docker migrations scripts systemd 2>/dev/null || true
+    rm -f install.sh uninstall.sh README.md docker-compose.yml 2>/dev/null || true
+    rm -rf .git 2>/dev/null || true
+
+    echo -e "  Purgado concluído. A clonar repositório... ✓"
+    TEMP_DIR="onepa_clean_$(date +%s)"
+    git clone -b "$BRANCH" "https://github.com/$REPO.git" "$TEMP_DIR"
+    
+    log_info "Restaurando ficheiros da nova versão..."
+    cp -r "$TEMP_DIR/." .
+    rm -rf "$TEMP_DIR"
+    
+    # Restore .env
+    if [ -f .env.bak ]; then mv .env.bak .env; fi
+    echo -e "  ${GREEN}Código re-clonado com sucesso ✓${NC}"
+
+elif [ -d ".git" ]; then
     # We're in a git repo, just pull
     echo -e "  Repositório Git detectado. A fazer pull..."
     
@@ -170,9 +197,10 @@ fi
 # --- 6. Rebuild and restart ---
 echo -e "\n${YELLOW}[6/7] Reconstruindo containers...${NC}"
 
-BUILD_OPTS=""
-if [ "$FULL_RESET" = true ]; then
-    BUILD_OPTS="--no-cache"
+BUILD_OPTS="--pull"
+if [ "$FULL_RESET" = true ] || [ "$CLEAN_UPDATE" = true ]; then
+    echo -e "  ${YELLOW}Usando --no-cache para rebuild limpo...${NC}"
+    BUILD_OPTS="--pull --no-cache"
     export CACHE_BUST=$(date +%s)
 fi
 
