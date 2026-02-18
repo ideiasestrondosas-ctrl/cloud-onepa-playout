@@ -41,13 +41,14 @@ paths:
 
   # RTMP distribution relay target
   # Relay process reads from master and pushes here
+  # publishUser/publishPass left empty so internal relay doesn't need credentials
   live_stream:
     source: publisher
     sourceOnDemand: no
     readUser: ""
     readPass: ""
-    publishUser: backend
-    publishPass: backend
+    publishUser: ""
+    publishPass: ""
 
   # SRT distribution relay target
   live_stream_srt:
@@ -55,6 +56,15 @@ paths:
     sourceOnDemand: no
     readUser: ""
     readPass: ""
+    publishUser: ""
+    publishPass: ""
+
+  # Clean master feed (no overlay) for GraphicsEditor preview
+  master_clean:
+    source: publisher
+    sourceOnDemand: no
+    readUser: backend
+    readPass: backend
     publishUser: backend
     publishPass: backend
 

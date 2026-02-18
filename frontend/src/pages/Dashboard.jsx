@@ -41,7 +41,12 @@ import {
   Language as LanguageIcon,
   Podcasts as PodcastsIcon,
   Router as RouterIcon,
-  Wifi as WifiIcon
+  Wifi as WifiIcon,
+  PlayCircle as PlayCircleFilledIcon,
+  StopCircle as StopCircleIcon,
+  Cast as CastIcon,
+  CastConnected as CastConnectedIcon,
+  Terminal as TerminalIcon,
 } from '@mui/icons-material';
 import ProtocolIcon from '../components/ProtocolIcon';
 import {
@@ -493,6 +498,34 @@ export default function Dashboard() {
     return [h, m, s].map(v => v.toString().padStart(2, '0')).join(':');
   };
 
+  // Full uptime display with months, days, hours, minutes, seconds, milliseconds
+  const [uptimeMs, setUptimeMs] = useState(0);
+  useEffect(() => {
+    if (status.status !== 'playing') { setUptimeMs(0); return; }
+    setUptimeMs(status.uptime * 1000);
+    const iv = setInterval(() => setUptimeMs(prev => prev + 100), 100);
+    return () => clearInterval(iv);
+  }, [status.status, status.uptime]);
+
+  const formatUptimeFull = (ms) => {
+    if (!ms || ms < 0) return '00d 00h 00m 00s 000ms';
+    const totalSec = Math.floor(ms / 1000);
+    const months = Math.floor(totalSec / (30 * 86400));
+    const days = Math.floor((totalSec % (30 * 86400)) / 86400);
+    const hours = Math.floor((totalSec % 86400) / 3600);
+    const mins = Math.floor((totalSec % 3600) / 60);
+    const secs = totalSec % 60;
+    const msec = Math.floor(ms % 1000);
+    const parts = [];
+    if (months > 0) parts.push(`${months}m`);
+    if (days > 0 || months > 0) parts.push(`${String(days).padStart(2, '0')}d`);
+    parts.push(`${String(hours).padStart(2, '0')}h`);
+    parts.push(`${String(mins).padStart(2, '0')}m`);
+    parts.push(`${String(secs).padStart(2, '0')}s`);
+    parts.push(`${String(msec).padStart(3, '0')}ms`);
+    return parts.join(' ');
+  };
+
   return (
     <Box sx={{ position: 'relative' }}>
       {/* Background Glow */}
@@ -518,6 +551,18 @@ export default function Dashboard() {
         @keyframes onair-text-pulse {
           0%, 100% { opacity: 1; text-shadow: 0 0 12px #f44336; }
           50% { opacity: 0.8; text-shadow: 0 0 4px #f44336; }
+        }
+        @keyframes play-btn-glow {
+          0%, 100% { box-shadow: 0 0 18px rgba(0,229,255,0.35), 0 0 6px rgba(0,229,255,0.15); }
+          50% { box-shadow: 0 0 30px rgba(0,229,255,0.55), 0 0 10px rgba(0,229,255,0.25); }
+        }
+        @keyframes stop-btn-pulse {
+          0%, 100% { box-shadow: 0 0 18px rgba(244,67,54,0.4), 0 0 6px rgba(244,67,54,0.2); }
+          50% { box-shadow: 0 0 8px rgba(244,67,54,0.15), 0 0 3px rgba(244,67,54,0.05); }
+        }
+        @keyframes distr-active-glow {
+          0%, 100% { box-shadow: 0 0 10px rgba(76,175,80,0.4); }
+          50% { box-shadow: 0 0 4px rgba(76,175,80,0.15); }
         }
       `}</style>
 
@@ -596,8 +641,8 @@ export default function Dashboard() {
         <Grid item xs={12} md={6} lg={3}>
           <Paper className="glass-panel" sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <Typography color="text.secondary" variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', mb: 1 }}>Tempo de Emissão</Typography>
-            <Typography variant="h4" className="neon-text" sx={{ fontWeight: 800, fontFamily: '"Orbitron", sans-serif' }}>
-              {formatTime(status.uptime)}
+            <Typography variant="h5" className="neon-text" sx={{ fontWeight: 800, fontFamily: '"Orbitron", sans-serif', fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' }, letterSpacing: 1 }}>
+              {formatUptimeFull(uptimeMs)}
             </Typography>
           </Paper>
         </Grid>
@@ -607,75 +652,182 @@ export default function Dashboard() {
             <Typography variant="h4" sx={{ fontWeight: 800 }}>{status.clips_played_today}</Typography>
           </Paper>
         </Grid>
+        {/* === PLAYOUT CONTROL PANEL — Icon-based broadcast controls === */}
         <Grid item xs={12} md={6} lg={3}>
-          <Paper className="glass-panel" sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <Button
-              variant="contained"
-              disabled={isValidating}
-              onClick={async () => {
-                if (isPlaying) {
-                  handleStop();
-                } else {
-                  setIsValidating(true);
-                  console.log('Initiating diagnostic check before start...');
-                  try {
-                    const diag = await playoutAPI.diagnose();
-                    console.log('Diagnostic result:', diag.data);
-                    if (!diag.data.has_active_schedule || !diag.data.has_playlist) {
-                      setScheduleAlertOpen(true);
-                      return;
-                    }
+          <Paper className="glass-panel" sx={{
+            p: 2, height: '100%',
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', gap: 2,
+          }}>
+            {/* Label */}
+            <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800, letterSpacing: 2, fontSize: '0.6rem' }}>
+              CONTROLO DE EMISSÃO
+            </Typography>
 
-                    if (settings) {
-                      setRestartOptions({
-                        auto_start: settings.auto_start_protocols,
-                        rtmp: settings.rtmp_enabled,
-                        srt: settings.srt_enabled,
-                        udp: settings.udp_enabled
-                      });
+            {/* ── MAIN PLAY / STOP BUTTON ── */}
+            <Tooltip
+              title={isValidating ? 'A validar agendamento...' : (isPlaying ? 'Parar Emissão (STOP)' : 'Iniciar Emissão (ON AIR)')}
+              arrow placement="top"
+            >
+              <span>
+                <IconButton
+                  disabled={isValidating}
+                  onClick={async () => {
+                    if (isPlaying) {
+                      handleStop();
+                    } else {
+                      setIsValidating(true);
+                      try {
+                        const diag = await playoutAPI.diagnose();
+                        if (!diag.data.has_active_schedule || !diag.data.has_playlist) {
+                          setScheduleAlertOpen(true);
+                          return;
+                        }
+                        if (settings) {
+                          setRestartOptions({
+                            auto_start: settings.auto_start_protocols,
+                            rtmp: settings.rtmp_enabled,
+                            srt: settings.srt_enabled,
+                            udp: settings.udp_enabled,
+                          });
+                        }
+                        setRestartDialogOpen(true);
+                      } catch (e) {
+                        showError('Erro ao validar agendamento');
+                      } finally {
+                        setIsValidating(false);
+                      }
                     }
-                    setRestartDialogOpen(true);
-                  } catch (e) {
-                    console.error('Validation failed:', e);
-                    showError('Erro ao validar agendamento');
-                  } finally {
-                    setIsValidating(false);
+                  }}
+                  sx={{
+                    width: 76, height: 76,
+                    bgcolor: isPlaying ? 'rgba(244,67,54,0.1)' : 'rgba(0,229,255,0.08)',
+                    border: '2.5px solid',
+                    borderColor: isPlaying ? '#f44336' : '#00e5ff',
+                    color: isPlaying ? '#f44336' : '#00e5ff',
+                    animation: isPlaying
+                      ? 'stop-btn-pulse 1.4s ease-in-out infinite'
+                      : 'play-btn-glow 2.5s ease-in-out infinite',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      transform: 'scale(1.08)',
+                      bgcolor: isPlaying ? 'rgba(244,67,54,0.22)' : 'rgba(0,229,255,0.18)',
+                    },
+                    '&:disabled': { opacity: 0.45 },
+                  }}
+                >
+                  {isValidating
+                    ? <CircularProgress size={34} sx={{ color: '#00e5ff' }} />
+                    : isPlaying
+                      ? <StopCircleIcon sx={{ fontSize: 44 }} />
+                      : <PlayCircleFilledIcon sx={{ fontSize: 44 }} />
                   }
+                </IconButton>
+              </span>
+            </Tooltip>
+
+            {/* State label */}
+            <Typography variant="caption" sx={{
+              fontWeight: 900, letterSpacing: 3, fontSize: '0.65rem',
+              color: isValidating ? '#00e5ff' : isPlaying ? '#f44336' : 'rgba(255,255,255,0.45)',
+              fontFamily: '"Orbitron", sans-serif',
+              transition: 'color 0.3s',
+            }}>
+              {isValidating ? 'A VALIDAR...' : isPlaying ? '● ON AIR' : '○ OFF AIR'}
+            </Typography>
+
+            <Divider sx={{ width: '100%', opacity: 0.08 }} />
+
+            {/* ── SECONDARY CONTROLS: SKIP · LOGS · DISTR ── */}
+            <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'flex-start' }}>
+
+              {/* SKIP — SkipNext */}
+              <Tooltip title={isPlaying ? 'Saltar para próximo clip' : 'Inicie a emissão primeiro'} arrow placement="bottom">
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                  <IconButton
+                    onClick={handleSkip}
+                    disabled={!isPlaying}
+                    sx={{
+                      width: 46, height: 46,
+                      bgcolor: 'rgba(255,255,255,0.04)',
+                      border: '1.5px solid',
+                      borderColor: isPlaying ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.05)',
+                      color: isPlaying ? '#fff' : 'rgba(255,255,255,0.2)',
+                      transition: 'all 0.2s ease',
+                      '&:hover': { bgcolor: 'rgba(0,229,255,0.12)', borderColor: '#00e5ff', color: '#00e5ff' },
+                      '&:disabled': { opacity: 0.25 },
+                    }}
+                  >
+                    <SkipIcon sx={{ fontSize: 26 }} />
+                  </IconButton>
+                  <Typography variant="caption" sx={{ fontSize: '0.52rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', letterSpacing: 1 }}>SKIP</Typography>
+                </Box>
+              </Tooltip>
+
+              {/* LOGS — Terminal */}
+              <Tooltip title="Diagnóstico & Logs do Sistema" arrow placement="bottom">
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                  <IconButton
+                    onClick={handleDiagnose}
+                    sx={{
+                      width: 46, height: 46,
+                      bgcolor: 'rgba(255,255,255,0.04)',
+                      border: '1.5px solid rgba(255,255,255,0.1)',
+                      color: 'rgba(255,255,255,0.5)',
+                      transition: 'all 0.2s ease',
+                      '&:hover': { bgcolor: 'rgba(156,39,176,0.15)', borderColor: '#ce93d8', color: '#ce93d8' },
+                    }}
+                  >
+                    <TerminalIcon sx={{ fontSize: 24 }} />
+                  </IconButton>
+                  <Typography variant="caption" sx={{ fontSize: '0.52rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', letterSpacing: 1 }}>LOGS</Typography>
+                </Box>
+              </Tooltip>
+
+              {/* DISTRIBUIÇÃO — Cast/CastConnected */}
+              <Tooltip
+                title={
+                  !isPlaying
+                    ? 'Inicie a emissão primeiro'
+                    : isDistributionActive
+                      ? 'Desligar Distribuição (RTMP/SRT/UDP)'
+                      : 'Ligar Distribuição (RTMP/SRT/UDP)'
                 }
-              }}
-              startIcon={isValidating ? <CircularProgress size={20} color="inherit" /> : (isPlaying ? <StopIcon /> : <PlayIcon />)}
-              sx={{
-                fontWeight: '800',
-                py: 1,
-                background: isPlaying ? 'rgba(244, 67, 54, 0.1)' : 'linear-gradient(45deg, #00e5ff 30%, #00b2cc 90%)',
-                color: isPlaying ? 'error.main' : '#0a0b10',
-                border: isPlaying ? '1px solid' : 'none',
-                borderColor: isPlaying ? 'error.main' : 'transparent',
-                '&:hover': {
-                  bgcolor: isPlaying ? 'rgba(244, 67, 54, 0.2)' : undefined,
-                }
-              }}
-            >
-              {isValidating ? 'A VALIDAR...' : (isPlaying ? 'PARAR' : 'INICIAR')}
-            </Button>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button variant="outlined" onClick={handleSkip} disabled={!isPlaying} size="small" sx={{ flexGrow: 1, fontSize: '0.7rem' }}>SKIP</Button>
-              <Button variant="outlined" color="primary" onClick={handleDiagnose} size="small" sx={{ flexGrow: 1, fontSize: '0.7rem' }}>LOGS</Button>
+                arrow placement="bottom"
+              >
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                  <IconButton
+                    onClick={() => isPlaying && handleToggleAllDistribution(!isDistributionActive)}
+                    disabled={!isPlaying}
+                    sx={{
+                      width: 46, height: 46,
+                      bgcolor: isDistributionActive && isPlaying ? 'rgba(76,175,80,0.1)' : 'rgba(255,255,255,0.04)',
+                      border: '1.5px solid',
+                      borderColor: isDistributionActive && isPlaying ? '#4caf50' : 'rgba(255,255,255,0.08)',
+                      color: isDistributionActive && isPlaying ? '#4caf50' : 'rgba(255,255,255,0.35)',
+                      transition: 'all 0.25s ease',
+                      animation: isDistributionActive && isPlaying ? 'distr-active-glow 2s ease-in-out infinite' : 'none',
+                      '&:hover': isPlaying ? {
+                        bgcolor: isDistributionActive ? 'rgba(244,67,54,0.12)' : 'rgba(76,175,80,0.15)',
+                        borderColor: isDistributionActive ? '#f44336' : '#4caf50',
+                        color: isDistributionActive ? '#f44336' : '#4caf50',
+                      } : {},
+                      '&:disabled': { opacity: 0.25 },
+                    }}
+                  >
+                    {isDistributionActive && isPlaying
+                      ? <CastConnectedIcon sx={{ fontSize: 24 }} />
+                      : <CastIcon sx={{ fontSize: 24 }} />
+                    }
+                  </IconButton>
+                  <Typography variant="caption" sx={{
+                    fontSize: '0.52rem', fontWeight: 800, letterSpacing: 1,
+                    color: isDistributionActive && isPlaying ? '#4caf50' : 'rgba(255,255,255,0.3)',
+                  }}>DISTR.</Typography>
+                </Box>
+              </Tooltip>
+
             </Box>
-            <Button
-              variant="contained"
-              size="small"
-              color={isDistributionActive ? "error" : "success"}
-              className={isDistributionActive ? 'flash-active' : ''}
-              sx={{
-                fontWeight: 'bold',
-                fontSize: '0.75rem',
-                display: isPlaying ? 'inline-flex' : 'none'
-              }}
-              onClick={() => handleToggleAllDistribution(!isDistributionActive)}
-            >
-              {isDistributionActive ? 'DESLIGAR DISTR.' : 'LIGAR DISTR.'}
-            </Button>
           </Paper>
         </Grid>
       </Grid>

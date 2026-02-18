@@ -1003,11 +1003,20 @@ impl PlayoutEngine {
             }
         }
 
-        // 0. Master Feed Status — path is "master" (not "live/master")
+        // 0. Master Feed Status — primary: FFmpeg process alive; secondary: MediaMTX API
+        let master_process_alive = {
+            let mut proc_lock = self.current_process.lock().await;
+            if let Some(ref mut child) = *proc_lock {
+                matches!(child.try_wait(), Ok(None))
+            } else {
+                false
+            }
+        };
         let master_info = mediamtx_paths.get("master");
+        let master_ready = master_process_alive || master_info.map(|i| i.ready).unwrap_or(false);
         streams.push(ActiveStream {
             protocol: "MASTER".to_string(),
-            status: if master_info.map(|i| i.ready).unwrap_or(false) {
+            status: if master_ready && engine_running {
                 "active".to_string()
             } else {
                 "idle".to_string()
@@ -1018,27 +1027,24 @@ impl PlayoutEngine {
             details: "Internal Feed".to_string(),
         });
 
-        // 1. RTMP Status
+        // 1. RTMP Status — primary: relay process alive; secondary: MediaMTX path ready
         let rtmp_active = settings.rtmp_enabled || settings.output_type == "rtmp";
         let rtmp_path_info = mediamtx_paths.get("live_stream");
-        let mut rtmp_status = if rtmp_active {
-            if rtmp_path_info.map(|i| i.ready).unwrap_or(false) {
+        let rtmp_status = if rtmp_active {
+            let mut procs = self.distribution_processes.lock().await;
+            let relay_alive = procs.get_mut("rtmp")
+                .map(|child| matches!(child.try_wait(), Ok(None)))
+                .unwrap_or(false);
+            if relay_alive {
+                "active".to_string()
+            } else if rtmp_path_info.map(|i| i.ready).unwrap_or(false) {
                 "active".to_string()
             } else {
-                "starting".to_string()
+                "idle".to_string()
             }
         } else {
             "idle".to_string()
         };
-
-        if rtmp_active {
-            let mut procs = self.distribution_processes.lock().await;
-            if let Some(child) = procs.get_mut("rtmp") {
-                if !matches!(child.try_wait(), Ok(None)) {
-                    rtmp_status = "error".to_string();
-                }
-            }
-        }
 
         streams.push(ActiveStream {
             protocol: "RTMP".to_string(),
@@ -1079,27 +1085,24 @@ impl PlayoutEngine {
             details: "http://localhost:8888/hls/stream.m3u8".to_string(),
         });
 
-        // 3. SRT Status
+        // 3. SRT Status — primary: relay process alive; secondary: MediaMTX path ready
         let srt_active = settings.srt_enabled || settings.output_type == "srt";
         let srt_path_info = mediamtx_paths.get("live_stream_srt");
-        let mut srt_status = if srt_active {
-            if srt_path_info.map(|i| i.ready).unwrap_or(false) {
+        let srt_status = if srt_active {
+            let mut procs = self.distribution_processes.lock().await;
+            let relay_alive = procs.get_mut("srt")
+                .map(|child| matches!(child.try_wait(), Ok(None)))
+                .unwrap_or(false);
+            if relay_alive {
+                "active".to_string()
+            } else if srt_path_info.map(|i| i.ready).unwrap_or(false) {
                 "active".to_string()
             } else {
-                "starting".to_string()
+                "idle".to_string()
             }
         } else {
             "idle".to_string()
         };
-
-        if srt_active {
-            let mut procs = self.distribution_processes.lock().await;
-            if let Some(child) = procs.get_mut("srt") {
-                if !matches!(child.try_wait(), Ok(None)) {
-                    srt_status = "error".to_string();
-                }
-            }
-        }
 
         streams.push(ActiveStream {
             protocol: "SRT".to_string(),
@@ -1408,14 +1411,22 @@ impl PlayoutEngine {
         // 2. SRT
         let srt_enabled = settings.srt_enabled
             || (settings.output_type == "srt" && settings.auto_start_protocols);
-        let srt_url = if settings.srt_enabled
-            && settings
-                .srt_output_url
-                .as_ref()
-                .map(|s| !s.is_empty())
-                .unwrap_or(false)
-        {
-            settings.srt_output_url.as_deref().unwrap_or("")
+        // CRITICAL FIX: SRT relay destination MUST use publish: streamid (not read:)
+        // The user-configured srt_output_url is for READING; relay needs publish.
+        // Use the internal MediaMTX SRT publish URL directly for the relay.
+        let srt_internal_relay_url = format!(
+            "srt://{}:8890?mode=caller&streamid=publish:live_stream_srt",
+            mediamtx_host
+        );
+        let srt_url = if settings.srt_enabled {
+            // If user set a custom external SRT URL, use that; otherwise use internal
+            let user_url = settings.srt_output_url.as_deref().unwrap_or("");
+            // If user URL has publish: it's intentional external; if read: or empty, use internal
+            if !user_url.is_empty() && user_url.contains("publish:") && !user_url.contains("mediamtx") {
+                user_url
+            } else {
+                &srt_internal_relay_url
+            }
         } else if settings.output_type == "srt" {
             &settings.output_url
         } else {

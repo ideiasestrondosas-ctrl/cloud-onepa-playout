@@ -414,6 +414,12 @@ impl FFmpegService {
         filter_complex.push_str("[v_processed]split=2[v_out][v_monitor_pre];");
         filter_complex.push_str("[v_monitor_pre]scale=640:360[v_monitor];");
 
+        // Clean stream (no overlay) for GraphicsEditor preview — always from raw input
+        if has_logo {
+            // Only needed when logo is active; when no logo, v_monitor IS already clean
+            filter_complex.push_str(&format!("[0:v]scale=640:360[v_clean];"));
+        }
+
         // Audio Chain (Standardize to EBU R128)
         filter_complex.push_str("[0:a]volume=0.8,asplit=2[a_out][a_monitor]");
 
@@ -798,6 +804,36 @@ impl FFmpegService {
                 "delete_segments+independent_segments".to_string(),
                 format!("{}/stream_low.m3u8", hls_path),
             ]);
+
+            // 6. CLEAN OUTPUT: No-overlay stream for GraphicsEditor preview (only when logo active)
+            if has_logo {
+                args.extend(vec![
+                    "-map".to_string(),
+                    "[v_clean]".to_string(),
+                    "-c:v".to_string(),
+                    "libx264".to_string(),
+                    "-preset".to_string(),
+                    "ultrafast".to_string(),
+                    "-b:v".to_string(),
+                    "600k".to_string(),
+                    "-maxrate".to_string(),
+                    "600k".to_string(),
+                    "-bufsize".to_string(),
+                    "1200k".to_string(),
+                    "-g".to_string(),
+                    format!("{}", gop),
+                    "-an".to_string(), // No audio needed for clean preview
+                    "-f".to_string(),
+                    "hls".to_string(),
+                    "-hls_time".to_string(),
+                    "2".to_string(),
+                    "-hls_list_size".to_string(),
+                    "8".to_string(),
+                    "-hls_flags".to_string(),
+                    "delete_segments+independent_segments".to_string(),
+                    format!("{}/stream_clean.m3u8", hls_path),
+                ]);
+            }
         } else {
             // Single output
             args.extend(vec![

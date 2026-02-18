@@ -292,22 +292,29 @@ export default function GraphicsEditor() {
                     ))}
                   </Box>
                 )}
-                {/* Live HLS feed background — only when playout is active */}
+                {/* Live HLS feed background — clean stream (no logo overlay) */}
                 {isLivePlaying && (
                   <Box
                     component="video"
-                    src="/hls/stream_low.m3u8"
+                    src="/hls/stream_clean.m3u8"
                     autoPlay
                     muted
                     loop={false}
                     playsInline
+                    onError={(e) => {
+                      // Fallback to stream_low if clean not yet available
+                      if (e.target.src.includes('stream_clean')) {
+                        e.target.src = '/hls/stream_low.m3u8';
+                      }
+                    }}
                     sx={{
                       position: 'absolute', top: 0, left: 0,
                       width: '100%', height: '100%',
-                      objectFit: 'cover',
+                      objectFit: 'contain',
                       zIndex: 0,
                       pointerEvents: 'none',
-                      opacity: 0.75,
+                      opacity: 1,
+                      bgcolor: '#000',
                     }}
                   />
                 )}

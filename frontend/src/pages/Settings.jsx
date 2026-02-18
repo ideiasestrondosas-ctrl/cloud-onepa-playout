@@ -503,7 +503,7 @@ function Settings() {
         defaultImagePath: data.default_image_path || '',
 
         defaultVideoPath: data.default_video_path || '',
-        version: data.system_version || 'v2.2.0-ALPHA.19-PRO',
+        version: data.system_version || 'v2.2.0-ALPHA.22-PRO',
         releaseDate: data.release_date || '2026-02-18',
         overlay_enabled: data.overlay_enabled ?? true,
         channelName: data.channel_name || 'Cloud Onepa',
@@ -513,7 +513,7 @@ function Settings() {
         srtMode: data.srt_mode || 'caller',
         protectedPath: data.protected_path || '/var/lib/onepa-playout/assets/protected',
         docsPath: data.docs_path || '/app/docs',
-        system_version: data.system_version || 'v2.2.0-ALPHA.19-PRO',
+        system_version: data.system_version || 'v2.2.0-ALPHA.22-PRO',
         release_date: data.release_date || '2026-02-18',
         rtmpOutputUrl: data.rtmp_output_url || '',
         srtOutputUrl: data.srt_output_url || '',
@@ -735,6 +735,9 @@ function Settings() {
   const fetchReleaseHistory = () => {
     // Curated local history — no external API dependency, works offline
     setReleaseHistory([
+      { version: 'v2.2.0-ALPHA.22-PRO', date: '2026-02-18', changes: ['Dashboard: painel de controlo com ícones profissionais (PlayCircle/StopCircle/Cast/Terminal/SkipNext)', 'Estados visuais dinâmicos: cor + ícone + glow por estado ON AIR/OFF AIR', 'Animações pulse/glow no botão principal e distribuição activa', 'Tooltip descritivo em hover em todos os controlos de emissão', 'Settings: histórico de versões completo até ALPHA.22'] },
+      { version: 'v2.2.0-ALPHA.21-PRO', date: '2026-02-18', changes: ['Uptime com precisão ms (00h 00m 00s 000ms)', 'Stream clean preview (stream_clean.m3u8 sem overlay)', 'Protocol status real baseado em processo relay activo', 'SRT relay URL fix (publish: streamid)', 'Settings: botão REPOR PADRÕES para branding defaults'] },
+      { version: 'v2.2.0-ALPHA.20-PRO', date: '2026-02-18', changes: ['Dashboard: redesign ícone UDP + estado real de protocolo', 'Settings: UI DASH/MSS/RTSP/WebRTC (desactivado, em breve)', 'Graphics: preview 16:9 proporcional sem imagens externas', 'EPG: barra TV Guide com data + ícones abrir/download', 'Logs: config de rotação (tamanho, ficheiros, compressão, retenção), filtro, export', 'Branding: botão RESTAURAR DEFAULTS + auto-assign em novo vídeo'] },
       { version: 'v2.2.0-ALPHA.19-PRO', date: '2026-02-18', changes: ['Ecrã preto: GlobalErrorBoundary global em main.jsx', 'Fix HelpSystem: toggleHelpMode não declarado', 'Login: gradiente CSS local (sem Unsplash)', 'Settings: painel de versões scrollable com histórico real', 'Fallbacks de versão corrigidos para ALPHA.19'] },
       { version: 'v2.2.0-ALPHA.18-PRO', date: '2026-02-12', changes: ['Logs de playout com rotação automática (50MB/5 ficheiros)', 'Log Viewer em tempo real com refresh 2s em Settings'] },
       { version: 'v2.2.0-ALPHA.17-PRO', date: '2026-02-12', changes: ['Relay cooldown: 5s → 15s', 'Master-feed inactive threshold: 10 → 20 ticks'] },
@@ -1390,8 +1393,46 @@ function Settings() {
             <Paper className="glass-panel" sx={{ p: 4 }}>
               <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Box>
-                  <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>BRANDING & ASSETS PROTEGIDOS</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>IDENTIDADE VISUAL E FALLBACKS</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+                    <Box>
+                      <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>BRANDING & ASSETS PROTEGIDOS</Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>IDENTIDADE VISUAL E FALLBACKS</Typography>
+                    </Box>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<RefreshIcon />}
+                      onClick={async () => {
+                        const defaults = {
+                          branding_type: 'video',
+                          logo_path: '/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4',
+                          overlay_enabled: true,
+                          overlay_opacity: 1.0,
+                          overlay_scale: 0.3,
+                          overlay_x: 30,
+                          overlay_y: 20,
+                          overlay_anchor: 'top-right',
+                        };
+                        try {
+                          await settingsAPI.update(defaults);
+                          setSettings(prev => ({
+                            ...prev,
+                            branding_type: 'video',
+                            logoPath: defaults.logo_path,
+                            overlayOpacity: 1.0,
+                            overlay_anchor: 'top-right',
+                          }));
+                          showSuccess('Branding reposto para os valores por defeito!');
+                          fetchSettings();
+                        } catch (e) {
+                          showError('Erro ao repor branding');
+                        }
+                      }}
+                      sx={{ fontWeight: 800, borderRadius: 2, fontSize: '0.7rem', whiteSpace: 'nowrap' }}
+                    >
+                      REPOR PADRÕES
+                    </Button>
+                  </Box>
                 </Box>
                 <Tooltip title="Restaurar branding e assets para os valores por defeito do sistema" arrow>
                   <Button
