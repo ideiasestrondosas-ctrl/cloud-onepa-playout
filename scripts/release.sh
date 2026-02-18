@@ -44,7 +44,7 @@ trap error_handler ERR
 
 # --- Configuration ---
 PROJECT_NAME="onepa-playout"
-GITHUB_REPO="ideiasestrondosas-ctrl/cloud-onepa-alpha"
+GITHUB_REPO="ideiasestrondosas-ctrl/cloud-onepa-playout"
 EXCLUDE_FILE="big_buck_bunny_1080p_h264.mov"
 
 echo -e "${GREEN}"
@@ -81,7 +81,12 @@ echo -e "Current active branch: ${YELLOW}$CURRENT_BRANCH${NC}"
 read -p "Target branch for update (alpha, beta, final, stable) [ENTER for $CURRENT_BRANCH]: " TARGET_BRANCH
 TARGET_BRANCH=${TARGET_BRANCH:-$CURRENT_BRANCH}
 
-RELEASE_NAME="v${NEW_VERSION}-PRO"
+# Build RELEASE_NAME — avoid double -PRO if version already ends with -PRO
+if [[ "$NEW_VERSION" == *"-PRO" ]]; then
+    RELEASE_NAME="v${NEW_VERSION}"
+else
+    RELEASE_NAME="v${NEW_VERSION}-PRO"
+fi
 ZIP_NAME="${PROJECT_NAME}-${RELEASE_NAME}.zip"
 echo -e "Release Target: ${YELLOW}$RELEASE_NAME${NC} on branch ${YELLOW}$TARGET_BRANCH${NC}"
 
