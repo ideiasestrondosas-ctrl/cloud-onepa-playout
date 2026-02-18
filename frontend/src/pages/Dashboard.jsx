@@ -94,6 +94,9 @@ export default function Dashboard() {
   const [startSteps, setStartSteps] = useState([]);
   const [vlcCommand, setVlcCommand] = useState('');
   const [playerKey, setPlayerKey] = useState(0);
+  const [hlsReady, setHlsReady] = useState(false);
+  const [hlsRetryCount, setHlsRetryCount] = useState(0);
+  const hlsRetryTimerRef = useRef(null);
   const [audioContextSuspended, setAudioContextSuspended] = useState(false);
   const [restartDialogOpen, setRestartDialogOpen] = useState(false);
   const [restartOptions, setRestartOptions] = useState({
@@ -135,30 +138,47 @@ export default function Dashboard() {
     }
   };
 
-  // Auto-reload preview when engine starts or fails
+  // Reset HLS state when engine stops
   useEffect(() => {
-    let timer;
-    if (status.status === 'playing') {
-      console.log('Engine is playing, scheduling initial preview reload...');
-      // Try multiple reloads to ensure we catch the manifest as segments are generated
-      timer = setTimeout(() => {
-        setPlayerKey(prev => prev + 1);
-        console.log('Initial preview reload triggered');
-      }, 5000); // 5s is safer for initial manifest generation
+    if (status.status !== 'playing') {
+      setHlsReady(false);
+      setHlsRetryCount(0);
+      if (hlsRetryTimerRef.current) clearTimeout(hlsRetryTimerRef.current);
     }
-    return () => clearTimeout(timer);
   }, [status.status]);
 
-  const handlePlayerError = useCallback((e) => {
-    console.warn('Live preview error (likely manifest missing):', e);
-    // If it's playing but erroring, retry after a short delay
-    if (status.status === 'playing') {
-      console.log('Scheduling retry in 3s...');
-      setTimeout(() => {
+  // Auto-reload preview when engine starts — retry loop up to 6 times × 8s = 48s
+  useEffect(() => {
+    if (status.status === 'playing' && !hlsReady) {
+      if (hlsRetryCount >= 6) {
+        console.warn('[HLS-Retry] Max retries reached. Stream may not be available yet.');
+        return;
+      }
+      const delay = hlsRetryCount === 0 ? 6000 : 8000; // First attempt at 6s, then every 8s
+      console.log(`[HLS-Retry] Attempt ${hlsRetryCount + 1}/6 in ${delay / 1000}s...`);
+      hlsRetryTimerRef.current = setTimeout(() => {
         setPlayerKey(prev => prev + 1);
-      }, 3000);
+        setHlsRetryCount(prev => prev + 1);
+      }, delay);
     }
-  }, [status.status]);
+    return () => {
+      if (hlsRetryTimerRef.current) clearTimeout(hlsRetryTimerRef.current);
+    };
+  }, [status.status, hlsReady, hlsRetryCount]);
+
+  const handlePlayerReady = useCallback(() => {
+    console.log('[HLS] Stream ready — stopping retry loop');
+    setHlsReady(true);
+    setHlsRetryCount(0);
+    if (hlsRetryTimerRef.current) clearTimeout(hlsRetryTimerRef.current);
+    setupAudioAnalysis();
+  }, [setupAudioAnalysis]);
+
+  const handlePlayerError = useCallback((e) => {
+    console.warn('[HLS] Live preview error (manifest missing or stream not ready):', e);
+    setHlsReady(false);
+    // Retry is handled by the useEffect above — no manual setTimeout needed here
+  }, []);
 
   // Reset audio source reference when player reloads (critical for LUFS meter)
   useEffect(() => {
@@ -651,7 +671,16 @@ export default function Dashboard() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <TvIcon className={isPlaying ? "neon-text" : ""} sx={{ fontSize: 20 }} />
             <Typography variant="caption" sx={{ color: '#fff', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 2 }}>LIVE MONITOR</Typography>
-            {isPlaying && <Box sx={{ width: 8, height: 8, bgcolor: 'error.main', borderRadius: '50%', animation: 'logo-pulse 1s infinite' }} />}
+            {isPlaying && (
+              <Tooltip title={hlsReady ? 'Stream HLS activo' : 'A aguardar stream HLS...'} arrow>
+                <Box sx={{
+                  width: 8, height: 8, borderRadius: '50%',
+                  bgcolor: hlsReady ? '#4caf50' : '#ff9800',
+                  animation: 'logo-pulse 1s infinite',
+                  transition: 'background-color 0.5s ease'
+                }} />
+              </Tooltip>
+            )}
           </Box>
           <Box display="flex" gap={1}>
             <IconButton size="small" sx={{ color: '#fff', bgcolor: 'rgba(255, 255, 255, 0.1)', '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.2)' } }} onClick={handleTogglePause}>
@@ -673,7 +702,7 @@ export default function Dashboard() {
               muted={previewMuted}
               width="100%"
               height="100%"
-              onReady={setupAudioAnalysis}
+              onReady={handlePlayerReady}
               onPlay={setupAudioAnalysis}
               onError={handlePlayerError}
               config={{

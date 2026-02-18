@@ -1317,8 +1317,8 @@ impl PlayoutEngine {
                 *count += 1;
                 let current_count = *count;
                 drop(count);
-                if current_count < 10 {
-                    log::debug!("[DEBUG-RELAY] Master feed is inactive (count={}/10). Waiting for stabilization.", current_count);
+                if current_count < 20 {
+                    log::debug!("[DEBUG-RELAY] Master feed is inactive (count={}/20). Waiting for stabilization.", current_count);
                     return;
                 }
                 let mut procs = self.distribution_processes.lock().await;
@@ -1454,7 +1454,7 @@ impl PlayoutEngine {
         procs: &mut HashMap<String, Child>,
         ffmpeg: &FFmpegService,
     ) {
-        const COOLDOWN_SECS: u64 = 5;
+        const COOLDOWN_SECS: u64 = 15;
 
         let mut needs_remove = false;
         let is_running = if let Some(child) = procs.get_mut(key) {

@@ -84,6 +84,9 @@ export default function GraphicsEditor() {
     }
   };
 
+  // Cache-bust key for the logo preview image
+  const [logoCacheBust, setLogoCacheBust] = useState(Date.now());
+
   const handleSave = async () => {
     try {
       setSaving(true);
@@ -94,6 +97,10 @@ export default function GraphicsEditor() {
         overlay_opacity: logoOpacity,
         overlay_anchor: anchor
       });
+      // Refresh settings from server so logo_path is up-to-date
+      await fetchSettings();
+      // Force logo image to reload by busting the cache
+      setLogoCacheBust(Date.now());
       showSuccess('Gráficos atualizados com sucesso!');
     } catch (error) {
       showError('Erro ao guardar configurações de gráficos');
@@ -257,7 +264,7 @@ export default function GraphicsEditor() {
               <Box
                 ref={logoRef}
                 component="img"
-                src={settings?.logoPath || "/api/settings/logo"}
+                src={`${settings?.logo_path || "/api/settings/logo"}?v=${logoCacheBust}`}
                 onMouseDown={handleMouseDown}
                 sx={{
                   ...getLogoStyle(),

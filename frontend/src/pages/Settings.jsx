@@ -609,6 +609,7 @@ function Settings() {
   };
 
   const [activePreset, setActivePreset] = useState(null);
+  const [pendingPreset, setPendingPreset] = useState(null); // { id, title, res, bitrate, fps }
 
   useEffect(() => {
     // Sync active preset highlight based on current resolution
@@ -654,17 +655,22 @@ function Settings() {
 
   const applyPreset = (presetId) => {
     const entry = Object.entries(PRESETS).find(([k, v]) => v.id === presetId);
-    if (entry) {
-      const [res, p] = entry;
-      // This will trigger the handlers naturally via state update
-      setSettings(prev => ({
-        ...prev,
-        resolution: res,
-        videoBitrate: `${p.bitrate}k`,
-        fps: p.fps
-      }));
-      showSuccess(`Preset ${p.label} aplicado!`);
-    }
+    if (!entry) return;
+    const [res, p] = entry;
+    // Show confirmation dialog before applying — engine restart required
+    setPendingPreset({ id: presetId, title: p.label, res, bitrate: p.bitrate, fps: p.fps });
+  };
+
+  const confirmApplyPreset = () => {
+    if (!pendingPreset) return;
+    setSettings(prev => ({
+      ...prev,
+      resolution: pendingPreset.res,
+      videoBitrate: `${pendingPreset.bitrate}k`,
+      fps: pendingPreset.fps
+    }));
+    showSuccess(`Preset ${pendingPreset.title} aplicado! Guarde e reinicie o motor.`);
+    setPendingPreset(null);
   };
 
   const handleUdpModeChange = (mode) => {
@@ -2064,6 +2070,36 @@ function Settings() {
           showSuccess("Protocolo UDP pronto para ativação ao salvar.");
         }}
       />
+
+      {/* Quality Preset Confirmation Dialog */}
+      <Dialog
+        open={!!pendingPreset}
+        onClose={() => setPendingPreset(null)}
+        PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255, 152, 0, 0.3)' } }}
+      >
+        <DialogTitle sx={{ color: 'warning.main', display: 'flex', alignItems: 'center', gap: 1, fontWeight: 800 }}>
+          <WarningIcon /> ALTERAR PRESET DE QUALIDADE
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            Vai aplicar o preset <strong style={{ color: '#00e5ff' }}>{pendingPreset?.title}</strong>:
+          </Typography>
+          <Box sx={{ p: 2, bgcolor: 'rgba(0,0,0,0.3)', borderRadius: 2, fontFamily: 'monospace', fontSize: '0.85rem', mb: 2 }}>
+            <div>Resolução: <strong>{pendingPreset?.res}</strong></div>
+            <div>Bitrate: <strong>{pendingPreset?.bitrate}k</strong></div>
+            <div>FPS: <strong>{pendingPreset?.fps}</strong></div>
+          </Box>
+          <Alert severity="warning" sx={{ fontSize: '0.8rem' }}>
+            Esta alteração requer reinício do motor de playout para ter efeito. Guarde as definições e reinicie o motor após confirmar.
+          </Alert>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setPendingPreset(null)} sx={{ fontWeight: 800 }}>CANCELAR</Button>
+          <Button variant="contained" color="warning" onClick={confirmApplyPreset} sx={{ fontWeight: 800, px: 4 }}>
+            APLICAR PRESET
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Log Viewer Dialog */}
       <Dialog
