@@ -25,7 +25,7 @@ import {
   Help as HelpIcon,
   Replay as ResetIcon
 } from '@mui/icons-material';
-import { settingsAPI } from '../services/api';
+import { settingsAPI, playoutAPI } from '../services/api';
 import graphicsService from '../services/graphicsLayersAPI';
 import { useNotification } from '../contexts/NotificationContext';
 import LayerManager from '../components/GraphicsLayers/LayerManager';
@@ -83,6 +83,20 @@ export default function GraphicsEditor() {
       showError('Falha ao carregar camadas de gráficos');
     }
   };
+
+  // Live feed for preview background
+  const [isLivePlaying, setIsLivePlaying] = useState(false);
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const res = await playoutAPI.status();
+        setIsLivePlaying(res.data?.status === 'playing');
+      } catch (_) { }
+    };
+    check();
+    const iv = setInterval(check, 5000);
+    return () => clearInterval(iv);
+  }, []);
 
   // Cache-bust key for the logo preview image
   const [logoCacheBust, setLogoCacheBust] = useState(Date.now());
@@ -254,13 +268,34 @@ export default function GraphicsEditor() {
                 borderRadius: 3,
                 overflow: 'hidden',
                 position: 'relative',
-                backgroundImage: 'url("https://images.unsplash.com/photo-1492691523567-61709dcf9801?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80")', // Stock background for context
+                // Background shown only when not live
+                backgroundImage: isLivePlaying ? 'none' : 'url("https://images.unsplash.com/photo-1492691523567-61709dcf9801?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80")',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 boxShadow: 'inset 0 0 100px rgba(0,0,0,0.8)',
                 userSelect: 'none'
               }}
             >
+              {/* Live HLS feed background — only when playout is active */}
+              {isLivePlaying && (
+                <Box
+                  component="video"
+                  src="/hls/stream_low.m3u8"
+                  autoPlay
+                  muted
+                  loop={false}
+                  playsInline
+                  sx={{
+                    position: 'absolute', top: 0, left: 0,
+                    width: '100%', height: '100%',
+                    objectFit: 'cover',
+                    zIndex: 0,
+                    pointerEvents: 'none',
+                    opacity: 0.75,
+                  }}
+                />
+              )}
+
               <Box
                 ref={logoRef}
                 component="img"

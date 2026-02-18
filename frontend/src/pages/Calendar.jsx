@@ -26,7 +26,9 @@ import {
   PlayArrow as PlayIcon,
   Delete as DeleteIcon,
   DeleteSweep as BulkDeleteIcon,
-  History as HistoryIcon
+  History as HistoryIcon,
+  OpenInNew as OpenInNewIcon,
+  Download as DownloadIcon
 } from '@mui/icons-material';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -395,6 +397,38 @@ export default function Calendar() {
                     .fc-col-header-cell-cushion { font-size: 0.7rem; font-weight: 800; color: rgba(255,255,255,0.5); }
                     .fc-day-today { background: rgba(0, 229, 255, 0.2) !important; box-shadow: inset 0 0 20px rgba(0, 229, 255, 0.1); }
                 `}</style>
+            {/* EPG Export Bar */}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1, mb: 1 }}>
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: 1, mr: 'auto' }}>
+                📺 TV GUIDE · {new Date().toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' }).toUpperCase()}
+              </Typography>
+              <Tooltip title="Abrir EPG XML no browser" arrow placement="top">
+                <IconButton
+                  size="small"
+                  onClick={() => window.open('/api/playlists/epg.xml', '_blank')}
+                  sx={{ color: 'primary.main', border: '1px solid rgba(0,229,255,0.2)', borderRadius: 1.5, width: 32, height: 32, '&:hover': { bgcolor: 'rgba(0,229,255,0.1)' } }}
+                >
+                  <OpenInNewIcon sx={{ fontSize: 16 }} />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Descarregar EPG XML para disco" arrow placement="top">
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    const a = document.createElement('a');
+                    a.href = '/api/playlists/epg.xml';
+                    a.download = `epg_${new Date().toISOString().split('T')[0]}.xml`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                  }}
+                  sx={{ color: 'primary.main', border: '1px solid rgba(0,229,255,0.2)', borderRadius: 1.5, width: 32, height: 32, '&:hover': { bgcolor: 'rgba(0,229,255,0.1)' } }}
+                >
+                  <DownloadIcon sx={{ fontSize: 16 }} />
+                </IconButton>
+              </Tooltip>
+            </Box>
+
             <FullCalendar
               plugins={[dayGridPlugin, interactionPlugin]}
               initialView="dayGridMonth"

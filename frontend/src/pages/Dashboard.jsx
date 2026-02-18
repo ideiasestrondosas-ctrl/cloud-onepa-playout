@@ -166,13 +166,16 @@ export default function Dashboard() {
     };
   }, [status.status, hlsReady, hlsRetryCount]);
 
+  // NOTE: setupAudioAnalysis is intentionally omitted from deps (stable ref, deps=[])
+  // to avoid TDZ in Rollup production bundle (setupAudioAnalysis declared later in scope).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const handlePlayerReady = useCallback(() => {
     console.log('[HLS] Stream ready — stopping retry loop');
     setHlsReady(true);
     setHlsRetryCount(0);
     if (hlsRetryTimerRef.current) clearTimeout(hlsRetryTimerRef.current);
     setupAudioAnalysis();
-  }, [setupAudioAnalysis]);
+  }, []);
 
   const handlePlayerError = useCallback((e) => {
     console.warn('[HLS] Live preview error (manifest missing or stream not ready):', e);
@@ -339,14 +342,26 @@ export default function Dashboard() {
     setDiagnosing(true);
     setDebugDialogOpen(true);
     try {
-      const response = await playoutAPI.diagnose();
-      setDebugReport(response.data);
+      const [diagRes] = await Promise.all([playoutAPI.diagnose()]);
+      setDebugReport({ ...diagRes.data, _live: status, _settings: settings, _ts: new Date() });
     } catch (e) {
       showError('Erro no diagnóstico');
     } finally {
       setDiagnosing(false);
     }
   };
+
+  // Auto-refresh diagnostic while dialog is open
+  useEffect(() => {
+    if (!debugDialogOpen) return;
+    const iv = setInterval(async () => {
+      try {
+        const [diagRes] = await Promise.all([playoutAPI.diagnose()]);
+        setDebugReport(prev => ({ ...diagRes.data, _live: status, _settings: settings, _ts: new Date(), _prev: prev }));
+      } catch (_) { }
+    }, 5000);
+    return () => clearInterval(iv);
+  }, [debugDialogOpen, status, settings]);
 
   const handleStop = async () => {
     try {
@@ -450,6 +465,26 @@ export default function Dashboard() {
     }
   }, [isPlaying, previewPaused, previewMuted, setupAudioAnalysis, playerKey]);
 
+  // Local position ticker — increments every second so the progress bar moves smoothly
+  // between API polls (which happen every 2s)
+  const [localPosition, setLocalPosition] = useState(0);
+  useEffect(() => {
+    if (status?.current_clip) {
+      setLocalPosition(status.current_clip.position);
+    }
+  }, [status?.current_clip?.filename]);
+
+  useEffect(() => {
+    if (status?.status !== 'playing' || !status?.current_clip) return;
+    const timer = setInterval(() => {
+      setLocalPosition(prev => {
+        const next = prev + 1;
+        return next >= (status.current_clip?.duration || 0) ? prev : next;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [status?.status, status?.current_clip?.filename]);
+
   const formatTime = (seconds) => {
     if (isNaN(seconds)) return '00:00:00';
     const h = Math.floor(seconds / 3600);
@@ -474,11 +509,53 @@ export default function Dashboard() {
         zIndex: 0
       }} />
 
+      {/* ON AIR CSS keyframes injected globally */}
+      <style>{`
+        @keyframes onair-blink {
+          0%, 100% { opacity: 1; box-shadow: 0 0 8px #d32f2f, 0 0 20px #d32f2f; }
+          50% { opacity: 0.4; box-shadow: 0 0 4px #d32f2f; }
+        }
+        @keyframes onair-text-pulse {
+          0%, 100% { opacity: 1; text-shadow: 0 0 12px #f44336; }
+          50% { opacity: 0.8; text-shadow: 0 0 4px #f44336; }
+        }
+      `}</style>
+
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Typography variant="h4" className="neon-text" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>
             {settings?.channel_name || 'Cloud Onepa'}
           </Typography>
+
+          {/* ON AIR / OFF AIR indicator */}
+          <Box sx={{
+            display: 'flex', alignItems: 'center', gap: 1.5,
+            px: 2, py: 0.75, borderRadius: 2,
+            bgcolor: isPlaying ? 'rgba(211, 47, 47, 0.12)' : 'rgba(255,255,255,0.03)',
+            border: '1.5px solid',
+            borderColor: isPlaying ? '#d32f2f' : 'rgba(255,255,255,0.08)',
+            transition: 'all 0.4s ease',
+          }}>
+            <Box sx={{
+              width: 10, height: 10, borderRadius: '50%',
+              bgcolor: isPlaying ? '#f44336' : '#444',
+              animation: isPlaying ? 'onair-blink 1.2s ease-in-out infinite' : 'none',
+              transition: 'background-color 0.3s',
+              flexShrink: 0,
+            }} />
+            <Typography sx={{
+              fontFamily: '"Orbitron", "Rajdhani", sans-serif',
+              fontWeight: 900,
+              fontSize: isPlaying ? '0.9rem' : '0.75rem',
+              letterSpacing: isPlaying ? 4 : 2,
+              color: isPlaying ? '#f44336' : '#555',
+              animation: isPlaying ? 'onair-text-pulse 1.2s ease-in-out infinite' : 'none',
+              textTransform: 'uppercase',
+              userSelect: 'none',
+            }}>
+              {isPlaying ? 'ON AIR' : 'OFF AIR'}
+            </Typography>
+          </Box>
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -603,68 +680,101 @@ export default function Dashboard() {
         </Grid>
       </Grid>
 
-      {status.active_streams?.length > 0 && (
-        <Box sx={{ mt: 3, position: 'relative', zIndex: 1 }}>
-          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, mb: 1.5, display: 'flex', alignItems: 'center', gap: 1, textTransform: 'uppercase', letterSpacing: 1.5 }}>
-            <LaunchIcon sx={{ fontSize: 14 }} /> Protocolos de Transmissão
-          </Typography>
-          <Grid container spacing={2}>
-            {status.active_streams.map((stream, idx) => (
-              <Grid item xs={6} md={3} key={idx}>
-                <Paper className="glass-panel" sx={{
-                  p: 2,
-                  bgcolor: stream.status === 'active' ? 'rgba(0, 229, 255, 0.03)' : 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid',
-                  borderColor: stream.status === 'active' ? 'primary.main' : 'rgba(255, 255, 255, 0.05)',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  transition: 'all 0.3s ease'
-                }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Box sx={{
-                      p: 1,
-                      borderRadius: 1.5,
-                      bgcolor: stream.status === 'active' ? 'rgba(0, 229, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      border: '1px solid',
-                      borderColor: stream.status === 'active' ? 'primary.main' : 'transparent'
-                    }}>
-                      <ProtocolIcon protocol={stream.protocol} size={32} active={stream.status === 'active'} />
-                    </Box>
-                    <Box>
-                      <Typography variant="caption" sx={{ color: stream.status === 'active' ? 'primary.main' : 'text.disabled', fontWeight: 800 }}>
+      {/* Compact Protocol Icons Bar */}
+      {status.active_streams?.length > 0 && (() => {
+        // Filter: hide DASH/MSS/RTSP/WebRTC when not enabled in settings
+        const hiddenWhenDisabled = ['DASH', 'MSS', 'RTSP', 'WEBRTC'];
+        const visibleStreams = status.active_streams.filter(s => {
+          const key = s.protocol?.toUpperCase();
+          if (hiddenWhenDisabled.includes(key)) {
+            const settingKey = `${s.protocol?.toLowerCase()}_enabled`;
+            return settings?.[settingKey] === true;
+          }
+          return true;
+        });
+        if (visibleStreams.length === 0) return null;
+        return (
+          <Box sx={{ mt: 3, position: 'relative', zIndex: 1 }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, mb: 1.5, display: 'flex', alignItems: 'center', gap: 1, textTransform: 'uppercase', letterSpacing: 1.5 }}>
+              <LaunchIcon sx={{ fontSize: 14 }} /> Protocolos de Transmissão
+            </Typography>
+            <Paper className="glass-panel" sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+              {visibleStreams.map((stream, idx) => {
+                const isActive = stream.status === 'active';
+                const isError = stream.status === 'error';
+                const isReadOnly = stream.protocol === 'MASTER' || stream.protocol === 'HLS';
+                const isLoading = toggleLoading[stream.protocol];
+                const dotColor = isActive ? '#4caf50' : isError ? '#ff9800' : '#555';
+                return (
+                  <Tooltip
+                    key={idx}
+                    title={
+                      <Box sx={{ textAlign: 'center', p: 0.5 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 800, display: 'block' }}>{stream.protocol}</Typography>
+                        <Typography variant="caption" sx={{ color: isActive ? '#4caf50' : isError ? '#ff9800' : '#aaa', display: 'block' }}>
+                          {isActive ? '● ACTIVO' : isError ? '⚠ ERRO' : '○ OFFLINE'}
+                        </Typography>
+                        {!isReadOnly && <Typography variant="caption" sx={{ opacity: 0.7, display: 'block', mt: 0.5 }}>{isActive ? 'Clique para desligar' : 'Clique para ligar'}</Typography>}
+                        {isReadOnly && <Typography variant="caption" sx={{ opacity: 0.5, display: 'block', mt: 0.5 }}>Protocolo principal (apenas leitura)</Typography>}
+                        {stream.url && <Typography variant="caption" sx={{ opacity: 0.6, display: 'block', mt: 0.5, fontFamily: 'monospace', fontSize: '0.65rem' }}>{stream.url}</Typography>}
+                      </Box>
+                    }
+                    arrow
+                    placement="top"
+                  >
+                    <Box
+                      onClick={() => !isReadOnly && !isLoading && handleToggleProtocol(stream.protocol, stream.status)}
+                      sx={{
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5,
+                        cursor: isReadOnly ? 'default' : 'pointer',
+                        px: 1.5, py: 1, borderRadius: 2,
+                        border: '1.5px solid',
+                        borderColor: isActive ? (isReadOnly ? 'rgba(0,229,255,0.4)' : 'primary.main') : isError ? 'warning.main' : 'rgba(255,255,255,0.08)',
+                        bgcolor: isActive ? (isReadOnly ? 'rgba(0,229,255,0.04)' : 'rgba(0,229,255,0.06)') : 'rgba(255,255,255,0.02)',
+                        transition: 'all 0.25s ease',
+                        position: 'relative',
+                        minWidth: 64,
+                        '&:hover': !isReadOnly ? {
+                          borderColor: isActive ? 'error.main' : 'primary.main',
+                          bgcolor: isActive ? 'rgba(244,67,54,0.08)' : 'rgba(0,229,255,0.1)',
+                          transform: 'translateY(-1px)',
+                        } : {},
+                        opacity: isLoading ? 0.6 : 1,
+                      }}
+                    >
+                      {/* Status dot */}
+                      <Box sx={{
+                        position: 'absolute', top: 5, right: 5,
+                        width: 6, height: 6, borderRadius: '50%',
+                        bgcolor: dotColor,
+                        boxShadow: isActive ? `0 0 6px ${dotColor}` : 'none',
+                        animation: isActive && !isReadOnly ? 'onair-blink 2s ease-in-out infinite' : 'none',
+                      }} />
+
+                      {/* Protocol icon */}
+                      <Box sx={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isLoading ? 0.5 : 1 }}>
+                        {isLoading
+                          ? <CircularProgress size={20} color="inherit" />
+                          : <ProtocolIcon protocol={stream.protocol} size={32} active={isActive} />
+                        }
+                      </Box>
+
+                      {/* Protocol label */}
+                      <Typography sx={{
+                        fontSize: '0.6rem', fontWeight: 800, letterSpacing: 1,
+                        color: isActive ? 'primary.main' : isError ? 'warning.main' : 'text.disabled',
+                        textTransform: 'uppercase', lineHeight: 1,
+                      }}>
                         {stream.protocol}
                       </Typography>
-                      <Typography variant="body2" sx={{
-                        fontWeight: '700',
-                        fontSize: '0.7rem',
-                        color: stream.status === 'active' ? 'primary.main' : stream.status === 'error' ? 'warning.main' : 'text.secondary'
-                      }}>
-                        {stream.status === 'active' ? 'ON AIR' : stream.status === 'error' ? 'ERRO' : 'OFFLINE'}
-                      </Typography>
                     </Box>
-                  </Box>
-                  <Box sx={{ textAlign: 'right' }}>
-                    <Button
-                      size="small"
-                      variant={stream.status === 'active' ? "outlined" : "contained"}
-                      color={stream.status === 'active' ? "error" : "primary"}
-                      onClick={() => handleToggleProtocol(stream.protocol, stream.status)}
-                      sx={{ py: 0, fontSize: '0.6rem', fontWeight: 800, minWidth: '70px', height: '24px' }}
-                      disabled={stream.protocol === 'MASTER' || stream.protocol === 'HLS' || toggleLoading[stream.protocol]}
-                    >
-                      {toggleLoading[stream.protocol] ? '...' : (stream.status === 'active' ? 'STOP' : 'START')}
-                    </Button>
-                  </Box>
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
-        </Box>
-      )}
+                  </Tooltip>
+                );
+              })}
+            </Paper>
+          </Box>
+        );
+      })()}
 
       <Paper className="glass-panel" sx={{ mt: 3, p: 0, height: 480, position: 'relative', bgcolor: '#000', borderRadius: 4, overflow: 'hidden', border: '2px solid', borderColor: isPlaying ? 'primary.main' : 'rgba(255, 255, 255, 0.1)', boxShadow: isPlaying ? '0 0 30px rgba(0, 229, 255, 0.15)' : 'none', zIndex: 1 }}>
         <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, p: 2, display: 'flex', justifyContent: 'space-between', background: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%)' }}>
@@ -842,11 +952,11 @@ export default function Dashboard() {
                   </Typography>
                 )}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Typography variant="caption" sx={{ minWidth: 60, fontFamily: 'monospace' }}>{formatTime(status.current_clip.position)}</Typography>
+                  <Typography variant="caption" sx={{ minWidth: 60, fontFamily: 'monospace' }}>{formatTime(localPosition)}</Typography>
                   <Box sx={{ flexGrow: 1, position: 'relative' }}>
                     <LinearProgress
                       variant="determinate"
-                      value={(status.current_clip.position / status.current_clip.duration) * 100}
+                      value={(localPosition / (status.current_clip.duration || 1)) * 100}
                       sx={{
                         height: 6,
                         borderRadius: 3,
@@ -892,7 +1002,7 @@ export default function Dashboard() {
                     <Typography variant="body2" noWrap sx={{ fontWeight: i === 0 ? 700 : 500, fontSize: '0.8rem' }}>{c.filename}</Typography>
                     <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.65rem' }}>{formatTime(c.duration)}</Typography>
                   </Box>
-                  {i === 0 && <Chip label="SÉGUE" size="small" sx={{ height: 16, fontSize: '0.6rem', bgcolor: 'primary.main', color: '#000', fontWeight: 800 }} />}
+                  {i === 0 && <Chip label="SEGUE" size="small" sx={{ height: 16, fontSize: '0.6rem', bgcolor: 'primary.main', color: '#000', fontWeight: 800 }} />}
                 </Box>
               )) : (
                 <Box sx={{ p: 4, textAlign: 'center', opacity: 0.5 }}>
@@ -1057,69 +1167,117 @@ export default function Dashboard() {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={debugDialogOpen} onClose={() => setDebugDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Diagnóstico do Sistema</DialogTitle>
+      <Dialog open={debugDialogOpen} onClose={() => setDebugDialogOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <InfoIcon color="primary" /> Diagnóstico do Sistema
+          </Box>
+          {debugReport?._ts && (
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'monospace' }}>
+              Actualizado: {debugReport._ts.toLocaleTimeString()} · Auto-refresh 5s
+            </Typography>
+          )}
+        </DialogTitle>
         <DialogContent dividers>
-          {diagnosing ? <LinearProgress sx={{ my: 2 }} /> : (
+          {diagnosing && !debugReport ? <LinearProgress sx={{ my: 2 }} /> : (
             <Box>
-              <Typography variant="subtitle2" gutterBottom>Relatório de Diagnóstico:</Typography>
               {debugReport ? (
-                <List dense>
-                  <ListItem>
-                    <ListItemIcon><CheckIcon color={debugReport.has_active_schedule ? "success" : "warning"} /></ListItemIcon>
-                    <ListItemText
-                      primary="Agendamento Ativo"
-                      secondary={debugReport.has_active_schedule ? `ID: ${debugReport.active_schedule_id}` : "Nenhum horário detetado para agora"}
-                    />
-                  </ListItem>
-                  <ListItem>
-                    <ListItemIcon><CheckIcon color={debugReport.has_playlist ? "success" : "error"} /></ListItemIcon>
-                    <ListItemText
-                      primary="Playlist Carregada"
-                      secondary={debugReport.has_playlist ? `ID: ${debugReport.playlist_id}` : "Nenhuma playlist associada"}
-                    />
-                  </ListItem>
-                  <ListItem>
-                    <ListItemIcon><CheckIcon color={debugReport.media_files_count > 0 ? "success" : "error"} /></ListItemIcon>
-                    <ListItemText
-                      primary="Ficheiros de Media"
-                      secondary={`${debugReport.media_files_count} clips na playlist`}
-                    />
-                  </ListItem>
-                  {debugReport.missing_media_files?.length > 0 && (
-                    <ListItem>
-                      <ListItemIcon><ErrorIcon color="error" /></ListItemIcon>
-                      <ListItemText
-                        primary="Ficheiros em Falta"
-                        secondary={
-                          <Box component="span" sx={{ color: 'error.main' }}>
-                            {debugReport.missing_media_files.map(f => <div key={f}>{f}</div>)}
-                          </Box>
-                        }
-                      />
-                    </ListItem>
-                  )}
-                  <ListItem>
-                    <ListItemIcon><CheckIcon color={debugReport.overlay_configured ? "success" : "info"} /></ListItemIcon>
-                    <ListItemText primary="Overlay" secondary={debugReport.overlay_configured ? "Configurado e pronto" : "Desativado ou sem logo"} />
-                  </ListItem>
-                  {debugReport.warnings?.length > 0 && (
-                    <ListItem>
-                      <ListItemIcon><WarningIcon color="warning" /></ListItemIcon>
-                      <ListItemText
-                        primary="Avisos"
-                        secondary={debugReport.warnings.map((w, i) => <div key={i}>{w}</div>)}
-                      />
-                    </ListItem>
-                  )}
-                </List>
+                <Grid container spacing={2}>
+                  {/* Left column */}
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="caption" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, color: 'text.secondary', display: 'block', mb: 1 }}>Estado do Motor</Typography>
+                    <List dense disablePadding>
+                      <ListItem disableGutters>
+                        <ListItemIcon sx={{ minWidth: 32 }}><Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: debugReport._live?.status === 'playing' ? '#4caf50' : '#555' }} /></ListItemIcon>
+                        <ListItemText primary="Motor FFmpeg" secondary={debugReport._live?.status === 'playing' ? '▶ Em execução' : '◼ Parado'} secondaryTypographyProps={{ sx: { color: debugReport._live?.status === 'playing' ? 'success.main' : 'text.disabled' } }} />
+                      </ListItem>
+                      <ListItem disableGutters>
+                        <ListItemIcon sx={{ minWidth: 32 }}><InfoIcon sx={{ fontSize: 16, color: 'primary.main' }} /></ListItemIcon>
+                        <ListItemText primary="Tempo de Emissão" secondary={formatTime(debugReport._live?.uptime || 0)} secondaryTypographyProps={{ sx: { fontFamily: 'monospace', color: 'primary.main', fontWeight: 700 } }} />
+                      </ListItem>
+                      <ListItem disableGutters>
+                        <ListItemIcon sx={{ minWidth: 32 }}><CheckIcon sx={{ fontSize: 16 }} color={debugReport.has_active_schedule ? 'success' : 'warning'} /></ListItemIcon>
+                        <ListItemText primary="Agendamento" secondary={debugReport.has_active_schedule ? `Activo · ${debugReport.active_schedule_id?.slice(0, 8)}…` : 'Nenhum detectado para agora'} />
+                      </ListItem>
+                      <ListItem disableGutters>
+                        <ListItemIcon sx={{ minWidth: 32 }}><CheckIcon sx={{ fontSize: 16 }} color={debugReport.has_playlist ? 'success' : 'error'} /></ListItemIcon>
+                        <ListItemText primary="Playlist" secondary={debugReport.has_playlist ? `Carregada · ${debugReport.playlist_id?.slice(0, 8)}…` : 'Nenhuma playlist associada'} />
+                      </ListItem>
+                      <ListItem disableGutters>
+                        <ListItemIcon sx={{ minWidth: 32 }}><CheckIcon sx={{ fontSize: 16 }} color={debugReport.media_files_count > 0 ? 'success' : 'error'} /></ListItemIcon>
+                        <ListItemText primary="Media na Playlist" secondary={`${debugReport.media_files_count || 0} clips disponíveis`} />
+                      </ListItem>
+                      <ListItem disableGutters>
+                        <ListItemIcon sx={{ minWidth: 32 }}><CheckIcon sx={{ fontSize: 16 }} color={debugReport.overlay_configured ? 'success' : 'info'} /></ListItemIcon>
+                        <ListItemText primary="Overlay / Logo" secondary={debugReport.overlay_configured ? 'Configurado e pronto' : 'Desactivado'} />
+                      </ListItem>
+                      <ListItem disableGutters>
+                        <ListItemIcon sx={{ minWidth: 32 }}><InfoIcon sx={{ fontSize: 16 }} /></ListItemIcon>
+                        <ListItemText primary="Clips hoje" secondary={`${debugReport._live?.clips_played_today || 0} reproduzidos`} />
+                      </ListItem>
+                    </List>
+
+                    {debugReport._live?.current_clip && (
+                      <Box sx={{ mt: 2, p: 1.5, bgcolor: 'rgba(0,229,255,0.05)', borderRadius: 2, border: '1px solid rgba(0,229,255,0.15)' }}>
+                        <Typography variant="caption" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, color: 'primary.main', display: 'block', mb: 0.5 }}>Clip Actual</Typography>
+                        <Typography variant="body2" noWrap sx={{ fontWeight: 700 }}>{debugReport._live.current_clip.filename}</Typography>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'monospace' }}>
+                          {formatTime(debugReport._live.current_clip.position)} / {formatTime(debugReport._live.current_clip.duration)}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Grid>
+
+                  {/* Right column */}
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="caption" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, color: 'text.secondary', display: 'block', mb: 1 }}>Protocolos Activos</Typography>
+                    {debugReport._live?.active_streams?.length > 0 ? (
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                        {debugReport._live.active_streams.map((s, i) => (
+                          <Chip key={i} size="small" label={s.protocol}
+                            sx={{ bgcolor: s.status === 'active' ? 'rgba(76,175,80,0.15)' : 'rgba(255,255,255,0.05)', borderColor: s.status === 'active' ? 'success.main' : 'rgba(255,255,255,0.1)', border: '1px solid', color: s.status === 'active' ? 'success.main' : 'text.disabled', fontWeight: 700, fontSize: '0.65rem' }}
+                          />
+                        ))}
+                      </Box>
+                    ) : <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block', mb: 2 }}>Nenhum protocolo activo</Typography>}
+
+                    {debugReport._live?.last_error && (
+                      <Alert severity="error" sx={{ mb: 2, py: 0.5 }}>
+                        <Typography variant="caption" sx={{ fontFamily: 'monospace', fontWeight: 700 }}>Último erro: {debugReport._live.last_error}</Typography>
+                      </Alert>
+                    )}
+
+                    {debugReport.warnings?.length > 0 && (
+                      <Alert severity="warning" sx={{ mb: 2, py: 0.5 }}>
+                        {debugReport.warnings.map((w, i) => <Typography key={i} variant="caption" display="block">{w}</Typography>)}
+                      </Alert>
+                    )}
+
+                    {debugReport.missing_media_files?.length > 0 && (
+                      <Alert severity="error" sx={{ mb: 2, py: 0.5 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 700, display: 'block' }}>Ficheiros em falta:</Typography>
+                        {debugReport.missing_media_files.map(f => <Typography key={f} variant="caption" display="block" sx={{ fontFamily: 'monospace' }}>{f}</Typography>)}
+                      </Alert>
+                    )}
+
+                    <Typography variant="caption" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, color: 'text.secondary', display: 'block', mb: 1 }}>Últimas Entradas de Log</Typography>
+                    <Box sx={{ bgcolor: 'rgba(0,0,0,0.4)', p: 1.5, borderRadius: 1, maxHeight: 130, overflowY: 'auto', fontFamily: 'monospace', fontSize: '0.68rem' }}>
+                      {debugReport._live?.logs?.slice(-6).reverse().map((l, i) => (
+                        <Box key={i} sx={{ color: l.includes('✗') || l.toLowerCase().includes('error') ? '#f44336' : l.includes('✓') ? '#4caf50' : 'rgba(255,255,255,0.6)', mb: 0.3 }}>{l}</Box>
+                      )) || <Box sx={{ color: 'rgba(255,255,255,0.3)' }}>Sem logs disponíveis</Box>}
+                    </Box>
+                  </Grid>
+                </Grid>
               ) : (
                 <Alert severity="error">Não foi possível obter o relatório.</Alert>
               )}
             </Box>
           )}
         </DialogContent>
-        <DialogActions><Button onClick={() => setDebugDialogOpen(false)}>Fechar</Button></DialogActions>
+        <DialogActions>
+          <Button onClick={handleDiagnose} variant="outlined" size="small">Actualizar agora</Button>
+          <Button onClick={() => setDebugDialogOpen(false)}>Fechar</Button>
+        </DialogActions>
       </Dialog>
 
       <Dialog open={restartDialogOpen} onClose={() => setRestartDialogOpen(false)}>
