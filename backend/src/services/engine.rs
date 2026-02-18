@@ -49,6 +49,7 @@ pub struct PlayoutEngine {
     current_process: Arc<Mutex<Option<Child>>>,
     current_clip_id: Arc<Mutex<Option<String>>>,
     pub is_running: Arc<Mutex<bool>>,
+    pub is_paused: Arc<Mutex<bool>>,
     pub last_error: Arc<Mutex<Option<String>>>,
     pub status: Arc<Mutex<PlayoutStatus>>,
     engine_start_time: Arc<Mutex<Option<chrono::DateTime<Local>>>>,
@@ -70,6 +71,8 @@ pub struct PlayoutEngine {
     relay_cooldowns: Arc<Mutex<HashMap<String, std::time::Instant>>>,
     pub hls_sessions: Arc<Mutex<HashMap<String, Instant>>>,
     pub preview_ips: Arc<Mutex<HashMap<IpAddr, Instant>>>,
+    // Instance-level counter for master feed inactivity (replaces static AtomicU32)
+    master_inactive_count: Arc<Mutex<u32>>,
 }
 
 impl PlayoutEngine {
@@ -79,6 +82,7 @@ impl PlayoutEngine {
             current_process: Arc::new(Mutex::new(None)),
             current_clip_id: Arc::new(Mutex::new(None)),
             is_running: Arc::new(Mutex::new(false)),
+            is_paused: Arc::new(Mutex::new(false)),
             last_error: Arc::new(Mutex::new(None)),
             status: Arc::new(Mutex::new(PlayoutStatus {
                 status: "stopped".to_string(),
@@ -111,6 +115,7 @@ impl PlayoutEngine {
             relay_cooldowns: Arc::new(Mutex::new(HashMap::new())),
             hls_sessions: Arc::new(Mutex::new(HashMap::new())),
             preview_ips: Arc::new(Mutex::new(HashMap::new())),
+            master_inactive_count: Arc::new(Mutex::new(0u32)),
         }
     }
 
@@ -335,7 +340,7 @@ impl PlayoutEngine {
         // 2. Find scheduled playlist (Better logic)
         // a. Today's direct schedule
         let mut schedule = sqlx::query_as::<_, Schedule>(
-            "SELECT s.*, p.name as playlist_name 
+            "SELECT s.*, p.name as playlist_name, p.content as playlist_content 
              FROM schedule s 
              JOIN playlists p ON s.playlist_id = p.id 
              WHERE s.date = $1 AND s.repeat_pattern IS NULL
@@ -352,7 +357,7 @@ impl PlayoutEngine {
 
         // b. Daily repeats
         let daily = sqlx::query_as::<_, Schedule>(
-            "SELECT s.*, p.name as playlist_name 
+            "SELECT s.*, p.name as playlist_name, p.content as playlist_content 
              FROM schedule s 
              JOIN playlists p ON s.playlist_id = p.id 
              WHERE s.repeat_pattern = 'daily' AND s.date <= $1
@@ -371,7 +376,7 @@ impl PlayoutEngine {
         // c. Weekly repeats
         let day_of_week = current_date.weekday().num_days_from_monday();
         let weekly = sqlx::query_as::<_, Schedule>(
-            "SELECT s.*, p.name as playlist_name 
+            "SELECT s.*, p.name as playlist_name, p.content as playlist_content 
              FROM schedule s 
              JOIN playlists p ON s.playlist_id = p.id 
              WHERE s.repeat_pattern = 'weekly' 
@@ -623,8 +628,11 @@ impl PlayoutEngine {
                 status.next_clips = next_clips_vec;
             }
 
-            let mut current_id = self.current_clip_id.lock().await;
+            log::debug!("[DIAG] Entering lock block in play_from_playlist");
             let mut proc_lock = self.current_process.lock().await;
+            log::debug!("[DIAG] Locked current_process");
+            let mut current_id = self.current_clip_id.lock().await;
+            log::debug!("[DIAG] Locked current_clip_id");
             let mut last_overlay_opacity = self.last_overlay_opacity.lock().await;
             let mut last_overlay_scale = self.last_overlay_scale.lock().await;
             let mut last_overlay_x = self.last_overlay_x.lock().await;
@@ -634,6 +642,7 @@ impl PlayoutEngine {
             let mut last_res = self.last_resolution.lock().await;
             let mut last_vb = self.last_video_bitrate.lock().await;
             let mut last_ab = self.last_audio_bitrate.lock().await;
+            log::debug!("[DIAG] All state locks acquired");
 
             let current_opacity = settings.overlay_opacity.unwrap_or(1.0);
             let current_scale = settings.overlay_scale.unwrap_or(1.0);
@@ -674,15 +683,6 @@ impl PlayoutEngine {
                 *last_ab = settings.audio_bitrate.clone();
             }
 
-            let is_running = if let Some(ref mut child) = *proc_lock {
-                match child.try_wait() {
-                    Ok(None) => !overlay_changed && !settings_changed, // Force restart if settings changed
-                    _ => false,
-                }
-            } else {
-                false
-            };
-
             // ---------------------------------------------------------
             // GAPLESS PLAYOUT LOGIC (Replace single-clip with sequence)
             // ---------------------------------------------------------
@@ -691,11 +691,28 @@ impl PlayoutEngine {
             let mut seq = self.current_sequence.lock().await;
             let current_clip_id_str = clip_id.to_string();
 
+            // Check if FFmpeg process is actually alive (stale sequence guard)
+            let process_alive = if let Some(ref mut child) = *proc_lock {
+                matches!(child.try_wait(), Ok(None))
+            } else {
+                false
+            };
+
+            // If process died unexpectedly, clear the sequence so we restart cleanly
+            if !process_alive && !seq.is_empty() {
+                log::warn!("[STALE-SEQ] FFmpeg process exited unexpectedly. Clearing stale sequence.");
+                seq.clear();
+            }
+
+            let is_running = process_alive && !overlay_changed && !settings_changed;
+
             // If the process is healthy AND the target clip is inside the currently running sequence...
             // We assume FFmpeg is handling the transition internally.
             let in_sequence = is_running && seq.contains(&current_clip_id_str);
+            log::debug!("[DIAG] in_sequence check: is_running={}, in_seq={}", is_running, in_sequence);
 
             if !in_sequence {
+                log::debug!("[DIAG] Starting NEW sequence flow");
                 log::info!(
                     "Starting NEW sequence starting with: {} (offset {:.2}s)",
                     clip_id,
@@ -737,20 +754,17 @@ impl PlayoutEngine {
 
                 // Update Sequence State
                 *seq = sequence_ids;
-                log::info!(
-                    "Generated gapless sequence with {} items at {:?}",
-                    seq.len(),
-                    playlist_path
-                );
+                log::debug!("[DIAG] Generated playlist file at {:?}", playlist_path);
 
                 let ffmpeg = FFmpegService::new();
+                log::debug!("[DIAG] FFmpegService initialized, calling start_stream");
                 let hls_preview_path_str = std::env::var("HLS_PATH")
                     .unwrap_or_else(|_| "/var/lib/onepa-playout/hls".to_string());
                 let hls_preview_path = hls_preview_path_str.as_str();
                 std::fs::create_dir_all(hls_preview_path).ok();
 
                 // Main engine always pushes to an internal master feed
-                let output_url = "rtmp://mediamtx:1935/live/master".to_string();
+                let output_url = "rtmp://backend:backend@mediamtx:1935/master".to_string();
 
                 let logo_path = if settings.overlay_enabled {
                     settings
@@ -966,8 +980,8 @@ impl PlayoutEngine {
             }
         }
 
-        // 0. Master Feed Status
-        let master_info = mediamtx_paths.get("live/master");
+        // 0. Master Feed Status — path is "master" (not "live/master")
+        let master_info = mediamtx_paths.get("master");
         streams.push(ActiveStream {
             protocol: "MASTER".to_string(),
             status: if master_info.map(|i| i.ready).unwrap_or(false) {
@@ -1203,12 +1217,18 @@ impl PlayoutEngine {
     pub async fn toggle_protocol(&self, protocol: &str, enabled: bool) -> Result<(), String> {
         log::info!("API: Toggling protocol {} to {}", protocol, enabled);
 
-        // Update database
+        // Update database — extended protocol set
         let query = match protocol {
-            "rtmp" => "UPDATE settings SET rtmp_enabled = $1 WHERE id = TRUE",
-            "srt" => "UPDATE settings SET srt_enabled = $1 WHERE id = TRUE",
-            "udp" => "UPDATE settings SET udp_enabled = $1 WHERE id = TRUE",
-            "hls" => "UPDATE settings SET hls_enabled = $1 WHERE id = TRUE",
+            "rtmp"   => "UPDATE settings SET rtmp_enabled = $1 WHERE id = TRUE",
+            "srt"    => "UPDATE settings SET srt_enabled = $1 WHERE id = TRUE",
+            "udp"    => "UPDATE settings SET udp_enabled = $1 WHERE id = TRUE",
+            "hls"    => "UPDATE settings SET hls_enabled = $1 WHERE id = TRUE",
+            "dash"   => "UPDATE settings SET dash_enabled = $1 WHERE id = TRUE",
+            "mss"    => "UPDATE settings SET mss_enabled = $1 WHERE id = TRUE",
+            "rtsp"   => "UPDATE settings SET rtsp_enabled = $1 WHERE id = TRUE",
+            "webrtc" => "UPDATE settings SET webrtc_enabled = $1 WHERE id = TRUE",
+            "llhls"  => "UPDATE settings SET llhls_enabled = $1 WHERE id = TRUE",
+            "rist"   => "UPDATE settings SET rist_enabled = $1 WHERE id = TRUE",
             _ => return Err(format!("Unknown protocol: {}", protocol)),
         };
 
@@ -1218,7 +1238,7 @@ impl PlayoutEngine {
             .await
             .map_err(|e| e.to_string())?;
 
-        // If disabling, stop the process immediately to prevent flicker
+        // If disabling a relay-based protocol, stop the process immediately
         if !enabled {
             let mut procs = self.distribution_processes.lock().await;
             if let Some(mut child) = procs.remove(protocol) {
@@ -1232,6 +1252,56 @@ impl PlayoutEngine {
         Ok(())
     }
 
+    /// Pause the playout engine — sends SIGSTOP to the FFmpeg process
+    pub async fn pause_playout(&self) {
+        let mut paused = self.is_paused.lock().await;
+        if *paused {
+            return; // Already paused
+        }
+        *paused = true;
+        drop(paused);
+
+        let proc_lock = self.current_process.lock().await;
+        if let Some(ref child) = *proc_lock {
+            // std::process::Child::id() returns u32 directly (not Option)
+            let pid = child.id();
+            #[cfg(unix)]
+            unsafe {
+                libc::kill(pid as i32, libc::SIGSTOP);
+            }
+            log::info!("Playout PAUSED (SIGSTOP sent to PID {})", pid);
+        }
+        drop(proc_lock);
+
+        let mut status = self.status.lock().await;
+        status.status = "paused".to_string();
+    }
+
+    /// Resume the playout engine — sends SIGCONT to the FFmpeg process
+    pub async fn resume_playout(&self) {
+        let mut paused = self.is_paused.lock().await;
+        if !*paused {
+            return; // Not paused
+        }
+        *paused = false;
+        drop(paused);
+
+        let proc_lock = self.current_process.lock().await;
+        if let Some(ref child) = *proc_lock {
+            // std::process::Child::id() returns u32 directly (not Option)
+            let pid = child.id();
+            #[cfg(unix)]
+            unsafe {
+                libc::kill(pid as i32, libc::SIGCONT);
+            }
+            log::info!("Playout RESUMED (SIGCONT sent to PID {})", pid);
+        }
+        drop(proc_lock);
+
+        let mut status = self.status.lock().await;
+        status.status = "playing".to_string();
+    }
+
     async fn manage_distribution(&self, settings: &Settings) {
         let engine_running = *self.is_running.lock().await;
 
@@ -1239,14 +1309,16 @@ impl PlayoutEngine {
             log::debug!("Engine not running, but will manage distribution based on DB flags");
         }
 
-        static INACTIVE_COUNT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
         let master_feed_active = self.check_master_feed_active().await;
         if !master_feed_active {
             tokio::time::sleep(Duration::from_millis(500)).await;
             if !self.check_master_feed_active().await {
-                let count = INACTIVE_COUNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
-                if count < 10 {
-                    log::debug!("[DEBUG-RELAY] Master feed is inactive (count={}/10). Waiting for stabilization.", count);
+                let mut count = self.master_inactive_count.lock().await;
+                *count += 1;
+                let current_count = *count;
+                drop(count);
+                if current_count < 10 {
+                    log::debug!("[DEBUG-RELAY] Master feed is inactive (count={}/10). Waiting for stabilization.", current_count);
                     return;
                 }
                 let mut procs = self.distribution_processes.lock().await;
@@ -1262,10 +1334,12 @@ impl PlayoutEngine {
                 }
                 return;
             } else {
-                INACTIVE_COUNT.store(0, std::sync::atomic::Ordering::Relaxed);
+                let mut count = self.master_inactive_count.lock().await;
+                *count = 0;
             }
         } else {
-            INACTIVE_COUNT.store(0, std::sync::atomic::Ordering::Relaxed);
+            let mut count = self.master_inactive_count.lock().await;
+            *count = 0;
         }
 
         // REMOVED 2S SLEEP - it slows down the tick loop and causes sync issues
@@ -1274,7 +1348,7 @@ impl PlayoutEngine {
         let ffmpeg = FFmpegService::new();
         let mediamtx_host =
             std::env::var("MEDIAMTX_HOST").unwrap_or_else(|_| "localhost".to_string());
-        let master_url = format!("rtmp://{}:1935/live/master", mediamtx_host);
+        let master_url = format!("rtmp://backend:backend@{}:1935/master", mediamtx_host);
 
         // 1. RTMP
         let rtmp_enabled = settings.rtmp_enabled
@@ -1574,14 +1648,15 @@ impl PlayoutEngine {
                     if let Ok(json) = resp.json::<serde_json::Value>().await {
                         if let Some(items) = json.get("items") {
                             // MediaMTX path items can be a list or a map
+                            // The engine pushes to rtmp://mediamtx:1935/master → path name is "master"
                             let master_path = if items.is_object() {
-                                items.get("live/master")
+                                items.get("master")
                             } else if items.is_array() {
                                 items.as_array().and_then(|arr| {
                                     arr.iter().find(|item| {
                                         item.get("name")
                                             == Some(&serde_json::Value::String(
-                                                "live/master".to_string(),
+                                                "master".to_string(),
                                             ))
                                     })
                                 })
@@ -1595,7 +1670,7 @@ impl PlayoutEngine {
                                 {
                                     let is_ready = ready.as_bool().unwrap_or(false);
                                     if !is_ready {
-                                        log::debug!("[DEBUG-RELAY] Master feed live/master found but NOT READY");
+                                        log::debug!("[DEBUG-RELAY] Master feed 'master' found but NOT READY");
                                     }
                                     return is_ready;
                                 }

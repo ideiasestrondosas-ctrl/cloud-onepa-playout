@@ -43,6 +43,7 @@ services:
       THUMBNAILS_PATH: /var/lib/onepa-playout/thumbnails
       PLAYLIST_PATH: /var/lib/onepa-playout/playlists
       HLS_PATH: /var/lib/onepa-playout/hls
+      LOG_PATH: /var/log/onepa
     volumes:
       - ./data/media:/var/lib/onepa-playout/media
       - ./data/thumbnails:/var/lib/onepa-playout/thumbnails
@@ -77,7 +78,18 @@ services:
       - "1935:1935" # RTMP
       - "8888:8888" # HLS
       - "8992:8989" # WebRTC
-      - "8890:8890/udp" # SRT
+      - "0.0.0.0:8890:8890/udp" # SRT
+    environment:
+      - MTX_AUTHINTERNALUSERS_0_USER=backend
+      - MTX_AUTHINTERNALUSERS_0_PASS=backend
+      - MTX_AUTHINTERNALUSERS_0_PERMISSIONS_0_ACTION=api
+      - MTX_AUTHINTERNALUSERS_0_PERMISSIONS_1_ACTION=read
+      - MTX_AUTHINTERNALUSERS_0_PERMISSIONS_2_ACTION=publish
+      - MTX_AUTHINTERNALUSERS_1_USER=any
+      - MTX_AUTHINTERNALUSERS_1_PERMISSIONS_0_ACTION=read
+      # Path Configuration (Environment Override)
+      - MTX_PATHS_ALL_SOURCE=publisher
+      - MTX_PATHS_MASTER_SOURCE=publisher
     volumes:
       - ./docker/mediamtx.yml:/mediamtx.yml:ro
     networks:
@@ -102,6 +114,8 @@ services:
       - "3011:80"
     networks:
       - alpha-network
+    volumes:
+      - ./data/hls:/var/lib/onepa-playout/hls:ro
     depends_on:
       backend:
         condition: service_healthy

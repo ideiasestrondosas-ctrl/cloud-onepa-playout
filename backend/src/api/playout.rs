@@ -50,17 +50,23 @@ async fn skip_clip(engine: web::Data<Arc<PlayoutEngine>>) -> impl Responder {
     }))
 }
 
-async fn pause_playout(_engine: web::Data<Arc<PlayoutEngine>>) -> impl Responder {
-    // TODO: Implement pause in PlayoutEngine
+async fn pause_playout(engine: web::Data<Arc<PlayoutEngine>>) -> impl Responder {
+    log::info!("API: Pausing playout engine...");
+    engine.pause_playout().await;
+    let state = engine.status.lock().await;
     HttpResponse::Ok().json(serde_json::json!({
-        "message": "Pause requested (not implemented yet)"
+        "message": "Playout paused",
+        "status": state.clone()
     }))
 }
 
-async fn resume_playout(_engine: web::Data<Arc<PlayoutEngine>>) -> impl Responder {
-    // TODO: Implement resume in PlayoutEngine
+async fn resume_playout(engine: web::Data<Arc<PlayoutEngine>>) -> impl Responder {
+    log::info!("API: Resuming playout engine...");
+    engine.resume_playout().await;
+    let state = engine.status.lock().await;
     HttpResponse::Ok().json(serde_json::json!({
-        "message": "Resume requested (not implemented yet)"
+        "message": "Playout resumed",
+        "status": state.clone()
     }))
 }
 
@@ -88,12 +94,16 @@ async fn diagnose_playout(pool: web::Data<PgPool>) -> impl Responder {
     let now_dt = chrono::Local::now();
     let today = now_dt.date_naive();
 
-    // First, check for a direct schedule for today
-    let direct_schedule =
-        sqlx::query("SELECT id, playlist_id FROM schedule WHERE date = $1 LIMIT 1")
-            .bind(today)
-            .fetch_optional(pool.get_ref())
-            .await;
+    let current_time = now_dt.time();
+
+    // First, check for a direct schedule for today that has already started
+    let direct_schedule = sqlx::query(
+        "SELECT id, playlist_id FROM schedule WHERE date = $1 AND start_time <= $2 ORDER BY start_time DESC LIMIT 1"
+    )
+    .bind(today)
+    .bind(current_time)
+    .fetch_optional(pool.get_ref())
+    .await;
 
     let mut found_playlist_id: Option<Uuid> = None;
 
@@ -104,13 +114,16 @@ async fn diagnose_playout(pool: web::Data<PgPool>) -> impl Responder {
         report.playlist_id = found_playlist_id;
     }
 
-    // If no direct schedule, check for repeating schedules
+    // If no direct schedule, check for repeating schedules that have started
     if !report.has_active_schedule {
-        // Check daily repeats
-        let daily_schedule = sqlx::query("SELECT id, playlist_id FROM schedule WHERE repeat_pattern = 'daily' AND date <= $1 ORDER BY date DESC LIMIT 1")
-            .bind(today)
-            .fetch_optional(pool.get_ref())
-            .await;
+        // Check daily repeats (must have started by current_time)
+        let daily_schedule = sqlx::query(
+            "SELECT id, playlist_id FROM schedule WHERE repeat_pattern = 'daily' AND date <= $1 AND start_time <= $2 ORDER BY date DESC, start_time DESC LIMIT 1"
+        )
+        .bind(today)
+        .bind(current_time)
+        .fetch_optional(pool.get_ref())
+        .await;
 
         if let Ok(Some(row)) = daily_schedule {
             report.has_active_schedule = true;
@@ -122,11 +135,14 @@ async fn diagnose_playout(pool: web::Data<PgPool>) -> impl Responder {
         // Check weekly repeats if still not found
         if !report.has_active_schedule {
             let day_of_week = today.weekday().num_days_from_monday();
-            let weekly_schedule = sqlx::query("SELECT id, playlist_id FROM schedule WHERE repeat_pattern = 'weekly' AND EXTRACT(DOW FROM date) = $1 AND date <= $2 ORDER BY date DESC LIMIT 1")
-                .bind(day_of_week as i32)
-                .bind(today)
-                .fetch_optional(pool.get_ref())
-                .await;
+            let weekly_schedule = sqlx::query(
+                "SELECT id, playlist_id FROM schedule WHERE repeat_pattern = 'weekly' AND EXTRACT(DOW FROM date) = $1 AND date <= $2 AND start_time <= $3 ORDER BY date DESC, start_time DESC LIMIT 1"
+            )
+            .bind(day_of_week as i32)
+            .bind(today)
+            .bind(current_time)
+            .fetch_optional(pool.get_ref())
+            .await;
 
             if let Ok(Some(row)) = weekly_schedule {
                 report.has_active_schedule = true;

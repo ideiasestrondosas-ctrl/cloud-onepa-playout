@@ -33,6 +33,9 @@ import {
   ListItemButton,
   ListItemIcon,
   CircularProgress,
+  Tabs,
+  Tab,
+  Divider,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -49,6 +52,7 @@ import {
   DoneAll as DoneAllIcon,
   MoreVert as MoreIcon,
   Movie as MovieIcon,
+  Folder as FolderIcon,
 } from '@mui/icons-material';
 import {
   DndContext,
@@ -248,6 +252,7 @@ export default function PlaylistEditor() {
   }, [historyIndex, history]);
 
   const calculateTimings = (clipsList) => {
+    if (!Array.isArray(clipsList)) return []; // Critical Safety Guard
     let offset = 0;
     return clipsList.map(clip => {
       const duration = Number(clip.duration) || 0;
@@ -262,7 +267,7 @@ export default function PlaylistEditor() {
       };
     });
   };
-  const [availableMedia, setAvailableMedia] = useState([]);
+
   const [playlistName, setPlaylistName] = useState('');
   const [playlistDate, setPlaylistDate] = useState('');
   const [validation, setValidation] = useState(null);
@@ -277,6 +282,10 @@ export default function PlaylistEditor() {
   const [folders, setFolders] = useState([]);
   const [selectedFolder, setSelectedFolder] = useState('root');
   const [useFillersOnly, setUseFillersOnly] = useState(false);
+  const [currentFolderInPicker, setCurrentFolderInPicker] = useState('root');
+  const [fillerFilter, setFillerFilter] = useState('all'); // all, only, exclude
+  const [sidebarTab, setSidebarTab] = useState('media'); // playlists, media
+  const [availableMedia, setAvailableMedia] = useState([]); // Fixed initialization
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -309,18 +318,20 @@ export default function PlaylistEditor() {
   const fetchPlaylists = async () => {
     try {
       const response = await playlistAPI.list();
-      setPlaylists(response.data.playlists);
+      setPlaylists(response.data?.playlists || []);
     } catch (error) {
       console.error('Failed to fetch playlists:', error);
+      setPlaylists([]);
     }
   };
 
   const fetchAvailableMedia = async () => {
     try {
       const response = await mediaAPI.list();
-      setAvailableMedia(response.data.media);
+      setAvailableMedia(response.data?.media || []);
     } catch (error) {
       console.error('Failed to fetch media:', error);
+      setAvailableMedia([]);
     }
   };
 
@@ -415,6 +426,32 @@ export default function PlaylistEditor() {
       setSelectedClipIds([]);
       showSuccess(`${selectedClipIds.length} clips removidos`);
     }
+  };
+
+  const handleAddAllFromFolder = () => {
+    const filteredSource = availableMedia.filter(m => {
+      const inFolder = currentFolderInPicker === 'root' || m.folder_id === currentFolderInPicker;
+      const isMedia = m.media_type === 'video' || m.media_type === 'audio';
+      const matchesFiller =
+        fillerFilter === 'all' ? true :
+          fillerFilter === 'only' ? m.is_filler :
+            !m.is_filler;
+      return inFolder && isMedia && matchesFiller;
+    });
+
+    if (filteredSource.length === 0) {
+      showWarning('Nenhum ficheiro encontrado nesta pasta com os filtros atuais');
+      return;
+    }
+
+    const newClips = filteredSource.map(media => ({
+      ...media,
+      id: `${media.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      media_id: media.id,
+    }));
+
+    setClips([...clips, ...newClips]);
+    showSuccess(`${newClips.length} clips adicionados`);
   };
 
   const handleSave = async () => {
@@ -647,9 +684,18 @@ export default function PlaylistEditor() {
     }
   };
 
-  const totalDuration = clips.reduce((sum, clip) => sum + (clip.duration || 0), 0);
+  const totalDuration = (clips || []).reduce((sum, clip) => sum + (clip.duration || 0), 0);
   const targetDuration = 24 * 3600; // 24 hours
 
+
+  if (!Array.isArray(clips)) {
+    return (
+      <Box sx={{ p: 4, textAlign: 'center' }}>
+        <CircularProgress />
+        <Typography sx={{ mt: 2 }}>Loading clips...</Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -720,48 +766,147 @@ export default function PlaylistEditor() {
       </Box>
 
       <Grid container spacing={3} sx={{ flexGrow: 1, overflow: 'hidden' }}>
-        {/* 2. SIDEBAR: LIBRARY */}
         <Grid item xs={12} md={3} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
           <Paper className="glass-panel" sx={{ p: 0, flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <Box sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.05)', bgcolor: 'rgba(255,255,255,0.02)' }}>
-              <Typography variant="overline" sx={{ fontWeight: 800, color: 'primary.main' }}>BIBLIOTECA DE PLAYLISTS</Typography>
+            <Box sx={{ p: 1, borderBottom: '1px solid rgba(255,255,255,0.05)', bgcolor: 'rgba(255,255,255,0.02)' }}>
+              <Tabs
+                value={sidebarTab}
+                onChange={(e, v) => setSidebarTab(v)}
+                variant="fullWidth"
+                sx={{
+                  minHeight: 36,
+                  '& .MuiTab-root': { minHeight: 36, fontSize: '0.65rem', fontWeight: 800, color: 'text.secondary' },
+                  '& .Mui-selected': { color: 'primary.main' }
+                }}
+              >
+                <Tab value="media" label="MEDIA" />
+                <Tab value="playlists" label="PLAYLISTS" />
+              </Tabs>
             </Box>
-            <List sx={{ flexGrow: 1, overflowY: 'auto', p: 1 }}>
-              {playlists.map((playlist) => (
-                <ListItemButton
-                  key={playlist.id}
-                  selected={selectedPlaylist?.id === playlist.id}
-                  onClick={() => handleLoadPlaylist(playlist)}
-                  sx={{
-                    borderRadius: 3,
-                    mb: 1,
-                    transition: '0.3s',
-                    '&.Mui-selected': { bgcolor: 'rgba(0,229,255,0.1)', border: '1px solid rgba(0,229,255,0.2)' },
-                    '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' }
-                  }}
-                >
-                  <ListItemIcon sx={{ color: 'primary.main', minWidth: 40 }}>
-                    <LoopIcon sx={{ fontSize: 20 }} />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={playlist.name.toUpperCase()}
-                    secondary={playlist.date}
-                    primaryTypographyProps={{ sx: { fontWeight: 800, fontSize: '0.75rem', letterSpacing: 0.5 } }}
-                    secondaryTypographyProps={{ sx: { fontSize: '0.65rem', opacity: 0.6 } }}
-                  />
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeletePlaylist(playlist);
+
+            {sidebarTab === 'playlists' ? (
+              <List sx={{ flexGrow: 1, overflowY: 'auto', p: 1 }}>
+                {playlists.map((playlist) => (
+                  <ListItemButton
+                    key={playlist.id}
+                    selected={selectedPlaylist?.id === playlist.id}
+                    onClick={() => handleLoadPlaylist(playlist)}
+                    sx={{
+                      borderRadius: 3,
+                      mb: 1,
+                      transition: '0.3s',
+                      '&.Mui-selected': { bgcolor: 'rgba(0,229,255,0.1)', border: '1px solid rgba(0,229,255,0.2)' },
+                      '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' }
                     }}
-                    sx={{ color: 'error.main', opacity: 0, '.MuiListItemButton-root:hover &': { opacity: 1 } }}
                   >
-                    <DeleteIcon sx={{ fontSize: 16 }} />
-                  </IconButton>
-                </ListItemButton>
-              ))}
-            </List>
+                    <ListItemIcon sx={{ color: 'primary.main', minWidth: 40 }}>
+                      <LoopIcon sx={{ fontSize: 20 }} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={playlist.name.toUpperCase()}
+                      secondary={playlist.date}
+                      primaryTypographyProps={{ sx: { fontWeight: 800, fontSize: '0.75rem', letterSpacing: 0.5 } }}
+                      secondaryTypographyProps={{ sx: { fontSize: '0.65rem', opacity: 0.6 } }}
+                    />
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeletePlaylist(playlist);
+                      }}
+                      sx={{ color: 'error.main', opacity: 0, '.MuiListItemButton-root:hover &': { opacity: 1 } }}
+                    >
+                      <DeleteIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  </ListItemButton>
+                ))}
+              </List>
+            ) : (
+              <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                {/* Folder Shortcuts */}
+                <Box sx={{ p: 1.5, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <FormControl fullWidth variant="standard">
+                    <Select
+                      value={currentFolderInPicker}
+                      onChange={(e) => setCurrentFolderInPicker(e.target.value)}
+                      sx={{ fontWeight: 800, fontSize: '0.75rem' }}
+                      size="small"
+                    >
+                      <MenuItem value="root">RAIZ (TODAS)</MenuItem>
+                      {folders.map(f => (
+                        <MenuItem key={f.id} value={f.id}>{f.name.toUpperCase()}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <Stack direction="row" spacing={0.5} sx={{ mt: 1.5 }}>
+                    <Chip
+                      label="T" size="small"
+                      onClick={() => setFillerFilter('all')}
+                      variant={fillerFilter === 'all' ? 'filled' : 'outlined'}
+                      sx={{ height: 20, fontSize: '0.6rem', fontWeight: 800 }}
+                    />
+                    <Chip
+                      label="F" size="small" color="warning"
+                      onClick={() => setFillerFilter('only')}
+                      variant={fillerFilter === 'only' ? 'filled' : 'outlined'}
+                      sx={{ height: 20, fontSize: '0.6rem', fontWeight: 800 }}
+                    />
+                    <Chip
+                      label="-F" size="small"
+                      onClick={() => setFillerFilter('exclude')}
+                      variant={fillerFilter === 'exclude' ? 'filled' : 'outlined'}
+                      sx={{ height: 20, fontSize: '0.6rem', fontWeight: 800 }}
+                    />
+                    <Box sx={{ flexGrow: 1 }} />
+                    <Tooltip title="Adicionar todos desta pasta">
+                      <IconButton size="small" color="primary" onClick={handleAddAllFromFolder}>
+                        <DoneAllIcon sx={{ fontSize: 18 }} />
+                      </IconButton>
+                    </Tooltip>
+                  </Stack>
+                </Box>
+
+                {/* Quick Add List */}
+                <List sx={{ flexGrow: 1, overflowY: 'auto', p: 1 }}>
+                  {availableMedia
+                    .filter((m) => {
+                      const isMedia = m.media_type === 'video' || m.media_type === 'audio';
+                      const inFolder = currentFolderInPicker === 'root' || m.folder_id === currentFolderInPicker;
+                      const matchesFiller =
+                        fillerFilter === 'all' ? true :
+                          fillerFilter === 'only' ? m.is_filler :
+                            !m.is_filler;
+                      return isMedia && inFolder && matchesFiller;
+                    })
+                    .map((m) => (
+                      <ListItemButton
+                        key={m.id}
+                        onClick={() => handleAddClip(m)}
+                        sx={{
+                          borderRadius: 2,
+                          mb: 0.5,
+                          p: 1,
+                          '&:hover': { bgcolor: 'rgba(0,229,255,0.05)' }
+                        }}
+                      >
+                        <ListItemIcon sx={{ minWidth: 32, color: 'primary.main' }}>
+                          <MovieIcon sx={{ fontSize: 16 }} />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={m.filename.toUpperCase()}
+                          primaryTypographyProps={{ sx: { fontWeight: 800, fontSize: '0.65rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }}
+                          secondary={formatShortDuration(m.duration)}
+                          secondaryTypographyProps={{ sx: { fontSize: '0.6rem', opacity: 0.5 } }}
+                        />
+                        <IconButton size="small" sx={{ color: 'primary.main', opacity: 0, '.MuiListItemButton-root:hover &': { opacity: 1 } }}>
+                          <AddIcon sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      </ListItemButton>
+                    ))
+                  }
+                </List>
+              </Box>
+            )}
           </Paper>
         </Grid>
 
@@ -883,56 +1028,128 @@ export default function PlaylistEditor() {
       <Dialog
         open={mediaDialogOpen}
         onClose={() => { setMediaDialogOpen(false); setSelectedMediaIds([]); }}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
         PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
       >
         <DialogTitle sx={{ fontWeight: 800, color: 'primary.main', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box>SELECIONAR MEDIA ({availableMedia.filter(m => m.media_type === 'video' || m.media_type === 'audio').length} DISPONÍVEIS)</Box>
-          <FormControlLabel
-            control={
-              <Checkbox
-                size="small"
-                indeterminate={selectedMediaIds.length > 0 && selectedMediaIds.length < availableMedia.filter(m => m.media_type === 'video' || m.media_type === 'audio').length}
-                checked={selectedMediaIds.length > 0 && selectedMediaIds.length === availableMedia.filter(m => m.media_type === 'video' || m.media_type === 'audio').length}
-                onChange={(e) => handleSelectAllMedia(e.target.checked)}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            BIBLIOTECA DE MEDIA
+            <Stack direction="row" spacing={1}>
+              <Chip
+                label="TODOS" size="small"
+                onClick={() => setFillerFilter('all')}
+                variant={fillerFilter === 'all' ? 'filled' : 'outlined'}
+                sx={{ height: 24, fontSize: '0.65rem', fontWeight: 800 }}
               />
-            }
-            label={<Typography variant="caption" sx={{ fontWeight: 800 }}>SELECIONAR TODOS</Typography>}
-          />
+              <Chip
+                label="APENAS FILLER" size="small" color="warning"
+                onClick={() => setFillerFilter('only')}
+                variant={fillerFilter === 'only' ? 'filled' : 'outlined'}
+                sx={{ height: 24, fontSize: '0.65rem', fontWeight: 800 }}
+              />
+              <Chip
+                label="EXCLUIR FILLER" size="small"
+                onClick={() => setFillerFilter('exclude')}
+                variant={fillerFilter === 'exclude' ? 'filled' : 'outlined'}
+                sx={{ height: 24, fontSize: '0.65rem', fontWeight: 800 }}
+              />
+            </Stack>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Button
+              size="small" variant="outlined" color="primary"
+              startIcon={<AddIcon />}
+              onClick={handleAddAllFromFolder}
+              sx={{ height: 32, borderRadius: 2, fontWeight: 800, fontSize: '0.7rem' }}
+            >
+              ADICIONAR TODOS DESTA PASTA
+            </Button>
+            <Divider orientation="vertical" flexItem sx={{ mx: 1, height: 20 }} />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
+                  onChange={(e) => handleSelectAllMedia(e.target.checked)}
+                />
+              }
+              label={<Typography variant="caption" sx={{ fontWeight: 800 }}>SELECIONAR TUDO</Typography>}
+            />
+          </Box>
         </DialogTitle>
         <DialogContent sx={{ p: 0 }}>
-          {selectedMediaIds.length > 0 && (
-            <Alert severity="info" sx={{ m: 2, borderRadius: 2, bgcolor: 'rgba(0,229,255,0.05)', color: 'primary.main', border: '1px solid rgba(0,229,255,0.1)' }}>
-              {selectedMediaIds.length} FICHEIRO(S) SELECIONADO(S) PRONTOS PARA ADICIONAR
-            </Alert>
-          )}
-          <List sx={{ px: 2 }}>
-            {availableMedia.filter((m) => m.media_type === 'video' || m.media_type === 'audio').map((media) => {
-              const isSelected = selectedMediaIds.includes(media.id);
-              return (
+          <Grid container sx={{ minHeight: '60vh' }}>
+            {/* Sidebar: Folders */}
+            <Grid item xs={12} md={3} sx={{ borderRight: '1px solid rgba(255,255,255,0.05)', bgcolor: 'rgba(255,255,255,0.01)' }}>
+              <List dense>
                 <ListItemButton
-                  key={media.id}
-                  onClick={() => toggleMediaSelection(media.id)}
-                  sx={{
-                    borderRadius: 3,
-                    mb: 1,
-                    bgcolor: isSelected ? 'rgba(0,229,255,0.05)' : 'transparent',
-                    border: isSelected ? '1px solid rgba(0,229,255,0.2)' : '1px solid transparent'
-                  }}
+                  selected={currentFolderInPicker === 'root'}
+                  onClick={() => setCurrentFolderInPicker('root')}
+                  sx={{ borderRadius: 0, '&.Mui-selected': { bgcolor: 'rgba(0,229,255,0.1)' } }}
                 >
-                  <Checkbox checked={isSelected} sx={{ color: isSelected ? 'primary.main' : 'rgba(255,255,255,0.2)' }} />
-                  <ListItemText
-                    primary={media.filename.toUpperCase()}
-                    secondary={`${media.media_type.toUpperCase()} • ${formatDuration(media.duration)}`}
-                    primaryTypographyProps={{ sx: { fontWeight: 800, fontSize: '0.8rem' } }}
-                    secondaryTypographyProps={{ sx: { fontSize: '0.65rem', opacity: 0.6 } }}
-                  />
-                  {media.is_filler && <Chip label="FILLER" size="small" variant="outlined" color="warning" sx={{ height: 16, fontSize: '0.55rem' }} />}
+                  <ListItemIcon sx={{ minWidth: 32 }}><FolderIcon sx={{ fontSize: 18 }} /></ListItemIcon>
+                  <ListItemText primary="TODAS AS PASTAS" primaryTypographyProps={{ sx: { fontWeight: 800, fontSize: '0.7rem' } }} />
                 </ListItemButton>
-              );
-            })}
-          </List>
+                <Divider sx={{ my: 1, borderColor: 'rgba(255,255,255,0.05)' }} />
+                {folders.map(f => (
+                  <ListItemButton
+                    key={f.id}
+                    selected={currentFolderInPicker === f.id}
+                    onClick={() => setCurrentFolderInPicker(f.id)}
+                    sx={{ borderRadius: 0, '&.Mui-selected': { bgcolor: 'rgba(0,229,255,0.1)' } }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 32 }}><FolderIcon sx={{ fontSize: 18 }} /></ListItemIcon>
+                    <ListItemText primary={f.name.toUpperCase()} primaryTypographyProps={{ sx: { fontWeight: 800, fontSize: '0.7rem' } }} />
+                  </ListItemButton>
+                ))}
+              </List>
+            </Grid>
+
+            {/* Media List */}
+            <Grid item xs={12} md={9}>
+              {selectedMediaIds.length > 0 && (
+                <Alert severity="info" sx={{ m: 2, borderRadius: 2, bgcolor: 'rgba(0,229,255,0.05)', color: 'primary.main', border: '1px solid rgba(0,229,255,0.1)' }}>
+                  {selectedMediaIds.length} FICHEIRO(S) SELECIONADO(S)
+                </Alert>
+              )}
+              <List sx={{ px: 2, maxHeight: '60vh', overflowY: 'auto' }}>
+                {availableMedia
+                  .filter((m) => {
+                    const isVideoAudio = m.media_type === 'video' || m.media_type === 'audio';
+                    const inFolder = currentFolderInPicker === 'root' || m.folder_id === currentFolderInPicker;
+                    const matchesFiller =
+                      fillerFilter === 'all' ? true :
+                        fillerFilter === 'only' ? m.is_filler :
+                          !m.is_filler;
+                    return isVideoAudio && inFolder && matchesFiller;
+                  })
+                  .map((media) => {
+                    const isSelected = selectedMediaIds.includes(media.id);
+                    return (
+                      <ListItemButton
+                        key={media.id}
+                        onClick={() => toggleMediaSelection(media.id)}
+                        sx={{
+                          borderRadius: 3,
+                          mb: 1,
+                          bgcolor: isSelected ? 'rgba(0,229,255,0.05)' : 'transparent',
+                          border: isSelected ? '1px solid rgba(0,229,255,0.2)' : '1px solid transparent'
+                        }}
+                      >
+                        <Checkbox checked={isSelected} sx={{ color: isSelected ? 'primary.main' : 'rgba(255,255,255,0.2)' }} />
+                        <ListItemText
+                          primary={media.filename.toUpperCase()}
+                          secondary={`${media.media_type.toUpperCase()} • ${formatDuration(media.duration)}`}
+                          primaryTypographyProps={{ sx: { fontWeight: 800, fontSize: '0.8rem' } }}
+                          secondaryTypographyProps={{ sx: { fontSize: '0.65rem', opacity: 0.6 } }}
+                        />
+                        {media.is_filler && <Chip label="FILLER" size="small" variant="outlined" color="warning" sx={{ height: 16, fontSize: '0.55rem' }} />}
+                      </ListItemButton>
+                    );
+                  })}
+              </List>
+            </Grid>
+          </Grid>
         </DialogContent>
         <DialogActions sx={{ p: 3, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
           <Button onClick={() => { setMediaDialogOpen(false); setSelectedMediaIds([]); }} sx={{ fontWeight: 800 }}>CANCELAR</Button>
@@ -942,7 +1159,7 @@ export default function PlaylistEditor() {
             disabled={selectedMediaIds.length === 0}
             sx={{ borderRadius: 2, fontWeight: 800, px: 4 }}
           >
-            ADICIONAR ({selectedMediaIds.length})
+            ADICIONAR SELECIONADOS ({selectedMediaIds.length})
           </Button>
         </DialogActions>
       </Dialog>

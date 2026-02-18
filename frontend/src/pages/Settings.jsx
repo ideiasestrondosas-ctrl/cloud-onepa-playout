@@ -367,6 +367,7 @@ function Settings() {
     rtspEnabled: false,
     webrtcEnabled: false,
     llhlsEnabled: false,
+    logPath: '/var/log/onepa',
   });
   const [logs, setLogs] = useState([]);
   const [showLogsDialog, setShowLogsDialog] = useState(false);
@@ -449,7 +450,7 @@ function Settings() {
   const fetchLogs = async () => {
     try {
       setIsRefreshingLogs(true);
-      const response = await playoutAPI.getLogs();
+      const response = await settingsAPI.getSystemLogs();
       setLogs(response.data.logs || []);
     } catch (error) {
       console.error('Failed to fetch logs:', error);
@@ -532,6 +533,7 @@ function Settings() {
         tvmazeApiKey: data.tvmaze_api_key || '',
         display_urls: data.display_urls || {},
         epgDays: data.epg_days || 7,
+        logPath: data.log_path || '/var/log/onepa/playout.log',
       });
     } catch (error) {
       console.error('Failed to fetch settings:', error);
@@ -575,7 +577,7 @@ function Settings() {
   // Output Defaults Configuration
   const OUTPUT_DEFAULTS = {
     rtmp: { url: 'rtmp://localhost:1935/live_stream', resolution: '1280x720', bitrate: '2500k' },
-    hls: { url: 'http://YOUR_SERVER_IP:8181/hls/stream.m3u8', resolution: '1920x1080', bitrate: '4000k' },
+    hls: { url: '/hls/stream.m3u8', resolution: '1920x1080', bitrate: '4000k' },
     srt: { url: 'srt://mediamtx:8890?mode=caller&streamid=publish:live_stream_srt', resolution: '1920x1080', bitrate: '5000k' },
     udp: { url: 'udp://239.0.0.1:1234', resolution: '1280x720', bitrate: '3000k' },
     desktop: { url: 'local', resolution: '1920x1080', bitrate: '0' }
@@ -596,6 +598,73 @@ function Settings() {
       srtMode: type === 'srt' ? 'caller' : prev.srtMode
     }));
     showSuccess(`Configuração atualizada para ${type.toUpperCase()}`);
+  };
+
+  // PRESET LOGIC: Sync Resolution -> Preset Cards -> Bitrate Limits
+  const PRESETS = {
+    '3840x2160': { id: '4k', label: 'Ultra HD', bitrate: 15000, fps: '30' },
+    '1920x1080': { id: '1080p', label: 'Full HD', bitrate: 5000, fps: '25' },
+    '1280x720': { id: '720p', label: 'HD Ready', bitrate: 2500, fps: '25' },
+    '640x360': { id: '360p', label: 'SD', bitrate: 1000, fps: '25' },
+  };
+
+  const [activePreset, setActivePreset] = useState(null);
+
+  useEffect(() => {
+    // Sync active preset highlight based on current resolution
+    const match = Object.values(PRESETS).find(p => p.bitrate + 'k' === settings.videoBitrate && settings.resolution === Object.keys(PRESETS).find(k => PRESETS[k].id === p.id));
+    // Or simplified: just match resolution for highlighting for now, as user requested "highlight when I save"
+    const simpleMatch = Object.entries(PRESETS).find(([res, p]) => res === settings.resolution);
+    if (simpleMatch) {
+      setActivePreset(simpleMatch[1].id);
+    } else {
+      setActivePreset(null);
+    }
+  }, [settings.resolution, settings.videoBitrate]);
+
+  const handleResolutionChange = (val) => {
+    const preset = PRESETS[val];
+    setSettings(prev => ({
+      ...prev,
+      resolution: val,
+      videoBitrate: preset ? `${preset.bitrate}k` : prev.videoBitrate,
+      fps: preset ? preset.fps : '25'
+    }));
+  };
+
+  const handleBitrateChange = (val) => {
+    setSettings(prev => {
+      // Clean numeric value
+      let numericVal = parseInt(val.toString().toLowerCase().replace('k', '')) || 0;
+
+      // Determine max allowed based on current resolution
+      const currentPreset = PRESETS[prev.resolution];
+      const maxAllowed = currentPreset ? currentPreset.bitrate : 15000; // Default max if unknown res
+
+      // Enforce limit: "só não pode alterar para maior que for definido"
+      // BUT: Allow lower values
+      if (numericVal > maxAllowed) {
+        showWarning(`Bitrate limitado a ${maxAllowed}k para ${prev.resolution}`);
+        numericVal = maxAllowed;
+      }
+
+      return { ...prev, videoBitrate: `${numericVal}k` };
+    });
+  };
+
+  const applyPreset = (presetId) => {
+    const entry = Object.entries(PRESETS).find(([k, v]) => v.id === presetId);
+    if (entry) {
+      const [res, p] = entry;
+      // This will trigger the handlers naturally via state update
+      setSettings(prev => ({
+        ...prev,
+        resolution: res,
+        videoBitrate: `${p.bitrate}k`,
+        fps: p.fps
+      }));
+      showSuccess(`Preset ${p.label} aplicado!`);
+    }
   };
 
   const handleUdpModeChange = (mode) => {
@@ -635,6 +704,7 @@ function Settings() {
       fetchProfiles();
     }
   }, [tabValue]);
+
 
   const fetchReleaseHistory = async () => {
     try {
@@ -715,9 +785,14 @@ function Settings() {
           default_video_path: settings.defaultVideoPath,
           logo_path: settings.logoPath,
           branding_type: settings.branding_type, // ADD: branding type for sidebar logo
+          log_path: settings.logPath,
         };
       } else if (tabValue === 2) { // Playout Tab
         payload = {
+          resolution: settings.resolution,
+          fps: settings.fps,
+          video_bitrate: settings.videoBitrate,
+          audio_bitrate: settings.audioBitrate,
           day_start: settings.dayStart,
           overlay_enabled: settings.overlay_enabled,
           channel_name: settings.channelName,
@@ -927,22 +1002,6 @@ function Settings() {
     }
   };
 
-  // Preset Selection
-  const activePreset = settings.resolution === '1280x720' && settings.videoBitrate === '2500k' ? '720p' :
-    settings.resolution === '1920x1080' && settings.videoBitrate === '5000k' ? '1080p' :
-      settings.resolution === '3840x2160' && settings.videoBitrate === '15000k' ? '4k' : 'custom';
-
-  const applyPreset = (preset) => {
-    if (preset === '720p') {
-      setSettings({ ...settings, resolution: '1280x720', videoBitrate: '2500k', fps: '25' });
-    } else if (preset === '1080p') {
-      setSettings({ ...settings, resolution: '1920x1080', videoBitrate: '5000k', fps: '25' });
-    } else if (preset === '4k') {
-      setSettings({ ...settings, resolution: '3840x2160', videoBitrate: '15000k', fps: '30' });
-    }
-    showSuccess(`Preset ${preset} aplicado!`);
-  };
-
   return (
     <Box sx={{ position: 'relative', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Background Glows */}
@@ -982,6 +1041,16 @@ function Settings() {
           </Box>
         </Box>
         <Box sx={{ display: 'flex', gap: 2 }}>
+          <Tooltip title="Recarregar definições do servidor" arrow>
+            <Button
+              variant="outlined"
+              startIcon={<RefreshIcon />}
+              onClick={fetchSettings}
+              sx={{ fontWeight: 800, borderColor: 'rgba(255,255,255,0.1)' }}
+            >
+              REFRESCAR
+            </Button>
+          </Tooltip>
           <Tooltip title="Ver novidades desta versão" arrow>
             <Button
               variant="outlined"
@@ -1113,7 +1182,8 @@ function Settings() {
                 <Grid item xs={12} md={6}>
                   <FormControl fullWidth>
                     <InputLabel>RESOLUÇÃO</InputLabel>
-                    <Select value={settings.resolution} label="RESOLUÇÃO" onChange={(e) => setSettings({ ...settings, resolution: e.target.value })} sx={{ bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3 }}>
+                    <Select value={settings.resolution} label="RESOLUÇÃO" onChange={(e) => handleResolutionChange(e.target.value)} sx={{ bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3 }}>
+                      <MenuItem value="3840x2160">4K (Ultra HD)</MenuItem>
                       <MenuItem value="1920x1080">1080p (Full HD)</MenuItem>
                       <MenuItem value="1280x720">720p (HD)</MenuItem>
                       <MenuItem value="640x360">360p (SD)</MenuItem>
@@ -1125,7 +1195,7 @@ function Settings() {
                     fullWidth
                     label="BITRATE VÍDEO (ex: 5000k)"
                     value={settings.videoBitrate}
-                    onChange={(e) => setSettings({ ...settings, videoBitrate: e.target.value })}
+                    onChange={(e) => handleBitrateChange(e.target.value)}
                     InputProps={{ sx: { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3 } }}
                   />
                 </Grid>
@@ -1180,6 +1250,17 @@ function Settings() {
                   { label: 'THUMBNAILS', value: settings.thumbnailsPath, key: 'thumbnailsPath', helper: 'Cache de miniaturas geradas' },
                   { label: 'PLAYLISTS DB', value: settings.playlistsPath, key: 'playlistsPath', helper: 'Base de dados das programações' },
                   { label: 'FILLERS & LOOPS', value: settings.fillersPath, key: 'fillersPath', helper: 'Conteúdos de preenchimento automático' },
+                  {
+                    label: 'PLAYOUT LOGS',
+                    value: settings.logPath,
+                    key: 'logPath',
+                    helper: 'Localização do ficheiro de registos do sistema',
+                    endAdornment: (
+                      <IconButton onClick={() => setShowLogsDialog(true)} color="primary" sx={{ bgcolor: 'rgba(0,229,255,0.05)', borderRadius: 2 }}>
+                        <HistoryIcon />
+                      </IconButton>
+                    )
+                  },
                   { label: 'BRANDING & ASSETS PROTEGIDOS', value: settings.protectedPath, key: 'protectedPath', helper: 'Localização de logos e vídeos institucionais' }
                 ].map(field => (
                   <Grid item xs={12} key={field.key}>
@@ -1189,7 +1270,10 @@ function Settings() {
                       value={field.value}
                       onChange={(e) => setSettings({ ...settings, [field.key]: e.target.value })}
                       helperText={field.helper}
-                      InputProps={{ sx: { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3 } }}
+                      InputProps={{
+                        sx: { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3 },
+                        endAdornment: field.endAdornment
+                      }}
                     />
                   </Grid>
                 ))}
@@ -1423,7 +1507,7 @@ function Settings() {
                     <Slider value={settings.overlayOpacity ?? 0.6} min={0} max={1} step={0.1} onChange={(e, v) => setSettings({ ...settings, overlayOpacity: v })} />
                   </Grid>
                   <Grid item xs={12} md={6}>
-                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', mb: 1, display: 'block' }}>ESCALA ({settings.overlayScale ?? 0.6}x)</Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', mb: 1, display: 'block' }}>ESCALA ({Math.round((settings.overlayScale ?? 0.6) * 100)}%)</Typography>
                     <Slider value={settings.overlayScale ?? 0.6} min={0.1} max={2.0} step={0.1} onChange={(e, v) => setSettings({ ...settings, overlayScale: v })} />
                   </Grid>
                 </Grid>
@@ -1980,6 +2064,60 @@ function Settings() {
           showSuccess("Protocolo UDP pronto para ativação ao salvar.");
         }}
       />
+
+      {/* Log Viewer Dialog */}
+      <Dialog
+        open={showLogsDialog}
+        onClose={() => setShowLogsDialog(false)}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: 'primary.main', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <HistoryIcon /> REGISTOS DO PLAYOUT (LIVE)
+          </Box>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button size="small" onClick={fetchLogs} startIcon={isRefreshingLogs ? <CircularProgress size={16} /> : <RefreshIcon />}>Refrescar</Button>
+            <IconButton onClick={() => setShowLogsDialog(false)} size="small" sx={{ color: 'text.disabled' }}><AddIcon sx={{ transform: 'rotate(45deg)' }} /></IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.05)', p: 0 }}>
+          <Box sx={{
+            p: 2,
+            bgcolor: '#000',
+            minHeight: '400px',
+            maxHeight: '60vh',
+            overflowY: 'auto',
+            fontFamily: '"JetBrains Mono", "Roboto Mono", monospace',
+            fontSize: '0.8rem'
+          }}>
+            {logs.length > 0 ? logs.map((log, idx) => (
+              <Typography key={idx} variant="body2" sx={{
+                color: log.includes('ERROR') ? '#ff5252' : log.includes('WARN') ? '#ffd740' : log.includes('INFO') ? '#4caf50' : '#fff',
+                opacity: 0.9,
+                whiteSpace: 'pre-wrap',
+                mb: 0.5,
+                lineHeight: 1.4
+              }}>
+                {log}
+              </Typography>
+            )) : (
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', opacity: 0.5 }}>
+                A CARREGAR REGISTOS...
+              </Box>
+            )}
+            <div id="logs-end" />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Typography variant="caption" sx={{ flexGrow: 1, ml: 2, opacity: 0.5 }}>
+            Path: {settings.logPath}/playout.log
+          </Typography>
+          <Button onClick={() => setShowLogsDialog(false)} sx={{ fontWeight: 800 }}>FECHAR</Button>
+          <Button variant="contained" onClick={handleRetryPlayout} sx={{ fontWeight: 800 }}>REINICIAR MOTOR</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

@@ -58,7 +58,7 @@ const AppLogo = ({ version, settings, loading }) => {
       }}>
         {settings.branding_type !== 'static' ? ( // Default to video if 'video', null, or undefined
           <video
-            src={settings.logoPath || "/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4"}
+            src={settings.logo_path || "/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4"}
             autoPlay
             loop
             muted
@@ -73,7 +73,7 @@ const AppLogo = ({ version, settings, loading }) => {
         ) : (
           <Box
             component="img"
-            src={settings.logoPath || "/assets/protected/Cloud_Onepa_Playout_Infinity_Logo_remodelado.png"}
+            src={settings.logo_path || "/assets/protected/Cloud_Onepa_Playout_Infinity_Logo_remodelado.png"}
             sx={{ width: '100%', height: 'auto', maxHeight: '80px', objectFit: 'contain' }}
             onError={(e) => {
               console.error('Image logo failed to load:', e);
@@ -137,7 +137,7 @@ export default function Layout({ children }) {
         // Default to video/animated branding if not set
         if (!data.branding_type) {
           data.branding_type = 'video';
-          data.logoPath = data.logoPath || '/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4';
+          data.logo_path = data.logo_path || '/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4';
         }
         setSettings(data);
       } catch (err) {

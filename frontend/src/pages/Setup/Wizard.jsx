@@ -55,7 +55,7 @@ export default function SetupWizard() {
     channelName: 'Meu Canal Onepa',
     logoFile: null,
     outputType: 'hls',
-    outputUrl: 'http://localhost:8888/hls/stream.m3u8',
+    outputUrl: '/hls/stream.m3u8',
     playlistItems: [],
     isDefaultVideoAdded: false,
   });
@@ -506,7 +506,7 @@ export default function SetupWizard() {
                   const newType = e.target.value;
                   const newUrl = newType === 'rtmp'
                     ? 'rtmp://localhost:1935/live/stream'
-                    : 'http://localhost:8888/hls/stream.m3u8';
+                    : '/hls/stream.m3u8';
 
                   setSetupData({
                     ...setupData,

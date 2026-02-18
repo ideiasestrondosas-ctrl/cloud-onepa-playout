@@ -9,6 +9,7 @@ use serde::Deserialize;
 use sqlx::{PgPool, Row};
 use std::io::Write;
 use std::path::Path;
+use std::sync::Arc;
 
 async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
     let assets_path = std::env::var("ASSETS_PATH")
@@ -125,6 +126,7 @@ async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
                 omdb_api_key: None,
                 tvmaze_api_key: None,
                 branding_type: Some("video".to_string()),
+                log_path: Some("/var/log/onepa".to_string()),
             })
         }
         Err(_) => HttpResponse::InternalServerError()
@@ -135,8 +137,20 @@ async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
 async fn update_settings(
     req: web::Json<UpdateSettingsRequest>,
     pool: web::Data<PgPool>,
+    engine: web::Data<Arc<crate::services::engine::PlayoutEngine>>,
 ) -> impl Responder {
     log::info!("Received update_settings request: {:?}", req);
+    
+    // Check if we need to restart the engine for emission changes
+    let needs_restart = req.resolution.is_some() || 
+                       req.video_codec.is_some() || 
+                       req.audio_codec.is_some() ||
+                       req.video_bitrate.is_some() ||
+                       req.audio_bitrate.is_some() ||
+                       req.output_url.is_some() ||
+                       req.output_type.is_some() ||
+                       req.overlay_enabled.is_some();
+
     let mut sql = String::from("UPDATE settings SET updated_at = CURRENT_TIMESTAMP");
     let mut counter = 1;
 
@@ -205,6 +219,7 @@ async fn update_settings(
     add_field!(req.omdb_api_key, "omdb_api_key");
     add_field!(req.tvmaze_api_key, "tvmaze_api_key");
     add_field!(req.branding_type, "branding_type");
+    add_field!(req.log_path, "log_path");
     let _ = counter;
 
     sql.push_str(" WHERE id = TRUE");
@@ -286,11 +301,26 @@ async fn update_settings(
     bind_field!(req.omdb_api_key);
     bind_field!(req.tvmaze_api_key);
     bind_field!(req.branding_type);
+    bind_field!(req.log_path);
 
     let result = query.execute(pool.get_ref()).await;
 
     match result {
-        Ok(_) => HttpResponse::Ok().json(serde_json::json!({"message": "Settings updated"})),
+        Ok(_) => {
+            if needs_restart {
+                log::info!("Critical setting changed, restarting playout engine...");
+                let engine_clone = engine.get_ref().clone();
+                tokio::spawn(async move {
+                    let is_running = *engine_clone.is_running.lock().await;
+                    if is_running {
+                        engine_clone.set_running(false).await;
+                        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+                        engine_clone.set_running(true).await;
+                    }
+                });
+            }
+            HttpResponse::Ok().json(serde_json::json!({"message": "Settings updated"}))
+        },
         Err(e) => {
             log::error!("Failed to update settings: {}", e);
             HttpResponse::InternalServerError()
@@ -705,6 +735,44 @@ async fn get_release_history() -> impl Responder {
     }
 }
 
+async fn get_system_logs(pool: web::Data<PgPool>) -> impl Responder {
+    let row = match sqlx::query("SELECT log_path FROM settings WHERE id = TRUE")
+        .fetch_optional(pool.get_ref())
+        .await
+    {
+        Ok(Some(r)) => r,
+        Ok(None) => return HttpResponse::NotFound().json(serde_json::json!({"error": "Settings not found"})),
+        Err(_) => return HttpResponse::InternalServerError().json(serde_json::json!({"error": "Failed to get log path"})),
+    };
+
+    let log_path_dir: Option<String> = row.get("log_path");
+    let log_path_raw = log_path_dir.unwrap_or_else(|| "/var/log/onepa".to_string());
+    
+    // Robust handling: if the stored path already ends with .log, it's the file path, not a directory
+    let log_file = if log_path_raw.to_lowercase().ends_with(".log") {
+        std::path::PathBuf::from(&log_path_raw)
+    } else {
+        Path::new(&log_path_raw).join("playout.log")
+    };
+
+    if !log_file.exists() {
+        return HttpResponse::NotFound().json(serde_json::json!({"error": format!("Log file not found at {:?}", log_file)}));
+    }
+
+    match std::fs::read_to_string(&log_file) {
+        Ok(content) => {
+            let lines: Vec<String> = content.lines().rev().take(1000).map(|s| s.to_string()).collect();
+            let mut result = lines;
+            result.reverse();
+            HttpResponse::Ok().json(serde_json::json!({ "logs": result }))
+        }
+        Err(e) => {
+            log::error!("Failed to read log file: {:?}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({"error": format!("Failed to read logs: {}", e)}))
+        }
+    }
+}
+
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.route("", web::get().to(get_settings))
         .route("", web::put().to(update_settings))
@@ -716,5 +784,6 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         .route("/upload-app-logo", web::post().to(upload_app_logo))
         .route("/upload-overlay-pair", web::post().to(upload_overlay_pair))
         .route("/reset-all", web::post().to(reset_all))
-        .route("/release-history", web::get().to(get_release_history));
+        .route("/release-history", web::get().to(get_release_history))
+        .route("/system-logs", web::get().to(get_system_logs));
 }

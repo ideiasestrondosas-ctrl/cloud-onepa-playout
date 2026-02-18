@@ -109,7 +109,7 @@ async fn create_schedule(
             let id: Uuid = row.get("id");
             // Fetch the full schedule with playlist name for the frontend
             let full_schedule = sqlx::query_as::<_, Schedule>(
-                "SELECT s.*, p.name as playlist_name 
+                "SELECT s.*, p.name as playlist_name, p.content as playlist_content 
                  FROM schedule s 
                  JOIN playlists p ON s.playlist_id = p.id 
                  WHERE s.id = $1"
@@ -120,7 +120,18 @@ async fn create_schedule(
 
             match full_schedule {
                 Ok(s) => HttpResponse::Created().json(s),
-                Err(_) => HttpResponse::InternalServerError().json(serde_json::json!({"error": "Created but failed to re-fetch"})),
+                Err(e) => {
+                    log::error!("Created schedule {} but failed to re-fetch: {}", id, e);
+                    // Fallback: return what we have instead of 500
+                    HttpResponse::Created().json(serde_json::json!({
+                        "id": id,
+                        "playlist_id": req.playlist_id,
+                        "date": req.date,
+                        "start_time": req.start_time,
+                        "repeat_pattern": req.repeat_pattern,
+                        "message": "Created successfully (re-fetch failed)"
+                    }))
+                },
             }
         },
         Err(e) => {

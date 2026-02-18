@@ -19,7 +19,18 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
     // Setup logging with flexi_logger (50MB rotation, 5 files limit)
-    let log_path = env::var("LOG_PATH").unwrap_or_else(|_| "/var/log/onepa".to_string());
+    let log_path_raw = env::var("LOG_PATH").unwrap_or_else(|_| "/var/log/onepa".to_string());
+    
+    // Robust path handing: if path ends in .log, get parent directory
+    let log_path = if log_path_raw.to_lowercase().ends_with(".log") {
+        std::path::Path::new(&log_path_raw)
+            .parent()
+            .and_then(|p| p.to_str())
+            .unwrap_or("/var/log/onepa")
+            .to_string()
+    } else {
+        log_path_raw
+    };
     
     let _logger = Logger::try_with_env_or_str("info")
         .unwrap()
@@ -27,12 +38,16 @@ async fn main() -> std::io::Result<()> {
             FileSpec::default()
                 .directory(&log_path)
                 .basename("playout")
+                .suffix("log")
+                .suppress_timestamp()
         )
+        .duplicate_to_stderr(flexi_logger::Duplicate::All)
         .rotate(
             Criterion::Size(50 * 1024 * 1024), // 50 MB
             Naming::Numbers,
             Cleanup::KeepLogFiles(5), // Keep last 5 files
         )
+        .create_symlink(std::path::Path::new(&log_path).join("playout.log")) // Ensure static filename
         .write_mode(flexi_logger::WriteMode::Async)
         .start()
         .expect("Failed to initialize logger");

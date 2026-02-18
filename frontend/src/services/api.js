@@ -106,6 +106,9 @@ export const playoutAPI = {
   start: () => api.post('/playout/start'),
   stop: () => api.post('/playout/stop'),
   skip: () => api.post('/playout/skip'),
+  skipClip: () => api.post('/playout/skip'), // alias for Dashboard compatibility
+  pause: () => api.post('/playout/pause'),
+  resume: () => api.post('/playout/resume'),
   diagnose: () => api.get('/playout/diagnose'),
   openMonitor: () => api.post('/playout/open-monitor'),
   getLogs: () => api.get('/playout/logs'),
@@ -128,6 +131,7 @@ export const settingsAPI = {
   testApi: (service, apiKey) => api.post('/settings/test-api', { service, api_key: apiKey }),
   applyDefaults: () => api.post('/settings/apply-defaults'),
   resetAll: () => api.post('/settings/reset-all'),
+  getSystemLogs: () => api.get('/settings/system-logs'),
 };
 
 // Template endpoints

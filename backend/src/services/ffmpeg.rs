@@ -251,86 +251,64 @@ impl FFmpegService {
     }
 
     fn map_output_url(&self, output_url: &str) -> String {
-        if output_url.contains("localhost")
-            || output_url.contains("127.0.0.1")
-            || output_url.contains("mediamtx")
-        {
-            if output_url.starts_with("rtmp://") {
-                log::info!("📡 RTMP: Mapping host to mediamtx with query auth");
-                if !output_url.contains("@") && !output_url.contains("user=") {
-                    let separator = if output_url.contains('?') { "&" } else { "?" };
-                    output_url
-                        .replace("localhost", "mediamtx")
-                        .replace("127.0.0.1", "mediamtx")
-                        + separator
-                        + "user=backend&pass=backend"
-                } else {
-                    output_url
-                        .replace("localhost", "mediamtx")
-                        .replace("127.0.0.1", "mediamtx")
-                }
-            } else if output_url.starts_with("srt://") {
-                if output_url.contains("mode=listener") || output_url.contains("listen=1") {
-                    log::info!("🎧 SRT LISTENER: Binding to all interfaces (empty host)");
-                    output_url
-                        .replace("localhost", "")
-                        .replace("127.0.0.1", "")
-                        .replace("0.0.0.0", "")
-                } else {
-                    log::info!("📞 SRT CALLER: Mapping host to mediamtx with logic");
-                    let mut final_url = output_url
-                        .replace("localhost", "mediamtx")
-                        .replace("127.0.0.1", "mediamtx");
+        let mut final_url = output_url.to_string();
 
-                    if final_url.contains("mediamtx") && !final_url.contains("user=") {
-                        // However, streamid is usually srt://host:port?streamid=...
-                        // If it already has streamid, we append ;user=...
-                        if final_url.contains("streamid=") {
-                            // MediaMTX SRT authentication format (v1.x):
-                            // action:pathname:user:pass[:query]
-                            // We generically inject :user:pass after the pathname part
-                            if let Some(pos) = final_url.find("publish:") {
-                                let after_publish = &final_url[pos + 8..];
-                                // The pathname ends at the first '?' or '&' or end of string
-                                let end_pos = after_publish
-                                    .find(|c| c == '?' || c == '&')
-                                    .unwrap_or(after_publish.len());
-                                let pathname = &after_publish[..end_pos];
+        if output_url.starts_with("rtmp://") {
+            log::info!("📡 RTMP: Mapping host to mediamtx");
+            final_url = final_url
+                .replace("localhost", "mediamtx")
+                .replace("127.0.0.1", "mediamtx");
+        } else if output_url.starts_with("srt://") {
+            if output_url.contains("mode=listener") || output_url.contains("listen=1") {
+                log::info!("🎧 SRT LISTENER: Binding to all interfaces (empty host)");
+                final_url = final_url
+                    .replace("localhost", "")
+                    .replace("127.0.0.1", "")
+                    .replace("0.0.0.0", "");
+            } else {
+                log::info!("📞 SRT CALLER: Mapping host to mediamtx logic");
+                final_url = final_url
+                    .replace("localhost", "mediamtx")
+                    .replace("127.0.0.1", "mediamtx");
 
-                                if !pathname.contains(":backend:backend") {
-                                    let new_streamid_val = format!("{}:backend:backend", pathname);
-                                    let mut new_url = final_url.clone();
-                                    new_url.replace_range(
-                                        pos + 8..pos + 8 + end_pos,
-                                        &new_streamid_val,
-                                    );
-                                    final_url = new_url;
-                                }
+                if final_url.contains("mediamtx") && !final_url.contains("user=") {
+                    if final_url.contains("streamid=") {
+                        // action:pathname:user:pass[:query]
+                        if let Some(pos) = final_url.find("publish:") {
+                            let after_publish = &final_url[pos + 8..];
+                            let end_pos = after_publish
+                                .find(|c| c == '?' || c == '&')
+                                .unwrap_or(after_publish.len());
+                            let pathname = &after_publish[..end_pos];
+
+                            if !pathname.contains(":backend:backend") {
+                                let new_streamid_val = format!("{}:backend:backend", pathname);
+                                let mut new_url = final_url.clone();
+                                new_url.replace_range(
+                                    pos + 8..pos + 8 + end_pos,
+                                    &new_streamid_val,
+                                );
+                                final_url = new_url;
                             }
-                        } else {
-                            // Fallback if streamid is missing (unlikely in our engine)
-                            let q_sep = if final_url.contains('?') { "&" } else { "?" };
-                            final_url = format!("{}{}user=backend&pass=backend", final_url, q_sep);
                         }
                     }
-                    final_url
                 }
-            } else if output_url.starts_with("udp://") {
-                if output_url.contains("@") {
-                    log::info!("📡 UDP LISTENER: Mapping to all interfaces (empty host)");
-                    output_url.replace("localhost", "").replace("127.0.0.1", "")
-                } else {
-                    log::info!("📡 UDP PUSH: Mapping localhost to host.docker.internal");
-                    output_url
-                        .replace("localhost", "host.docker.internal")
-                        .replace("127.0.0.1", "host.docker.internal")
-                }
-            } else {
-                output_url.to_string()
             }
-        } else {
-            output_url.to_string()
+        } else if output_url.starts_with("udp://") {
+            if output_url.contains("@") {
+                log::info!("📡 UDP LISTENER: Mapping to all interfaces (empty host)");
+                final_url = final_url
+                    .replace("localhost", "")
+                    .replace("127.0.0.1", "");
+            } else {
+                log::info!("📡 UDP PUSH: Mapping localhost to host.docker.internal");
+                final_url = final_url
+                    .replace("localhost", "host.docker.internal")
+                    .replace("127.0.0.1", "host.docker.internal");
+            }
         }
+
+        final_url
     }
 
     /// Start a live stream from a file with HLS preview
@@ -417,7 +395,6 @@ impl FFmpegService {
             let scale = overlay_scale.unwrap_or(1.0).clamp(0.1, 2.0);
 
             // Determine overlay position coordinates based on anchor + offsets
-            // Anchors allow us to keep 50:50 spacing from corners easily
             let pos_coords = match overlay_anchor {
                 "top-left" => format!("{}:{}", overlay_x, overlay_y),
                 "bottom-left" => format!("{}:H-h-{}", overlay_x, overlay_y),
@@ -426,15 +403,19 @@ impl FFmpegService {
             };
 
             filter_complex.push_str(&format!(
-                "[0:v]scale={}[bg];[1:v]scale=iw*{}:ih*{},format=rgba,colorchannelmixer=aa={}[logo];[bg][logo]overlay={}[v_out];",
+                "[0:v]scale={}[bg];[1:v]scale=iw*{}:ih*{},format=rgba,colorchannelmixer=aa={}[logo];[bg][logo]overlay={}[v_processed];",
                 resolution, scale, scale, opacity, pos_coords
             ));
         } else {
-            filter_complex.push_str(&format!("[0:v]scale={}[v_out];", resolution));
+            filter_complex.push_str(&format!("[0:v]scale={}[v_processed];", resolution));
         }
 
+        // Split for Monitor
+        filter_complex.push_str("[v_processed]split=2[v_out][v_monitor_pre];");
+        filter_complex.push_str("[v_monitor_pre]scale=640:360[v_monitor];");
+
         // Audio Chain (Standardize to EBU R128)
-        filter_complex.push_str("[0:a]volume=0.8[a_out]");
+        filter_complex.push_str("[0:a]volume=0.8,asplit=2[a_out][a_monitor]");
 
         // 3. CODEC SELECTION LOGIC
         // Force transcoding if logo/overlay is enabled, even if "copy" was selected.
@@ -658,7 +639,8 @@ impl FFmpegService {
                 "?"
             };
             if !final_output_url.contains("latency=") {
-                final_output_url = format!("{}{}latency=200ms", final_output_url, separator2);
+                // FFmpeg SRT expects integer milliseconds, NOT "200ms" suffix
+                final_output_url = format!("{}{}latency=200", final_output_url, separator2);
             }
             let separator3 = if final_output_url.contains('?') {
                 "&"
@@ -716,26 +698,19 @@ impl FFmpegService {
         // Explicitly map [v_out] and [a_out] from the filter complex
         if let Some(hls_path) = hls_preview_path {
             // Escape any existing single quotes for the tee muxer
-            let escaped_url = final_output_url.replace("'", "'\\''");
+            // Only escape pipes for tee separator, colons usually don't need escaping in this context
+            // and over-escaping them can break the protocol detection.
+            let escaped_url = final_output_url.replace("|", "\\|");
 
             let slave_url = if final_output_url.starts_with("srt://") {
                 // SRT NEEDS fifo + onfail=ignore to prevents blocking the whole pipeline
-                // restart_with_keyframe=1: Ensures we only send complete GOPs after a drop/connect
                 format!(
                     "[f=fifo:fifo_format=mpegts:onfail=ignore:drop_pkts_on_overflow=1:restart_with_keyframe=1:queue_size=60000]'{}'",
                     escaped_url
                 )
-            } else if final_output_url.starts_with("rtmp://") {
-                // RTMP with FIFO for robustness against network blips (MediaMTX restarts)
-                // Using onfail=ignore so HLS preview keeps working even if distribution drops
-                // restart_with_keyframe=1: Ensures we only send complete GOPs after a drop/connect
-                format!(
-                    "[f=fifo:fifo_format=flv:onfail=ignore:drop_pkts_on_overflow=1:attempt_recovery=1:recovery_wait_time=3:restart_with_keyframe=1:queue_size=60000]'{}'",
-                    escaped_url
-                )
             } else {
-                // UDP and others (Standard direct mapping)
-                format!("[f={}]'{}'", output_format, escaped_url)
+                // Simplified RTMP output and other direct mappings
+                format!("[f={}]{}", output_format, escaped_url)
             };
 
             // 1. Primary Distribution Output (RTMP/SRT)
@@ -746,6 +721,15 @@ impl FFmpegService {
                 "[f=hls:hls_time=2:hls_list_size=10:hls_flags=delete_segments+independent_segments]{}/stream.m3u8",
                 hls_path
             ));
+
+            // 2b. Secondary Low-Res HLS Output (for Dashboard Monitor)
+            // We use a separate sub-folder to avoid manifest collision, or separate filename
+            // Using different filename in the same dir for simplicity if FFmpeg allows it via map
+            // BUT tee muxer usually wants different files.
+            // Better: Add a dedicated low-res scaler and output
+            // Let's stick to the plan of a dedicated low-res segments chain
+            // We need a separate scaling chain for the low-res output
+            // This requires modifying the filter_complex to have two video outputs.
 
             // 3. Optional DASH Output
             if settings.dash_enabled {
@@ -779,6 +763,40 @@ impl FFmpegService {
                 "-map".to_string(),
                 "[a_out]".to_string(),
                 tee_outputs.join("|"),
+            ]);
+
+            // 5. SECONDARY OUTPUT: Low-Res Monitor HLS
+            // We use a separate encode to save user bandwidth in the browser
+            args.extend(vec![
+                "-map".to_string(),
+                "[v_monitor]".to_string(),
+                "-c:v".to_string(),
+                "libx264".to_string(),
+                "-preset".to_string(),
+                "ultrafast".to_string(),
+                "-b:v".to_string(),
+                "800k".to_string(),
+                "-maxrate".to_string(),
+                "800k".to_string(),
+                "-bufsize".to_string(),
+                "1600k".to_string(),
+                "-g".to_string(),
+                format!("{}", gop),
+                "-map".to_string(),
+                "[a_monitor]".to_string(),
+                "-c:a".to_string(),
+                "aac".to_string(),
+                "-b:a".to_string(),
+                "96k".to_string(),
+                "-f".to_string(),
+                "hls".to_string(),
+                "-hls_time".to_string(),
+                "2".to_string(),
+                "-hls_list_size".to_string(),
+                "10".to_string(),
+                "-hls_flags".to_string(),
+                "delete_segments+independent_segments".to_string(),
+                format!("{}/stream_low.m3u8", hls_path),
             ]);
         } else {
             // Single output
@@ -868,7 +886,8 @@ impl FFmpegService {
                 "?"
             };
             if !final_output_url.contains("latency=") {
-                final_output_url = format!("{}{}latency=200ms", final_output_url, separator2);
+                // FFmpeg SRT expects integer milliseconds, NOT "200ms" suffix
+                final_output_url = format!("{}{}latency=200", final_output_url, separator2);
             }
             if !final_output_url.contains("pkt_size=") {
                 let separator3 = if final_output_url.contains('?') {

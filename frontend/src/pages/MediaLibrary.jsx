@@ -31,7 +31,8 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
-  ListItemButton
+  ListItemButton,
+  Checkbox
 } from '@mui/material';
 import {
   CloudUpload as UploadIcon,
@@ -477,9 +478,19 @@ export default function MediaLibrary() {
       uploadControllers[id].abort();
       setUploadFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'error', progress: 0, error: 'Cancelado' } : f));
     } else {
-      // Just remove from pending
+      // Just remove from pending/queue
       setUploadFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'error', error: 'Cancelado' } : f));
     }
+  };
+
+  const handleCancelAllUploads = () => {
+    Object.values(uploadControllers).forEach(c => c.abort());
+    setUploadFiles(prev => prev.map(f =>
+      (f.status === 'uploading' || f.status === 'pending')
+        ? { ...f, status: 'error', error: 'Cancelado' }
+        : f
+    ));
+    showInfo('Todos os carregamentos cancelados');
   };
 
   const toggleItemSelection = (id) => {
@@ -1288,12 +1299,23 @@ export default function MediaLibrary() {
             </Alert>
           )}
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ justifyContent: 'space-between', px: 3, pb: 2 }}>
           <Button
+            size="small"
+            color="error"
+            startIcon={<ErrorIcon />}
+            onClick={handleCancelAllUploads}
+            disabled={!uploadFiles.some(f => f.status === 'uploading' || f.status === 'pending')}
+          >
+            CANCELAR TODOS
+          </Button>
+          <Button
+            variant="contained"
             disabled={uploadFiles.some(f => f.status === 'uploading' || f.status === 'pending')}
             onClick={() => setUploadProgressOpen(false)}
+            sx={{ fontWeight: 800 }}
           >
-            Fechar
+            Fechar Janela
           </Button>
         </DialogActions>
       </Dialog>

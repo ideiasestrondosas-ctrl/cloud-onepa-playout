@@ -2,16 +2,7 @@
 
 # Global authentication
 authMethod: internal
-authInternalUsers:
-  - user: backend
-    pass: backend
-    permissions:
-      - action: api
-      - action: read
-      - action: publish
-  - user: any
-    permissions:
-      - action: read
+# authInternalUsers: (Managed via Environment Variables in docker-compose.yml)
 
 # Listeners
 rtmp: yes
@@ -38,6 +29,35 @@ apiAddress: :9997
 
 # Path settings
 paths:
+  # Internal master feed — engine pushes here via RTMP
+  # Path name: "master" (matches rtmp://mediamtx:1935/master)
+  master:
+    source: publisher
+    sourceOnDemand: no
+    readUser: backend
+    readPass: backend
+    publishUser: backend
+    publishPass: backend
+
+  # RTMP distribution relay target
+  # Relay process reads from master and pushes here
+  live_stream:
+    source: publisher
+    sourceOnDemand: no
+    readUser: ""
+    readPass: ""
+    publishUser: backend
+    publishPass: backend
+
+  # SRT distribution relay target
+  live_stream_srt:
+    source: publisher
+    sourceOnDemand: no
+    readUser: ""
+    readPass: ""
+    publishUser: backend
+    publishPass: backend
+
+  # Catch-all for any other paths (HLS preview, etc.)
   all:
-    # Global default: source is publisher
     source: publisher

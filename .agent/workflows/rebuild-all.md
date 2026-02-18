@@ -1,113 +1,64 @@
 ---
-description: Rebuild both local dev and Docker environments simultaneously
+description: Rebuild the Docker environment using the Alpha rebuild script
 ---
 
-# Rebuild All Environments
+# Rebuild Docker Environment
 
-This workflow rebuilds and starts both the local development environment (port 3010) and Docker environment (port 3011) simultaneously, allowing you to test both in parallel.
+This workflow rebuilds and starts the Docker environment for Cloud Onepa Playout Alpha. 
+It uses the optimized `./rebuild_alpha_docker.sh` script which handles dependency caching, 
+database readiness, and health checks.
 
 ## Prerequisites
 
 - Docker and Docker Compose installed
-- Node.js and npm installed
-- Rust toolchain installed
-- Alpha Postgres database running on port 5534
+- Internet connection (for initial asset/image downloads)
 
 ## Steps
 
-### 1. Full Rebuild (Both Environments)
+### 1. Execute Rebuild Script
 
 ```bash
-./rebuild_all.sh
+./rebuild_alpha_docker.sh
 ```
 
-This will:
-
-- Clean up existing processes
-- Build Rust backend
-- Build frontend for Docker
-- Start local dev environment (ports 3010, 8181)
-- Rebuild and start Docker containers (ports 3011, 8182)
-- Run health checks
-
-### 2. Rebuild Only Local Dev
-
+// turbo
+3. Alternatively, you can run:
 ```bash
-./rebuild_all.sh --dev-only
+docker-compose down && docker-compose up -d --build
 ```
 
-Use this when you only want to test local development changes.
+### What this script does:
+1. **Build context preparation**: Prepares necessary files for Docker.
+2. **Container Rebuild**: Rebuilds backend and frontend using Docker's build cache.
+3. **Service Initialization**: Starts Postgres, MediaMTX, Backend, and Frontend.
+4. **Health Check**: Waits for the backend to be fully initialized and healthy.
+5. **Frontend Sync**: Restarts the frontend after the backend is ready to ensure zero-delay connectivity.
 
-### 3. Rebuild Only Docker
+## Verification
 
-```bash
-./rebuild_all.sh --docker-only
-```
+After the script completes, you can verify the status:
 
-Use this when you only want to rebuild the Docker containers.
-
-### 4. Force Docker Rebuild (No Cache)
-
-```bash
-./rebuild_all.sh --no-cache
-```
-
-Use this when you need to rebuild Docker images from scratch.
-
-## Testing Both Environments
-
-After running the script, you can test both environments:
-
-- **Local Dev**: http://localhost:3010
-- **Docker**: http://localhost:3011
-
-## Viewing Logs
-
-**Local Dev:**
-
-```bash
-tail -f backend.log frontend-dev.log
-```
-
-**Docker:**
-
-```bash
-docker-compose logs -f
-```
-
-## Stopping Environments
-
-**Stop Local Dev:**
-
-```bash
-kill $(cat .backend.pid .frontend.pid)
-```
-
-**Stop Docker:**
-
-```bash
-docker-compose down
-```
+- **Frontend URL**: [http://localhost:3011](http://localhost:3011)
+- **Health Endpoint**: [http://localhost:3011/api/health](http://localhost:3011/api/health)
+- **Status Audit**: `./scripts/audit_ports.sh`
 
 ## Troubleshooting
 
-### Port Already in Use
-
-If you get port conflicts, manually kill processes:
-
+### Persistence Issues
+If you need to clear the database and media data, run:
 ```bash
-lsof -ti:3010 | xargs kill -9
-lsof -ti:8181 | xargs kill -9
+docker-compose down -v
+```
+*Note: This will delete all uploaded media and playlist data.*
+
+### Viewing Logs
+To monitor the initialization process in detail:
+```bash
+docker-compose logs -f backend
 ```
 
-### Docker Build Fails
-
-Try rebuilding without cache:
-
+### Port Conflicts
+If port 3011 or 8182 is already in use:
 ```bash
-./rebuild_all.sh --no-cache
+lsof -ti:3011,8182 | xargs kill -9
 ```
-
-### Frontend Not Loading
-
-Wait a few seconds for Vite dev server to start, then refresh the browser.

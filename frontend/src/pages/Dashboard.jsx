@@ -392,7 +392,7 @@ export default function Dashboard() {
   const handleLaunchVLC = () => {
     setVlcLogs([]);
     setVlcDialogOpen(true);
-    const hlsUrl = `http://${window.location.hostname}:8888/hls/stream.m3u8`;
+    const hlsUrl = `${window.location.origin}/hls/stream.m3u8`;
     const vlcProtocolUrl = `vlc://${hlsUrl}`;
 
     addVlcLog('Iniciando Smart Launcher VLC...', 'info');
@@ -668,7 +668,7 @@ export default function Dashboard() {
             <ReactPlayer
               key={playerKey}
               ref={playerRef}
-              url="/hls/stream.m3u8"
+              url="/hls/stream_low.m3u8"
               playing={!previewPaused}
               muted={previewMuted}
               width="100%"
@@ -697,9 +697,9 @@ export default function Dashboard() {
             <Box sx={{ position: 'absolute', left: 20, bottom: 20, zIndex: 50 }}>
               <Chip
                 icon={<PlayIcon />}
-                label={`VLC: http://${window.location.hostname}:8888/hls/stream.m3u8`}
+                label={`VLC: ${window.location.origin}/hls/stream.m3u8`}
                 onClick={() => {
-                  const url = `http://${window.location.hostname}:8888/hls/stream.m3u8`;
+                  const url = `${window.location.origin}/hls/stream.m3u8`;
                   navigator.clipboard.writeText(url);
                   showSuccess('Link HLS copiado!');
                 }}

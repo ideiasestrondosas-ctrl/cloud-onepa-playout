@@ -71,6 +71,8 @@ pub struct Settings {
     pub tvmaze_api_key: Option<String>,
     #[sqlx(default)]
     pub branding_type: Option<String>,
+    #[sqlx(default)]
+    pub log_path: Option<String>,
 }
 
 impl Settings {
@@ -116,10 +118,10 @@ impl Settings {
         };
         urls.insert("UDP".to_string(), udp_final);
 
-        // 4. HLS (via MediaMTX)
+        // 4. HLS (Served via Nginx/Frontend)
         urls.insert(
             "HLS".to_string(),
-            format!("http://{}:8888/hls/stream.m3u8", host),
+            format!("http://{}/hls/stream.m3u8", host),
         );
 
         // 5. MASTER
@@ -186,4 +188,5 @@ pub struct UpdateSettingsRequest {
     pub omdb_api_key: Option<String>,
     pub tvmaze_api_key: Option<String>,
     pub branding_type: Option<String>,
+    pub log_path: Option<Option<String>>,
 }
