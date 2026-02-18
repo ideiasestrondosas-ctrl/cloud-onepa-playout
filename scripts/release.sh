@@ -36,7 +36,7 @@ error_handler() {
     echo "2. Git: Ensure you are on the 'master' branch and have no unmerged conflicts."
     echo "3. GitHub CLI: Verify 'gh auth status' to ensure you are logged in."
     echo "4. Disk Space: Ensure you have enough space for the 700MB+ zip file."
-    echo "5. Manual Fix: You can manually run the failing step and then restart this script."
+    echo "5. Manual Fix: You can manually run the failing step and then restart this script, also exclude hls directory"
     exit 1
 }
 
@@ -175,6 +175,9 @@ zip -r "$ZIP_NAME" . \
     -x "data/media/*" \
     -x "data/thumbnails/*" \
     -x "data/postgres/*" \
+    -x "data/hls/*" \
+    -x "data/logs/*" \
+    -x "data/playlists/*.m3u8" \
     -x "backups/*" \
     -x "tmp/*" \
     -x ".DS_Store" \
@@ -184,7 +187,15 @@ zip -r "$ZIP_NAME" . \
     -x "*.zip" \
     -x "*.log" \
     -x "*$EXCLUDE_FILE" \
-    -x "*/$EXCLUDE_FILE"
+    -x "*/$EXCLUDE_FILE" || {
+    ZIP_EXIT=$?
+    # Exit code 18 = not all files were readable (warnings only) — archive is still valid
+    if [ $ZIP_EXIT -ne 18 ]; then
+        echo "zip failed with exit code $ZIP_EXIT"
+        exit $ZIP_EXIT
+    fi
+    echo -e "${YELLOW}⚠️  zip: alguns ficheiros não eram legíveis (ex: sockets HLS) — arquivo criado com sucesso.${NC}"
+}
 
 if [ -f "$ZIP_NAME" ]; then
     log_success "Archive $ZIP_NAME created successfully (${YELLOW}$(du -h "$ZIP_NAME" | cut -f1)${NC})."
