@@ -8,5 +8,6 @@
 --   #7    - GraphicsEditor logo preview refreshes immediately after save (cache-bust)
 
 UPDATE settings
-SET version = 'ALPHA.7 PRO'
+SET system_version = 'v2.2.0-ALPHA.7-PRO',
+    release_date = '2026-02-18'
 WHERE id = TRUE;
