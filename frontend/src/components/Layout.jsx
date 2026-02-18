@@ -132,7 +132,7 @@ export default function Layout({ children }) {
       try {
         setLoadingSettings(true);
         const response = await settingsAPI.get();
-        setVersion(response.data.system_version);
+        setVersion(response.data.system_version || 'v2.2.0-ALPHA.19-PRO');
         const data = response.data;
         // Default to video/animated branding if not set
         if (!data.branding_type) {

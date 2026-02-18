@@ -33,7 +33,7 @@ import {
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { scheduleAPI, playlistAPI, playoutAPI } from '../services/api';
+import { scheduleAPI, playlistAPI, playoutAPI, settingsAPI } from '../services/api';
 import { useNotification } from '../contexts/NotificationContext';
 
 export default function Calendar() {
@@ -51,15 +51,24 @@ export default function Calendar() {
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
+  const [settings, setSettings] = useState(null);
 
   useEffect(() => {
     fetchSchedule();
     fetchPlaylists();
     fetchPlayoutStatus();
+    fetchSettings();
     // Poll status every 10 seconds to keep calendar synced with playout
     const interval = setInterval(fetchPlayoutStatus, 10000);
     return () => clearInterval(interval);
   }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const res = await settingsAPI.get();
+      setSettings(res.data);
+    } catch (_) { }
+  };
 
   const fetchPlayoutStatus = async () => {
     try {
@@ -400,8 +409,45 @@ export default function Calendar() {
             {/* EPG Export Bar */}
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1, mb: 1 }}>
               <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: 1, mr: 'auto' }}>
-                📺 TV GUIDE · {new Date().toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' }).toUpperCase()}
+                📺 TV GUIDE · {new Date().toLocaleDateString('pt-PT', { weekday: 'short', day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase()}
               </Typography>
+              {settings?.epgUrl && (
+                <Tooltip title="Abrir EPG no browser" arrow>
+                  <IconButton
+                    size="small"
+                    sx={{ color: 'primary.main', ml: 1 }}
+                    onClick={() => window.open(settings.epgUrl, '_blank', 'noopener,noreferrer')}
+                  >
+                    <OpenInNewIcon sx={{ fontSize: 18 }} />
+                  </IconButton>
+                </Tooltip>
+              )}
+              <Tooltip title={settings?.epgUrl ? 'Exportar e guardar EPG em disco (.xml)' : 'URL do EPG não configurado'} arrow>
+                <span>
+                  <IconButton
+                    size="small"
+                    disabled={!settings?.epgUrl}
+                    sx={{ color: settings?.epgUrl ? 'success.main' : 'text.disabled', ml: 0.5 }}
+                    onClick={async () => {
+                      try {
+                        const response = await fetch('/api/epg/export');
+                        if (!response.ok) throw new Error('Falha na exportação');
+                        const blob = await response.blob();
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `epg_${new Date().toISOString().slice(0, 10)}.xml`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      } catch (e) {
+                        console.error('EPG export failed:', e);
+                      }
+                    }}
+                  >
+                    <DownloadIcon sx={{ fontSize: 18 }} />
+                  </IconButton>
+                </span>
+              </Tooltip>
               <Tooltip title="Abrir EPG XML no browser" arrow placement="top">
                 <IconButton
                   size="small"

@@ -135,4 +135,4 @@ Para garantir que as correções locais cheguem ao servidor Linux de produção,
 
 ---
 
-**Última atualização:** 2026-02-05 (v2.3.0-ALPHA.6-PRO)
+**Última atualização:** 2026-02-18 (v2.2.0-ALPHA.19-PRO)

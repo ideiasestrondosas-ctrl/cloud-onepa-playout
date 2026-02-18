@@ -10,8 +10,10 @@ use uuid::Uuid;
 pub struct DebugReport {
     pub has_active_schedule: bool,
     pub active_schedule_id: Option<Uuid>,
+    pub active_schedule_name: Option<String>,
     pub has_playlist: bool,
     pub playlist_id: Option<Uuid>,
+    pub playlist_name: Option<String>,
     pub media_files_count: i32,
     pub missing_media_files: Vec<String>,
     pub overlay_configured: bool,
@@ -82,8 +84,10 @@ async fn diagnose_playout(pool: web::Data<PgPool>) -> impl Responder {
     let mut report = DebugReport {
         has_active_schedule: false,
         active_schedule_id: None,
+        active_schedule_name: None,
         has_playlist: false,
         playlist_id: None,
+        playlist_name: None,
         media_files_count: 0,
         missing_media_files: Vec::new(),
         overlay_configured: false,
@@ -97,8 +101,13 @@ async fn diagnose_playout(pool: web::Data<PgPool>) -> impl Responder {
     let current_time = now_dt.time();
 
     // First, check for a direct schedule for today that has already started
+    // JOIN with playlists to get the playlist name for the diagnostic report
     let direct_schedule = sqlx::query(
-        "SELECT id, playlist_id FROM schedule WHERE date = $1 AND start_time <= $2 ORDER BY start_time DESC LIMIT 1"
+        "SELECT s.id, s.playlist_id, p.name as playlist_name 
+         FROM schedule s 
+         JOIN playlists p ON s.playlist_id = p.id
+         WHERE s.date = $1 AND s.start_time <= $2 
+         ORDER BY s.start_time DESC LIMIT 1"
     )
     .bind(today)
     .bind(current_time)
@@ -112,13 +121,20 @@ async fn diagnose_playout(pool: web::Data<PgPool>) -> impl Responder {
         report.active_schedule_id = Some(row.get("id"));
         found_playlist_id = Some(row.get("playlist_id"));
         report.playlist_id = found_playlist_id;
+        let pname: Option<String> = row.try_get("playlist_name").ok();
+        report.active_schedule_name = pname.clone();
+        report.playlist_name = pname;
     }
 
     // If no direct schedule, check for repeating schedules that have started
     if !report.has_active_schedule {
         // Check daily repeats (must have started by current_time)
         let daily_schedule = sqlx::query(
-            "SELECT id, playlist_id FROM schedule WHERE repeat_pattern = 'daily' AND date <= $1 AND start_time <= $2 ORDER BY date DESC, start_time DESC LIMIT 1"
+            "SELECT s.id, s.playlist_id, p.name as playlist_name
+             FROM schedule s
+             JOIN playlists p ON s.playlist_id = p.id
+             WHERE s.repeat_pattern = 'daily' AND s.date <= $1 AND s.start_time <= $2 
+             ORDER BY s.date DESC, s.start_time DESC LIMIT 1"
         )
         .bind(today)
         .bind(current_time)
@@ -130,13 +146,20 @@ async fn diagnose_playout(pool: web::Data<PgPool>) -> impl Responder {
             report.active_schedule_id = Some(row.get("id"));
             found_playlist_id = Some(row.get("playlist_id"));
             report.playlist_id = found_playlist_id;
+            let pname: Option<String> = row.try_get("playlist_name").ok();
+            report.active_schedule_name = pname.clone();
+            report.playlist_name = pname;
         }
 
         // Check weekly repeats if still not found
         if !report.has_active_schedule {
             let day_of_week = today.weekday().num_days_from_monday();
             let weekly_schedule = sqlx::query(
-                "SELECT id, playlist_id FROM schedule WHERE repeat_pattern = 'weekly' AND EXTRACT(DOW FROM date) = $1 AND date <= $2 AND start_time <= $3 ORDER BY date DESC, start_time DESC LIMIT 1"
+                "SELECT s.id, s.playlist_id, p.name as playlist_name
+                 FROM schedule s
+                 JOIN playlists p ON s.playlist_id = p.id
+                 WHERE s.repeat_pattern = 'weekly' AND EXTRACT(DOW FROM s.date) = $1 AND s.date <= $2 AND s.start_time <= $3 
+                 ORDER BY s.date DESC, s.start_time DESC LIMIT 1"
             )
             .bind(day_of_week as i32)
             .bind(today)
@@ -149,13 +172,16 @@ async fn diagnose_playout(pool: web::Data<PgPool>) -> impl Responder {
                 report.active_schedule_id = Some(row.get("id"));
                 found_playlist_id = Some(row.get("playlist_id"));
                 report.playlist_id = found_playlist_id;
+                let pname: Option<String> = row.try_get("playlist_name").ok();
+                report.active_schedule_name = pname.clone();
+                report.playlist_name = pname;
             }
         }
     }
 
     // Check playlist if we found a schedule
     if let Some(playlist_id) = found_playlist_id {
-        let playlist = sqlx::query("SELECT content FROM playlists WHERE id = $1")
+        let playlist = sqlx::query("SELECT content, name FROM playlists WHERE id = $1")
             .bind(playlist_id)
             .fetch_optional(pool.get_ref())
             .await;
@@ -164,6 +190,10 @@ async fn diagnose_playout(pool: web::Data<PgPool>) -> impl Responder {
             Ok(Some(row)) => {
                 report.has_playlist = true;
                 let content: serde_json::Value = row.get("content");
+                // Capture playlist name if not already set
+                if report.playlist_name.is_none() {
+                    report.playlist_name = row.try_get::<String, _>("name").ok();
+                }
 
                 // Check media files
                 if let Some(clips) = content.as_array() {

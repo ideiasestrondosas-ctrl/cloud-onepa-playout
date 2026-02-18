@@ -1197,11 +1197,39 @@ export default function Dashboard() {
                       </ListItem>
                       <ListItem disableGutters>
                         <ListItemIcon sx={{ minWidth: 32 }}><CheckIcon sx={{ fontSize: 16 }} color={debugReport.has_active_schedule ? 'success' : 'warning'} /></ListItemIcon>
-                        <ListItemText primary="Agendamento" secondary={debugReport.has_active_schedule ? `Activo · ${debugReport.active_schedule_id?.slice(0, 8)}…` : 'Nenhum detectado para agora'} />
+                        <ListItemText
+                          primary="Agendamento"
+                          secondary={
+                            debugReport.has_active_schedule
+                              ? `Activo · ${debugReport.active_schedule_name || (debugReport.active_schedule_id?.slice(0, 8) + '…')}`
+                              : 'Nenhum detectado para agora'
+                          }
+                          secondaryTypographyProps={{
+                            sx: {
+                              color: debugReport.has_active_schedule ? 'success.main' : 'warning.main',
+                              fontWeight: debugReport.has_active_schedule ? 700 : 400,
+                              fontSize: '0.75rem',
+                            }
+                          }}
+                        />
                       </ListItem>
                       <ListItem disableGutters>
                         <ListItemIcon sx={{ minWidth: 32 }}><CheckIcon sx={{ fontSize: 16 }} color={debugReport.has_playlist ? 'success' : 'error'} /></ListItemIcon>
-                        <ListItemText primary="Playlist" secondary={debugReport.has_playlist ? `Carregada · ${debugReport.playlist_id?.slice(0, 8)}…` : 'Nenhuma playlist associada'} />
+                        <ListItemText
+                          primary="Playlist"
+                          secondary={
+                            debugReport.has_playlist
+                              ? `Carregada · ${debugReport.playlist_name || (debugReport.playlist_id?.slice(0, 8) + '…')}`
+                              : 'Nenhuma playlist associada'
+                          }
+                          secondaryTypographyProps={{
+                            sx: {
+                              color: debugReport.has_playlist ? 'success.main' : 'error.main',
+                              fontWeight: debugReport.has_playlist ? 700 : 400,
+                              fontSize: '0.75rem',
+                            }
+                          }}
+                        />
                       </ListItem>
                       <ListItem disableGutters>
                         <ListItemIcon sx={{ minWidth: 32 }}><CheckIcon sx={{ fontSize: 16 }} color={debugReport.media_files_count > 0 ? 'success' : 'error'} /></ListItemIcon>

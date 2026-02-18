@@ -260,104 +260,121 @@ export default function GraphicsEditor() {
               />
             </Box>
 
-            <Box
-              ref={containerRef}
-              sx={{
-                flexGrow: 1,
-                bgcolor: '#000',
-                borderRadius: 3,
-                overflow: 'hidden',
-                position: 'relative',
-                // Background shown only when not live
-                backgroundImage: isLivePlaying ? 'none' : 'url("https://images.unsplash.com/photo-1492691523567-61709dcf9801?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80")',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                boxShadow: 'inset 0 0 100px rgba(0,0,0,0.8)',
-                userSelect: 'none'
-              }}
-            >
-              {/* Live HLS feed background — only when playout is active */}
-              {isLivePlaying && (
+            {/* 16:9 wrapper — ensures proportional canvas regardless of container height */}
+            <Box sx={{ width: '100%', aspectRatio: '16/9', position: 'relative', flexShrink: 0 }}>
+              <Box
+                ref={containerRef}
+                sx={{
+                  position: 'absolute', inset: 0,
+                  bgcolor: '#0a0a0a',
+                  borderRadius: 3,
+                  overflow: 'hidden',
+                  // Video-like dark background with subtle colour gradient — no external URL
+                  background: isLivePlaying
+                    ? '#000'
+                    : 'linear-gradient(160deg, #0d1117 0%, #111827 50%, #0a0a10 100%)',
+                  boxShadow: 'inset 0 0 80px rgba(0,0,0,0.7)',
+                  userSelect: 'none'
+                }}
+              >
+                {/* Subtle scanline overlay for realistic video feel */}
+                {!isLivePlaying && (
+                  <Box sx={{
+                    position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
+                    backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.12) 3px, rgba(0,0,0,0.12) 4px)',
+                  }} />
+                )}
+                {/* EBU colour bars strip at bottom — classic test pattern */}
+                {!isLivePlaying && (
+                  <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '8%', display: 'flex', zIndex: 1 }}>
+                    {['#c0c0c0', '#c0c000', '#00c0c0', '#00c000', '#c000c0', '#c00000', '#0000c0'].map((c, i) => (
+                      <Box key={i} sx={{ flex: 1, bgcolor: c, opacity: 0.5 }} />
+                    ))}
+                  </Box>
+                )}
+                {/* Live HLS feed background — only when playout is active */}
+                {isLivePlaying && (
+                  <Box
+                    component="video"
+                    src="/hls/stream_low.m3u8"
+                    autoPlay
+                    muted
+                    loop={false}
+                    playsInline
+                    sx={{
+                      position: 'absolute', top: 0, left: 0,
+                      width: '100%', height: '100%',
+                      objectFit: 'cover',
+                      zIndex: 0,
+                      pointerEvents: 'none',
+                      opacity: 0.75,
+                    }}
+                  />
+                )}
+
                 <Box
-                  component="video"
-                  src="/hls/stream_low.m3u8"
-                  autoPlay
-                  muted
-                  loop={false}
-                  playsInline
+                  ref={logoRef}
+                  component="img"
+                  src={`${settings?.logo_path || "/api/settings/logo"}?v=${logoCacheBust}`}
+                  onMouseDown={handleMouseDown}
                   sx={{
-                    position: 'absolute', top: 0, left: 0,
-                    width: '100%', height: '100%',
-                    objectFit: 'cover',
-                    zIndex: 0,
-                    pointerEvents: 'none',
-                    opacity: 0.75,
+                    ...getLogoStyle(),
+                    // Add a subtle border if it's the default logo to indicate it can be moved
+                    border: !settings?.logoPath ? '1px dashed rgba(0, 229, 255, 0.3)' : 'none',
+                  }}
+                  onError={(e) => {
+                    e.target.src = "/assets/protected/Cloud_Onepa_Playout_Infinity_Logo_remodelado.png";
+                    e.target.onerror = null; // Prevent infinite loop
                   }}
                 />
-              )}
 
-              <Box
-                ref={logoRef}
-                component="img"
-                src={`${settings?.logo_path || "/api/settings/logo"}?v=${logoCacheBust}`}
-                onMouseDown={handleMouseDown}
-                sx={{
-                  ...getLogoStyle(),
-                  // Add a subtle border if it's the default logo to indicate it can be moved
-                  border: !settings?.logoPath ? '1px dashed rgba(0, 229, 255, 0.3)' : 'none',
-                }}
-                onError={(e) => {
-                  e.target.src = "/assets/protected/Cloud_Onepa_Playout_Infinity_Logo_remodelado.png";
-                  e.target.onerror = null; // Prevent infinite loop
-                }}
-              />
+                {/* Position Information Overlay */}
+                <Box sx={{
+                  position: 'absolute',
+                  bottom: 20,
+                  left: 20,
+                  p: 1.5,
+                  bgcolor: 'rgba(0,0,0,0.6)',
+                  backdropFilter: 'blur(10px)',
+                  borderRadius: 2,
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  zIndex: 20
+                }}>
+                  <Typography sx={{ color: '#fff', fontSize: '0.7rem', fontWeight: 800, fontFamily: 'monospace' }}>
+                    X: {logoPos.x} PX | Y: {logoPos.y} PX | ANCHOR: {anchor.toUpperCase()}
+                  </Typography>
+                </Box>
 
-              {/* Position Information Overlay */}
-              <Box sx={{
-                position: 'absolute',
-                bottom: 20,
-                left: 20,
-                p: 1.5,
-                bgcolor: 'rgba(0,0,0,0.6)',
-                backdropFilter: 'blur(10px)',
-                borderRadius: 2,
-                border: '1px solid rgba(255,255,255,0.1)',
-                zIndex: 20
-              }}>
-                <Typography sx={{ color: '#fff', fontSize: '0.7rem', fontWeight: 800, fontFamily: 'monospace' }}>
-                  X: {logoPos.x} PX | Y: {logoPos.y} PX | ANCHOR: {anchor.toUpperCase()}
-                </Typography>
-              </Box>
+                {/* Graphics Layers Preview */}
+                <LayerPreview
+                  layers={graphicsLayers}
+                  selectedLayerId={selectedLayerId}
+                  onLayerSelect={(id) => {
+                    setSelectedLayerId(id);
+                  }}
+                  onLayerDoubleClick={(layer) => {
+                    setLayerToEdit(layer);
+                    setActiveTab(2); // Switch to LAYER tab
+                  }}
+                  onLayerMove={async (id, x, y, isFinished) => {
+                    // Update local state for real-time preview
+                    setGraphicsLayers(prev => prev.map(l =>
+                      l.id === id ? { ...l, position_x: x, position_y: y } : l
+                    ));
 
-              {/* Graphics Layers Preview */}
-              <LayerPreview
-                layers={graphicsLayers}
-                selectedLayerId={selectedLayerId}
-                onLayerSelect={(id) => {
-                  setSelectedLayerId(id);
-                }}
-                onLayerDoubleClick={(layer) => {
-                  setLayerToEdit(layer);
-                  setActiveTab(2); // Switch to LAYER tab
-                }}
-                onLayerMove={async (id, x, y, isFinished) => {
-                  // Update local state for real-time preview
-                  setGraphicsLayers(prev => prev.map(l =>
-                    l.id === id ? { ...l, position_x: x, position_y: y } : l
-                  ));
-
-                  // Update backend on drag end
-                  if (isFinished) {
-                    try {
-                      await graphicsService.updatePosition(id, { position_x: x, position_y: y });
-                      showSuccess('Layer position updated');
-                    } catch (error) {
-                      const msg = error.response?.data?.error || error.message;
-                      showError(`Failed to save layer position: ${msg}`);
+                    // Update backend on drag end
+                    if (isFinished) {
+                      try {
+                        await graphicsService.updatePosition(id, { position_x: x, position_y: y });
+                        showSuccess('Layer position updated');
+                      } catch (error) {
+                        const msg = error.response?.data?.error || error.message;
+                        showError(`Failed to save layer position: ${msg}`);
+                      }
                     }
-                  }
-                }}
-              />
+                  }}
+                />
+              </Box>
             </Box>
           </Paper>
         </Grid>

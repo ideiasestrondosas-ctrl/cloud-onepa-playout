@@ -3,6 +3,16 @@ use actix_web::{web, HttpResponse, Responder};
 use sqlx::PgPool;
 use serde::Deserialize;
 
+/// Touch settings.graphics_updated_at so the engine detects the change and
+/// restarts the FFmpeg overlay pipeline on next tick.
+async fn touch_graphics_timestamp(pool: &PgPool) {
+    let _ = sqlx::query(
+        "UPDATE settings SET graphics_updated_at = NOW() WHERE id = TRUE"
+    )
+    .execute(pool)
+    .await;
+}
+
 // List all graphics layers
 async fn list_layers(pool: web::Data<PgPool>) -> impl Responder {
     let result = sqlx::query_as::<_, GraphicsLayer>(
@@ -47,7 +57,10 @@ async fn create_layer(
     .await;
 
     match result {
-        Ok(layer) => HttpResponse::Ok().json(layer),
+        Ok(layer) => {
+            touch_graphics_timestamp(pool.get_ref()).await;
+            HttpResponse::Ok().json(layer)
+        },
         Err(e) => {
             log::error!("Failed to create graphics layer: {}", e);
             HttpResponse::InternalServerError()
@@ -123,7 +136,10 @@ async fn update_layer(
     let result = query.fetch_one(pool.get_ref()).await;
 
     match result {
-        Ok(layer) => HttpResponse::Ok().json(layer),
+        Ok(layer) => {
+            touch_graphics_timestamp(pool.get_ref()).await;
+            HttpResponse::Ok().json(layer)
+        },
         Err(e) => {
             log::error!("Failed to update graphics layer: {}", e);
             HttpResponse::InternalServerError()
@@ -140,7 +156,10 @@ async fn delete_layer(layer_id: web::Path<i32>, pool: web::Data<PgPool>) -> impl
         .await;
 
     match result {
-        Ok(_) => HttpResponse::Ok().json(serde_json::json!({"message": "Layer deleted successfully"})),
+        Ok(_) => {
+            touch_graphics_timestamp(pool.get_ref()).await;
+            HttpResponse::Ok().json(serde_json::json!({"message": "Layer deleted successfully"}))
+        },
         Err(e) => {
             log::error!("Failed to delete graphics layer: {}", e);
             HttpResponse::InternalServerError()
@@ -160,7 +179,10 @@ async fn toggle_layer(layer_id: web::Path<i32>, pool: web::Data<PgPool>) -> impl
     .await;
 
     match result {
-        Ok(layer) => HttpResponse::Ok().json(layer),
+        Ok(layer) => {
+            touch_graphics_timestamp(pool.get_ref()).await;
+            HttpResponse::Ok().json(layer)
+        },
         Err(e) => {
             log::error!("Failed to toggle graphics layer: {}", e);
             HttpResponse::InternalServerError()
@@ -168,6 +190,7 @@ async fn toggle_layer(layer_id: web::Path<i32>, pool: web::Data<PgPool>) -> impl
         }
     }
 }
+
 // Update layer position
 #[derive(Deserialize)]
 pub struct UpdatePositionRequest {
@@ -190,7 +213,10 @@ async fn update_position(
     .await;
 
     match result {
-        Ok(layer) => HttpResponse::Ok().json(layer),
+        Ok(layer) => {
+            touch_graphics_timestamp(pool.get_ref()).await;
+            HttpResponse::Ok().json(layer)
+        },
         Err(e) => {
             log::error!("Failed to update layer position: {}", e);
             HttpResponse::InternalServerError()
@@ -209,8 +235,6 @@ async fn reorder_layers(
     req: web::Json<ReorderLayersRequest>,
     pool: web::Data<PgPool>,
 ) -> impl Responder {
-    // Update z_index for each layer based on position in array
-    // Higher index in list (top) should have HIGHER z_index to appear on top
     let total = req.layer_ids.len();
     for (index, layer_id) in req.layer_ids.iter().enumerate() {
         let z_index = (total - 1 - index) as i32;
@@ -229,6 +253,7 @@ async fn reorder_layers(
         }
     }
 
+    touch_graphics_timestamp(pool.get_ref()).await;
     HttpResponse::Ok().json(serde_json::json!({"message": "Layers reordered successfully"}))
 }
 

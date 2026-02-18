@@ -127,6 +127,7 @@ async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
                 tvmaze_api_key: None,
                 branding_type: Some("video".to_string()),
                 log_path: Some("/var/log/onepa".to_string()),
+                graphics_updated_at: None,
             })
         }
         Err(_) => HttpResponse::InternalServerError()

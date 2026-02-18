@@ -72,7 +72,7 @@ export default function Login() {
       overflow: 'hidden',
       bgcolor: '#000'
     }}>
-      {/* Dynamic Background */}
+      {/* Local CSS Background — no external dependencies, works fully offline */}
       <Box sx={{
         position: 'absolute',
         top: 0,
@@ -80,23 +80,23 @@ export default function Login() {
         right: 0,
         bottom: 0,
         zIndex: 0,
-        '&:after': {
+        background: 'radial-gradient(ellipse at 20% 30%, rgba(0,229,255,0.06) 0%, transparent 60%), radial-gradient(ellipse at 80% 70%, rgba(100,0,255,0.06) 0%, transparent 60%), linear-gradient(160deg, #060810 0%, #0a0d18 40%, #080b14 100%)',
+        overflow: 'hidden',
+        '&:before': {
           content: '""',
           position: 'absolute',
-          top: 0, left: 0, right: 0, bottom: 0,
-          background: 'radial-gradient(circle at 50% 50%, rgba(10, 11, 16, 0.4) 0%, rgba(10, 11, 16, 0.9) 100%)',
-          zIndex: 1
+          top: '-50%',
+          left: '-50%',
+          width: '200%',
+          height: '200%',
+          backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 80px, rgba(0,229,255,0.015) 80px, rgba(0,229,255,0.015) 81px), repeating-linear-gradient(90deg, transparent, transparent 80px, rgba(0,229,255,0.015) 80px, rgba(0,229,255,0.015) 81px)',
+          pointerEvents: 'none',
         }
       }}>
-        <Box sx={{
-          width: '100%',
-          height: '100%',
-          backgroundImage: 'url("https://images.unsplash.com/photo-1593642532400-2e9124a350eb?q=80&w=2070&auto=format&fit=crop")',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          filter: 'blur(10px) brightness(0.5)',
-          transform: 'scale(1.1)'
-        }} />
+        {/* Neon glow orbs */}
+        <Box sx={{ position: 'absolute', top: '15%', left: '10%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,229,255,0.08) 0%, transparent 70%)', filter: 'blur(40px)' }} />
+        <Box sx={{ position: 'absolute', bottom: '10%', right: '5%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(100,0,255,0.07) 0%, transparent 70%)', filter: 'blur(60px)' }} />
+        <Box sx={{ position: 'absolute', top: '50%', right: '20%', width: 250, height: 250, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,229,255,0.05) 0%, transparent 70%)', filter: 'blur(30px)' }} />
       </Box>
 
       {/* Login Content */}
@@ -235,7 +235,7 @@ export default function Login() {
                 border: '1px solid rgba(255, 255, 255, 0.2)'
               }}>
                 <Typography variant="caption" sx={{ color: 'white', fontWeight: 900, letterSpacing: 1.5, textTransform: 'uppercase', fontSize: '0.6rem' }}>
-                  ALPHA TEST MODE - {version || 'v2.2.0-ALPHA.4-PRO'}
+                  ALPHA TEST MODE - {version || 'v2.2.0-ALPHA.19-PRO'}
                 </Typography>
               </Box>
             </Box>

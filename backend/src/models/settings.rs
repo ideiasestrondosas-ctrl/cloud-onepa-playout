@@ -73,6 +73,8 @@ pub struct Settings {
     pub branding_type: Option<String>,
     #[sqlx(default)]
     pub log_path: Option<String>,
+    #[sqlx(default)]
+    pub graphics_updated_at: Option<DateTime<Utc>>,
 }
 
 impl Settings {

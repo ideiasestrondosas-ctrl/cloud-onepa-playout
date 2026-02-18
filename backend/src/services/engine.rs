@@ -73,6 +73,10 @@ pub struct PlayoutEngine {
     pub preview_ips: Arc<Mutex<HashMap<IpAddr, Instant>>>,
     // Instance-level counter for master feed inactivity (replaces static AtomicU32)
     master_inactive_count: Arc<Mutex<u32>>,
+    // Track last known graphics_updated_at to detect layer changes
+    last_graphics_updated_at: Arc<Mutex<Option<chrono::DateTime<chrono::Utc>>>>,
+    // Watchdog: (clip_id_at_check, expected_position, consecutive_stagnant_ticks)
+    position_watchdog: Arc<Mutex<(String, f64, u32)>>,
 }
 
 impl PlayoutEngine {
@@ -116,6 +120,8 @@ impl PlayoutEngine {
             hls_sessions: Arc::new(Mutex::new(HashMap::new())),
             preview_ips: Arc::new(Mutex::new(HashMap::new())),
             master_inactive_count: Arc::new(Mutex::new(0u32)),
+            last_graphics_updated_at: Arc::new(Mutex::new(None)),
+            position_watchdog: Arc::new(Mutex::new(("".to_string(), 0.0, 0u32))),
         }
     }
 
@@ -664,7 +670,24 @@ impl PlayoutEngine {
                 || settings.video_bitrate != *last_vb
                 || settings.audio_bitrate != *last_ab;
 
-            if overlay_changed || settings_changed {
+            // Detect graphics layer changes (updated by graphics_layers API)
+            let graphics_changed = {
+                let last_gfx = *self.last_graphics_updated_at.lock().await;
+                let current_gfx = settings.graphics_updated_at;
+                let changed = match (last_gfx, current_gfx) {
+                    (Some(l), Some(c)) => c > l,
+                    (None, Some(_)) => true,
+                    _ => false,
+                };
+                if changed {
+                    log::info!("[Graphics] Layer change detected — forcing FFmpeg restart for overlay update");
+                    let mut last_gfx_lock = self.last_graphics_updated_at.lock().await;
+                    *last_gfx_lock = current_gfx;
+                }
+                changed
+            };
+
+            if overlay_changed || settings_changed || graphics_changed {
                 log::info!(
                     "Stream settings changed (URL: {}->{}, Res: {}->{}, Bitrate: {}/{}->{}/{}, Overlay: {}/{}). Restarting stream.",
                     *last_url, settings.output_url,
@@ -1111,8 +1134,9 @@ impl PlayoutEngine {
                     }
                 }
             } else {
-                // Process not in map but UDP is enabled - check if it should be starting
-                udp_status = "starting".to_string();
+                // Process not in map — stays "idle" until manage_distribution actually spawns it
+                // Do NOT show "starting" when no process has been initiated yet
+                udp_status = "idle".to_string();
             }
         }
 

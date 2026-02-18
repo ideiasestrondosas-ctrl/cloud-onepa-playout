@@ -372,6 +372,10 @@ function Settings() {
   const [logs, setLogs] = useState([]);
   const [showLogsDialog, setShowLogsDialog] = useState(false);
   const [isRefreshingLogs, setIsRefreshingLogs] = useState(false);
+  const [logFilter, setLogFilter] = useState('ALL');
+  const [logSearch, setLogSearch] = useState('');
+  const [logRotationSettings, setLogRotationSettings] = useState({ maxSizeMb: 50, maxFiles: 5, compressOld: true, retentionDays: 30 });
+  const [showLogRotationConfig, setShowLogRotationConfig] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [protectedAssets, setProtectedAssets] = useState([]);
@@ -499,8 +503,8 @@ function Settings() {
         defaultImagePath: data.default_image_path || '',
 
         defaultVideoPath: data.default_video_path || '',
-        version: data.system_version || 'v2.2.0-ALPHA.4-PRO',
-        releaseDate: data.release_date || '2026-02-03',
+        version: data.system_version || 'v2.2.0-ALPHA.19-PRO',
+        releaseDate: data.release_date || '2026-02-18',
         overlay_enabled: data.overlay_enabled ?? true,
         channelName: data.channel_name || 'Cloud Onepa',
         branding_type: brandingType,
@@ -509,8 +513,8 @@ function Settings() {
         srtMode: data.srt_mode || 'caller',
         protectedPath: data.protected_path || '/var/lib/onepa-playout/assets/protected',
         docsPath: data.docs_path || '/app/docs',
-        system_version: data.system_version || 'v2.2.0-ALPHA.4-PRO',
-        release_date: data.release_date || '2026-02-03',
+        system_version: data.system_version || 'v2.2.0-ALPHA.19-PRO',
+        release_date: data.release_date || '2026-02-18',
         rtmpOutputUrl: data.rtmp_output_url || '',
         srtOutputUrl: data.srt_output_url || '',
         udpOutputUrl: data.udp_output_url || '',
@@ -661,15 +665,31 @@ function Settings() {
     setPendingPreset({ id: presetId, title: p.label, res, bitrate: p.bitrate, fps: p.fps });
   };
 
-  const confirmApplyPreset = () => {
+  const confirmApplyPreset = async () => {
     if (!pendingPreset) return;
+    const presetRes = pendingPreset.res;
+    const presetBitrate = `${pendingPreset.bitrate}k`;
+    const presetFps = pendingPreset.fps;
+
+    // Apply locally
     setSettings(prev => ({
       ...prev,
-      resolution: pendingPreset.res,
-      videoBitrate: `${pendingPreset.bitrate}k`,
-      fps: pendingPreset.fps
+      resolution: presetRes,
+      videoBitrate: presetBitrate,
+      fps: presetFps
     }));
-    showSuccess(`Preset ${pendingPreset.title} aplicado! Guarde e reinicie o motor.`);
+
+    // Save to DB immediately
+    try {
+      await settingsAPI.update({
+        resolution: presetRes,
+        video_bitrate: presetBitrate,
+        fps: presetFps,
+      });
+      showSuccess(`Preset ${pendingPreset.title} guardado! Reinicie o motor para aplicar.`);
+    } catch (e) {
+      showError('Preset aplicado localmente mas erro ao guardar na base de dados.');
+    }
     setPendingPreset(null);
   };
 
@@ -712,30 +732,29 @@ function Settings() {
   }, [tabValue]);
 
 
-  const fetchReleaseHistory = async () => {
-    try {
-      const response = await axios.get('https://api.github.com/repos/ideiasestrondosas-ctrl/cloud-onepa-playout/releases');
-
-      if (!Array.isArray(response.data)) throw new Error('Invalid GitHub response');
-
-      const releases = response.data.map(r => ({
-        version: r.tag_name,
-        date: new Date(r.published_at).toLocaleDateString(),
-        // Split body by newlines and filter empty or standard boilerplate
-        changes: r.body ? r.body.split('\n').filter(line => line.trim().startsWith('-') || line.trim().startsWith('*')).map(line => line.replace(/^[-*]\s*/, '')) : ['Atualização do sistema']
-      }));
-      setReleaseHistory(releases);
-    } catch (error) {
-      console.warn('Failed to fetch GitHub releases, using fallback.', error);
-      // Fallback
-      setReleaseHistory([
-        {
-          version: 'v2.2.0-ALPHA.5',
-          date: new Date().toLocaleDateString(),
-          changes: ['Autonated Release Notes Unavailable (Offline Mode)']
-        }
-      ]);
-    }
+  const fetchReleaseHistory = () => {
+    // Curated local history — no external API dependency, works offline
+    setReleaseHistory([
+      { version: 'v2.2.0-ALPHA.19-PRO', date: '2026-02-18', changes: ['Ecrã preto: GlobalErrorBoundary global em main.jsx', 'Fix HelpSystem: toggleHelpMode não declarado', 'Login: gradiente CSS local (sem Unsplash)', 'Settings: painel de versões scrollable com histórico real', 'Fallbacks de versão corrigidos para ALPHA.19'] },
+      { version: 'v2.2.0-ALPHA.18-PRO', date: '2026-02-12', changes: ['Logs de playout com rotação automática (50MB/5 ficheiros)', 'Log Viewer em tempo real com refresh 2s em Settings'] },
+      { version: 'v2.2.0-ALPHA.17-PRO', date: '2026-02-12', changes: ['Relay cooldown: 5s → 15s', 'Master-feed inactive threshold: 10 → 20 ticks'] },
+      { version: 'v2.2.0-ALPHA.16-PRO', date: '2026-02-12', changes: ['HLS duplo: stream.m3u8 + stream_low.m3u8 (640×360)', 'Player retry: 6 tentativas × 8s = 48s máximo'] },
+      { version: 'v2.2.0-ALPHA.15-PRO', date: '2026-02-12', changes: ['Dashboard Live Monitor: dot laranja/verde', 'GraphicsEditor: cache-bust de logo após guardar'] },
+      { version: 'v2.2.0-ALPHA.14-PRO', date: '2026-02-12', changes: ['Preset de qualidade com diálogo de confirmação', 'Limites de bitrate por resolução'] },
+      { version: 'v2.2.0-ALPHA.13-PRO', date: '2026-02-12', changes: ['Layer Manager de gráficos', 'Layers: Marquee, Lower Third, Clock', 'API REST para CRUD de graphics layers'] },
+      { version: 'v2.2.0-ALPHA.12-PRO', date: '2026-02-12', changes: ['RBAC granular: perfis com permissões individuais', 'Gestão de perfis e password reset por admin'] },
+      { version: 'v2.2.0-ALPHA.11-PRO', date: '2026-02-12', changes: ['Metadata Fetcher: TMDB, OMDB, TVMaze', 'Revisão de metadados na Media Library', 'EPG enriquecido com sinopses e imagens'] },
+      { version: 'v2.2.0-ALPHA.10-PRO', date: '2026-02-05', changes: ['Gapless playback melhorado', 'Engine watchdog com reinício automático'] },
+      { version: 'v2.2.0-ALPHA.9-PRO', date: '2026-02-05', changes: ['SRT listener/caller mode configurável', 'Scripts de diagnóstico SRT'] },
+      { version: 'v2.2.0-ALPHA.8-PRO', date: '2026-02-05', changes: ['UDP multicast/unicast configurável', 'Diálogo de verificação de rede UDP'] },
+      { version: 'v2.2.0-ALPHA.7-PRO', date: '2026-02-05', changes: ['HLS via MediaMTX', 'Multi-protocol simultâneo', 'Presets de codec'] },
+      { version: 'v2.2.0-ALPHA.6-PRO', date: '2026-02-05', changes: ['Coordenadas de overlay configuráveis', 'Opacidade e escala em tempo real'] },
+      { version: 'v2.2.0-ALPHA.5-PRO', date: '2026-02-04', changes: ['Schedule exceptions', 'EPG XMLTV export', 'Dias de EPG configuráveis (1-30)'] },
+      { version: 'v2.2.0-ALPHA.4-PRO', date: '2026-02-03', changes: ['Graphics Editor base', 'Templates reutilizáveis'] },
+      { version: 'v2.2.0-ALPHA.3-PRO', date: '2026-01-31', changes: ['Branding type: estático/animado', 'Sincronização de logo sidebar/overlay'] },
+      { version: 'v2.2.0-ALPHA.2-PRO', date: '2026-01-30', changes: ['Storage paths configuráveis', 'Validação de caminhos'] },
+      { version: 'v2.2.0-ALPHA.1', date: '2026-01-28', changes: ['Portas dedicadas Alpha (3011/8181/5534)', 'Docker-only workflow', 'Login: erros 401 corrigidos'] },
+    ]);
   };
 
   const handleSaveSettings = async () => {
@@ -1215,6 +1234,7 @@ function Settings() {
                 <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>ACTIVAÇÃO DE PROTOCOLOS ADICIONAIS</Typography>
               </Box>
 
+              {/* Active protocols */}
               <Grid container spacing={4}>
                 {[
                   { id: 'rtmp', label: 'RTMP Server', icon: <PlatformIcon /> },
@@ -1236,6 +1256,47 @@ function Settings() {
                         sx={{ color: 'primary.main', '&.Mui-checked': { color: 'primary.main' } }}
                       />
                     </Box>
+                  </Grid>
+                ))}
+
+                {/* Divider */}
+                <Grid item xs={12}>
+                  <Divider sx={{ opacity: 0.08, my: 1 }}>
+                    <Chip label="EM DESENVOLVIMENTO — BREVEMENTE DISPONÍVEIS" size="small" sx={{ fontWeight: 800, fontSize: '0.55rem', color: 'warning.main', bgcolor: 'rgba(255,152,0,0.08)', borderColor: 'rgba(255,152,0,0.2)', border: '1px solid' }} />
+                  </Divider>
+                </Grid>
+
+                {/* Future protocols - disabled, not shown on dashboard */}
+                {[
+                  { id: 'dash', label: 'MPEG-DASH Adaptive', desc: 'Streaming adaptativo multi-bitrate' },
+                  { id: 'mss', label: 'MSS (Microsoft Smooth)', desc: 'Smooth Streaming para Azure/CDN' },
+                  { id: 'rtsp', label: 'RTSP Server', desc: 'Protocolo para IPTV e câmeras IP' },
+                  { id: 'webrtc', label: 'WebRTC (Ultra Low Lat.)', desc: 'Latência sub-segundo para browser' }
+                ].map(proto => (
+                  <Grid item xs={12} md={6} key={proto.id}>
+                    <Tooltip title={proto.desc + ' — Não aparece no dashboard quando desactivado'} arrow>
+                      <Box sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.01)', borderRadius: 4, border: '1px dashed rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', opacity: 0.55 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <Box sx={{ p: 1, bgcolor: 'rgba(255,152,0,0.07)', borderRadius: 2, color: 'warning.main' }}>
+                            <PlatformIcon />
+                          </Box>
+                          <Box>
+                            <Typography variant="body2" sx={{ fontWeight: 800, color: 'text.disabled' }}>{proto.label}</Typography>
+                            <Typography variant="caption" sx={{ color: 'warning.main', fontSize: '0.6rem', fontWeight: 700 }}>EM DESENVOLVIMENTO</Typography>
+                          </Box>
+                        </Box>
+                        <Tooltip title="Desactivado por defeito — brevemente disponível">
+                          <span>
+                            <Switch
+                              size="small"
+                              checked={settings[`${proto.id}Enabled`] || false}
+                              onChange={(e) => setSettings({ ...settings, [`${proto.id}Enabled`]: e.target.checked })}
+                              sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: 'warning.main' }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: 'warning.main' } }}
+                            />
+                          </span>
+                        </Tooltip>
+                      </Box>
+                    </Tooltip>
                   </Grid>
                 ))}
               </Grid>
@@ -1327,9 +1388,41 @@ function Settings() {
             </Paper>
 
             <Paper className="glass-panel" sx={{ p: 4 }}>
-              <Box sx={{ mb: 4 }}>
-                <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>BRANDING & ASSETS PROTEGIDOS</Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>IDENTIDADE VISUAL E FALLBACKS</Typography>
+              <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box>
+                  <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>BRANDING & ASSETS PROTEGIDOS</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>IDENTIDADE VISUAL E FALLBACKS</Typography>
+                </Box>
+                <Tooltip title="Restaurar branding e assets para os valores por defeito do sistema" arrow>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<RefreshIcon />}
+                    onClick={async () => {
+                      const defaults = {
+                        branding_type: 'video',
+                        logo_path: '/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4',
+                        default_image_path: '/assets/protected/Cloud_Onepa_Playout_Infinity_Logo_remodelado.png',
+                        default_video_path: '/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4',
+                      };
+                      try {
+                        await settingsAPI.update(defaults);
+                        setSettings(prev => ({
+                          ...prev,
+                          branding_type: 'video',
+                          logoPath: defaults.logo_path,
+                          defaultImagePath: defaults.default_image_path,
+                          defaultVideoPath: defaults.default_video_path,
+                        }));
+                        await fetchProtectedAssets();
+                        showSuccess('Branding restaurado para os valores por defeito!');
+                      } catch (e) { showError('Erro ao restaurar branding'); }
+                    }}
+                    sx={{ fontWeight: 800, fontSize: '0.7rem', borderColor: 'rgba(0,229,255,0.2)', color: 'primary.main' }}
+                  >
+                    RESTAURAR DEFAULTS
+                  </Button>
+                </Tooltip>
               </Box>
 
               <Grid container spacing={3}>
@@ -1713,8 +1806,8 @@ function Settings() {
               </Box>
               <Grid container spacing={3}>
                 {[
-                  { label: 'VERSÃO DO SISTEMA', value: settings.system_version || settings.version || 'v2.2.0-ALPHA.4-PRO', icon: <WizardIcon /> },
-                  { label: 'ÚLTIMA ATUALIZAÇÃO', value: settings.release_date || settings.releaseDate || '2026-02-03', icon: <CheckIcon /> },
+                  { label: 'VERSÃO DO SISTEMA', value: settings.system_version || settings.version || 'v2.2.0-ALPHA.19-PRO', icon: <WizardIcon /> },
+                  { label: 'ÚLTIMA ATUALIZAÇÃO', value: settings.release_date || settings.releaseDate || '2026-02-18', icon: <CheckIcon /> },
                   { label: 'DEPLOYMENT', value: 'Docker Container (Linux)', icon: <FolderIcon /> }
                 ].map((item, id) => (
                   <Grid item xs={12} sm={6} md={4} key={id}>
@@ -1754,26 +1847,28 @@ function Settings() {
                 <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>HISTÓRICO DE VERSÕES</Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>NOTAS CRÍTICAS E EVOLUÇÃO DO PROJETO</Typography>
               </Box>
-              <List sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                {releaseHistory.length > 0 ? releaseHistory.map((release, idx) => (
-                  <ListItem key={idx} sx={{ display: 'block', p: 0 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'primary.main' }}>{release.version.startsWith('v') ? release.version : 'v' + release.version}</Typography>
-                      <Divider sx={{ flexGrow: 1, opacity: 0.1 }} />
-                      <Typography variant="caption" sx={{ opacity: 0.5 }}>{release.date}</Typography>
-                    </Box>
-                    <Box sx={{ pl: 4, borderLeft: '2px dashed rgba(0,229,255,0.2)' }}>
-                      {release.changes.map((change, cIdx) => (
-                        <Typography key={cIdx} variant="body2" sx={{ mb: 1, opacity: 0.8, display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Box sx={{ width: 4, height: 4, bgcolor: 'primary.main', borderRadius: '50%' }} /> {change}
-                        </Typography>
-                      ))}
-                    </Box>
-                  </ListItem>
-                )) : (
-                  <Typography variant="body2" sx={{ opacity: 0.5, textAlign: 'center', py: 4 }}>NENHUM HISTÓRICO DISPONÍVEL</Typography>
-                )}
-              </List>
+              <Box sx={{ maxHeight: '65vh', overflowY: 'auto', pr: 1, '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-track': { bgcolor: 'rgba(255,255,255,0.02)' }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(0,229,255,0.3)', borderRadius: 3 } }}>
+                <List sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  {releaseHistory.length > 0 ? releaseHistory.map((release, idx) => (
+                    <ListItem key={idx} sx={{ display: 'block', p: 0 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'primary.main' }}>{release.version.startsWith('v') ? release.version : 'v' + release.version}</Typography>
+                        <Divider sx={{ flexGrow: 1, opacity: 0.1 }} />
+                        <Typography variant="caption" sx={{ opacity: 0.5 }}>{release.date}</Typography>
+                      </Box>
+                      <Box sx={{ pl: 4, borderLeft: '2px dashed rgba(0,229,255,0.2)' }}>
+                        {release.changes.map((change, cIdx) => (
+                          <Typography key={cIdx} variant="body2" sx={{ mb: 1, opacity: 0.8, display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Box sx={{ width: 4, height: 4, bgcolor: 'primary.main', borderRadius: '50%' }} /> {change}
+                          </Typography>
+                        ))}
+                      </Box>
+                    </ListItem>
+                  )) : (
+                    <Typography variant="body2" sx={{ opacity: 0.5, textAlign: 'center', py: 4 }}>NENHUM HISTÓRICO DISPONÍVEL</Typography>
+                  )}
+                </List>
+              </Box>
             </Paper>
           </TabPanel>
 
@@ -1867,7 +1962,7 @@ function Settings() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <WizardIcon /> NOTAS DE LANÇAMENTO
           </Box>
-          <Typography variant="caption" sx={{ opacity: 0.5 }}>v2.2.0-ALPHA.4-PRO</Typography>
+          <Typography variant="caption" sx={{ opacity: 0.5 }}>{settings.system_version || 'v2.2.0-ALPHA.19-PRO'}</Typography>
         </DialogTitle>
         <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.05)' }}>
           <List sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -2101,57 +2196,113 @@ function Settings() {
         </DialogActions>
       </Dialog>
 
-      {/* Log Viewer Dialog */}
+      {/* Advanced Log Viewer Dialog */}
       <Dialog
         open={showLogsDialog}
         onClose={() => setShowLogsDialog(false)}
-        maxWidth="lg"
+        maxWidth="xl"
         fullWidth
-        PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
+        PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)', height: '90vh' } }}
       >
-        <DialogTitle sx={{ fontWeight: 800, color: 'primary.main', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <HistoryIcon /> REGISTOS DO PLAYOUT (LIVE)
+        <DialogTitle sx={{ fontWeight: 800, color: 'primary.main', pb: 1 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <HistoryIcon /> REGISTOS DO PLAYOUT
+              {isRefreshingLogs && <CircularProgress size={14} sx={{ ml: 1 }} />}
+            </Box>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Tooltip title="Configuração de rotação de logs" arrow>
+                <Button size="small" variant="outlined" startIcon={<SettingsIcon />} onClick={() => setShowLogRotationConfig(v => !v)} sx={{ fontWeight: 800, fontSize: '0.65rem' }}>ROTAÇÃO</Button>
+              </Tooltip>
+              <Tooltip title="Exportar logs visíveis como TXT" arrow>
+                <Button size="small" variant="outlined" startIcon={<SaveIcon />} onClick={() => {
+                  const filtered = logs.filter(l => logFilter === 'ALL' || l.includes(logFilter)).filter(l => !logSearch || l.toLowerCase().includes(logSearch.toLowerCase()));
+                  const blob = new Blob([filtered.join('\n')], { type: 'text/plain' });
+                  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `playout_logs_${new Date().toISOString().slice(0, 10)}.txt`; a.click();
+                }} sx={{ fontWeight: 800, fontSize: '0.65rem' }}>EXPORTAR TXT</Button>
+              </Tooltip>
+              <Button size="small" onClick={fetchLogs} startIcon={<RefreshIcon />} sx={{ fontWeight: 800, fontSize: '0.65rem' }}>REFRESCAR</Button>
+              <IconButton onClick={() => setShowLogsDialog(false)} size="small" sx={{ color: 'text.disabled' }}><AddIcon sx={{ transform: 'rotate(45deg)' }} /></IconButton>
+            </Box>
           </Box>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button size="small" onClick={fetchLogs} startIcon={isRefreshingLogs ? <CircularProgress size={16} /> : <RefreshIcon />}>Refrescar</Button>
-            <IconButton onClick={() => setShowLogsDialog(false)} size="small" sx={{ color: 'text.disabled' }}><AddIcon sx={{ transform: 'rotate(45deg)' }} /></IconButton>
+          {/* Rotation Config Panel */}
+          {showLogRotationConfig && (
+            <Box sx={{ mt: 2, p: 2, bgcolor: 'rgba(255,152,0,0.06)', borderRadius: 3, border: '1px solid rgba(255,152,0,0.15)' }}>
+              <Typography variant="overline" sx={{ color: 'warning.main', fontWeight: 800, display: 'block', mb: 2 }}>CONFIGURAÇÃO DE ROTAÇÃO DE LOGS</Typography>
+              <Grid container spacing={2} alignItems="center">
+                <Grid item xs={6} md={3}>
+                  <TextField size="small" label="TAMANHO MÁX. (MB)" type="number" value={logRotationSettings.maxSizeMb} onChange={e => setLogRotationSettings(p => ({ ...p, maxSizeMb: parseInt(e.target.value) || 50 }))} InputProps={{ sx: { bgcolor: 'rgba(0,0,0,0.3)', fontFamily: 'monospace' } }} fullWidth />
+                </Grid>
+                <Grid item xs={6} md={3}>
+                  <TextField size="small" label="MÁXIMO DE FICHEIROS" type="number" value={logRotationSettings.maxFiles} onChange={e => setLogRotationSettings(p => ({ ...p, maxFiles: parseInt(e.target.value) || 5 }))} InputProps={{ sx: { bgcolor: 'rgba(0,0,0,0.3)', fontFamily: 'monospace' } }} fullWidth />
+                </Grid>
+                <Grid item xs={6} md={3}>
+                  <TextField size="small" label="RETENÇÃO (DIAS)" type="number" value={logRotationSettings.retentionDays} onChange={e => setLogRotationSettings(p => ({ ...p, retentionDays: parseInt(e.target.value) || 30 }))} InputProps={{ sx: { bgcolor: 'rgba(0,0,0,0.3)', fontFamily: 'monospace' } }} fullWidth />
+                </Grid>
+                <Grid item xs={6} md={3}>
+                  <FormControlLabel control={<Switch checked={logRotationSettings.compressOld} onChange={e => setLogRotationSettings(p => ({ ...p, compressOld: e.target.checked }))} size="small" sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: 'warning.main' } }} />} label={<Typography variant="caption" sx={{ fontWeight: 800 }}>COMPRIMIR LOGS ANTIGOS</Typography>} />
+                </Grid>
+              </Grid>
+              <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                <Button size="small" variant="contained" color="warning" onClick={async () => {
+                  try {
+                    await settingsAPI.update({ log_max_size_mb: logRotationSettings.maxSizeMb, log_max_files: logRotationSettings.maxFiles, log_compress_old: logRotationSettings.compressOld, log_retention_days: logRotationSettings.retentionDays });
+                    showSuccess('Configuração de rotação guardada!');
+                  } catch (e) { showError('Erro ao guardar configuração de rotação'); }
+                }} sx={{ fontWeight: 800, fontSize: '0.65rem' }}>GUARDAR CONFIGURAÇÃO</Button>
+                <Button size="small" variant="outlined" color="error" onClick={async () => {
+                  if (!window.confirm('Forçar rotação agora? O log actual será arquivado.')) return;
+                  try {
+                    await fetch('/api/logs/rotate', { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+                    showSuccess('Rotação executada! Log reiniciado.'); fetchLogs();
+                  } catch (e) { showError('Erro ao executar rotação'); }
+                }} sx={{ fontWeight: 800, fontSize: '0.65rem' }}>FORÇAR ROTAÇÃO AGORA</Button>
+              </Box>
+            </Box>
+          )}
+          {/* Filter Toolbar */}
+          <Box sx={{ mt: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
+            <ToggleButtonGroup value={logFilter} exclusive onChange={(e, v) => v && setLogFilter(v)} size="small">
+              {['ALL', 'INFO', 'WARN', 'ERROR'].map(f => (
+                <ToggleButton key={f} value={f} sx={{ fontWeight: 800, fontSize: '0.65rem', color: f === 'ERROR' ? 'error.main' : f === 'WARN' ? 'warning.main' : f === 'INFO' ? 'success.main' : 'text.primary', '&.Mui-selected': { bgcolor: f === 'ERROR' ? 'rgba(244,67,54,0.15)' : f === 'WARN' ? 'rgba(255,152,0,0.15)' : f === 'INFO' ? 'rgba(76,175,80,0.15)' : 'rgba(255,255,255,0.08)' } }}>
+                  {f}
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
+            <TextField size="small" placeholder="Pesquisar nos logs..." value={logSearch} onChange={e => setLogSearch(e.target.value)} sx={{ flexGrow: 1 }} InputProps={{ sx: { bgcolor: 'rgba(0,0,0,0.3)', borderRadius: 2, fontSize: '0.75rem', fontFamily: 'monospace' } }} />
+            <Typography variant="caption" sx={{ opacity: 0.5, whiteSpace: 'nowrap' }}>
+              {logs.filter(l => logFilter === 'ALL' || l.includes(logFilter)).filter(l => !logSearch || l.toLowerCase().includes(logSearch.toLowerCase())).length} linhas
+            </Typography>
           </Box>
         </DialogTitle>
-        <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.05)', p: 0 }}>
-          <Box sx={{
-            p: 2,
-            bgcolor: '#000',
-            minHeight: '400px',
-            maxHeight: '60vh',
-            overflowY: 'auto',
-            fontFamily: '"JetBrains Mono", "Roboto Mono", monospace',
-            fontSize: '0.8rem'
-          }}>
-            {logs.length > 0 ? logs.map((log, idx) => (
-              <Typography key={idx} variant="body2" sx={{
-                color: log.includes('ERROR') ? '#ff5252' : log.includes('WARN') ? '#ffd740' : log.includes('INFO') ? '#4caf50' : '#fff',
-                opacity: 0.9,
-                whiteSpace: 'pre-wrap',
-                mb: 0.5,
-                lineHeight: 1.4
-              }}>
-                {log}
-              </Typography>
-            )) : (
-              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', opacity: 0.5 }}>
-                A CARREGAR REGISTOS...
-              </Box>
-            )}
-            <div id="logs-end" />
+        <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.05)', p: 0, flexGrow: 1, overflow: 'hidden' }}>
+          <Box sx={{ p: 2, bgcolor: '#000', height: '100%', overflowY: 'auto', fontFamily: '"JetBrains Mono","Roboto Mono",monospace', fontSize: '0.75rem' }}>
+            {(() => {
+              const filtered = logs.filter(l => logFilter === 'ALL' || l.includes(logFilter)).filter(l => !logSearch || l.toLowerCase().includes(logSearch.toLowerCase()));
+              return filtered.length > 0 ? filtered.map((log, idx) => (
+                <Typography key={idx} component="div" sx={{
+                  color: log.includes('ERROR') ? '#ff5252' : log.includes('WARN') ? '#ffd740' : log.includes('INFO') ? '#4caf50' : 'rgba(255,255,255,0.8)',
+                  whiteSpace: 'pre-wrap', mb: 0.3, lineHeight: 1.5, fontFamily: 'inherit', fontSize: 'inherit',
+                  '&:hover': { bgcolor: 'rgba(255,255,255,0.04)', borderRadius: 1 }
+                }}>
+                  {log}
+                </Typography>
+              )) : (
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 200, opacity: 0.4 }}>
+                  {logFilter !== 'ALL' || logSearch ? 'NENHUM RESULTADO PARA OS FILTROS APLICADOS' : 'A AGUARDAR REGISTOS...'}
+                </Box>
+              );
+            })()}
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Typography variant="caption" sx={{ flexGrow: 1, ml: 2, opacity: 0.5 }}>
-            Path: {settings.logPath}/playout.log
+        <DialogActions sx={{ p: 2, justifyContent: 'space-between' }}>
+          <Typography variant="caption" sx={{ opacity: 0.4, fontFamily: 'monospace', fontSize: '0.65rem' }}>
+            📂 {settings.logPath || '/var/log/onepa/playout.log'} · Rotação: {logRotationSettings.maxSizeMb}MB / {logRotationSettings.maxFiles} ficheiros · {logRotationSettings.compressOld ? '🗜 Compressão ON' : 'Compressão OFF'} · Retenção: {logRotationSettings.retentionDays} dias
           </Typography>
-          <Button onClick={() => setShowLogsDialog(false)} sx={{ fontWeight: 800 }}>FECHAR</Button>
-          <Button variant="contained" onClick={handleRetryPlayout} sx={{ fontWeight: 800 }}>REINICIAR MOTOR</Button>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button onClick={() => setShowLogsDialog(false)} sx={{ fontWeight: 800 }}>FECHAR</Button>
+            <Button variant="outlined" color="warning" onClick={handleRetryPlayout} sx={{ fontWeight: 800 }}>REINICIAR MOTOR</Button>
+          </Box>
         </DialogActions>
       </Dialog>
     </Box>
