@@ -1223,9 +1223,20 @@ export default function MediaLibrary() {
       <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle sx={{ bgcolor: 'primary.dark', color: '#fff' }}>Preview: {selectedMedia?.filename}</DialogTitle>
         <DialogContent sx={{ p: 0, bgcolor: '#000', display: 'flex', justifyContent: 'center' }}>
-          {selectedMedia?.media_type === 'video' && <video controls autoPlay style={{ maxWidth: '100%', maxHeight: '70vh' }} src={`/api/media/${selectedMedia.id}/stream`} />}
+          {selectedMedia?.media_type === 'video' && (
+            <video
+              controls
+              autoPlay
+              preload="metadata"
+              style={{ maxWidth: '100%', maxHeight: '70vh' }}
+              src={`/api/media/${selectedMedia.id}/stream`}
+            >
+              <source src={`/api/media/${selectedMedia.id}/stream`} type="video/mp4" />
+              O seu navegador não suporta o elemento de vídeo.
+            </video>
+          )}
           {selectedMedia?.media_type === 'image' && <img alt="preview" style={{ maxWidth: '100%', maxHeight: '70vh' }} src={`/api/media/${selectedMedia.id}/stream`} />}
-          {selectedMedia?.media_type === 'audio' && <Box sx={{ p: 4 }}><audio controls src={`/api/media/${selectedMedia.id}/stream`} /></Box>}
+          {selectedMedia?.media_type === 'audio' && <Box sx={{ p: 4 }}><audio controls preload="metadata" src={`/api/media/${selectedMedia.id}/stream`} /></Box>}
         </DialogContent>
         <DialogActions><Button onClick={() => setPreviewOpen(false)}>Fechar</Button></DialogActions>
       </Dialog>

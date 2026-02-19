@@ -1,9 +1,11 @@
 use actix_files::NamedFile;
 use actix_multipart::Multipart;
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
+use actix_web::http::header::{ContentRange, ContentRangeSpec};
 use futures_util::StreamExt;
 use sqlx::{PgPool, Row};
-use std::io::Write;
+use std::io::{Read, Seek, SeekFrom, Write};
+use std::fs::File;
 use std::path::Path;
 use uuid::Uuid;
 
@@ -833,14 +835,135 @@ async fn stream_media(
                 return HttpResponse::NotFound()
                     .json(serde_json::json!({"error": "File not found on disk"}));
             }
+
+            // Get file metadata
+            let file_metadata = match std::fs::metadata(&path) {
+                Ok(m) => m,
+                Err(e) => {
+                    log::error!("Failed to get file metadata: {}", e);
+                    return HttpResponse::InternalServerError()
+                        .json(serde_json::json!({"error": "Failed to read file metadata"}));
+                }
+            };
+            let file_size = file_metadata.len();
+
+            // Determine content type based on file extension
+            let content_type = match path.extension().and_then(|e| e.to_str()) {
+                Some("mp4") => "video/mp4",
+                Some("webm") => "video/webm",
+                Some("mkv") => "video/x-matroska",
+                Some("avi") => "video/x-msvideo",
+                Some("mov") => "video/quicktime",
+                Some("ts") => "video/mp2t",
+                Some("mp3") => "audio/mpeg",
+                Some("wav") => "audio/wav",
+                Some("aac") => "audio/aac",
+                Some("m4a") => "audio/mp4",
+                Some("jpg") | Some("jpeg") => "image/jpeg",
+                Some("png") => "image/png",
+                Some("gif") => "image/gif",
+                Some("webp") => "image/webp",
+                _ => "application/octet-stream",
+            };
+
+            // Check for Range header
+            let range_header = req.headers().get("Range");
+
+            if let Some(range_str) = range_header {
+                if let Ok(range_str) = range_str.to_str() {
+                    // Parse Range header (e.g., "bytes=0-1023" or "bytes=0-")
+                    if range_str.starts_with("bytes=") {
+                        let range_part = &range_str[6..];
+                        
+                        // Handle multiple ranges - for simplicity, we only handle single range
+                        if let Some(range_spec) = range_part.split(',').next() {
+                            let parts: Vec<&str> = range_spec.split('-').collect();
+                            
+                            if parts.len() == 2 {
+                                let start: u64 = parts[0].parse().unwrap_or(0);
+                                let end: u64 = if parts[1].is_empty() {
+                                    file_size - 1
+                                } else {
+                                    parts[1].parse().unwrap_or(file_size - 1)
+                                };
+
+                                // Clamp end to file size
+                                let end = end.min(file_size - 1);
+                                let length = end - start + 1;
+
+                                // Open file and seek to start position
+                                let mut file = match File::open(&path) {
+                                    Ok(f) => f,
+                                    Err(e) => {
+                                        log::error!("Failed to open file: {}", e);
+                                        return HttpResponse::InternalServerError()
+                                            .json(serde_json::json!({"error": "Failed to open file"}));
+                                    }
+                                };
+
+                                if file.seek(SeekFrom::Start(start)).is_err() {
+                                    return HttpResponse::InternalServerError()
+                                        .json(serde_json::json!({"error": "Failed to seek file"}));
+                                }
+
+                                // Read the requested chunk
+                                let mut buffer = vec![0u8; length as usize];
+                                if file.read_exact(&mut buffer).is_err() {
+                                    return HttpResponse::InternalServerError()
+                                        .json(serde_json::json!({"error": "Failed to read file chunk"}));
+                                }
+
+                                log::debug!(
+                                    "Streaming range {}-{} of {} bytes for {:?}",
+                                    start, end, file_size, path
+                                );
+
+                                // Build 206 Partial Content response
+                                return HttpResponse::PartialContent()
+                                    .insert_header(("Content-Type", content_type))
+                                    .insert_header(("Content-Length", length))
+                                    .insert_header(("Accept-Ranges", "bytes"))
+                                    .insert_header(ContentRange(ContentRangeSpec::Bytes {
+                                        range: Some((start, end)),
+                                        instance_length: Some(file_size),
+                                    }))
+                                    .body(buffer);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // No Range header - serve entire file with streaming support
+            log::debug!("Streaming full file {} bytes for {:?}", file_size, path);
+
+            // For large files, we still want to support Range requests
+            // So we return headers indicating we accept ranges
             match NamedFile::open_async(path).await {
-                Ok(named_file) => named_file.into_response(&req),
-                Err(_) => HttpResponse::InternalServerError()
-                    .json(serde_json::json!({"error": "Failed to open file"})),
+                Ok(named_file) => {
+                    // Use the default NamedFile behavior which already supports Range requests
+                    // Just add the Accept-Ranges header via the response
+                    let mut response = named_file.into_response(&req);
+                    response.headers_mut().insert(
+                        actix_web::http::header::HeaderName::from_static("accept-ranges"),
+                        actix_web::http::header::HeaderValue::from_static("bytes"),
+                    );
+                    response.headers_mut().insert(
+                        actix_web::http::header::CONTENT_TYPE,
+                        actix_web::http::header::HeaderValue::from_static(content_type),
+                    );
+                    response
+                }
+                Err(e) => {
+                    log::error!("Failed to open file: {}", e);
+                    HttpResponse::InternalServerError()
+                        .json(serde_json::json!({"error": "Failed to open file"}))
+                }
             }
         }
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({"error": "Media not found"})),
-        Err(_) => {
+        Err(e) => {
+            log::error!("Database error: {}", e);
             HttpResponse::InternalServerError().json(serde_json::json!({"error": "Database error"}))
         }
     }
