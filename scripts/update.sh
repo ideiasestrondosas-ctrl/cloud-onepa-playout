@@ -22,6 +22,16 @@ RED='\033[0;31m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
+# Determin OS and SUDO
+OS_TYPE="unknown"
+SUDO=""
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    OS_TYPE="linux"
+    if [ "$EUID" -ne 0 ]; then SUDO="sudo"; fi
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+    OS_TYPE="macos"
+fi
+
 log_info() { echo -e "${GREEN}[INFO] $1${NC}"; }
 log_warn() { echo -e "${YELLOW}[WARN] $1${NC}"; }
 log_err() { echo -e "${RED}[ERROR] $1${NC}"; }
@@ -182,20 +192,20 @@ if [ "$CLEAN_UPDATE" = true ]; then
     
     # Remove everything except data/, .env.bak and update.sh
     # We use a safer approach: remove specific known directories
-    rm -rf backend frontend docker migrations scripts systemd 2>/dev/null || true
-    rm -f install.sh uninstall.sh README.md docker-compose.yml 2>/dev/null || true
-    rm -rf .git 2>/dev/null || true
+    $SUDO rm -rf backend frontend docker migrations scripts systemd 2>/dev/null || true
+    $SUDO rm -f install.sh uninstall.sh README.md docker-compose.yml 2>/dev/null || true
+    $SUDO rm -rf .git 2>/dev/null || true
 
     echo -e "  Purgado concluído. A clonar repositório... ✓"
     TEMP_DIR="onepa_clean_$(date +%s)"
     git clone -b "$BRANCH" "https://github.com/$REPO.git" "$TEMP_DIR"
     
     echo "Restaurando ficheiros da nova versão..."
-    cp -r "$TEMP_DIR/." .
-    rm -rf "$TEMP_DIR"
+    $SUDO cp -r "$TEMP_DIR/." .
+    $SUDO rm -rf "$TEMP_DIR"
     
     # Restore .env
-    if [ -f .env.bak ]; then mv .env.bak .env; fi
+    if [ -f .env.bak ]; then $SUDO mv .env.bak .env; fi
     echo -e "  ${GREEN}Código re-clonado com sucesso ✓${NC}"
 
 elif [ -d ".git" ]; then
@@ -224,13 +234,13 @@ else
     git clone -b "$BRANCH" "https://github.com/$REPO.git" "$TEMP_DIR"
     
     # Copy new files (preserve data directories)
-    cp "$TEMP_DIR/docker-compose.yml" ./
-    cp -r "$TEMP_DIR/docker" ./
-    cp -r "$TEMP_DIR/backend" ./
-    cp -r "$TEMP_DIR/frontend" ./
-    cp -r "$TEMP_DIR/scripts" ./
+    $SUDO cp "$TEMP_DIR/docker-compose.yml" ./
+    $SUDO cp -r "$TEMP_DIR/docker" ./
+    $SUDO cp -r "$TEMP_DIR/backend" ./
+    $SUDO cp -r "$TEMP_DIR/frontend" ./
+    $SUDO cp -r "$TEMP_DIR/scripts" ./
     
-    rm -rf "$TEMP_DIR"
+    $SUDO rm -rf "$TEMP_DIR"
     echo -e "  ${GREEN}Código copiado ✓${NC}"
 fi
 

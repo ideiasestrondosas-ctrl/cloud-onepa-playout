@@ -30,8 +30,10 @@ if [[ "$*" == *"--full-reset"* ]]; then
 fi
 
 OS_TYPE="unknown"
+SUDO=""
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     OS_TYPE="linux"
+    if [ "$EUID" -ne 0 ]; then SUDO="sudo"; fi
 elif [[ "$OSTYPE" == "darwin"* ]]; then
     OS_TYPE="macos"
 fi
@@ -199,7 +201,7 @@ fi
 # --- 4.1 Asset Verification & Download ---
 log_info "Verificando assets protegidos..."
 ASSET_DIR="backend/assets/protected"
-mkdir -p "$ASSET_DIR"
+$SUDO mkdir -p "$ASSET_DIR"
 
 # Big Buck Bunny (Default Sample)
 BBB_FILE="$ASSET_DIR/big_buck_bunny_1080p_h264.mov"
@@ -211,30 +213,29 @@ LOGO_URL="https://github.com/ideiasestrondosas-ctrl/cloud-onepa-alpha/raw/alpha/
 
 if [ ! -f "$BBB_FILE" ]; then
     log_warn "Asset 'Big Buck Bunny' não encontrado. Baixando..."
-    if ! curl -L "$BBB_URL" -o "$BBB_FILE"; then
+    if ! $SUDO curl -L "$BBB_URL" -o "$BBB_FILE"; then
         log_err "Falha ao baixar assets. O sistema continuará."
     fi
 fi
 
 if [ ! -f "$LOGO_FILE" ]; then
     log_info "Baixando Logo Video da Login Page..."
-    curl -L "$LOGO_URL" -o "$LOGO_FILE" || true
+    $SUDO curl -L "$LOGO_URL" -o "$LOGO_FILE" || true
 fi
 
-# --- 5. Environment (.env) ---
 log_info "Configurando ambiente..."
 if [ ! -f .env ]; then
     # Use 'admin' as default password for easier first access as requested
-    cat <<EOF > .env
+    $SUDO bash -c "cat <<EOF > .env
 POSTGRES_USER=onepa
 POSTGRES_PASSWORD=admin
 POSTGRES_DB=onepa_playout
 JWT_SECRET=$(openssl rand -hex 16)
 MEDIA_PATH=/var/lib/onepa-playout/media
 THUMBNAILS_PATH=/var/lib/onepa-playout/thumbnails
-DEPLOY_BRANCH=${GH_BRANCH:-"alpha"}
-DEPLOY_REPO=${GH_REPO:-"ideiasestrondosas-ctrl/cloud-onepa-playout"}
-EOF
+DEPLOY_BRANCH=${GH_BRANCH:-\"alpha\"}
+DEPLOY_REPO=${GH_REPO:-\"ideiasestrondosas-ctrl/cloud-onepa-playout\"}
+EOF"
 fi
 
 # --- 6. Launch Docker ---
