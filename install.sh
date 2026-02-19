@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ONEPA Playout PRO - Total Automation Installer (macOS/Linux)
-# Version: 2.3.0-ALPHA.6-PRO
+# Version: v2.2.0-ALPHA.22-PRO
 # Features: OS-specific Auto-installation, GitHub Cloud Sync, Nuclear Ghost Cleanup
 
 set -e
@@ -166,7 +166,7 @@ if [ "$LOCAL_MODE" = false ]; then
     echo -e "\n${YELLOW}🔑 Configuração do GitHub Cloud${NC}"
     read -p "GitHub Private Access Token (PAT): " GH_PAT
     read -p "Repositório (ex: user/repo) [ENTER p/ padrão]: " GH_REPO
-    GH_REPO=${GH_REPO:-"ideiasestrondosas-ctrl/cloud-onepa-alpha"}
+    GH_REPO=${GH_REPO:-"ideiasestrondosas-ctrl/cloud-onepa-playout"}
     read -p "Branch para Deploy (main, alpha, stable) [ENTER p/ alpha]: " GH_BRANCH
     GH_BRANCH=${GH_BRANCH:-"alpha"}
     

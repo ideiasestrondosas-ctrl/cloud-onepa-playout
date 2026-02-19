@@ -2,7 +2,7 @@
 
 # ============================================================================
 # ONEPA Playout PRO - Update Script (Existing VM)
-# Version: 2.2.0-ALPHA.6-PRO
+# Version: 2.2.0-ALPHA.22-PRO
 #
 # Usage:
 #   bash update.sh              # Standard update (preserves data)
@@ -64,9 +64,20 @@ echo -e "${YELLOW}[1/7] Verificações de pré-voo...${NC}"
 # Check disk space
 FREE_SPACE_KB=$(df -k / | tail -1 | awk '{print $4}' 2>/dev/null || echo "10000000")
 FREE_SPACE_MB=$((FREE_SPACE_KB / 1024))
-if [ "$FREE_SPACE_MB" -lt 5120 ]; then
-    echo -e "${YELLOW}  ⚠️ Pouco espaço em disco (${FREE_SPACE_MB}MB). Recomendado: 5GB+${NC}"
+if [ "$FREE_SPACE_MB" -lt 1024 ]; then
+    log_err "CRÍTICO: Espaço insuficiente em disco (${FREE_SPACE_MB}MB)."
+    log_warn "O build do Docker IRÁ falhar nesta condição."
+    exit 1
+elif [ "$FREE_SPACE_MB" -lt 5120 ]; then
+    log_warn "Aviso: Espaço limitado (${FREE_SPACE_MB}MB). Recomendado: 5GB+"
 fi
+
+# Hardware check (CPU/RAM)
+CPU_CORES=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || echo "1")
+TOTAL_MEM=$(grep MemTotal /proc/meminfo | awk '{print $2}' 2>/dev/null || echo "1000000")
+TOTAL_MEM_GB=$((TOTAL_MEM / 1024 / 1024))
+
+log_info "Recursos: ${CPU_CORES} Cores | ${TOTAL_MEM_GB}GB RAM | ${FREE_SPACE_MB}MB Disco livre"
 
 # Check Git
 if ! command -v git &> /dev/null; then
@@ -141,14 +152,18 @@ fi
 # --- 4. Stop and remove services to prevent name conflicts ---
 echo -e "\n${YELLOW}[4/7] Parando serviços em execução...${NC}"
 
-# Function to remove all onepa/alpha containers regardless of project
+# Function to remove all onepa/alpha containers and reset network
 nuclear_ghost_cleanup() {
-    log_warn "🧪 Realizando limpeza de containers antigos..."
+    log_warn "🧪 Realizando limpeza de containers antigos e rede..."
     GHOSTS=$(docker ps -aq --filter name=alpha --filter name=onepa)
     if [ -n "$GHOSTS" ]; then
         echo -e "  Removendo containers encontrados: $GHOSTS"
         docker rm -f $GHOSTS 2>/dev/null || sudo docker rm -f $GHOSTS 2>/dev/null || true
     fi
+    
+    # Force remove network to clear IP locks (Sync with install.sh)
+    echo -e "  Resetando rede virtual..."
+    docker network rm alpha-network 2>/dev/null || sudo docker network rm alpha-network 2>/dev/null || true
 }
 
 # Use down instead of stop to properly remove containers (preserving volumes)
