@@ -111,9 +111,9 @@ Este projeto representa um esforço significativo de engenharia para criar uma s
 
 | Métrica          | Detalhe                    | Valor                                     |
 | ---------------- | -------------------------- | ----------------------------------------- |
-| **Código Fonte** | Frontend (React/JSX)       | ~12908 linhas                              |
-|                  | Backend (Rust)             | ~8051 linhas                              |
-|                  | Total                      | **~20959+ linhas**                        |
+| **Código Fonte** | Frontend (React/JSX)       | ~13092 linhas                              |
+|                  | Backend (Rust)             | ~8048 linhas                              |
+|                  | Total                      | **~21140+ linhas**                        |
 | **Arquitetura**  | Módulos Backend (Rust)     | 32                                        |
 |                  | Componentes Visuais        | 25+                                       |
 |                  | Migrações de Base de Dados | 26                                        |
@@ -185,7 +185,7 @@ _Focus: Innovation and High Availability_
 
 Ver [RELEASE_NOTES.md](RELEASE_NOTES.md) para detalhes completos.
 
-### Versão Atual: v2.2.0-ALPHA.22-PRO-PRO (2026-02-18)
+### Versão Atual: v2.2.0-ALPHA.22-PRO-PRO (2026-02-19)
 
 **Principais Novidades:**
 

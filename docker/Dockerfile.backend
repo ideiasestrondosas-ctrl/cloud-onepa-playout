@@ -1,5 +1,5 @@
 # Multi-stage build for Rust backend
-FROM rust:alpine as builder
+FROM rust:alpine AS builder
 
 # Install dependencies required for building
 RUN apk add --no-cache \

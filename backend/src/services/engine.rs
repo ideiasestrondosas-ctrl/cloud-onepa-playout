@@ -75,8 +75,6 @@ pub struct PlayoutEngine {
     master_inactive_count: Arc<Mutex<u32>>,
     // Track last known graphics_updated_at to detect layer changes
     last_graphics_updated_at: Arc<Mutex<Option<chrono::DateTime<chrono::Utc>>>>,
-    // Watchdog: (clip_id_at_check, expected_position, consecutive_stagnant_ticks)
-    position_watchdog: Arc<Mutex<(String, f64, u32)>>,
 }
 
 impl PlayoutEngine {
@@ -121,7 +119,6 @@ impl PlayoutEngine {
             preview_ips: Arc::new(Mutex::new(HashMap::new())),
             master_inactive_count: Arc::new(Mutex::new(0u32)),
             last_graphics_updated_at: Arc::new(Mutex::new(None)),
-            position_watchdog: Arc::new(Mutex::new(("".to_string(), 0.0, 0u32))),
         }
     }
 

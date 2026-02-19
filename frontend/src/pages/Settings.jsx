@@ -72,6 +72,14 @@ import {
   CloudUpload as UploadIcon,
   Person as UserIcon,
   Settings as SettingsIcon,
+  Language as LanguageIcon,
+  Sensors as SensorsIcon,
+  EventNote as EpgIcon,
+  Brush as GraphicsIcon,
+  Business as EnterpriseIcon,
+  Speed as ScalabilityIcon,
+  RocketLaunch as RocketIcon,
+  Memory as AiIcon,
   BugReport as BugIcon // Added for ErrorBoundary
 } from '@mui/icons-material';
 
@@ -731,6 +739,76 @@ function Settings() {
     }
   }, [tabValue]);
 
+
+  const roadmapData = [
+    {
+      phase: 'Phase 22',
+      title: 'CONECTIVIDADE & LIVE INPUTS',
+      focus: 'Expansão além da reprodução de ficheiros',
+      icon: <SensorsIcon />,
+      color: '#00e5ff',
+      items: [
+        { text: 'Suporte SRT: Implementação (Caller & Listener) para contribuição remota fiável', done: true },
+        { text: 'Live Inputs: Integração de WebRTC, NDI e SDI para switching em direto', done: false },
+        { text: 'Smart Folder Playback: Reprodução aleatória direta de pastas (sem checklists)', done: false }
+      ]
+    },
+    {
+      phase: 'Phase 23',
+      title: 'EPG & METADATA ENGINE',
+      focus: 'Guia de programação profissional e descoberta de conteúdos',
+      icon: <EpgIcon />,
+      color: '#ff9800',
+      items: [
+        { text: 'Gerador de EPG: Criação interna de guias eletrónicos de programação', done: true },
+        { text: 'EPG Web Export: API pública JSON/XML para entidades externas', done: true },
+        { text: 'Compliance Standards: Suporte para formatos XMLTV e DVB-EIT', done: true },
+        { text: 'Sincronização Externa: Ligar EPG com agendamentos internos e eventos recorrentes', done: true }
+      ]
+    },
+    {
+      phase: 'Phase 24',
+      title: 'GRAPHICS & VISUAL EXPERIENCE',
+      focus: 'Branding avançado on-air e UX multi-dispositivo',
+      icon: <GraphicsIcon />,
+      color: '#e91e63',
+      items: [
+        { text: 'Editor Drag-and-Drop: Editor WYSIWYG baseado na web para templates ativos', done: false },
+        { text: 'HTML5 Graphics Engine: Overlays dinâmicos usando tecnologias web standard', done: false },
+        { text: 'Mobile Responsive Layout: Suporte móvel total para o dashboard', done: false },
+        { text: 'Personalização de Temas: Motor avançado de temas por utilizador', done: false },
+        { text: 'Suporte Multi-idioma: Implementação total de i18n (PT/EN/ES)', done: false }
+      ]
+    },
+    {
+      phase: 'Phase 25',
+      title: 'ENTERPRISE & COMPLIANCE',
+      focus: 'Escalabilidade e requisitos profissionais de broadcast',
+      icon: <EnterpriseIcon />,
+      color: '#4caf50',
+      items: [
+        { text: 'Sistema Multi-Utilizador: Controlo de acessos baseado em perfis (RBAC)', done: true },
+        { text: 'Audit Logs: Rastreio completo de todas as ações de utilizadores', done: false },
+        { text: 'As-Run Logs: Logs de exibição (Proof-of-Play) padrão da indústria', done: false },
+        { text: 'Suporte SCTE-35: Gatilhos para inserção de anúncios em fluxos IPTV/Cabo', done: false },
+        { text: 'Analytics Dashboard: Estatísticas de visualização e métricas de saúde do sistema', done: false }
+      ]
+    },
+    {
+      phase: 'Phase 26',
+      title: 'FUTURE TECH & SCALABILITY',
+      focus: 'Inovação e Elevada Disponibilidade',
+      icon: <RocketIcon />,
+      color: '#ce93d8',
+      items: [
+        { text: 'Integração de IA: Auto-tagging de conteúdos e geração inteligente de playlists', done: false },
+        { text: 'Multi-Channel Core: Uma única instância gerindo múltiplos canais independentes', done: false },
+        { text: 'Canais Dedicados: Logótipos e pastas de média/música próprios por canal', done: false },
+        { text: 'Alta Disponibilidade: Arquitetura de redundância e failover automático', done: false },
+        { text: 'Low-HLS Support: Latência ultra-baixa para streaming interactivo', done: false }
+      ]
+    }
+  ];
 
   const fetchReleaseHistory = () => {
     // Curated local history — no external API dependency, works offline
@@ -1862,6 +1940,29 @@ function Settings() {
                   </Grid>
                 ))}
               </Grid>
+
+              {/* ROADMAP & FUTURE section integrated here for visibility */}
+              <Box sx={{ mt: 6, mb: 2 }}>
+                <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 800, letterSpacing: 2 }}>DESTAQUES DO DESENVOLVIMENTO (FUTUROS)</Typography>
+                <Grid container spacing={2} sx={{ mt: 1 }}>
+                  {[
+                    { label: 'MULTI-IDIOMA', value: 'i18n Ready', icon: <LanguageIcon /> },
+                    { label: 'MULTI-CANAL', value: 'Independent Core', icon: <PlatformIcon /> },
+                    { label: 'LOW-LATENCY', value: 'Low-HLS / SRT', icon: <ScalabilityIcon /> }
+                  ].map((item, id) => (
+                    <Grid item xs={12} sm={4} key={id}>
+                      <Box sx={{ p: 1.5, display: 'flex', alignItems: 'center', gap: 1.5, bgcolor: 'rgba(0,229,255,0.03)', borderRadius: 2, border: '1px solid rgba(0,229,255,0.08)' }}>
+                        <Box sx={{ color: 'primary.main' }}>{item.icon}</Box>
+                        <Box>
+                          <Typography variant="caption" sx={{ fontWeight: 800, display: 'block', fontSize: '0.6rem', opacity: 0.6 }}>{item.label}</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 800, fontSize: '0.75rem' }}>{item.value}</Typography>
+                        </Box>
+                      </Box>
+                    </Grid>
+                  ))}
+                </Grid>
+              </Box>
+
               <Box sx={{ mt: 4, display: 'flex', gap: 2 }}>
                 <Button
                   variant="outlined"
@@ -1910,6 +2011,89 @@ function Settings() {
                   )}
                 </List>
               </Box>
+            </Paper>
+
+            {/* ROADMAP & FUTURO Section — Added as per ALPHA-22 update */}
+            <Paper className="glass-panel" sx={{ p: 4, mt: 4 }}>
+              <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box>
+                  <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>ROADMAP & FUTURO</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>VISÃO ESTRATÉGICA E PRÓXIMAS FUNCIONALIDADES</Typography>
+                </Box>
+                <Chip
+                  icon={<MagicIcon style={{ color: '#00e5ff' }} />}
+                  label="ALPHA EVOLUTION"
+                  sx={{ fontWeight: 900, fontSize: '0.7rem', bgcolor: 'rgba(0,229,255,0.1)', border: '1px solid rgba(0,229,255,0.2)', color: '#00e5ff' }}
+                />
+              </Box>
+
+              <Grid container spacing={3}>
+                {roadmapData.map((item, idx) => (
+                  <Grid item xs={12} md={6} key={idx}>
+                    <Box sx={{
+                      p: 3,
+                      height: '100%',
+                      bgcolor: 'rgba(255,255,255,0.01)',
+                      borderRadius: 4,
+                      border: '1px solid',
+                      borderColor: 'rgba(255,255,255,0.05)',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        bgcolor: 'rgba(255,255,255,0.02)',
+                        borderColor: item.color + '33',
+                        transform: 'translateY(-4px)'
+                      }
+                    }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                        <Box sx={{
+                          width: 48, height: 48, borderRadius: 3,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          bgcolor: item.color + '1a',
+                          color: item.color,
+                          border: '1px solid',
+                          borderColor: item.color + '33'
+                        }}>
+                          {item.icon}
+                        </Box>
+                        <Box>
+                          <Typography variant="caption" sx={{ fontWeight: 900, color: item.color, letterSpacing: 1 }}>{item.phase}</Typography>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.2 }}>{item.title}</Typography>
+                        </Box>
+                      </Box>
+
+                      <Typography variant="body2" sx={{ mb: 2, fontWeight: 600, opacity: 0.7, fontSize: '0.8rem' }}>
+                        {item.focus}
+                      </Typography>
+
+                      <List dense sx={{ p: 0 }}>
+                        {item.items.map((bullet, bIdx) => (
+                          <ListItem key={bIdx} sx={{ p: 0, mb: 0.5, alignItems: 'flex-start' }}>
+                            <ListItemIcon sx={{ minWidth: 24, mt: 0.5 }}>
+                              {bullet.done ? (
+                                <CheckIcon sx={{ fontSize: 14, color: 'success.main', opacity: 0.8 }} />
+                              ) : (
+                                <PlayIcon sx={{ fontSize: 12, color: 'primary.main', opacity: 0.4, transform: 'rotate(-45deg)' }} />
+                              )}
+                            </ListItemIcon>
+                            <ListItemText
+                              primary={bullet.text}
+                              primaryTypographyProps={{
+                                sx: {
+                                  fontSize: '0.75rem',
+                                  fontWeight: bullet.done ? 600 : 500,
+                                  opacity: bullet.done ? 1 : 0.6,
+                                  color: bullet.done ? 'inherit' : 'rgba(255,255,255,0.7)'
+                                }
+                              }}
+                            />
+                            {bullet.done && <Chip label="OK" size="small" sx={{ height: 16, fontSize: '0.55rem', fontWeight: 900, bgcolor: 'rgba(76,175,80,0.15)', color: '#4caf50', border: '1px solid rgba(76,175,80,0.2)', ml: 1 }} />}
+                          </ListItem>
+                        ))}
+                      </List>
+                    </Box>
+                  </Grid>
+                ))}
+              </Grid>
             </Paper>
           </TabPanel>
 
