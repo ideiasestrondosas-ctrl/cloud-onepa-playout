@@ -2,7 +2,7 @@
 
 # ============================================================================
 # ONEPA Playout PRO - Update Script (Existing VM)
-# Version: 2.2.0-ALPHA.22-PRO
+# Version: v2.2.0-ALPHA.23-PRO (2026-02-19)
 #
 # Usage:
 #   bash update.sh              # Standard update (preserves data)
@@ -184,6 +184,11 @@ echo -e "  ${GREEN}Serviços removidos ✓${NC}"
 
 # --- 5. Pull or Re-clone latest code ---
 echo -e "\n${YELLOW}[5/7] Atualizando código...${NC}"
+
+# Add safe directory fix for Linux VMs
+if command -v git &>/dev/null; then
+    git config --global --add safe.directory "$(pwd)" 2>/dev/null || true
+fi
 
 if [ "$CLEAN_UPDATE" = true ]; then
     echo -e "${RED}⚠️  MODO CLEAN UPDATE: Purgando ficheiros da aplicação (preservando dados)...${NC}"

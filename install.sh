@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ONEPA Playout PRO - Total Automation Installer (macOS/Linux)
-# Version: v2.2.0-ALPHA.22-PRO
+# Version: v2.2.0-ALPHA.23-PRO (2026-02-19)
 # Features: OS-specific Auto-installation, GitHub Cloud Sync, Nuclear Ghost Cleanup
 
 set -e
@@ -172,6 +172,11 @@ if [ "$LOCAL_MODE" = false ]; then
     read -p "Branch para Deploy (main, alpha, stable) [ENTER p/ alpha]: " GH_BRANCH
     GH_BRANCH=${GH_BRANCH:-"alpha"}
     
+    # Add safe directory fix for Linux VMs
+    if command -v git &>/dev/null; then
+        git config --global --add safe.directory "$(pwd)" 2>/dev/null || true
+    fi
+
     # --- 3. Clone Repository ---
     TEMP_DIR="onepa_repo_tmp"
     rm -rf "$TEMP_DIR" 2>/dev/null

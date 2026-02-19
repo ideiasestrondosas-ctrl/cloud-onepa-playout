@@ -111,9 +111,9 @@ Este projeto representa um esforço significativo de engenharia para criar uma s
 
 | Métrica          | Detalhe                    | Valor                                     |
 | ---------------- | -------------------------- | ----------------------------------------- |
-| **Código Fonte** | Frontend (React/JSX)       | ~13103 linhas                              |
+| **Código Fonte** | Frontend (React/JSX)       | ~13104 linhas                              |
 |                  | Backend (Rust)             | ~8171 linhas                              |
-|                  | Total                      | **~21274+ linhas**                        |
+|                  | Total                      | **~21275+ linhas**                        |
 | **Arquitetura**  | Módulos Backend (Rust)     | 32                                        |
 |                  | Componentes Visuais        | 25+                                       |
 |                  | Migrações de Base de Dados | 26                                        |
@@ -189,11 +189,10 @@ Ver [RELEASE_NOTES.md](RELEASE_NOTES.md) para detalhes completos.
 
 **Principais Novidades:**
 
-- 🪄 **Metadata Wizard Transparency**: O assistente agora mostra exatamente de onde os dados foram extraídos (TMDB/OMDb/TVMaze) com links diretos.
-- 📅 **EPG Intelligence 2.0**: Tooltips aprimorados com Diretor, Classificação, Género e Sinopse completa.
-- 📜 **Release History Sync**: Sincronização offline do histórico completo de versões desde a 1.9.3.
-- 🛠️ **Stability Fix**: Resolução de White Screens nos diálogos de metadados e persistência garantida do campo "EPG Days Ahead".
-- 📈 **Performance Metrics**: Atualização das estatísticas do repositório (~15k+ linhas de código).
+- ⚡ **Enhanced Streaming**: Otimização profunda em Nginx (`proxy_buffering off`, `Accept-Ranges`) e suporte a Range Requests no backend (Rust).
+- 🎬 **Instant Media Preview**: O frontend agora gere buffers de vídeo de forma profissional, permitindo previews rápidos de ficheiros grandes.
+- 🐧 **Linux Excellence**: Scripts de instalação (`install.sh`) e atualização (`update.sh`) otimizados para Ubuntu com tratamento automático de permissões e Git security.
+- 💾 **Persistence Fixes**: Estabilização da gravação de metas e dias de guia EPG.
 
 ### Versão Anterior: 2.1.0-PRO (2026-01-25)
 

@@ -6,47 +6,22 @@
 - **Automated Release**: Version bump and statistics update.
 - **Documentation**: Synced README.md and version history.
 
-## v2.2.0-ALPHA.22-PRO-PRO (2026-02-19)
+## v2.2.0-ALPHA.23-PRO (2026-02-19)
 
 ### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
+- **Streaming Optimizations**: Otimização profunda em Nginx (`proxy_buffering off`, `Accept-Ranges`).
+- **Media Preview**: Suporte nativo a buffers e partial content no frontend para previews instantâneos.
+- **Backend Streaming**: Implementação de Range Requests em Rust para manuseamento eficiente de ficheiros vídeo grandes.
+- **Global Version Fix**: Consolidação total da versão `v2.2.0-ALPHA.23-PRO` em todo o ecossistema.
 
-## v2.2.0-ALPHA.22-PRO-PRO (2026-02-19)
-
-### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
-
-## v2.2.0-ALPHA.22-PRO-PRO (2026-02-19)
+## v2.2.0-ALPHA.22-PRO (2026-02-19)
 
 ### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
-
-## v2.2.0-ALPHA.22-PRO-PRO (2026-02-19)
-
-### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
-
-## v2.2.0-ALPHA.22-PRO-PRO (2026-02-18)
-
-### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
-
-## v2.2.0-ALPHA.22-PRO-PRO (2026-02-18)
-
-### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
-
-## v2.2.0-ALPHA.22-PRO-PRO (2026-02-18)
-
-### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
+- **Dashboard Refesign**: Nova barra de controlos profissionais com ícones `PlayCircle`/`StopCircle`/`Cast`/`Terminal`/`SkipNext`.
+- **Roadmap & Futuro**: Nova secção visual na tab "Sobre o Sistema" com progresso auditado.
+- **Ubuntu Compatibility**: Scripts de instalação e atualização corrigidos para VMs Linux (SUDO fix + Git permissions).
+- **Backend Quality**: Removido código morto e corrigidos avisos de casing nos Dockerfiles.
+- **EPG & Metadata**: Estabilização dos diálogos de metadados e persistência de definições de guia.
 
 ## v2.2.0-ALPHA.19-PRO (2026-02-18)
 

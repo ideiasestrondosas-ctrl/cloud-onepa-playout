@@ -511,7 +511,7 @@ function Settings() {
         defaultImagePath: data.default_image_path || '',
 
         defaultVideoPath: data.default_video_path || '',
-        version: data.system_version || 'v2.2.0-ALPHA.22-PRO',
+        version: data.system_version || 'v2.2.0-ALPHA.23-PRO',
         releaseDate: data.release_date || '2026-02-18',
         overlay_enabled: data.overlay_enabled ?? true,
         channelName: data.channel_name || 'Cloud Onepa',
@@ -521,7 +521,7 @@ function Settings() {
         srtMode: data.srt_mode || 'caller',
         protectedPath: data.protected_path || '/var/lib/onepa-playout/assets/protected',
         docsPath: data.docs_path || '/app/docs',
-        system_version: data.system_version || 'v2.2.0-ALPHA.22-PRO',
+        system_version: data.system_version || 'v2.2.0-ALPHA.23-PRO',
         release_date: data.release_date || '2026-02-18',
         rtmpOutputUrl: data.rtmp_output_url || '',
         srtOutputUrl: data.srt_output_url || '',
@@ -813,6 +813,7 @@ function Settings() {
   const fetchReleaseHistory = () => {
     // Curated local history — no external API dependency, works offline
     setReleaseHistory([
+      { version: 'v2.2.0-ALPHA.23-PRO', date: '2026-02-19', changes: ['Streaming: Otimização profunda em Nginx (buffering off, byte ranges)', 'Frontend: Preview de media com suporte nativo a Buffering/Partial Content', 'Backend: Implementação de Range Requests no endpoint de stream (Rust)', 'Estabilidade: Melhor manuseamento de ficheiros grandes via Chunked Transfer', 'Versioning: Bump global para ALPHA.23 PRO'] },
       { version: 'v2.2.0-ALPHA.22-PRO', date: '2026-02-18', changes: ['Dashboard: painel de controlo com ícones profissionais (PlayCircle/StopCircle/Cast/Terminal/SkipNext)', 'Estados visuais dinâmicos: cor + ícone + glow por estado ON AIR/OFF AIR', 'Animações pulse/glow no botão principal e distribuição activa', 'Tooltip descritivo em hover em todos os controlos de emissão', 'Settings: histórico de versões completo até ALPHA.22'] },
       { version: 'v2.2.0-ALPHA.21-PRO', date: '2026-02-18', changes: ['Uptime com precisão ms (00h 00m 00s 000ms)', 'Stream clean preview (stream_clean.m3u8 sem overlay)', 'Protocol status real baseado em processo relay activo', 'SRT relay URL fix (publish: streamid)', 'Settings: botão REPOR PADRÕES para branding defaults'] },
       { version: 'v2.2.0-ALPHA.20-PRO', date: '2026-02-18', changes: ['Dashboard: redesign ícone UDP + estado real de protocolo', 'Settings: UI DASH/MSS/RTSP/WebRTC (desactivado, em breve)', 'Graphics: preview 16:9 proporcional sem imagens externas', 'EPG: barra TV Guide com data + ícones abrir/download', 'Logs: config de rotação (tamanho, ficheiros, compressão, retenção), filtro, export', 'Branding: botão RESTAURAR DEFAULTS + auto-assign em novo vídeo'] },
