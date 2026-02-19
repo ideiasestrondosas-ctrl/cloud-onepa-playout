@@ -217,6 +217,11 @@ elif [ -d ".git" ]; then
     # We're in a git repo, just pull
     echo -e "  Repositório Git detectado. A fazer pull..."
     
+    # Fix ownership before git operations to prevent "Permission denied" on FETCH_HEAD etc
+    if [ "$OS_TYPE" == "linux" ]; then
+        sudo chown -R $USER:$USER . 2>/dev/null || true
+    fi
+
     # Ensure remote origin exists
     if ! git remote get-url origin &>/dev/null; then
         echo -e "  ${YELLOW}⚠️  Remote 'origin' não encontrado. Usando primeiro remote disponível...${NC}"

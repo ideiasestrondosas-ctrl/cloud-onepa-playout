@@ -197,6 +197,12 @@ if [ "$LOCAL_MODE" = false ]; then
         cp -r "$TEMP_DIR/." .
         rm -rf "$TEMP_DIR"
     fi
+
+    # Fix ownership to prevent "Permission denied" errors during development/updates
+    if [ "$OS_TYPE" == "linux" ]; then
+        sudo chown -R $USER:$USER . 2>/dev/null || true
+    fi
+
     TEMP_DIR="."
 else
     TEMP_DIR="."
