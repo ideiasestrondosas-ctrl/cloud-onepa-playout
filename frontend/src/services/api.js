@@ -82,8 +82,11 @@ export const mediaAPI = {
   optimizeForStreaming: (id) => api.post(`/media/${id}/optimize`),
   generateProxy: (id) => api.post(`/media/${id}/proxy`),
   getProxyStats: () => api.get(`/media/stats/proxy`),
+  listProxies: () => api.get(`/media/proxies`),
+  deleteSpecificProxies: (ids) => api.post(`/media/proxies/delete`, ids),
   purgeProxies: () => api.delete(`/media/proxies/purge`),
   getMediaTasks: (id) => api.get(`/media/${id}/tasks`),
+  mediaHealthCheck: () => api.get(`/media/health-check`),
 };
 
 // Playlist endpoints

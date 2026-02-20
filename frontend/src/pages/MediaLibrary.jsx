@@ -32,7 +32,8 @@ import {
   ListItemText,
   ListItemIcon,
   ListItemButton,
-  Checkbox
+  Checkbox,
+  CircularProgress
 } from '@mui/material';
 import {
   CloudUpload as UploadIcon,
@@ -55,7 +56,6 @@ import {
   Speed as SpeedIcon,
   Bolt as BoltIcon,
 } from '@mui/icons-material';
-import { CircularProgress } from '@mui/material';
 import { useDropzone } from 'react-dropzone';
 import { mediaAPI } from '../services/api';
 
@@ -143,15 +143,24 @@ export default function MediaLibrary() {
           const response = await mediaAPI.getMediaTasks(item.id);
           const tasks = response.data;
 
-          // Filter only pending/processing tasks
-          const active = tasks.filter(t => t.status === 'pending' || t.status === 'processing');
+          // Filter active and recently failed tasks
+          const activeOrFailed = tasks.filter(t =>
+            t.status === 'pending' ||
+            t.status === 'processing' ||
+            (t.status === 'failed' && (new Date() - new Date(t.created_at)) < 120000) // Keep failed for 2 mins
+          );
 
-          if (active.length > 0) {
-            updatedTasks[item.id] = active;
+          if (activeOrFailed.length > 0) {
+            updatedTasks[item.id] = activeOrFailed;
+            console.log(`[MediaLibrary] Tasks for ${item.id}:`, activeOrFailed);
           }
         } catch (error) {
           console.error(`Failed to fetch tasks for ${item.id}:`, error);
         }
+      }
+
+      if (Object.keys(updatedTasks).length > 0) {
+        console.log('[MediaLibrary] Setting activeTasks:', updatedTasks);
       }
 
       // Compare with current activeTasks to avoid unnecessary state updates
@@ -946,10 +955,14 @@ export default function MediaLibrary() {
                           </IconButton>
                         </Tooltip>
                         {item.media_type === 'video' && (
-                          <Tooltip title="Otimizar para Streaming">
+                          <Tooltip title={item.is_optimized ? "Vídeo Otimizado para Streaming" : "Otimizar para Streaming"}>
                             <IconButton
                               size="small"
-                              sx={{ color: 'success.main', bgcolor: 'rgba(76, 175, 80, 0.1)' }}
+                              sx={{
+                                color: item.is_optimized ? 'success.light' : 'success.main',
+                                bgcolor: item.is_optimized ? 'rgba(76, 175, 80, 0.2)' : 'rgba(76, 175, 80, 0.1)',
+                                border: item.is_optimized ? '1px solid rgba(76, 175, 80, 0.4)' : 'none'
+                              }}
                               onClick={async () => {
                                 try {
                                   showInfo(`Otimização de "${item.filename}" iniciada em background.`);
@@ -958,9 +971,16 @@ export default function MediaLibrary() {
                                   showError(`Erro ao iniciar otimização: ${err.response?.data?.error || err.message}`);
                                 }
                               }}
+                              disabled={item.is_optimized || activeTasks[item.id]?.some(t => t.task_type === 'optimize' && (t.status === 'pending' || t.status === 'processing'))}
                             >
-                              {activeTasks[item.id]?.some(t => t.task_type === 'optimize') ? (
-                                <CircularProgress size={16} color="success" />
+                              {activeTasks[item.id]?.find(t => t.task_type === 'optimize' && t.status === 'failed') ? (
+                                <Tooltip title={`Erro: ${activeTasks[item.id]?.find(t => t.task_type === 'optimize' && t.status === 'failed')?.error_message || 'Desconhecido'}`}>
+                                  <ErrorIcon fontSize="small" color="error" />
+                                </Tooltip>
+                              ) : activeTasks[item.id]?.some(t => t.task_type === 'optimize') ? (
+                                <CircularProgress key={`opt-${item.id}`} size={16} color="success" />
+                              ) : item.is_optimized ? (
+                                <CheckCircleIcon fontSize="small" />
                               ) : (
                                 <SpeedIcon fontSize="small" />
                               )}
@@ -972,9 +992,9 @@ export default function MediaLibrary() {
                             <IconButton
                               size="small"
                               sx={{
-                                color: item.has_proxy ? 'secondary.main' : 'warning.main',
-                                bgcolor: item.has_proxy ? 'rgba(156, 39, 176, 0.1)' : 'rgba(255, 152, 0, 0.1)',
-                                border: item.has_proxy ? '1px solid rgba(156, 39, 176, 0.3)' : 'none'
+                                color: item.has_proxy ? 'secondary.light' : 'warning.main',
+                                bgcolor: item.has_proxy ? 'rgba(156, 39, 176, 0.2)' : 'rgba(255, 152, 0, 0.1)',
+                                border: item.has_proxy ? '1px solid rgba(156, 39, 176, 0.4)' : 'none'
                               }}
                               onClick={async () => {
                                 try {
@@ -984,9 +1004,16 @@ export default function MediaLibrary() {
                                   showError(`Erro ao iniciar geração de proxy: ${err.response?.data?.error || err.message}`);
                                 }
                               }}
+                              disabled={item.has_proxy || activeTasks[item.id]?.some(t => t.task_type === 'proxy' && (t.status === 'pending' || t.status === 'processing'))}
                             >
-                              {activeTasks[item.id]?.some(t => t.task_type === 'proxy') ? (
-                                <CircularProgress size={16} color="warning" />
+                              {activeTasks[item.id]?.find(t => t.task_type === 'proxy' && t.status === 'failed') ? (
+                                <Tooltip title={`Erro: ${activeTasks[item.id]?.find(t => t.task_type === 'proxy' && t.status === 'failed')?.error_message || 'Desconhecido'}`}>
+                                  <ErrorIcon fontSize="small" color="error" />
+                                </Tooltip>
+                              ) : activeTasks[item.id]?.some(t => t.task_type === 'proxy') ? (
+                                <CircularProgress key={`proxy-${item.id}`} size={16} color="warning" />
+                              ) : item.has_proxy ? (
+                                <CheckCircleIcon fontSize="small" />
                               ) : (
                                 <BoltIcon fontSize="small" />
                               )}

@@ -419,6 +419,10 @@ function Settings() {
   const [newPassword, setNewPassword] = useState('');
   const [proxyStats, setProxyStats] = useState({ total_bytes: 0, proxy_count: 0 });
   const [purgingProxies, setPurgingProxies] = useState(false);
+  const [proxiesList, setProxiesList] = useState([]);
+  const [selectedProxyIds, setSelectedProxyIds] = useState([]);
+  const [explorerOpen, setExplorerOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -426,6 +430,7 @@ function Settings() {
     fetchUsers();
     fetchReleaseHistory();
     fetchProxyStats();
+    fetchProxiesList();
 
     // Handle URL parameters for deep-linking
     const tab = searchParams.get('tab');
@@ -735,6 +740,58 @@ function Settings() {
     }
   };
 
+  const fetchProxyStats = async () => {
+    try {
+      const response = await mediaAPI.getProxyStats();
+      setProxyStats(response.data);
+    } catch (error) {
+      console.error('Failed to fetch proxy stats:', error);
+    }
+  };
+
+  const fetchProxiesList = async () => {
+    try {
+      const response = await mediaAPI.listProxies();
+      setProxiesList(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      console.error('Failed to fetch proxies list:', error);
+      setProxiesList([]);
+    }
+  };
+
+  const handleDeleteSelectedProxies = async () => {
+    if (selectedProxyIds.length === 0) return;
+    try {
+      setPurgingProxies(true);
+      const response = await mediaAPI.deleteSpecificProxies(selectedProxyIds);
+      showSuccess(`${response.data.deleted_count} proxies removidos. (${(response.data.deleted_bytes / 1024 / 1024).toFixed(2)} MB libertados)`);
+      setDeleteConfirmOpen(false);
+      setSelectedProxyIds([]);
+      await fetchProxyStats();
+      await fetchProxiesList();
+    } catch (error) {
+      console.error('Failed to delete specific proxies:', error);
+      showError('Erro ao apagar proxies selecionados');
+    } finally {
+      setPurgingProxies(false);
+    }
+  };
+
+  const handlePurgeProxies = async () => {
+    if (window.confirm('Tem a certeza que deseja eliminar todas as versões proxy? Isto não afetará os ficheiros originais, mas os previews na Media Library poderão demorar mais. Esta ação liberta espaço em disco.')) {
+      setPurgingProxies(true);
+      try {
+        const res = await mediaAPI.purgeProxies();
+        showSuccess(`Limpeza concluída. ${res.data.deleted_count} proxies removidos (${(res.data.deleted_bytes / 1024 / 1024).toFixed(2)} MB libertados).`);
+        fetchProxyStats();
+      } catch (err) {
+        showError(`Erro ao limpar proxies: ${err.response?.data?.error || err.message}`);
+      } finally {
+        setPurgingProxies(false);
+      }
+    }
+  };
+
   useEffect(() => {
     if (tabValue === 3) {
       fetchUsers();
@@ -842,32 +899,6 @@ function Settings() {
     ]);
   };
 
-  const fetchProxyStats = async () => {
-    try {
-      const response = await mediaAPI.getProxyStats();
-      console.log('Proxy Stats Response:', response.data);
-      if (response && response.data) {
-        setProxyStats(response.data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch proxy stats:', err);
-    }
-  };
-
-  const handlePurgeProxies = async () => {
-    if (window.confirm('Tem a certeza que deseja eliminar todas as versões proxy? Isto não afetará os ficheiros originais, mas os previews na Media Library poderão demorar mais. Esta ação liberta espaço em disco.')) {
-      setPurgingProxies(true);
-      try {
-        const res = await mediaAPI.purgeProxies();
-        showSuccess(`Limpeza concluída. ${res.data.deleted_count} proxies removidos (${(res.data.deleted_bytes / 1024 / 1024).toFixed(2)} MB libertados).`);
-        fetchProxyStats();
-      } catch (err) {
-        showError(`Erro ao limpar proxies: ${err.response?.data?.error || err.message}`);
-      } finally {
-        setPurgingProxies(false);
-      }
-    }
-  };
 
   const handleSaveSettings = async () => {
     setSaving(true);
@@ -1495,10 +1526,20 @@ function Settings() {
                   disabled={purgingProxies || proxyStats.proxy_count === 0}
                   sx={{ fontWeight: 800 }}
                 >
-                  {purgingProxies ? 'A LIMPAR ESPAÇO...' : 'LIMPAR TODOS OS PROXIES'}
+                  {purgingProxies ? 'A LIMPAR...' : 'LIMPAR TUDO'}
+                </Button>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  startIcon={<ViewIcon />}
+                  onClick={() => { fetchProxiesList(); setExplorerOpen(true); }}
+                  disabled={proxyStats.proxy_count === 0}
+                  sx={{ fontWeight: 800 }}
+                >
+                  EXPLORAR & GESTÃO GRANULAR
                 </Button>
                 <Typography variant="caption" sx={{ color: 'text.disabled', maxWidth: '300px' }}>
-                  A limpeza afeta apenas os ficheiros otimizados. Os vídeos originais na Media Library nunca são apagados nesta ação.
+                  A limpeza afeta apenas os ficheiros otimizados (H.264). Os vídeos originais na Media Library nunca são apagados nesta ação.
                 </Typography>
               </Box>
             </Paper>
@@ -2603,6 +2644,121 @@ function Settings() {
             <Button onClick={() => setShowLogsDialog(false)} sx={{ fontWeight: 800 }}>FECHAR</Button>
             <Button variant="outlined" color="warning" onClick={handleRetryPlayout} sx={{ fontWeight: 800 }}>REINICIAR MOTOR</Button>
           </Box>
+        </DialogActions>
+      </Dialog>
+
+      {/* PROXY EXPLORER DIALOG */}
+      <Dialog
+        open={explorerOpen}
+        onClose={() => setExplorerOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{ className: "glass-panel", sx: { borderRadius: 4, minHeight: '600px' } }}
+      >
+        <DialogTitle sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 800 }}>EXPLORADOR DE PROXIES WEB</Typography>
+            <Typography variant="caption" sx={{ opacity: 0.7 }}>GESTÃO INDIVIDUAL DE FICHEIROS OPTIMIZADOS PARA PREVIEW</Typography>
+          </Box>
+          <IconButton onClick={() => setExplorerOpen(false)} sx={{ color: 'text.secondary' }}><CloseIcon /></IconButton>
+        </DialogTitle>
+        <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.05)', p: 0 }}>
+          <Box sx={{ p: 2, bgcolor: 'rgba(0,0,0,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+              {selectedProxyIds.length} SELECIONADOS
+              {selectedProxyIds.length > 0 && ` (${(proxiesList.filter(p => selectedProxyIds.includes(p.id)).reduce((acc, curr) => acc + curr.size_bytes, 0) / 1024 / 1024).toFixed(2)} MB A LIBERTAR)`}
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                size="small"
+                onClick={() => setSelectedProxyIds(selectedProxyIds.length === proxiesList.length ? [] : proxiesList.map(p => p.id))}
+              >
+                {selectedProxyIds.length === proxiesList.length ? 'DESELECIONAR TUDO' : 'SELECIONAR TUDO'}
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                size="small"
+                disabled={selectedProxyIds.length === 0}
+                onClick={() => setDeleteConfirmOpen(true)}
+                startIcon={<DeleteIcon />}
+              >
+                APAGAR SELECIONADOS
+              </Button>
+            </Box>
+          </Box>
+          <Box sx={{ maxHeight: '400px', overflowY: 'auto' }}>
+            <List>
+              {proxiesList.map((proxy) => (
+                <ListItem
+                  key={proxy.id}
+                  sx={{
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                    bgcolor: selectedProxyIds.includes(proxy.id) ? 'rgba(255, 82, 82, 0.05)' : 'transparent'
+                  }}
+                >
+                  <Checkbox
+                    checked={selectedProxyIds.includes(proxy.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) setSelectedProxyIds([...selectedProxyIds, proxy.id]);
+                      else setSelectedProxyIds(selectedProxyIds.filter(id => id !== proxy.id));
+                    }}
+                  />
+                  <ListItemText
+                    primary={proxy.filename}
+                    primaryTypographyProps={{ fontWeight: 700, fontSize: '0.85rem' }}
+                    secondary={`${(proxy.size_bytes / 1024 / 1024).toFixed(2)} MB • ${new Date(proxy.created_at).toLocaleString()}`}
+                    secondaryTypographyProps={{ fontSize: '0.7rem' }}
+                  />
+                </ListItem>
+              ))}
+              {proxiesList.length === 0 && (
+                <Box sx={{ p: 4, textAlign: 'center', opacity: 0.5 }}>
+                  NENHUM PROXY ENCONTRADO NO DISCO
+                </Box>
+              )}
+            </List>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button onClick={() => setExplorerOpen(false)} sx={{ fontWeight: 800 }}>SAIR</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* DELETE CONFIRMATION DIALOG */}
+      <Dialog
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        PaperProps={{ className: "glass-panel", sx: { borderRadius: 4 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: 'error.main' }}>CONFIRMAR ELIMINAÇÃO</DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            Tem a certeza que deseja eliminar <strong>{selectedProxyIds.length}</strong> ficheiros de proxy?
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 2, opacity: 0.8 }}>
+            Total de espaço a libertar: <strong>{(proxiesList.filter(p => selectedProxyIds.includes(p.id)).reduce((acc, curr) => acc + curr.size_bytes, 0) / 1024 / 1024).toFixed(2)} MB</strong>
+          </Typography>
+          <Box sx={{ p: 1.5, bgcolor: 'rgba(0,0,0,0.3)', borderRadius: 2, maxHeight: '150px', overflowY: 'auto' }}>
+            {proxiesList.filter(p => selectedProxyIds.includes(p.id)).map(p => (
+              <Typography key={p.id} variant="caption" sx={{ display: 'block', opacity: 0.6 }}>• {p.filename}</Typography>
+            ))}
+          </Box>
+          <Typography variant="caption" color="warning.main" sx={{ display: 'block', mt: 2, fontWeight: 700 }}>
+            ⚠️ ESTA OPERAÇÃO NÃO PODE SER DESFEITA. OS PREVIEWS NO PORTAL VOLTARÃO A SER LENTOS PARA ESTES VÍDEOS.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setDeleteConfirmOpen(false)} sx={{ fontWeight: 800 }}>CANCELAR</Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleDeleteSelectedProxies}
+            disabled={purgingProxies}
+            sx={{ fontWeight: 800 }}
+          >
+            {purgingProxies ? <CircularProgress size={20} color="inherit" /> : 'CONFIRMAR E APAGAR'}
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

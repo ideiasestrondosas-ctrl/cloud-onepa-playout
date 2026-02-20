@@ -126,16 +126,31 @@ async fn list_media(query: web::Query<MediaQuery>, pool: web::Data<PgPool>) -> i
 
     match media_result {
         Ok(media) => {
-            // Add proxy existence flag for video files
+            // Add proxy existence and optimization flags for video files
+            let ffmpeg = FFmpegService::new();
             let media_with_proxy: Vec<serde_json::Value> = media.into_iter().map(|item| {
                 let mut val = serde_json::to_value(&item).unwrap();
-                let has_proxy = if item.media_type == "video" {
-                    let proxy_path = format!("{}.proxy.mp4", item.path.trim_end_matches(".mp4"));
-                    std::path::Path::new(&proxy_path).exists()
-                } else {
-                    false
-                };
-                val.as_object_mut().unwrap().insert("has_proxy".to_string(), serde_json::json!(has_proxy));
+                let mut has_proxy = false;
+                let mut is_optimized = false;
+
+                if item.media_type == "video" {
+                    let original_path = &item.path;
+                    let stem = if original_path.to_lowercase().ends_with(".mp4") {
+                        &original_path[..original_path.len() - 4]
+                    } else {
+                        original_path
+                    };
+                    
+                    let proxy_path = format!("{}.proxy.mp4", stem);
+                    has_proxy = std::path::Path::new(&proxy_path).exists();
+                    
+                    // Check if already optimized (this does a probe, might be slow but accurate)
+                    is_optimized = ffmpeg.is_faststart_optimized(original_path);
+                }
+
+                let obj = val.as_object_mut().unwrap();
+                obj.insert("has_proxy".to_string(), serde_json::json!(has_proxy));
+                obj.insert("is_optimized".to_string(), serde_json::json!(is_optimized));
                 val
             }).collect();
 
@@ -1166,7 +1181,12 @@ async fn optimize_for_streaming(
             }
 
             let original_path = path.to_string_lossy().to_string();
-            let optimized_path = format!("{}.optimized.mp4", original_path.trim_end_matches(".mp4"));
+            let stem = if original_path.to_lowercase().ends_with(".mp4") {
+                &original_path[..original_path.len() - 4]
+            } else {
+                &original_path
+            };
+            let optimized_path = format!("{}.optimized.mp4", stem);
 
             // Check if already optimized
             let ffmpeg = FFmpegService::new();
@@ -1263,7 +1283,12 @@ async fn generate_proxy(
             }
 
             let original_path = path.to_string_lossy().to_string();
-            let proxy_path = format!("{}.proxy.mp4", original_path.trim_end_matches(".mp4"));
+            let stem = if original_path.to_lowercase().ends_with(".mp4") {
+                &original_path[..original_path.len() - 4]
+            } else {
+                &original_path
+            };
+            let proxy_path = format!("{}.proxy.mp4", stem);
 
             // Check if proxy already exists
             if std::path::Path::new(&proxy_path).exists() {
@@ -1354,34 +1379,58 @@ async fn get_media_tasks(
     }
 }
 
-async fn get_proxy_stats(pool: web::Data<PgPool>) -> impl Responder {
-    let result = sqlx::query_as::<_, Media>("SELECT * FROM media WHERE media_type = 'video'")
-        .fetch_all(pool.get_ref())
-        .await;
-
-    match result {
-        Ok(videos) => {
-            let mut total_bytes: u64 = 0;
-            let mut proxy_count: u32 = 0;
-
-            for video in videos {
-                let proxy_path = format!("{}.proxy.mp4", video.path.trim_end_matches(".mp4"));
-                if let Ok(metadata) = std::fs::metadata(&proxy_path) {
-                    total_bytes += metadata.len();
-                    proxy_count += 1;
+fn scan_dir_for_proxies(dir: &Path, proxies: &mut Vec<serde_json::Value>) {
+    if let Ok(entries) = std::fs::read_dir(dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                scan_dir_for_proxies(&path, proxies);
+            } else if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
+                if file_name.to_lowercase().ends_with(".proxy.mp4") {
+                    if let Ok(metadata) = entry.metadata() {
+                        proxies.push(serde_json::json!({
+                            "proxy_path": path.to_string_lossy(),
+                            "size_bytes": metadata.len(),
+                            "created_at": metadata.created().ok().map(|c| {
+                                let datetime: chrono::DateTime<chrono::Utc> = c.into();
+                                datetime
+                            })
+                        }));
+                    }
                 }
             }
-
-            HttpResponse::Ok().json(serde_json::json!({
-                "total_bytes": total_bytes,
-                "proxy_count": proxy_count
-            }))
-        }
-        Err(e) => {
-            log::error!("Database error counting proxies: {}", e);
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": "Database error"}))
         }
     }
+}
+
+async fn get_proxy_stats(_pool: web::Data<PgPool>) -> impl Responder {
+    let media_path = std::env::var("MEDIA_PATH").unwrap_or_else(|_| "./data/media".to_string());
+    let assets_path = std::env::var("ASSETS_PATH").unwrap_or_else(|_| "./data/assets".to_string());
+    let branding_path = "./backend/assets/protected"; // Explicitly include branding even if env differs
+    
+    let mut proxies = Vec::new();
+    scan_dir_for_proxies(Path::new(&media_path), &mut proxies);
+    scan_dir_for_proxies(Path::new(&assets_path), &mut proxies);
+    scan_dir_for_proxies(Path::new(branding_path), &mut proxies);
+
+    // Deduplicate by path to avoid counting same file via different pointers
+    let mut unique_paths = std::collections::HashSet::new();
+    let mut total_bytes: u64 = 0;
+    let mut proxy_count: u32 = 0;
+
+    for p in proxies {
+        if let Some(path) = p["proxy_path"].as_str() {
+            if unique_paths.insert(path.to_string()) {
+                total_bytes += p["size_bytes"].as_u64().unwrap_or(0);
+                proxy_count += 1;
+            }
+        }
+    }
+
+    HttpResponse::Ok().json(serde_json::json!({
+        "total_bytes": total_bytes,
+        "proxy_count": proxy_count
+    }))
 }
 
 async fn purge_proxies(pool: web::Data<PgPool>) -> impl Responder {
@@ -1395,7 +1444,13 @@ async fn purge_proxies(pool: web::Data<PgPool>) -> impl Responder {
             let mut deleted_count: u32 = 0;
 
             for video in videos {
-                let proxy_path = format!("{}.proxy.mp4", video.path.trim_end_matches(".mp4"));
+                let stem = if video.path.to_lowercase().ends_with(".mp4") {
+                    &video.path[..video.path.len() - 4]
+                } else {
+                    &video.path
+                };
+                
+                let proxy_path = format!("{}.proxy.mp4", stem);
                 if let Ok(metadata) = std::fs::metadata(&proxy_path) {
                     let size = metadata.len();
                     if std::fs::remove_file(&proxy_path).is_ok() {
@@ -1418,13 +1473,202 @@ async fn purge_proxies(pool: web::Data<PgPool>) -> impl Responder {
     }
 }
 
+async fn list_proxies(pool: web::Data<PgPool>) -> impl Responder {
+    let media_path = std::env::var("MEDIA_PATH").unwrap_or_else(|_| "./data/media".to_string());
+    let assets_path = std::env::var("ASSETS_PATH").unwrap_or_else(|_| "./data/assets".to_string());
+    let branding_path = "./backend/assets/protected";
+    
+    let mut physical_proxies = Vec::new();
+    scan_dir_for_proxies(Path::new(&media_path), &mut physical_proxies);
+    scan_dir_for_proxies(Path::new(&assets_path), &mut physical_proxies);
+    scan_dir_for_proxies(Path::new(branding_path), &mut physical_proxies);
+
+    // Fetch all media to match names/IDs
+    let media_result = sqlx::query_as::<_, Media>("SELECT * FROM media")
+        .fetch_all(pool.get_ref())
+        .await;
+
+    let media_list = media_result.unwrap_or_default();
+    let mut proxies = Vec::new();
+    let mut unique_id_tracker = std::collections::HashSet::new();
+
+    for mut p in physical_proxies {
+        let proxy_path = p["proxy_path"].as_str().unwrap_or("").to_string();
+        
+        // Find if this proxy belongs to a DB entry
+        let matched_media = media_list.iter().find(|m| {
+            let stem = if m.path.to_lowercase().ends_with(".mp4") {
+                &m.path[..m.path.len() - 4]
+            } else {
+                &m.path
+            };
+            // Exact path match or starting with stem
+            proxy_path.contains(stem)
+        });
+
+        if let Some(m) = matched_media {
+            p.as_object_mut().unwrap().insert("media_id".to_string(), serde_json::json!(m.id));
+            p.as_object_mut().unwrap().insert("id".to_string(), serde_json::json!(m.id));
+            p.as_object_mut().unwrap().insert("filename".to_string(), serde_json::json!(m.filename));
+            p.as_object_mut().unwrap().insert("source_type".to_string(), serde_json::json!("media_library"));
+        } else {
+            // It's a branding asset or orphan
+            let filename = Path::new(&proxy_path).file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("unknown")
+                .replace(".proxy.mp4", "");
+            
+            let is_branding = proxy_path.contains("/assets/") || proxy_path.contains("branding");
+            let label = if is_branding { "Branding" } else { "Órfão" };
+            let source_key = if is_branding { "branding" } else { "orphan" };
+
+            p.as_object_mut().unwrap().insert("filename".to_string(), serde_json::json!(format!("{} ({})", filename, label)));
+            p.as_object_mut().unwrap().insert("source_type".to_string(), serde_json::json!(source_key));
+            p.as_object_mut().unwrap().insert("id".to_string(), serde_json::json!(proxy_path));
+        }
+
+        if let Some(id) = p["id"].as_str() {
+            if unique_id_tracker.insert(id.to_string()) {
+                proxies.push(p);
+            }
+        }
+    }
+
+    HttpResponse::Ok().json(proxies)
+}
+
+async fn delete_specific_proxies(
+    payload: web::Json<Vec<String>>,
+    pool: web::Data<PgPool>,
+) -> impl Responder {
+    let identifier_list = payload.into_inner();
+    let mut deleted_count = 0;
+    let mut deleted_bytes = 0;
+
+    for id_str in identifier_list {
+        // Try parsing as UUID first
+        if let Ok(id) = Uuid::parse_str(&id_str) {
+            let media = sqlx::query_as::<_, Media>("SELECT * FROM media WHERE id = $1")
+                .bind(id)
+                .fetch_optional(pool.get_ref())
+                .await;
+
+            if let Ok(Some(m)) = media {
+                let stem = if m.path.to_lowercase().ends_with(".mp4") {
+                    &m.path[..m.path.len() - 4]
+                } else {
+                    &m.path
+                };
+                
+                let proxy_path = format!("{}.proxy.mp4", stem);
+                if let Ok(metadata) = std::fs::metadata(&proxy_path) {
+                    let size = metadata.len();
+                    if std::fs::remove_file(&proxy_path).is_ok() {
+                        deleted_count += 1;
+                        deleted_bytes += size;
+                    }
+                }
+            }
+        } else {
+            // Assume it's a direct path (orphans or branding)
+            let proxy_path = &id_str;
+            if let Ok(metadata) = std::fs::metadata(proxy_path) {
+                let size = metadata.len();
+                // Security check: ensure it actually ends with .proxy.mp4
+                if proxy_path.to_lowercase().ends_with(".proxy.mp4") && std::fs::remove_file(proxy_path).is_ok() {
+                    deleted_count += 1;
+                    deleted_bytes += size;
+                }
+            }
+        }
+    }
+
+    HttpResponse::Ok().json(serde_json::json!({
+        "deleted_count": deleted_count,
+        "deleted_bytes": deleted_bytes
+    }))
+}
+
+async fn media_health_check(pool: web::Data<PgPool>) -> impl Responder {
+    let videos = sqlx::query_as::<_, Media>("SELECT * FROM media WHERE media_type = 'video'")
+        .fetch_all(pool.get_ref())
+        .await;
+
+    match videos {
+        Ok(items) => {
+            let mut inconsistencies = Vec::new();
+            let ffmpeg = FFmpegService::new();
+            
+            for m in items {
+                let original_path = &m.path;
+                let stem = if original_path.to_lowercase().ends_with(".mp4") {
+                    &original_path[..original_path.len() - 4]
+                } else {
+                    original_path
+                };
+                
+                let proxy_path = format!("{}.proxy.mp4", stem);
+                let proxy_exists = std::path::Path::new(&proxy_path).exists();
+                
+                // Check if optimized
+                let is_optimized = ffmpeg.is_faststart_optimized(original_path);
+                
+                if !is_optimized {
+                    inconsistencies.push(serde_json::json!({
+                        "id": m.id,
+                        "filename": m.filename,
+                        "type": "not_optimized",
+                        "severity": "medium",
+                        "message": "Ficheiro não optimizado para fast-start streaming"
+                    }));
+                }
+
+                if !proxy_exists {
+                    // Not technically an error, but useful to know
+                }
+                
+                // Check thumbnail
+                if let Some(ref thumb) = m.thumbnail_path {
+                    if !std::path::Path::new(thumb).exists() {
+                        inconsistencies.push(serde_json::json!({
+                            "id": m.id,
+                            "filename": m.filename,
+                            "type": "missing_thumbnail",
+                            "severity": "low",
+                            "message": "Miniatura não encontrada no disco"
+                        }));
+                    }
+                }
+            }
+            
+            // Heuristic for orphan proxies: check media directory for *.proxy.mp4
+            // and see if they correspond to a file in the DB.
+            // (Limiting to a simple check here to avoid timeouts on large libraries)
+            
+            HttpResponse::Ok().json(serde_json::json!({
+                "status": "completed",
+                "inconsistencies_count": inconsistencies.len(),
+                "inconsistencies": inconsistencies,
+                "timestamp": chrono::Utc::now()
+            }))
+        }
+        Err(e) => {
+            log::error!("Health check DB error index: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({"error": "DB error"}))
+        }
+    }
+}
+
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.route("", web::get().to(list_media))
         .route("/folders", web::get().to(list_folders))
         .route("/folders", web::post().to(create_folder))
         .route("/folders/{id}", web::delete().to(delete_folder))
         .route("/stats/proxy", web::get().to(get_proxy_stats))
+        .route("/proxies", web::get().to(list_proxies))
+        .route("/proxies/delete", web::post().to(delete_specific_proxies))
         .route("/proxies/purge", web::delete().to(purge_proxies))
+        .route("/health-check", web::get().to(media_health_check))
         .route("/{id}/tasks", web::get().to(get_media_tasks))
         .route("/{id}/move", web::post().to(move_media))
         .route("/{id}/copy", web::post().to(copy_media))
