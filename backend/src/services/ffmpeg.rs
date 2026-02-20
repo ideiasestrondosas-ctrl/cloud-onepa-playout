@@ -199,17 +199,13 @@ impl FFmpegService {
         Ok(())
     }
 
-    /// Check if an MP4 file has faststart enabled (moov atom at beginning)
-    /// Returns true if the file is optimized for streaming
-    #[allow(dead_code)]
     pub fn is_faststart_optimized(&self, file_path: &str) -> bool {
         // Use ffprobe to check atom positions
+        // Optimized files (faststart) have the 'moov' atom before the 'mdat' atom
         let output = Command::new(&self.ffprobe_path)
             .args(&[
                 "-v",
-                "quiet",
-                "-print_format",
-                "json",
+                "trace",
                 "-show_format",
                 file_path,
             ])
@@ -218,12 +214,14 @@ impl FFmpegService {
         match output {
             Ok(o) => {
                 if o.status.success() {
-                    // Simple heuristic: if file starts with ftyp and moov appears early
-                    // A more robust check would parse the actual atom structure
-                    let _json_str = String::from_utf8_lossy(&o.stdout);
-                    // For now, we'll return false and let the optimization run
-                    // A proper implementation would parse the JSON and check atom positions
-                    false
+                    let stderr = String::from_utf8_lossy(&o.stderr);
+                    let moov_pos = stderr.find("type='moov'");
+                    let mdat_pos = stderr.find("type='mdat'");
+                    
+                    match (moov_pos, mdat_pos) {
+                        (Some(moov), Some(mdat)) => moov < mdat,
+                        _ => false,
+                    }
                 } else {
                     false
                 }

@@ -1470,10 +1470,19 @@ function Settings() {
                   </Typography>
                 </Box>
                 <Box sx={{ textAlign: 'right' }}>
-                  <Typography variant="h4" sx={{ fontWeight: 'black', color: 'secondary.main' }}>
-                    {((proxyStats?.total_bytes || 0) / 1024 / 1024).toFixed(2)} <Typography component="span" variant="h6" sx={{ fontWeight: 800, color: 'text.secondary' }}>MB</Typography>
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>{proxyStats?.proxy_count || 0} PROXIES GERADOS</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 0.5 }}>ESPAÇO TOTAL EM DISCO (CACHE)</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
+                    <Typography variant="h4" sx={{ fontWeight: 'black', color: 'secondary.main', lineHeight: 1 }}>
+                      {((proxyStats?.total_bytes || 0) / 1024 / 1024).toFixed(2)}
+                      <Typography component="span" variant="h6" sx={{ fontWeight: 800, color: 'text.secondary', ml: 0.5 }}>MB</Typography>
+                    </Typography>
+                    <Tooltip title="Actualizar Métricas">
+                      <IconButton size="small" onClick={fetchProxyStats} sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}>
+                        <RefreshIcon sx={{ fontSize: 20 }} />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, mt: 1, display: 'block' }}>{proxyStats?.proxy_count || 0} PROXIES WEB ACTIVOS</Typography>
                 </Box>
               </Box>
 

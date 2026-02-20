@@ -191,6 +191,8 @@ zip -r "$ZIP_NAME" . \
     -x "node_modules/*" \
     -x "*.zip" \
     -x "*.log" \
+    -x "*.proxy.mp4" \
+    -x "*.optimized.mp4" \
     -x "*$EXCLUDE_FILE" \
     -x "*/$EXCLUDE_FILE" || {
     ZIP_EXIT=$?

@@ -129,13 +129,14 @@ export default function MediaLibrary() {
 
   // Polling for active tasks
   useEffect(() => {
+    if (media.length === 0) return;
+
     const pollTasks = async () => {
-      // Find media items that might have active tasks (or just poll for all shown media for simplicity)
       const mediaWithPossibleTasks = media.filter(m => m.media_type === 'video');
       if (mediaWithPossibleTasks.length === 0) return;
 
-      const newTasks = { ...activeTasks };
       let changed = false;
+      const updatedTasks = {};
 
       for (const item of mediaWithPossibleTasks) {
         try {
@@ -146,27 +147,34 @@ export default function MediaLibrary() {
           const active = tasks.filter(t => t.status === 'pending' || t.status === 'processing');
 
           if (active.length > 0) {
-            newTasks[item.id] = active;
-            changed = true;
-          } else if (newTasks[item.id]) {
-            // Task finished, clear it and refresh media to update icons (like has_proxy)
-            delete newTasks[item.id];
-            changed = true;
-            fetchMedia();
+            updatedTasks[item.id] = active;
           }
         } catch (error) {
           console.error(`Failed to fetch tasks for ${item.id}:`, error);
         }
       }
 
-      if (changed) {
-        setActiveTasks(newTasks);
-      }
+      // Compare with current activeTasks to avoid unnecessary state updates
+      setActiveTasks(prev => {
+        const currentKeys = Object.keys(prev);
+        const newKeys = Object.keys(updatedTasks);
+
+        // If keys changed or a finished task needs media refresh
+        const finishedMediaIds = currentKeys.filter(id => !newKeys.includes(id));
+        if (finishedMediaIds.length > 0) {
+          fetchMedia(); // Refresh media if tasks finished
+        }
+
+        if (JSON.stringify(prev) !== JSON.stringify(updatedTasks)) {
+          return updatedTasks;
+        }
+        return prev;
+      });
     };
 
-    const interval = setInterval(pollTasks, 3000);
+    const interval = setInterval(pollTasks, 4000);
     return () => clearInterval(interval);
-  }, [media, activeTasks]);
+  }, [media.length, filters.page, filters.search]); // Use length and basic filters instead of full media array
 
   const fetchMedia = async () => {
     setLoading(true);

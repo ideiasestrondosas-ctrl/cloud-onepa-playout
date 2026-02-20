@@ -1168,6 +1168,16 @@ async fn optimize_for_streaming(
             let original_path = path.to_string_lossy().to_string();
             let optimized_path = format!("{}.optimized.mp4", original_path.trim_end_matches(".mp4"));
 
+            // Check if already optimized
+            let ffmpeg = FFmpegService::new();
+            if ffmpeg.is_faststart_optimized(&original_path) {
+                log::info!("Video already optimized for streaming: {}", original_path);
+                return HttpResponse::Ok().json(serde_json::json!({
+                    "message": "Video is already optimized for streaming",
+                    "media_id": media.id
+                }));
+            }
+
             log::info!("Starting optimization (BG): {} -> {}", original_path, optimized_path);
             
             let pool_bg = pool.get_ref().clone();
@@ -1254,6 +1264,15 @@ async fn generate_proxy(
 
             let original_path = path.to_string_lossy().to_string();
             let proxy_path = format!("{}.proxy.mp4", original_path.trim_end_matches(".mp4"));
+
+            // Check if proxy already exists
+            if std::path::Path::new(&proxy_path).exists() {
+                log::info!("Proxy already exists for: {}", original_path);
+                return HttpResponse::Ok().json(serde_json::json!({
+                    "message": "Proxy already exists",
+                    "media_id": media.id
+                }));
+            }
 
             log::info!("Starting proxy generation (BG): {} -> {}", original_path, proxy_path);
             

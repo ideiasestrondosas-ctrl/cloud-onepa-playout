@@ -25,3 +25,5 @@ frontend/build_log*.txt
 backend/data/assets/protected/big_buck_bunny_1080p_h264.mov
 big_buck_bunny_1080p_h264.mov
 **/big_buck_bunny_1080p_h264.mov
+*.proxy.mp4
+*.optimized.mp4
