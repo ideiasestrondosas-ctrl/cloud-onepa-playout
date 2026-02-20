@@ -30,6 +30,8 @@ import graphicsService from '../services/graphicsLayersAPI';
 import { useNotification } from '../contexts/NotificationContext';
 import LayerManager from '../components/GraphicsLayers/LayerManager';
 import LayerPreview from '../components/GraphicsLayers/LayerPreview';
+import videojs from 'video.js';
+import 'video.js/dist/video-js.css';
 
 export default function GraphicsEditor() {
   const { showSuccess, showError } = useNotification();
@@ -97,6 +99,44 @@ export default function GraphicsEditor() {
     const iv = setInterval(check, 5000);
     return () => clearInterval(iv);
   }, []);
+
+  // Video.js HLS player for clean preview in GraphicsEditor (works in Chrome/Firefox/Linux)
+  const cleanVideoRef = useRef(null);
+  const cleanPlayerRef = useRef(null);
+
+  useEffect(() => {
+    if (isLivePlaying && cleanVideoRef.current && !cleanPlayerRef.current) {
+      cleanPlayerRef.current = videojs(cleanVideoRef.current, {
+        controls: false,
+        autoplay: true,
+        muted: true,
+        preload: 'auto',
+        fluid: false,
+        fill: true,
+        liveui: true,
+        html5: { vhs: { overrideNative: true } },
+        sources: [
+          { src: '/hls/stream_clean.m3u8', type: 'application/x-mpegURL' },
+        ],
+      });
+      cleanPlayerRef.current.on('error', () => {
+        // Fallback to low quality stream if clean not yet available
+        if (cleanPlayerRef.current) {
+          cleanPlayerRef.current.src({ src: '/hls/stream_low.m3u8', type: 'application/x-mpegURL' });
+        }
+      });
+    }
+    if (!isLivePlaying && cleanPlayerRef.current) {
+      cleanPlayerRef.current.dispose();
+      cleanPlayerRef.current = null;
+    }
+    return () => {
+      if (cleanPlayerRef.current) {
+        cleanPlayerRef.current.dispose();
+        cleanPlayerRef.current = null;
+      }
+    };
+  }, [isLivePlaying]);
 
   // Cache-bust key for the logo preview image
   const [logoCacheBust, setLogoCacheBust] = useState(Date.now());
@@ -292,31 +332,28 @@ export default function GraphicsEditor() {
                     ))}
                   </Box>
                 )}
-                {/* Live HLS feed background — clean stream (no logo overlay) */}
+                {/* Live HLS feed background — clean stream (no logo overlay) — uses video.js for Chrome/Firefox compat */}
                 {isLivePlaying && (
                   <Box
-                    component="video"
-                    src="/hls/stream_clean.m3u8"
-                    autoPlay
-                    muted
-                    loop={false}
-                    playsInline
-                    onError={(e) => {
-                      // Fallback to stream_low if clean not yet available
-                      if (e.target.src.includes('stream_clean')) {
-                        e.target.src = '/hls/stream_low.m3u8';
-                      }
-                    }}
                     sx={{
                       position: 'absolute', top: 0, left: 0,
                       width: '100%', height: '100%',
-                      objectFit: 'contain',
                       zIndex: 0,
                       pointerEvents: 'none',
-                      opacity: 1,
                       bgcolor: '#000',
+                      '& .video-js': { width: '100% !important', height: '100% !important' },
+                      '& .vjs-big-play-button': { display: 'none' },
+                      '& .vjs-control-bar': { display: 'none' },
                     }}
-                  />
+                  >
+                    <div data-vjs-player style={{ width: '100%', height: '100%' }}>
+                      <video
+                        ref={cleanVideoRef}
+                        className="video-js"
+                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                      />
+                    </div>
+                  </Box>
                 )}
 
                 <Box

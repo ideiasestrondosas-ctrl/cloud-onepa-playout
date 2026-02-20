@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNotification } from '../contexts/NotificationContext';
 import {
   Box,
@@ -113,6 +113,7 @@ export default function MediaLibrary() {
   const [selectedItemIds, setSelectedItemIds] = useState([]);
   const [performingBulkAction, setPerformingBulkAction] = useState(false);
   const [activeTasks, setActiveTasks] = useState({}); // { mediaId: [task1, task2] }
+  const finishedIdsRef = React.useRef([]); // Track IDs that just finished for safe fetchMedia call
 
   // Debounce search
   useEffect(() => {
@@ -135,55 +136,68 @@ export default function MediaLibrary() {
       const mediaWithPossibleTasks = media.filter(m => m.media_type === 'video');
       if (mediaWithPossibleTasks.length === 0) return;
 
-      let changed = false;
       const updatedTasks = {};
+      const justFinished = [];
+      const prevIds = Object.keys(activeTasks);
 
       for (const item of mediaWithPossibleTasks) {
         try {
           const response = await mediaAPI.getMediaTasks(item.id);
           const tasks = response.data;
 
-          // Filter active and recently failed tasks
+          // Filter active and recently failed tasks (keep failed for 2 min for UI feedback)
           const activeOrFailed = tasks.filter(t =>
             t.status === 'pending' ||
             t.status === 'processing' ||
-            (t.status === 'failed' && (new Date() - new Date(t.created_at)) < 120000) // Keep failed for 2 mins
+            (t.status === 'failed' && (new Date() - new Date(t.created_at)) < 120000)
           );
+
+          // Notify user about newly-failed tasks
+          const failedTasks = activeOrFailed.filter(t => t.status === 'failed');
+          const existingFailed = (activeTasks[item.id] || []).filter(t => t.status === 'failed');
+          for (const ft of failedTasks) {
+            if (!existingFailed.some(e => e.id === ft.id)) {
+              showError(`Erro ao processar "${item.filename}": ${ft.error_message || ft.task_type}`);
+            }
+          }
 
           if (activeOrFailed.length > 0) {
             updatedTasks[item.id] = activeOrFailed;
-            console.log(`[MediaLibrary] Tasks for ${item.id}:`, activeOrFailed);
           }
         } catch (error) {
           console.error(`Failed to fetch tasks for ${item.id}:`, error);
         }
       }
 
-      if (Object.keys(updatedTasks).length > 0) {
-        console.log('[MediaLibrary] Setting activeTasks:', updatedTasks);
+      // Detect tasks that just finished: were in prev, not in new
+      for (const id of prevIds) {
+        if (!updatedTasks[id]) {
+          justFinished.push(id);
+        }
       }
 
-      // Compare with current activeTasks to avoid unnecessary state updates
+      // Store finished IDs so the side-effect below can safely call fetchMedia
+      if (justFinished.length > 0) {
+        finishedIdsRef.current = justFinished;
+      }
+
       setActiveTasks(prev => {
-        const currentKeys = Object.keys(prev);
-        const newKeys = Object.keys(updatedTasks);
-
-        // If keys changed or a finished task needs media refresh
-        const finishedMediaIds = currentKeys.filter(id => !newKeys.includes(id));
-        if (finishedMediaIds.length > 0) {
-          fetchMedia(); // Refresh media if tasks finished
-        }
-
-        if (JSON.stringify(prev) !== JSON.stringify(updatedTasks)) {
-          return updatedTasks;
-        }
-        return prev;
+        if (JSON.stringify(prev) === JSON.stringify(updatedTasks)) return prev;
+        return updatedTasks;
       });
     };
 
     const interval = setInterval(pollTasks, 4000);
     return () => clearInterval(interval);
-  }, [media.length, filters.page, filters.search]); // Use length and basic filters instead of full media array
+  }, [media.length, filters.page, filters.search, activeTasks]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Safe side-effect: call fetchMedia when tasks finish (outside of state updater)
+  useEffect(() => {
+    if (finishedIdsRef.current.length > 0) {
+      finishedIdsRef.current = [];
+      fetchMedia();
+    }
+  }, [activeTasks]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchMedia = async () => {
     setLoading(true);
@@ -965,10 +979,22 @@ export default function MediaLibrary() {
                               }}
                               onClick={async () => {
                                 try {
-                                  showInfo(`Otimização de "${item.filename}" iniciada em background.`);
-                                  await mediaAPI.optimizeForStreaming(item.id);
+                                  // Optimistic state: show spinner immediately without waiting for poll
+                                  setActiveTasks(prev => ({
+                                    ...prev,
+                                    [item.id]: [...(prev[item.id] || []), { id: `opt-local-${item.id}`, task_type: 'optimize', status: 'pending', created_at: new Date().toISOString() }]
+                                  }));
+                                  const response = await mediaAPI.optimizeForStreaming(item.id);
+                                  if (response?.data?.status === 'instant' || response?.status === 200) {
+                                    // Fast-track: completed instantly, refresh immediately
+                                    await fetchMedia();
+                                    setActiveTasks(prev => { const n = { ...prev }; delete n[item.id]; return n; });
+                                  } else {
+                                    showInfo(`Otimização de "${item.filename}" iniciada em background.`);
+                                  }
                                 } catch (err) {
-                                  showError(`Erro ao iniciar otimização: ${err.response?.data?.error || err.message}`);
+                                  setActiveTasks(prev => { const n = { ...prev }; delete n[item.id]?.filter(t => t.id !== `opt-local-${item.id}`); return n; });
+                                  showError(`Erro ao optimizar: ${err.response?.data?.error || err.message}`);
                                 }
                               }}
                               disabled={item.is_optimized || activeTasks[item.id]?.some(t => t.task_type === 'optimize' && (t.status === 'pending' || t.status === 'processing'))}
@@ -998,9 +1024,21 @@ export default function MediaLibrary() {
                               }}
                               onClick={async () => {
                                 try {
-                                  showInfo(`Geração de proxy para "${item.filename}" iniciada em background.`);
-                                  await mediaAPI.generateProxy(item.id);
+                                  // Optimistic state: show spinner before next poll cycle
+                                  setActiveTasks(prev => ({
+                                    ...prev,
+                                    [item.id]: [...(prev[item.id] || []), { id: `proxy-local-${item.id}`, task_type: 'proxy', status: 'pending', created_at: new Date().toISOString() }]
+                                  }));
+                                  const response = await mediaAPI.generateProxy(item.id);
+                                  if (response?.data?.instant || response?.data?.status === 'instant') {
+                                    // Hard-link / zero-byte — completed instantly, no background task
+                                    await fetchMedia();
+                                    setActiveTasks(prev => { const n = { ...prev }; delete n[item.id]; return n; });
+                                  } else {
+                                    showInfo(`Geração de proxy para "${item.filename}" iniciada em background.`);
+                                  }
                                 } catch (err) {
+                                  setActiveTasks(prev => { const n = { ...prev }; delete n[item.id]; return n; });
                                   showError(`Erro ao iniciar geração de proxy: ${err.response?.data?.error || err.message}`);
                                 }
                               }}

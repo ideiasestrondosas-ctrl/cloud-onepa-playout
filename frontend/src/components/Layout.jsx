@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import useAuthStore from '../stores/authStore';
 import { settingsAPI } from '../services/api';
@@ -34,11 +34,57 @@ import {
 import { useHelp } from '../context/HelpContext';
 import ConnectivityStatus from './ConnectivityStatus';
 
+// === PERFORMANCE: Isolated clock component — only this re-renders every second ===
+const AppClock = memo(() => {
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const formatDate = (date) =>
+    date.toLocaleDateString('pt-PT', {
+      weekday: 'short',
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    }).replace('.', '');
+
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5 }}>
+      <Typography
+        variant="h4"
+        className="neon-text"
+        sx={{
+          fontFamily: '"Orbitron", "monospace"',
+          fontWeight: '700',
+          lineHeight: 1,
+          fontSize: { xs: '1.5rem', md: '2rem' },
+        }}
+      >
+        {now.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+      </Typography>
+      <Typography
+        variant="subtitle2"
+        sx={{
+          color: 'text.secondary',
+          fontWeight: '600',
+          textTransform: 'uppercase',
+          letterSpacing: 2,
+          fontSize: '0.7rem',
+        }}
+      >
+        {formatDate(now)}
+      </Typography>
+    </Box>
+  );
+});
+AppClock.displayName = 'AppClock';
+
 const AppLogo = ({ version, settings, loading }) => {
   const location = useLocation();
-  const isSettingsPage = location.pathname === '/settings';
 
-  // Show loading spinner while settings are being fetched
   if (loading || !settings) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 2.5, minHeight: '120px' }}>
@@ -56,7 +102,7 @@ const AppLogo = ({ version, settings, loading }) => {
         justifyContent: 'center',
         minHeight: '80px',
       }}>
-        {settings.branding_type !== 'static' ? ( // Default to video if 'video', null, or undefined
+        {settings.branding_type !== 'static' ? (
           <video
             src={settings.logo_path || "/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4"}
             autoPlay
@@ -65,8 +111,6 @@ const AppLogo = ({ version, settings, loading }) => {
             playsInline
             style={{ width: '100%', height: 'auto', maxHeight: '80px', objectFit: 'contain' }}
             onError={(e) => {
-              console.error('Video logo failed to load:', e);
-              // Fallback to default video
               e.target.src = "/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4";
             }}
           />
@@ -76,8 +120,6 @@ const AppLogo = ({ version, settings, loading }) => {
             src={settings.logo_path || "/assets/protected/Cloud_Onepa_Playout_Infinity_Logo_remodelado.png"}
             sx={{ width: '100%', height: 'auto', maxHeight: '80px', objectFit: 'contain' }}
             onError={(e) => {
-              console.error('Image logo failed to load:', e);
-              // Hide broken image
               e.target.style.display = 'none';
             }}
           />
@@ -90,16 +132,6 @@ const AppLogo = ({ version, settings, loading }) => {
           ONEPA PLAYOUT
         </Typography>
       </Box>
-
-      <style>
-        {`
-          @keyframes pulse {
-            0% { opacity: 0.8; }
-            50% { opacity: 1; transform: scale(1.05); }
-            100% { opacity: 0.8; }
-          }
-        `}
-      </style>
     </Box>
   );
 };
@@ -134,7 +166,6 @@ export default function Layout({ children }) {
         const response = await settingsAPI.get();
         setVersion(response.data.system_version || 'v2.2.0-ALPHA.19-PRO');
         const data = response.data;
-        // Default to video/animated branding if not set
         if (!data.branding_type) {
           data.branding_type = 'video';
           data.logo_path = data.logo_path || '/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4';
@@ -149,13 +180,6 @@ export default function Layout({ children }) {
     fetchSettings();
   }, []);
 
-  const [now, setNow] = useState(new Date());
-
-  useEffect(() => {
-    const clockInterval = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(clockInterval);
-  }, []);
-
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
@@ -163,15 +187,6 @@ export default function Layout({ children }) {
   const handleLogout = () => {
     logout();
     navigate('/login');
-  };
-
-  const formatDate = (date) => {
-    return date.toLocaleDateString('pt-PT', {
-      weekday: 'short',
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    }).replace('.', '');
   };
 
   const drawer = (
@@ -212,14 +227,14 @@ export default function Layout({ children }) {
   return (
     <Box sx={{ display: 'flex', bgcolor: 'background.default', minHeight: '100vh' }}>
       <ConnectivityStatus />
+      {/* PERFORMANCE: backdrop-filter:blur removed — use solid opaque bg instead */}
       <AppBar
         position="fixed"
         sx={{
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           ml: { sm: `${drawerWidth}px` },
-          bgcolor: 'rgba(10, 11, 16, 0.5)',
-          backdropFilter: 'blur(12px)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          bgcolor: 'rgba(10, 11, 16, 0.97)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
           boxShadow: 'none',
           color: 'text.primary'
         }}
@@ -235,40 +250,17 @@ export default function Layout({ children }) {
           </IconButton>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, flexGrow: 1 }}>
             <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5 }}>
-              <Typography
-                variant="h4"
-                className="neon-text"
-                sx={{
-                  fontFamily: '"Orbitron", "monospace"',
-                  fontWeight: '700',
-                  lineHeight: 1,
-                  fontSize: { xs: '1.5rem', md: '2rem' }
-                }}
-              >
-                {now.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-              </Typography>
-              <Typography
-                variant="subtitle2"
-                sx={{
-                  color: 'text.secondary',
-                  fontWeight: '600',
-                  textTransform: 'uppercase',
-                  letterSpacing: 2,
-                  fontSize: '0.7rem'
-                }}
-              >
-                {formatDate(now)}
-              </Typography>
+              {/* PERFORMANCE: AppClock is isolated — re-renders every 1s without causing Layout re-render */}
+              <AppClock />
 
               {version && version.includes('ALPHA') && (
+                // PERFORMANCE: removed `animation: pulse 2s infinite` — was causing non-stop GPU repaint
                 <Box sx={{
                   display: 'inline-block',
                   px: 1.5,
                   py: 0.5,
                   bgcolor: 'error.main',
                   borderRadius: 1,
-                  boxShadow: '0 0 10px rgba(211, 47, 47, 0.4)',
-                  animation: 'pulse 2s infinite',
                   border: '1px solid rgba(255,255,255,0.1)',
                   ml: 1
                 }}>
@@ -301,6 +293,7 @@ export default function Layout({ children }) {
         component="nav"
         sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
       >
+        {/* PERFORMANCE: backdrop-filter:blur removed from both Drawers */}
         <Drawer
           variant="temporary"
           open={mobileOpen}
@@ -311,9 +304,8 @@ export default function Layout({ children }) {
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
               width: drawerWidth,
-              backgroundColor: 'rgba(10, 11, 16, 0.9)',
-              backdropFilter: 'blur(20px)',
-              borderRight: '1px solid rgba(255, 255, 255, 0.1)'
+              backgroundColor: 'rgba(10, 11, 16, 0.98)',
+              borderRight: '1px solid rgba(255, 255, 255, 0.08)'
             },
           }}
         >
@@ -326,9 +318,8 @@ export default function Layout({ children }) {
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
               width: drawerWidth,
-              backgroundColor: 'rgba(10, 11, 16, 0.8)',
-              backdropFilter: 'blur(12px)',
-              borderRight: '1px solid rgba(255, 255, 255, 0.1)'
+              backgroundColor: 'rgba(10, 11, 16, 0.98)',
+              borderRight: '1px solid rgba(255, 255, 255, 0.08)'
             },
           }}
           open
@@ -351,4 +342,3 @@ export default function Layout({ children }) {
     </Box>
   );
 }
-

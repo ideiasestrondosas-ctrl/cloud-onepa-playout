@@ -1443,6 +1443,83 @@ function Settings() {
                   </Grid>
                 ))}
               </Grid>
+
+              {/* Conection Links */}
+              <Box sx={{ mt: 4, pt: 4, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <LanguageIcon fontSize="small" /> LINKS DIRECTOS DE CONEXÃO (VLC, OBS)
+                </Typography>
+                <Grid container spacing={2}>
+                  {settings.rtmpEnabled && (
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="RTMP (Mestre de Distribuição Local)"
+                        value={`rtmp://${window.location.hostname}:1935/live_stream`}
+                        InputProps={{
+                          readOnly: true,
+                          sx: { fontFamily: 'monospace', fontSize: '0.85rem', bgcolor: 'rgba(0,0,0,0.2)' },
+                          endAdornment: (
+                            <IconButton onClick={() => {
+                              navigator.clipboard.writeText(`rtmp://${window.location.hostname}:1935/live_stream`);
+                            }}>
+                              <ContentCopyIcon fontSize="small" />
+                            </IconButton>
+                          )
+                        }}
+                      />
+                    </Grid>
+                  )}
+                  {settings.srtEnabled && (
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="SRT - Secure Reliable Transport (UDP)"
+                        value={`srt://${window.location.hostname}:8890?streamid=read:live_stream_srt`}
+                        helperText="Atenção: A porta deve estar aberta em UDP. Clients devem solicitar explicitamente 'read:'"
+                        InputProps={{
+                          readOnly: true,
+                          sx: { fontFamily: 'monospace', fontSize: '0.85rem', bgcolor: 'rgba(0,0,0,0.2)' },
+                          endAdornment: (
+                            <IconButton onClick={() => {
+                              navigator.clipboard.writeText(`srt://${window.location.hostname}:8890?streamid=read:live_stream_srt`);
+                            }}>
+                              <ContentCopyIcon fontSize="small" />
+                            </IconButton>
+                          )
+                        }}
+                      />
+                    </Grid>
+                  )}
+                  {settings.hlsEnabled && (
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="HLS Playlist"
+                        value={`${window.location.origin}/hls/stream.m3u8`}
+                        InputProps={{
+                          readOnly: true,
+                          sx: { fontFamily: 'monospace', fontSize: '0.85rem', bgcolor: 'rgba(0,0,0,0.2)' },
+                          endAdornment: (
+                            <IconButton onClick={() => {
+                              navigator.clipboard.writeText(`${window.location.origin}/hls/stream.m3u8`);
+                            }}>
+                              <ContentCopyIcon fontSize="small" />
+                            </IconButton>
+                          )
+                        }}
+                      />
+                    </Grid>
+                  )}
+                  {!settings.rtmpEnabled && !settings.srtEnabled && !settings.hlsEnabled && (
+                    <Grid item xs={12}>
+                      <Alert severity="info" variant="outlined" sx={{ borderColor: 'rgba(255,255,255,0.1)', color: 'text.secondary' }}>
+                        Active pelo menos um protocolo acima (RTMP, SRT, HLS) para revelar as portas e links dedicados.
+                      </Alert>
+                    </Grid>
+                  )}
+                </Grid>
+              </Box>
             </Paper>
           </TabPanel>
 
