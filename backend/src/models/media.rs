@@ -22,6 +22,18 @@ pub struct Media {
 }
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct MediaTask {
+    pub id: Uuid,
+    pub media_id: Uuid,
+    pub task_type: String, // 'proxy', 'optimize'
+    pub status: String,    // 'pending', 'processing', 'completed', 'failed'
+    pub error_message: Option<String>,
+    pub progress: Option<f32>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct Folder {
     pub id: Uuid,
     pub name: String,

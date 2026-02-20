@@ -79,6 +79,11 @@ export const mediaAPI = {
   checkUsage: (id) => api.get(`/media/${id}/usage`),
   replaceWithFiller: (id) => api.post(`/media/${id}/replace-with-filler`),
   fetchMetadata: (id) => api.post(`/media/${id}/fetch-metadata`),
+  optimizeForStreaming: (id) => api.post(`/media/${id}/optimize`),
+  generateProxy: (id) => api.post(`/media/${id}/proxy`),
+  getProxyStats: () => api.get(`/media/stats/proxy`),
+  purgeProxies: () => api.delete(`/media/proxies/purge`),
+  getMediaTasks: (id) => api.get(`/media/${id}/tasks`),
 };
 
 // Playlist endpoints

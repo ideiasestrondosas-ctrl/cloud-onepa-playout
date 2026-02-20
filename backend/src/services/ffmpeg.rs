@@ -133,6 +133,105 @@ impl FFmpegService {
         Ok(())
     }
 
+    /// Optimize MP4 for web streaming by moving moov atom to the beginning
+    /// This allows the video to start playing immediately without downloading the entire file
+    pub fn optimize_for_streaming(
+        &self,
+        input_path: &str,
+        output_path: &str,
+    ) -> Result<(), String> {
+        log::info!("Optimizing MP4 for streaming: {} -> {}", input_path, output_path);
+        
+        let output = Command::new(&self.ffmpeg_path)
+            .args(&[
+                "-i",
+                input_path,
+                "-c",
+                "copy",           // No re-encoding, just copy streams
+                "-movflags",
+                "+faststart",     // Move moov atom to beginning
+                "-y",
+                output_path,
+            ])
+            .output()
+            .map_err(|e| format!("Failed to execute ffmpeg: {}", e))?;
+
+        if !output.status.success() {
+            let error = String::from_utf8_lossy(&output.stderr);
+            return Err(format!("FFmpeg streaming optimization failed: {}", error));
+        }
+
+        log::info!("Successfully optimized MP4 for streaming: {}", output_path);
+        Ok(())
+    }
+
+    /// Generate a lightweight proxy version of a video for web preview
+    /// Target: 720p, H.264, AAC, CRF 23, +faststart
+    pub fn generate_proxy(
+        &self,
+        input_path: &str,
+        output_path: &str,
+    ) -> Result<(), String> {
+        log::info!("Generating web proxy: {} -> {}", input_path, output_path);
+
+        let output = Command::new(&self.ffmpeg_path)
+            .args(&[
+                "-i", input_path,
+                "-vf", "scale=-1:720", // Resize to 720p height, keep aspect ratio
+                "-c:v", "libx264",
+                "-preset", "veryfast",
+                "-crf", "23",          // High quality, but very efficient
+                "-c:a", "aac",
+                "-b:a", "128k",
+                "-movflags", "+faststart",
+                "-y",
+                output_path,
+            ])
+            .output()
+            .map_err(|e| format!("Failed to execute ffmpeg for proxy: {}", e))?;
+
+        if !output.status.success() {
+            let error = String::from_utf8_lossy(&output.stderr);
+            return Err(format!("FFmpeg proxy generation failed: {}", error));
+        }
+
+        log::info!("Successfully generated web proxy: {}", output_path);
+        Ok(())
+    }
+
+    /// Check if an MP4 file has faststart enabled (moov atom at beginning)
+    /// Returns true if the file is optimized for streaming
+    #[allow(dead_code)]
+    pub fn is_faststart_optimized(&self, file_path: &str) -> bool {
+        // Use ffprobe to check atom positions
+        let output = Command::new(&self.ffprobe_path)
+            .args(&[
+                "-v",
+                "quiet",
+                "-print_format",
+                "json",
+                "-show_format",
+                file_path,
+            ])
+            .output();
+
+        match output {
+            Ok(o) => {
+                if o.status.success() {
+                    // Simple heuristic: if file starts with ftyp and moov appears early
+                    // A more robust check would parse the actual atom structure
+                    let _json_str = String::from_utf8_lossy(&o.stdout);
+                    // For now, we'll return false and let the optimization run
+                    // A proper implementation would parse the JSON and check atom positions
+                    false
+                } else {
+                    false
+                }
+            }
+            Err(_) => false,
+        }
+    }
+
     /// Validate media file
     #[allow(dead_code)]
     pub fn validate_media(&self, file_path: &str) -> Result<bool, String> {
@@ -173,7 +272,7 @@ impl FFmpegService {
         Ok(false)
     }
 
-    /// Convert media to standard format
+    /// Convert media to standard format with web-optimized streaming
     #[allow(dead_code)]
     pub fn normalize_media(
         &self,
@@ -198,6 +297,8 @@ impl FFmpegService {
                 "aac",
                 "-b:a",
                 "192k",
+                "-movflags",
+                "+faststart",  // Move moov atom to beginning for fast streaming
                 "-y",
                 output_path,
             ])
@@ -254,10 +355,10 @@ impl FFmpegService {
         let mut final_url = output_url.to_string();
 
         if output_url.starts_with("rtmp://") {
-            log::info!("📡 RTMP: Mapping host to mediamtx");
+            log::info!("📡 RTMP: Mapping host to mediamtx (with auth)");
             final_url = final_url
-                .replace("localhost", "mediamtx")
-                .replace("127.0.0.1", "mediamtx");
+                .replace("rtmp://localhost", "rtmp://backend:backend@mediamtx")
+                .replace("rtmp://127.0.0.1", "rtmp://backend:backend@mediamtx");
         } else if output_url.starts_with("srt://") {
             if output_url.contains("mode=listener") || output_url.contains("listen=1") {
                 log::info!("🎧 SRT LISTENER: Binding to all interfaces (empty host)");

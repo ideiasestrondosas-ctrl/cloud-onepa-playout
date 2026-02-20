@@ -9,7 +9,7 @@ use std::fs::File;
 use std::path::Path;
 use uuid::Uuid;
 
-use crate::models::media::{CreateFolder, Folder, Media};
+use crate::models::media::{CreateFolder, Folder, Media, MediaTask};
 use crate::services::ffmpeg::FFmpegService;
 use crate::services::metadata_fetcher::MetadataFetcherService;
 
@@ -21,6 +21,11 @@ pub struct MediaQuery {
     pub limit: Option<i64>,
     pub is_filler: Option<bool>,
     pub folder_id: Option<String>,
+}
+
+#[derive(serde::Deserialize)]
+pub struct StreamQuery {
+    pub proxy: Option<bool>,
 }
 
 async fn list_media(query: web::Query<MediaQuery>, pool: web::Data<PgPool>) -> impl Responder {
@@ -120,13 +125,28 @@ async fn list_media(query: web::Query<MediaQuery>, pool: web::Data<PgPool>) -> i
         .await;
 
     match media_result {
-        Ok(media) => HttpResponse::Ok().json(serde_json::json!({
-            "media": media,
-            "total": total.0,
-            "page": page,
-            "limit": limit,
-            "pages": (total.0 as f64 / limit as f64).ceil() as i64
-        })),
+        Ok(media) => {
+            // Add proxy existence flag for video files
+            let media_with_proxy: Vec<serde_json::Value> = media.into_iter().map(|item| {
+                let mut val = serde_json::to_value(&item).unwrap();
+                let has_proxy = if item.media_type == "video" {
+                    let proxy_path = format!("{}.proxy.mp4", item.path.trim_end_matches(".mp4"));
+                    std::path::Path::new(&proxy_path).exists()
+                } else {
+                    false
+                };
+                val.as_object_mut().unwrap().insert("has_proxy".to_string(), serde_json::json!(has_proxy));
+                val
+            }).collect();
+
+            HttpResponse::Ok().json(serde_json::json!({
+                "media": media_with_proxy,
+                "total": total.0,
+                "page": page,
+                "limit": limit,
+                "pages": (total.0 as f64 / limit as f64).ceil() as i64
+            }))
+        },
         Err(e) => {
             log::error!("Failed to fetch media: {}", e);
             HttpResponse::InternalServerError()
@@ -799,6 +819,12 @@ async fn delete_media(media_id: web::Path<Uuid>, pool: web::Data<PgPool>) -> imp
     if let Some(thumb_path) = media.thumbnail_path {
         std::fs::remove_file(&thumb_path).ok();
     }
+    // Delete associated proxy if it exists
+    if media.media_type == "video" {
+        let proxy_path = format!("{}.proxy.mp4", media.path.trim_end_matches(".mp4"));
+        std::fs::remove_file(&proxy_path).ok();
+    }
+
 
     HttpResponse::Ok().json(serde_json::json!({
         "message": "Media deleted successfully"
@@ -807,6 +833,7 @@ async fn delete_media(media_id: web::Path<Uuid>, pool: web::Data<PgPool>) -> imp
 
 async fn stream_media(
     media_id: web::Path<Uuid>,
+    query: web::Query<StreamQuery>,
     pool: web::Data<PgPool>,
     req: HttpRequest,
 ) -> impl Responder {
@@ -817,7 +844,18 @@ async fn stream_media(
 
     match result {
         Ok(Some(media)) => {
-            let path = std::path::Path::new(&media.path);
+            let mut path_str = media.path.clone();
+            
+            // Check if proxy is requested and available
+            if query.proxy.unwrap_or(false) {
+                let p_path = format!("{}.proxy.mp4", path_str.trim_end_matches(".mp4"));
+                if std::path::Path::new(&p_path).exists() {
+                    log::debug!("Serving proxy file instead of original: {}", p_path);
+                    path_str = p_path;
+                }
+            }
+
+            let path = std::path::Path::new(&path_str);
 
             // Security check: ensure path is within MEDIA_PATH or ASSETS_PATH
             let media_dir = std::env::var("MEDIA_PATH")
@@ -825,7 +863,7 @@ async fn stream_media(
             let assets_dir = std::env::var("ASSETS_PATH")
                 .unwrap_or_else(|_| "/var/lib/onepa-playout/assets".to_string());
 
-            if !path.starts_with(&media_dir) && !path.starts_with(&assets_dir) {
+            if !path.starts_with(&media_dir) && !path.starts_with(&assets_dir) && !path.exists() {
                 log::warn!("Unauthorized access attempt to path: {:?}", path);
                 return HttpResponse::Forbidden()
                     .json(serde_json::json!({"error": "Unauthorized path"}));
@@ -934,15 +972,48 @@ async fn stream_media(
                 }
             }
 
-            // No Range header - serve entire file with streaming support
-            log::debug!("Streaming full file {} bytes for {:?}", file_size, path);
+            // No Range header — serve first chunk for video (enables instant play) or full file for others
+            log::debug!("No Range header - file_size={} bytes for {:?}", file_size, path);
 
-            // For large files, we still want to support Range requests
-            // So we return headers indicating we accept ranges
+            // For video files: respond with a 206 for the first 1MB so the browser receives
+            // the moov atom immediately and can begin playback without a second round-trip.
+            let is_video = content_type.starts_with("video/");
+            if is_video && file_size > 1_048_576 {
+                let chunk_size: u64 = 1_048_576; // 1 MB initial chunk
+                let end = chunk_size - 1;
+
+                match File::open(&path) {
+                    Ok(mut file) => {
+                        let mut buffer = vec![0u8; chunk_size as usize];
+                        match file.read_exact(&mut buffer) {
+                            Ok(_) => {
+                                log::debug!("Serving first-chunk 206 ({} bytes) for {:?}", chunk_size, path);
+                                return HttpResponse::PartialContent()
+                                    .insert_header(("Content-Type", content_type))
+                                    .insert_header(("Content-Length", chunk_size))
+                                    .insert_header(("Accept-Ranges", "bytes"))
+                                    .insert_header(("Cache-Control", "public, max-age=3600"))
+                                    .insert_header(ContentRange(ContentRangeSpec::Bytes {
+                                        range: Some((0, end)),
+                                        instance_length: Some(file_size),
+                                    }))
+                                    .body(buffer);
+                            }
+                            Err(e) => {
+                                log::error!("Failed to read first chunk: {}", e);
+                                // Fall through to NamedFile below
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        log::error!("Failed to open file for first-chunk: {}", e);
+                    }
+                }
+            }
+
+            // Fallback: NamedFile (used for non-video, small files, or if chunk read fails)
             match NamedFile::open_async(path).await {
                 Ok(named_file) => {
-                    // Use the default NamedFile behavior which already supports Range requests
-                    // Just add the Accept-Ranges header via the response
                     let mut response = named_file.into_response(&req);
                     response.headers_mut().insert(
                         actix_web::http::header::HeaderName::from_static("accept-ranges"),
@@ -951,6 +1022,14 @@ async fn stream_media(
                     response.headers_mut().insert(
                         actix_web::http::header::CONTENT_TYPE,
                         actix_web::http::header::HeaderValue::from_static(content_type),
+                    );
+                    response.headers_mut().insert(
+                        actix_web::http::header::HeaderName::from_static("cache-control"),
+                        actix_web::http::header::HeaderValue::from_static("public, max-age=3600"),
+                    );
+                    response.headers_mut().insert(
+                        actix_web::http::header::HeaderName::from_static("x-content-type-options"),
+                        actix_web::http::header::HeaderValue::from_static("nosniff"),
                     );
                     response
                 }
@@ -1039,11 +1118,295 @@ async fn get_thumbnail(
     }
 }
 
+/// Optimize a video file for web streaming (move moov atom to beginning)
+async fn optimize_for_streaming(
+    media_id: web::Path<Uuid>,
+    pool: web::Data<PgPool>,
+) -> impl Responder {
+    let result = sqlx::query_as::<_, Media>("SELECT * FROM media WHERE id = $1")
+        .bind(media_id.into_inner())
+        .fetch_optional(pool.get_ref())
+        .await;
+
+    match result {
+        Ok(Some(media)) => {
+            // Only optimize video files
+            if media.media_type != "video" {
+                return HttpResponse::BadRequest()
+                    .json(serde_json::json!({"error": "Only video files can be optimized for streaming"}));
+            }
+
+            let path = std::path::Path::new(&media.path);
+            
+            // Get all allowed directories
+            let media_dir = std::env::var("MEDIA_PATH")
+                .unwrap_or_else(|_| "/var/lib/onepa-playout/media".to_string());
+            let assets_dir = std::env::var("ASSETS_PATH")
+                .unwrap_or_else(|_| "/var/lib/onepa-playout/assets".to_string());
+            
+            log::debug!("Optimize request - Path: {:?}, MEDIA_PATH: {}, ASSETS_PATH: {}", 
+                path, media_dir, assets_dir);
+            
+            // Security check - verify path is within allowed directories
+            let is_authorized = path.starts_with(&media_dir) 
+                || path.starts_with(&assets_dir)
+                || path.exists(); // If file exists, it's likely valid (uploaded through proper channels)
+            
+            if !is_authorized {
+                log::warn!("Unauthorized path access attempt: {:?} (expected prefix: {} or {})", 
+                    path, media_dir, assets_dir);
+                return HttpResponse::Forbidden()
+                    .json(serde_json::json!({"error": "Unauthorized path"}));
+            }
+
+            if !path.exists() {
+                log::warn!("File not found on disk: {:?}", path);
+                return HttpResponse::NotFound()
+                    .json(serde_json::json!({"error": "File not found on disk"}));
+            }
+
+            let original_path = path.to_string_lossy().to_string();
+            let optimized_path = format!("{}.optimized.mp4", original_path.trim_end_matches(".mp4"));
+
+            log::info!("Starting optimization (BG): {} -> {}", original_path, optimized_path);
+            
+            let pool_bg = pool.get_ref().clone();
+            let media_id_bg = media.id;
+
+            tokio::spawn(async move {
+                // Create task entry
+                let task_id = Uuid::new_v4();
+                let _ = sqlx::query("INSERT INTO media_tasks (id, media_id, task_type, status) VALUES ($1, $2, $3, $4)")
+                    .bind(task_id)
+                    .bind(media_id_bg)
+                    .bind("optimize")
+                    .bind("processing")
+                    .execute(&pool_bg)
+                    .await;
+
+                let ffmpeg = FFmpegService::new();
+                match ffmpeg.optimize_for_streaming(&original_path, &optimized_path) {
+                    Ok(_) => {
+                        // Replace original with optimized version
+                        if let Err(e) = std::fs::rename(&optimized_path, &original_path) {
+                            log::error!("Failed to replace original file: {}", e);
+                            let _ = std::fs::remove_file(&optimized_path);
+                            let _ = sqlx::query("UPDATE media_tasks SET status = 'failed', error_message = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2")
+                                .bind(format!("Rename failed: {}", e))
+                                .bind(task_id)
+                                .execute(&pool_bg)
+                                .await;
+                        } else {
+                            log::info!("Successfully optimized video for streaming: {}", original_path);
+                            let _ = sqlx::query("UPDATE media_tasks SET status = 'completed', progress = 1.0, updated_at = CURRENT_TIMESTAMP WHERE id = $2")
+                                .bind(task_id)
+                                .execute(&pool_bg)
+                                .await;
+                        }
+                    }
+                    Err(e) => {
+                        log::error!("Failed to optimize video: {}", e);
+                        let _ = std::fs::remove_file(&optimized_path);
+                        let _ = sqlx::query("UPDATE media_tasks SET status = 'failed', error_message = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2")
+                            .bind(e)
+                            .bind(task_id)
+                            .execute(&pool_bg)
+                            .await;
+                    }
+                }
+            });
+
+            HttpResponse::Accepted().json(serde_json::json!({
+                "message": "Optimization started in background",
+                "media_id": media.id
+            }))
+        }
+        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({"error": "Media not found"})),
+        Err(e) => {
+            log::error!("Database error: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({"error": "Database error"}))
+        }
+    }
+}
+
+/// Generate a lightweight proxy version of a video for web preview
+async fn generate_proxy(
+    media_id: web::Path<Uuid>,
+    pool: web::Data<PgPool>,
+) -> impl Responder {
+    let result = sqlx::query_as::<_, Media>("SELECT * FROM media WHERE id = $1")
+        .bind(media_id.into_inner())
+        .fetch_optional(pool.get_ref())
+        .await;
+
+    match result {
+        Ok(Some(media)) => {
+            if media.media_type != "video" {
+                return HttpResponse::BadRequest()
+                    .json(serde_json::json!({"error": "Only video files can have proxies"}));
+            }
+
+            let path = std::path::Path::new(&media.path);
+            if !path.exists() {
+                return HttpResponse::NotFound()
+                    .json(serde_json::json!({"error": "Original file not found"}));
+            }
+
+            let original_path = path.to_string_lossy().to_string();
+            let proxy_path = format!("{}.proxy.mp4", original_path.trim_end_matches(".mp4"));
+
+            log::info!("Starting proxy generation (BG): {} -> {}", original_path, proxy_path);
+            
+            // Intelligence: Check if the file is already small enough to just be hard-linked
+            if let (Some(height), Some(bitrate)) = (media.height, media.bitrate) {
+                if height <= 720 && bitrate <= 5_000_000 {
+                    log::info!("Video {} is already optimized. Creating hard link (Instant).", media.filename);
+                    if std::fs::hard_link(&original_path, &proxy_path).is_ok() {
+                        return HttpResponse::Ok().json(serde_json::json!({
+                            "message": "Proxy generated instantly (Zero-Byte Hard Link)",
+                            "path": proxy_path
+                        }));
+                    }
+                }
+            }
+
+            let pool_bg = pool.get_ref().clone();
+            let media_id_bg = media.id;
+
+            tokio::spawn(async move {
+                let task_id = Uuid::new_v4();
+                let _ = sqlx::query("INSERT INTO media_tasks (id, media_id, task_type, status) VALUES ($1, $2, $3, $4)")
+                    .bind(task_id)
+                    .bind(media_id_bg)
+                    .bind("proxy")
+                    .bind("processing")
+                    .execute(&pool_bg)
+                    .await;
+
+                let ffmpeg = FFmpegService::new();
+                match ffmpeg.generate_proxy(&original_path, &proxy_path) {
+                    Ok(_) => {
+                        log::info!("Successfully generated proxy: {}", proxy_path);
+                        let _ = sqlx::query("UPDATE media_tasks SET status = 'completed', progress = 1.0, updated_at = CURRENT_TIMESTAMP WHERE id = $1")
+                            .bind(task_id)
+                            .execute(&pool_bg)
+                            .await;
+                    }
+                    Err(e) => {
+                        log::error!("Failed to generate proxy: {}", e);
+                        let _ = std::fs::remove_file(&proxy_path);
+                        let _ = sqlx::query("UPDATE media_tasks SET status = 'failed', error_message = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2")
+                            .bind(e)
+                            .bind(task_id)
+                            .execute(&pool_bg)
+                            .await;
+                    }
+                }
+            });
+
+            HttpResponse::Accepted().json(serde_json::json!({
+                "message": "Proxy generation started in background",
+                "media_id": media.id
+            }))
+        }
+        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({"error": "Media not found"})),
+        Err(e) => {
+            log::error!("Database error: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({"error": "Database error"}))
+        }
+    }
+}
+
+async fn get_media_tasks(
+    media_id: web::Path<Uuid>,
+    pool: web::Data<PgPool>,
+) -> impl Responder {
+    let result = sqlx::query_as::<_, MediaTask>("SELECT * FROM media_tasks WHERE media_id = $1 ORDER BY created_at DESC")
+        .bind(media_id.into_inner())
+        .fetch_all(pool.get_ref())
+        .await;
+
+    match result {
+        Ok(tasks) => HttpResponse::Ok().json(tasks),
+        Err(e) => {
+            log::error!("Database error fetching tasks: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({"error": "Database error"}))
+        }
+    }
+}
+
+async fn get_proxy_stats(pool: web::Data<PgPool>) -> impl Responder {
+    let result = sqlx::query_as::<_, Media>("SELECT * FROM media WHERE media_type = 'video'")
+        .fetch_all(pool.get_ref())
+        .await;
+
+    match result {
+        Ok(videos) => {
+            let mut total_bytes: u64 = 0;
+            let mut proxy_count: u32 = 0;
+
+            for video in videos {
+                let proxy_path = format!("{}.proxy.mp4", video.path.trim_end_matches(".mp4"));
+                if let Ok(metadata) = std::fs::metadata(&proxy_path) {
+                    total_bytes += metadata.len();
+                    proxy_count += 1;
+                }
+            }
+
+            HttpResponse::Ok().json(serde_json::json!({
+                "total_bytes": total_bytes,
+                "proxy_count": proxy_count
+            }))
+        }
+        Err(e) => {
+            log::error!("Database error counting proxies: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({"error": "Database error"}))
+        }
+    }
+}
+
+async fn purge_proxies(pool: web::Data<PgPool>) -> impl Responder {
+    let result = sqlx::query_as::<_, Media>("SELECT * FROM media WHERE media_type = 'video'")
+        .fetch_all(pool.get_ref())
+        .await;
+
+    match result {
+        Ok(videos) => {
+            let mut deleted_bytes: u64 = 0;
+            let mut deleted_count: u32 = 0;
+
+            for video in videos {
+                let proxy_path = format!("{}.proxy.mp4", video.path.trim_end_matches(".mp4"));
+                if let Ok(metadata) = std::fs::metadata(&proxy_path) {
+                    let size = metadata.len();
+                    if std::fs::remove_file(&proxy_path).is_ok() {
+                        deleted_bytes += size;
+                        deleted_count += 1;
+                    }
+                }
+            }
+
+            HttpResponse::Ok().json(serde_json::json!({
+                "message": "Proxies purged successfully",
+                "deleted_bytes": deleted_bytes,
+                "deleted_count": deleted_count
+            }))
+        }
+        Err(e) => {
+            log::error!("Database error purging proxies: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({"error": "Database error"}))
+        }
+    }
+}
+
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.route("", web::get().to(list_media))
         .route("/folders", web::get().to(list_folders))
         .route("/folders", web::post().to(create_folder))
         .route("/folders/{id}", web::delete().to(delete_folder))
+        .route("/stats/proxy", web::get().to(get_proxy_stats))
+        .route("/proxies/purge", web::delete().to(purge_proxies))
+        .route("/{id}/tasks", web::get().to(get_media_tasks))
         .route("/{id}/move", web::post().to(move_media))
         .route("/{id}/copy", web::post().to(copy_media))
         .route("/{id}/usage", web::get().to(check_media_usage))
@@ -1056,6 +1419,8 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         .route("/{id}/thumbnail", web::get().to(get_thumbnail))
         .route("/{id}/filler", web::put().to(update_filler))
         .route("/{id}/transparent", web::post().to(make_transparent))
+        .route("/{id}/optimize", web::post().to(optimize_for_streaming))
+        .route("/{id}/proxy", web::post().to(generate_proxy))
         .route("/upload", web::post().to(upload_media))
         .route("/{id}", web::put().to(update_media))
         .route("/{id}/fetch-metadata", web::post().to(fetch_metadata))

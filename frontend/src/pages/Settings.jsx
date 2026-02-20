@@ -417,12 +417,15 @@ function Settings() {
   const [releaseHistory, setReleaseHistory] = useState([]);
   const [udpConfirmOpen, setUdpConfirmOpen] = useState(false);
   const [newPassword, setNewPassword] = useState('');
+  const [proxyStats, setProxyStats] = useState({ total_bytes: 0, proxy_count: 0 });
+  const [purgingProxies, setPurgingProxies] = useState(false);
 
   useEffect(() => {
     fetchSettings();
     fetchProtectedAssets();
     fetchUsers();
     fetchReleaseHistory();
+    fetchProxyStats();
 
     // Handle URL parameters for deep-linking
     const tab = searchParams.get('tab');
@@ -837,6 +840,33 @@ function Settings() {
       { version: 'v2.2.0-ALPHA.2-PRO', date: '2026-01-30', changes: ['Storage paths configuráveis', 'Validação de caminhos'] },
       { version: 'v2.2.0-ALPHA.1', date: '2026-01-28', changes: ['Portas dedicadas Alpha (3011/8181/5534)', 'Docker-only workflow', 'Login: erros 401 corrigidos'] },
     ]);
+  };
+
+  const fetchProxyStats = async () => {
+    try {
+      const response = await mediaAPI.getProxyStats();
+      console.log('Proxy Stats Response:', response.data);
+      if (response && response.data) {
+        setProxyStats(response.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch proxy stats:', err);
+    }
+  };
+
+  const handlePurgeProxies = async () => {
+    if (window.confirm('Tem a certeza que deseja eliminar todas as versões proxy? Isto não afetará os ficheiros originais, mas os previews na Media Library poderão demorar mais. Esta ação liberta espaço em disco.')) {
+      setPurgingProxies(true);
+      try {
+        const res = await mediaAPI.purgeProxies();
+        showSuccess(`Limpeza concluída. ${res.data.deleted_count} proxies removidos (${(res.data.deleted_bytes / 1024 / 1024).toFixed(2)} MB libertados).`);
+        fetchProxyStats();
+      } catch (err) {
+        showError(`Erro ao limpar proxies: ${err.response?.data?.error || err.message}`);
+      } finally {
+        setPurgingProxies(false);
+      }
+    }
   };
 
   const handleSaveSettings = async () => {
@@ -1427,6 +1457,41 @@ function Settings() {
                   </Grid>
                 ))}
               </Grid>
+            </Paper>
+
+            {/* STORAGE MGMT SECTION */}
+            <Paper className="glass-panel" sx={{ p: 4, mb: 4, borderLeft: '4px solid #9c27b0' }}>
+              <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box>
+                  <Typography variant="h6" sx={{ fontWeight: 800, color: 'secondary.main' }}>GESTÃO DE ESPAÇO (WEB PROXIES)</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>MONITORIZAÇÃO E CONTROLO DE CACHE</Typography>
+                  <Typography variant="body2" sx={{ mt: 1, maxWidth: '600px', opacity: 0.8 }}>
+                    As versões Proxy (720p H.264) são criadas automaticamente para garantir visualização e navegação instantânea no Portal, com zero-latência, sem pesar na largura de banda.
+                  </Typography>
+                </Box>
+                <Box sx={{ textAlign: 'right' }}>
+                  <Typography variant="h4" sx={{ fontWeight: 'black', color: 'secondary.main' }}>
+                    {((proxyStats?.total_bytes || 0) / 1024 / 1024).toFixed(2)} <Typography component="span" variant="h6" sx={{ fontWeight: 800, color: 'text.secondary' }}>MB</Typography>
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>{proxyStats?.proxy_count || 0} PROXIES GERADOS</Typography>
+                </Box>
+              </Box>
+
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', p: 2, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2 }}>
+                <Button
+                  variant="outlined"
+                  color="secondary"
+                  startIcon={purgingProxies ? <CircularProgress size={20} color="secondary" /> : <DeleteIcon />}
+                  onClick={handlePurgeProxies}
+                  disabled={purgingProxies || proxyStats.proxy_count === 0}
+                  sx={{ fontWeight: 800 }}
+                >
+                  {purgingProxies ? 'A LIMPAR ESPAÇO...' : 'LIMPAR TODOS OS PROXIES'}
+                </Button>
+                <Typography variant="caption" sx={{ color: 'text.disabled', maxWidth: '300px' }}>
+                  A limpeza afeta apenas os ficheiros otimizados. Os vídeos originais na Media Library nunca são apagados nesta ação.
+                </Typography>
+              </Box>
             </Paper>
 
             <Paper className="glass-panel" sx={{ p: 4, mb: 4 }}>

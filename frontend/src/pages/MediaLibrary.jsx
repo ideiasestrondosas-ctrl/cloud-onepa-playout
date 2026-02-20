@@ -52,6 +52,8 @@ import {
   Info as InfoIcon,
   Edit as EditIcon,
   AutoFixHigh as WizardIcon,
+  Speed as SpeedIcon,
+  Bolt as BoltIcon,
 } from '@mui/icons-material';
 import { CircularProgress } from '@mui/material';
 import { useDropzone } from 'react-dropzone';
@@ -75,6 +77,7 @@ export default function MediaLibrary() {
   const [pagination, setPagination] = useState({ total: 0, pages: 0 });
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [videoLoading, setVideoLoading] = useState(false); // Loading state for video preview
   const [transparencyOpen, setTransparencyOpen] = useState(false);
   const [newFolderOpen, setNewFolderOpen] = useState(false);
   const [moveOpen, setMoveOpen] = useState(false);
@@ -109,6 +112,7 @@ export default function MediaLibrary() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedItemIds, setSelectedItemIds] = useState([]);
   const [performingBulkAction, setPerformingBulkAction] = useState(false);
+  const [activeTasks, setActiveTasks] = useState({}); // { mediaId: [task1, task2] }
 
   // Debounce search
   useEffect(() => {
@@ -122,6 +126,47 @@ export default function MediaLibrary() {
     fetchMedia();
     fetchFolders();
   }, [filters, currentFolder]);
+
+  // Polling for active tasks
+  useEffect(() => {
+    const pollTasks = async () => {
+      // Find media items that might have active tasks (or just poll for all shown media for simplicity)
+      const mediaWithPossibleTasks = media.filter(m => m.media_type === 'video');
+      if (mediaWithPossibleTasks.length === 0) return;
+
+      const newTasks = { ...activeTasks };
+      let changed = false;
+
+      for (const item of mediaWithPossibleTasks) {
+        try {
+          const response = await mediaAPI.getMediaTasks(item.id);
+          const tasks = response.data;
+
+          // Filter only pending/processing tasks
+          const active = tasks.filter(t => t.status === 'pending' || t.status === 'processing');
+
+          if (active.length > 0) {
+            newTasks[item.id] = active;
+            changed = true;
+          } else if (newTasks[item.id]) {
+            // Task finished, clear it and refresh media to update icons (like has_proxy)
+            delete newTasks[item.id];
+            changed = true;
+            fetchMedia();
+          }
+        } catch (error) {
+          console.error(`Failed to fetch tasks for ${item.id}:`, error);
+        }
+      }
+
+      if (changed) {
+        setActiveTasks(newTasks);
+      }
+    };
+
+    const interval = setInterval(pollTasks, 3000);
+    return () => clearInterval(interval);
+  }, [media, activeTasks]);
 
   const fetchMedia = async () => {
     setLoading(true);
@@ -504,6 +549,21 @@ export default function MediaLibrary() {
     setSelectedItemIds(allIds);
   };
 
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setPage(1);
+  };
+
+  // Preload video headers on hover to speed up playback start
+  const handlePreload = (item) => {
+    if (item.media_type === 'video') {
+      const url = `/api/media/${item.id}/stream`;
+      // Fetching only the first few bytes is enough to warm up the connection
+      // and potentially fetch the moov atom (faststart) into browser cache
+      fetch(url, { headers: { 'Range': 'bytes=0-1024' } }).catch(() => { });
+    }
+  };
+
   const handleClearSelection = () => {
     setSelectedItemIds([]);
     setSelectionMode(false);
@@ -868,8 +928,63 @@ export default function MediaLibrary() {
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Stack direction="row" spacing={0.5}>
                         <Tooltip title="Preview">
-                          <IconButton size="small" sx={{ color: 'primary.main', bgcolor: 'rgba(0, 229, 255, 0.1)' }} onClick={() => { setSelectedMedia(item); setPreviewOpen(true); }}><PlayIcon fontSize="small" /></IconButton>
+                          <IconButton
+                            size="small"
+                            sx={{ color: 'primary.main', bgcolor: 'rgba(0, 229, 255, 0.1)' }}
+                            onMouseEnter={() => handlePreload(item)}
+                            onClick={() => { setSelectedMedia(item); setVideoLoading(item.media_type === 'video'); setPreviewOpen(true); }}
+                          >
+                            <PlayIcon fontSize="small" />
+                          </IconButton>
                         </Tooltip>
+                        {item.media_type === 'video' && (
+                          <Tooltip title="Otimizar para Streaming">
+                            <IconButton
+                              size="small"
+                              sx={{ color: 'success.main', bgcolor: 'rgba(76, 175, 80, 0.1)' }}
+                              onClick={async () => {
+                                try {
+                                  showInfo(`Otimização de "${item.filename}" iniciada em background.`);
+                                  await mediaAPI.optimizeForStreaming(item.id);
+                                } catch (err) {
+                                  showError(`Erro ao iniciar otimização: ${err.response?.data?.error || err.message}`);
+                                }
+                              }}
+                            >
+                              {activeTasks[item.id]?.some(t => t.task_type === 'optimize') ? (
+                                <CircularProgress size={16} color="success" />
+                              ) : (
+                                <SpeedIcon fontSize="small" />
+                              )}
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                        {item.media_type === 'video' && (
+                          <Tooltip title={item.has_proxy ? "Proxy Web Disponível" : "Gerar Proxy Web (Latência Zero)"}>
+                            <IconButton
+                              size="small"
+                              sx={{
+                                color: item.has_proxy ? 'secondary.main' : 'warning.main',
+                                bgcolor: item.has_proxy ? 'rgba(156, 39, 176, 0.1)' : 'rgba(255, 152, 0, 0.1)',
+                                border: item.has_proxy ? '1px solid rgba(156, 39, 176, 0.3)' : 'none'
+                              }}
+                              onClick={async () => {
+                                try {
+                                  showInfo(`Geração de proxy para "${item.filename}" iniciada em background.`);
+                                  await mediaAPI.generateProxy(item.id);
+                                } catch (err) {
+                                  showError(`Erro ao iniciar geração de proxy: ${err.response?.data?.error || err.message}`);
+                                }
+                              }}
+                            >
+                              {activeTasks[item.id]?.some(t => t.task_type === 'proxy') ? (
+                                <CircularProgress size={16} color="warning" />
+                              ) : (
+                                <BoltIcon fontSize="small" />
+                              )}
+                            </IconButton>
+                          </Tooltip>
+                        )}
                         <Tooltip title="Assistente de Metadados">
                           <IconButton size="small" sx={{ color: 'secondary.main', bgcolor: 'rgba(156, 39, 176, 0.1)' }} onClick={() => handleFetchMetadata(item)}><WizardIcon fontSize="small" /></IconButton>
                         </Tooltip>
@@ -919,10 +1034,11 @@ export default function MediaLibrary() {
             </Box>
           )}
         </Grid>
-      </Grid>
+      </Grid >
 
       {/* New Folder Dialog */}
-      <Dialog open={newFolderOpen} onClose={() => setNewFolderOpen(false)}>
+      < Dialog open={newFolderOpen} onClose={() => setNewFolderOpen(false)
+      }>
         <DialogTitle>Nova Pasta</DialogTitle>
         <DialogContent>
           <TextField fullWidth autoFocus label="Nome da Pasta" value={newFolderName} onChange={e => setNewFolderName(e.target.value)} sx={{ mt: 1 }} />
@@ -931,10 +1047,10 @@ export default function MediaLibrary() {
           <Button onClick={() => setNewFolderOpen(false)}>Cancelar</Button>
           <Button variant="contained" onClick={handleCreateFolder}>Criar</Button>
         </DialogActions>
-      </Dialog>
+      </Dialog >
 
       {/* Smart Delete Dialog */}
-      <Dialog open={deleteDialog.open} onClose={() => setDeleteDialog({ open: false, media: null, usage: null, simpleDelete: false })} maxWidth="sm" fullWidth>
+      < Dialog open={deleteDialog.open} onClose={() => setDeleteDialog({ open: false, media: null, usage: null, simpleDelete: false })} maxWidth="sm" fullWidth >
         <DialogTitle sx={{ color: deleteDialog.simpleDelete ? 'error.main' : 'warning.main', display: 'flex', alignItems: 'center', gap: 1 }}>
           {deleteDialog.simpleDelete ? '🗑️ Confirmar Eliminação' : '⚠️ Ficheiro em Uso no Calendário'}
         </DialogTitle>
@@ -1004,10 +1120,10 @@ export default function MediaLibrary() {
             </Button>
           )}
         </DialogActions>
-      </Dialog>
+      </Dialog >
 
       {/* Move/Copy Media Dialog */}
-      <Dialog open={moveOpen} onClose={() => setMoveOpen(false)} maxWidth="xs" fullWidth>
+      < Dialog open={moveOpen} onClose={() => setMoveOpen(false)} maxWidth="xs" fullWidth >
         <DialogTitle>Organizar "{mediaToMove?.filename}"</DialogTitle>
         <DialogContent dividers>
           <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>Escolha a pasta de destino:</Typography>
@@ -1036,10 +1152,10 @@ export default function MediaLibrary() {
           </List>
         </DialogContent>
         <DialogActions><Button onClick={() => setMoveOpen(false)}>Cancelar</Button></DialogActions>
-      </Dialog>
+      </Dialog >
 
       {/* Metadata Editor Dialog */}
-      <Dialog open={metadataOpen} onClose={() => { setMetadataOpen(false); setIsReviewMode(false); }} maxWidth="md" fullWidth>
+      < Dialog open={metadataOpen} onClose={() => { setMetadataOpen(false); setIsReviewMode(false); }} maxWidth="md" fullWidth >
         <DialogTitle sx={{ bgcolor: isReviewMode ? 'secondary.main' : 'primary.main', color: 'white' }}>
           {isReviewMode ? '🪄 Revisar Metadados Automáticos' : 'Editar Metadados EPG'}: {editingMedia?.filename}
         </DialogTitle>
@@ -1217,36 +1333,55 @@ export default function MediaLibrary() {
           <Button onClick={() => setMetadataOpen(false)}>Cancelar</Button>
           <Button variant="contained" onClick={handleSaveMetadata}>Guardar</Button>
         </DialogActions>
-      </Dialog>
+      </Dialog >
 
       {/* Preview Dialog */}
-      <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="md" fullWidth>
+      < Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="md" fullWidth >
         <DialogTitle sx={{ bgcolor: 'primary.dark', color: '#fff' }}>Preview: {selectedMedia?.filename}</DialogTitle>
-        <DialogContent sx={{ p: 0, bgcolor: '#000', display: 'flex', justifyContent: 'center' }}>
+        <DialogContent sx={{ p: 0, bgcolor: '#000', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px' }}>
           {selectedMedia?.media_type === 'video' && (
-            <video
-              controls
-              autoPlay
-              preload="metadata"
-              style={{ maxWidth: '100%', maxHeight: '70vh' }}
-              src={`/api/media/${selectedMedia.id}/stream`}
-            >
-              <source src={`/api/media/${selectedMedia.id}/stream`} type="video/mp4" />
-              O seu navegador não suporta o elemento de vídeo.
-            </video>
+            <Box sx={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
+              {videoLoading && (
+                <Box sx={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  zIndex: 10
+                }}>
+                  <CircularProgress size={60} thickness={4} />
+                </Box>
+              )}
+              <video
+                controls
+                autoPlay
+                preload="metadata"
+                poster={`/api/media/${selectedMedia.id}/thumbnail`}
+                style={{ maxWidth: '100%', maxHeight: '70vh' }}
+                src={selectedMedia.has_proxy ? `/api/media/${selectedMedia.id}/stream?proxy=true` : `/api/media/${selectedMedia.id}/stream`}
+                onLoadedData={() => setVideoLoading(false)}
+                onCanPlay={() => setVideoLoading(false)}
+                onWaiting={() => setVideoLoading(true)}
+                onPlaying={() => setVideoLoading(false)}
+                onError={() => setVideoLoading(false)}
+              >
+                <source src={selectedMedia.has_proxy ? `/api/media/${selectedMedia.id}/stream?proxy=true` : `/api/media/${selectedMedia.id}/stream`} type="video/mp4" />
+                O seu navegador não suporta o elemento de vídeo.
+              </video>
+            </Box>
           )}
           {selectedMedia?.media_type === 'image' && <img alt="preview" style={{ maxWidth: '100%', maxHeight: '70vh' }} src={`/api/media/${selectedMedia.id}/stream`} />}
           {selectedMedia?.media_type === 'audio' && <Box sx={{ p: 4 }}><audio controls preload="metadata" src={`/api/media/${selectedMedia.id}/stream`} /></Box>}
         </DialogContent>
         <DialogActions><Button onClick={() => setPreviewOpen(false)}>Fechar</Button></DialogActions>
-      </Dialog>
+      </Dialog >
       {/* Multi-file Upload Progress Dialog */}
-      <Dialog open={uploadProgressOpen} onClose={() => {
+      < Dialog open={uploadProgressOpen} onClose={() => {
         // Only allow closing if all finished
         if (uploadFiles.every(f => f.status === 'success' || f.status === 'error')) {
           setUploadProgressOpen(false);
         }
-      }} maxWidth="sm" fullWidth>
+      }} maxWidth="sm" fullWidth >
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <UploadIcon color="primary" /> Gestor de Uploads
         </DialogTitle>
@@ -1329,7 +1464,7 @@ export default function MediaLibrary() {
             Fechar Janela
           </Button>
         </DialogActions>
-      </Dialog>
-    </Box>
+      </Dialog >
+    </Box >
   );
 }
