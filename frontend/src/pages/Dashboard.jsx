@@ -508,22 +508,14 @@ export default function Dashboard() {
   }, [status.status, status.uptime]);
 
   const formatUptimeFull = (ms) => {
-    if (!ms || ms < 0) return '00d 00h 00m 00s 000ms';
+    if (!ms || ms < 0) return '00d 00h 00m 00s 0ms';
     const totalSec = Math.floor(ms / 1000);
-    const months = Math.floor(totalSec / (30 * 86400));
-    const days = Math.floor((totalSec % (30 * 86400)) / 86400);
+    const days = Math.floor(totalSec / 86400);
     const hours = Math.floor((totalSec % 86400) / 3600);
     const mins = Math.floor((totalSec % 3600) / 60);
     const secs = totalSec % 60;
     const msec = Math.floor(ms % 1000);
-    const parts = [];
-    if (months > 0) parts.push(`${months}m`);
-    if (days > 0 || months > 0) parts.push(`${String(days).padStart(2, '0')}d`);
-    parts.push(`${String(hours).padStart(2, '0')}h`);
-    parts.push(`${String(mins).padStart(2, '0')}m`);
-    parts.push(`${String(secs).padStart(2, '0')}s`);
-    parts.push(`${String(msec).padStart(3, '0')}ms`);
-    return parts.join(' ');
+    return `${String(days).padStart(2, '0')}d ${String(hours).padStart(2, '0')}h ${String(mins).padStart(2, '0')}m ${String(secs).padStart(2, '0')}s ${msec}ms`;
   };
 
   return (
@@ -1345,7 +1337,7 @@ export default function Dashboard() {
                       </ListItem>
                       <ListItem disableGutters>
                         <ListItemIcon sx={{ minWidth: 32 }}><InfoIcon sx={{ fontSize: 16, color: 'primary.main' }} /></ListItemIcon>
-                        <ListItemText primary="Tempo de Emissão" secondary={formatTime(debugReport._live?.uptime || 0)} secondaryTypographyProps={{ sx: { fontFamily: 'monospace', color: 'primary.main', fontWeight: 700 } }} />
+                        <ListItemText primary="Tempo de Emissão" secondary={formatUptimeFull((debugReport._live?.uptime || 0) * 1000)} secondaryTypographyProps={{ sx: { fontFamily: 'monospace', color: 'primary.main', fontWeight: 700 } }} />
                       </ListItem>
                       <ListItem disableGutters>
                         <ListItemIcon sx={{ minWidth: 32 }}><CheckIcon sx={{ fontSize: 16 }} color={debugReport.has_active_schedule ? 'success' : 'warning'} /></ListItemIcon>

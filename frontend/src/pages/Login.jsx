@@ -241,7 +241,7 @@ export default function Login() {
             </Box>
           </Paper>
 
-          <Box sx={{ mt: 4, p: 1, px: 2, borderRadius: 10, bgcolor: 'rgba(255, 255, 255, 0.05)', backdropFilter: 'blur(4px)' }}>
+          <Box sx={{ mt: 4, p: 1, px: 2, borderRadius: 10, bgcolor: 'rgba(50, 50, 60, 0.5)' }}>
             <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.4)', fontWeight: 600, fontSize: '0.65rem' }}>
               REDE PROTEGIDA • ACESSO MONITORIZADO
             </Typography>

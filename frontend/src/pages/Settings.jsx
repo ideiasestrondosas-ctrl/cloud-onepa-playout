@@ -1743,9 +1743,9 @@ function Settings() {
                     <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 800, mb: 2, display: 'block' }}>PREVIEW LOGO/VIDEO</Typography>
                     <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 180 }}>
                       {(settings.branding_type === 'video') ? (
-                        <video src={settings.logoPath || "/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4"} autoPlay loop muted style={{ maxWidth: '100%', maxHeight: '100%' }} />
+                        <video key={`vid-${settings.logo_path || 'default'}-${Date.now()}`} src={`${settings.logo_path || "/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4"}?cb=${Date.now()}`} autoPlay loop muted style={{ maxWidth: '100%', maxHeight: '100%' }} />
                       ) : (
-                        <img src={settings.logoPath || "/assets/protected/Cloud_Onepa_Playout_Infinity_Logo_remodelado.png"} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                        <img key={`img-${settings.logo_path || 'default'}-${Date.now()}`} src={`${settings.logo_path || "/assets/protected/Cloud_Onepa_Playout_Infinity_Logo_remodelado.png"}?cb=${Date.now()}`} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
                       )}
                     </Box>
                     <ToggleButtonGroup
@@ -1756,7 +1756,7 @@ function Settings() {
                         setSettings({
                           ...settings,
                           branding_type: v,
-                          logoPath: (v === 'video') ? '/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4' : '/assets/protected/Cloud_Onepa_Playout_Infinity_Logo_remodelado.png'
+                          logo_path: (v === 'video') ? '/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4' : '/assets/protected/Cloud_Onepa_Playout_Infinity_Logo_remodelado.png'
                         });
                       }}
                       fullWidth
@@ -1765,6 +1765,7 @@ function Settings() {
                       <ToggleButton value="static" sx={{ fontWeight: 800 }}>ESTÁTICO</ToggleButton>
                       <ToggleButton value="video" sx={{ fontWeight: 800 }}>ANIMADO</ToggleButton>
                     </ToggleButtonGroup>
+
                   </Box>
                 </Grid>
                 <Grid item xs={12} md={6}>

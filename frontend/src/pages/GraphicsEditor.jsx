@@ -378,8 +378,7 @@ export default function GraphicsEditor() {
                   bottom: 20,
                   left: 20,
                   p: 1.5,
-                  bgcolor: 'rgba(0,0,0,0.6)',
-                  backdropFilter: 'blur(10px)',
+                  bgcolor: 'rgba(0,0,0,0.8)',
                   borderRadius: 2,
                   border: '1px solid rgba(255,255,255,0.1)',
                   zIndex: 20

@@ -899,9 +899,8 @@ export default function MediaLibrary() {
                           height: 18,
                           fontSize: '0.6rem',
                           fontWeight: 800,
-                          bgcolor: 'rgba(0,0,0,0.6)',
+                          bgcolor: 'rgba(0,0,0,0.8)',
                           color: 'primary.main',
-                          backdropFilter: 'blur(4px)'
                         }}
                       />
                       {item.duration > 0 && (
@@ -912,9 +911,8 @@ export default function MediaLibrary() {
                             height: 18,
                             fontSize: '0.6rem',
                             fontWeight: 800,
-                            bgcolor: 'rgba(0,0,0,0.6)',
+                            bgcolor: 'rgba(0,0,0,0.8)',
                             color: '#fff',
-                            backdropFilter: 'blur(4px)'
                           }}
                         />
                       )}

@@ -1406,12 +1406,13 @@ fn scan_dir_for_proxies(dir: &Path, proxies: &mut Vec<serde_json::Value>) {
 async fn get_proxy_stats(_pool: web::Data<PgPool>) -> impl Responder {
     let media_path = std::env::var("MEDIA_PATH").unwrap_or_else(|_| "./data/media".to_string());
     let assets_path = std::env::var("ASSETS_PATH").unwrap_or_else(|_| "./data/assets".to_string());
-    let branding_path = "./backend/assets/protected"; // Explicitly include branding even if env differs
+    // Derive branding path from ASSETS_PATH so it works in Docker AND dev
+    let branding_path = format!("{}/protected", assets_path);
     
     let mut proxies = Vec::new();
     scan_dir_for_proxies(Path::new(&media_path), &mut proxies);
     scan_dir_for_proxies(Path::new(&assets_path), &mut proxies);
-    scan_dir_for_proxies(Path::new(branding_path), &mut proxies);
+    scan_dir_for_proxies(Path::new(&branding_path), &mut proxies);
 
     // Deduplicate by path to avoid counting same file via different pointers
     let mut unique_paths = std::collections::HashSet::new();
@@ -1476,12 +1477,13 @@ async fn purge_proxies(pool: web::Data<PgPool>) -> impl Responder {
 async fn list_proxies(pool: web::Data<PgPool>) -> impl Responder {
     let media_path = std::env::var("MEDIA_PATH").unwrap_or_else(|_| "./data/media".to_string());
     let assets_path = std::env::var("ASSETS_PATH").unwrap_or_else(|_| "./data/assets".to_string());
-    let branding_path = "./backend/assets/protected";
+    // Derive branding path from ASSETS_PATH so it works in Docker AND dev
+    let branding_path = format!("{}/protected", assets_path);
     
     let mut physical_proxies = Vec::new();
     scan_dir_for_proxies(Path::new(&media_path), &mut physical_proxies);
     scan_dir_for_proxies(Path::new(&assets_path), &mut physical_proxies);
-    scan_dir_for_proxies(Path::new(branding_path), &mut physical_proxies);
+    scan_dir_for_proxies(Path::new(&branding_path), &mut physical_proxies);
 
     // Fetch all media to match names/IDs
     let media_result = sqlx::query_as::<_, Media>("SELECT * FROM media")
@@ -1508,9 +1510,11 @@ async fn list_proxies(pool: web::Data<PgPool>) -> impl Responder {
 
         if let Some(m) = matched_media {
             p.as_object_mut().unwrap().insert("media_id".to_string(), serde_json::json!(m.id));
-            p.as_object_mut().unwrap().insert("id".to_string(), serde_json::json!(m.id));
             p.as_object_mut().unwrap().insert("filename".to_string(), serde_json::json!(m.filename));
-            p.as_object_mut().unwrap().insert("source_type".to_string(), serde_json::json!("media_library"));
+            let is_branding = proxy_path.contains("/assets/") || proxy_path.contains("branding");
+            let source_key = if is_branding { "branding" } else { "media_library" };
+            p.as_object_mut().unwrap().insert("source_type".to_string(), serde_json::json!(source_key));
+            p.as_object_mut().unwrap().insert("id".to_string(), serde_json::json!(proxy_path));
         } else {
             // It's a branding asset or orphan
             let filename = Path::new(&proxy_path).file_name()

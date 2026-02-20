@@ -69,8 +69,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           backgroundImage: 'none',
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
-          backdropFilter: 'blur(12px)',
+          backgroundColor: 'rgba(14, 16, 26, 0.97)',
           border: '1px solid rgba(255, 255, 255, 0.1)',
         },
         outlined: {
@@ -78,6 +77,7 @@ const theme = createTheme({
         }
       },
     },
+
     MuiButton: {
       styleOverrides: {
         root: {
@@ -99,18 +99,17 @@ const theme = createTheme({
     MuiDialog: {
       styleOverrides: {
         paper: {
-          backgroundColor: 'rgba(15, 16, 25, 0.9)',
-          backdropFilter: 'blur(20px)',
+          backgroundColor: 'rgba(12, 13, 22, 0.98)',
           border: '1px solid rgba(255, 255, 255, 0.1)',
           borderRadius: 20,
         },
       },
     },
+
     MuiCard: {
       styleOverrides: {
         root: {
-          backgroundColor: 'rgba(255, 255, 255, 0.03)',
-          backdropFilter: 'blur(12px)',
+          backgroundColor: 'rgba(14, 15, 25, 0.95)',
           border: '1px solid rgba(255, 255, 255, 0.05)',
           borderRadius: 16,
           transition: 'transform 0.2s ease-in-out, border-color 0.2s ease-in-out',
@@ -121,25 +120,26 @@ const theme = createTheme({
         },
       },
     },
+
     MuiDrawer: {
       styleOverrides: {
         paper: {
-          backgroundColor: 'rgba(10, 11, 16, 0.8)',
-          backdropFilter: 'blur(12px)',
+          backgroundColor: 'rgba(10, 11, 18, 0.99)',
           borderRight: '1px solid rgba(255, 255, 255, 0.1)',
         },
       },
     },
+
     MuiAppBar: {
       styleOverrides: {
         root: {
-          backgroundColor: 'rgba(10, 11, 16, 0.5)',
-          backdropFilter: 'blur(12px)',
+          backgroundColor: 'rgba(10, 11, 18, 0.99)',
           boxShadow: 'none',
           borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
         },
       },
     },
+
     MuiListItemButton: {
       styleOverrides: {
         root: {
