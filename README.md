@@ -111,9 +111,9 @@ Este projeto representa um esforço significativo de engenharia para criar uma s
 
 | Métrica          | Detalhe                    | Valor                                     |
 | ---------------- | -------------------------- | ----------------------------------------- |
-| **Código Fonte** | Frontend (React/JSX)       | ~13781 linhas                              |
+| **Código Fonte** | Frontend (React/JSX)       | ~13782 linhas                              |
 |                  | Backend (Rust)             | ~9119 linhas                              |
-|                  | Total                      | **~22900+ linhas**                        |
+|                  | Total                      | **~22901+ linhas**                        |
 | **Arquitetura**  | Módulos Backend (Rust)     | 32                                        |
 |                  | Componentes Visuais        | 25+                                       |
 |                  | Migrações de Base de Dados | 26                                        |
