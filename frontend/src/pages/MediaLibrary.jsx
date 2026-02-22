@@ -55,6 +55,7 @@ import {
   AutoFixHigh as WizardIcon,
   Speed as SpeedIcon,
   Bolt as BoltIcon,
+  Refresh as SyncIcon,
 } from '@mui/icons-material';
 import { useDropzone } from 'react-dropzone';
 import { mediaAPI } from '../services/api';
@@ -114,6 +115,43 @@ export default function MediaLibrary() {
   const [performingBulkAction, setPerformingBulkAction] = useState(false);
   const [activeTasks, setActiveTasks] = useState({}); // { mediaId: [task1, task2] }
   const finishedIdsRef = React.useRef([]); // Track IDs that just finished for safe fetchMedia call
+  const [syncing, setSyncing] = useState(false);
+
+  const fetchMedia = async () => {
+    setLoading(true);
+    try {
+      const params = {
+        ...filters,
+        folder_id: currentFolder?.id || 'root'
+      };
+      const res = await mediaAPI.list(params);
+      setMedia(res.data.media);
+      setPagination({ total: res.data.total, pages: res.data.pages });
+    } catch (error) {
+      showError('Erro ao carregar ficheiros');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSyncMedia = async () => {
+    try {
+      setSyncing(true);
+      const res = await mediaAPI.sync();
+      if (res.data.status === 'ok') {
+        showSuccess(`Sincronização concluída: ${res.data.added} novos ficheiros identificados.`);
+      } else {
+        showSuccess(`Sincronização parcial: ${res.data.added} adicionados, ${res.data.errors} erros.`);
+      }
+      fetchMedia();
+    } catch (err) {
+      showError('Erro ao sincronizar ficheiros do disco');
+      console.error(err);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   // Debounce search
   useEffect(() => {
@@ -199,25 +237,6 @@ export default function MediaLibrary() {
     }
   }, [activeTasks]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const fetchMedia = async () => {
-    setLoading(true);
-    try {
-      const params = {
-        ...filters,
-        folder_id: currentFolder?.id || 'root'
-      };
-      const response = await mediaAPI.list(params);
-      setMedia(response.data.media);
-      setPagination({
-        total: response.data.total,
-        pages: response.data.pages,
-      });
-    } catch (error) {
-      console.error('Failed to fetch media:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchFolders = async () => {
     try {
@@ -654,6 +673,16 @@ export default function MediaLibrary() {
           />
           <Button
             variant="outlined"
+            color="primary"
+            startIcon={syncing ? <CircularProgress size={18} /> : <SyncIcon />}
+            onClick={handleSyncMedia}
+            disabled={syncing}
+            sx={{ fontWeight: 800, border: '1px solid rgba(0, 229, 255, 0.3)' }}
+          >
+            {syncing ? 'SINCRONIZANDO...' : 'SINCRONIZAR DISCO'}
+          </Button>
+          <Button
+            variant="outlined"
             onClick={() => { setSelectionMode(!selectionMode); setSelectedItemIds([]); }}
             sx={{ fontWeight: 800, border: '1px solid rgba(255,255,255,0.1)', color: selectionMode ? 'primary.main' : 'text.secondary' }}
           >
@@ -674,34 +703,36 @@ export default function MediaLibrary() {
         </Stack>
       </Box>
 
-      {selectionMode && (
-        <Paper className="glass-panel" sx={{ mb: 3, p: 2, bgcolor: 'rgba(0, 229, 255, 0.1)', border: '1px solid rgba(0, 229, 255, 0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Stack direction="row" spacing={2} alignItems="center">
-            <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{selectedItemIds.length} selecionados</Typography>
-            <Button size="small" onClick={handleSelectAllInView}>Selecionar Todos</Button>
-          </Stack>
-          <Stack direction="row" spacing={1}>
-            <Button
-              variant="contained"
-              size="small"
-              color="primary"
-              disabled={performingBulkAction || selectedItemIds.length === 0}
-              onClick={() => handleBulkSetFiller(true)}
-            >
-              Marcar como Filler
-            </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              sx={{ color: 'text.secondary' }}
-              disabled={performingBulkAction || selectedItemIds.length === 0}
-              onClick={() => handleBulkSetFiller(false)}
-            >
-              Marcar como Prog
-            </Button>
-          </Stack>
-        </Paper>
-      )}
+      {
+        selectionMode && (
+          <Paper className="glass-panel" sx={{ mb: 3, p: 2, bgcolor: 'rgba(0, 229, 255, 0.1)', border: '1px solid rgba(0, 229, 255, 0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{selectedItemIds.length} selecionados</Typography>
+              <Button size="small" onClick={handleSelectAllInView}>Selecionar Todos</Button>
+            </Stack>
+            <Stack direction="row" spacing={1}>
+              <Button
+                variant="contained"
+                size="small"
+                color="primary"
+                disabled={performingBulkAction || selectedItemIds.length === 0}
+                onClick={() => handleBulkSetFiller(true)}
+              >
+                Marcar como Filler
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                sx={{ color: 'text.secondary' }}
+                disabled={performingBulkAction || selectedItemIds.length === 0}
+                onClick={() => handleBulkSetFiller(false)}
+              >
+                Marcar como Prog
+              </Button>
+            </Stack>
+          </Paper>
+        )
+      }
 
       <Grid container spacing={3}>
         {/* Sidebar Folders */}

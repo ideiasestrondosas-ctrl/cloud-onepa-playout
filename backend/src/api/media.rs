@@ -8,6 +8,7 @@ use std::io::{Read, Seek, SeekFrom, Write};
 use std::fs::File;
 use std::path::Path;
 use uuid::Uuid;
+use chrono::{DateTime, Utc};
 
 use crate::models::media::{CreateFolder, Folder, Media, MediaTask};
 use crate::services::ffmpeg::FFmpegService;
@@ -34,7 +35,7 @@ async fn list_media(query: web::Query<MediaQuery>, pool: web::Data<PgPool>) -> i
     let offset = (page - 1) * limit;
 
     let mut query_builder: sqlx::QueryBuilder<sqlx::Postgres> =
-        sqlx::QueryBuilder::new("SELECT * FROM media WHERE 1=1");
+        sqlx::QueryBuilder::new("SELECT * FROM media WHERE path NOT LIKE '%.proxy.%' AND path NOT LIKE '%.optimized.%' AND (path NOT LIKE '%/assets/protected/%' OR filename = 'big_buck_bunny_1080p_h264.mov')");
 
     if let Some(ref media_type) = query.media_type {
         if !media_type.is_empty() {
@@ -68,7 +69,7 @@ async fn list_media(query: web::Query<MediaQuery>, pool: web::Data<PgPool>) -> i
     // Usually we wrap it or just run a separate count query for simplicity if performance allows.
     // For now, let's keep it simple and just run the list query.
 
-    let count_query = "SELECT COUNT(*) FROM media WHERE 1=1";
+    let count_query = "SELECT COUNT(*) FROM media WHERE path NOT LIKE '%.proxy.%' AND path NOT LIKE '%.optimized.%' AND (path NOT LIKE '%/assets/protected/%' OR filename = 'big_buck_bunny_1080p_h264.mov')";
     let mut count_builder: sqlx::QueryBuilder<sqlx::Postgres> =
         sqlx::QueryBuilder::new(count_query);
 
@@ -1380,41 +1381,63 @@ async fn get_media_tasks(
 }
 
 fn scan_dir_for_proxies(dir: &Path, proxies: &mut Vec<serde_json::Value>) {
-    if let Ok(entries) = std::fs::read_dir(dir) {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path.is_dir() {
-                scan_dir_for_proxies(&path, proxies);
-            } else if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
-                if file_name.to_lowercase().ends_with(".proxy.mp4") {
-                    if let Ok(metadata) = entry.metadata() {
-                        proxies.push(serde_json::json!({
-                            "proxy_path": path.to_string_lossy(),
-                            "size_bytes": metadata.len(),
-                            "created_at": metadata.created().ok().map(|c| {
-                                let datetime: chrono::DateTime<chrono::Utc> = c.into();
-                                datetime
-                            })
-                        }));
-                    }
+    // Robust scan: ignore errors on subfolders to prevent entire scan failure
+    let entries = match std::fs::read_dir(dir) {
+        Ok(e) => e,
+        Err(err) => {
+            log::warn!("Could not read directory {:?}: {}", dir, err);
+            return;
+        }
+    };
+
+    for entry in entries {
+        let entry = match entry {
+            Ok(e) => e,
+            Err(_) => continue,
+        };
+
+        let path = entry.path();
+        if path.is_dir() {
+            scan_dir_for_proxies(&path, proxies);
+        } else if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
+            if file_name.to_lowercase().ends_with(".proxy.mp4") {
+                if let Ok(metadata) = entry.metadata() {
+                    proxies.push(serde_json::json!({
+                        "proxy_path": path.to_string_lossy(),
+                        "size_bytes": metadata.len(),
+                        "created_at": metadata.created().ok().map(|c| {
+                            let datetime: chrono::DateTime<chrono::Utc> = c.into();
+                            datetime
+                        })
+                    }));
                 }
             }
         }
     }
 }
 
-async fn get_proxy_stats(_pool: web::Data<PgPool>) -> impl Responder {
-    let media_path = std::env::var("MEDIA_PATH").unwrap_or_else(|_| "./data/media".to_string());
-    let assets_path = std::env::var("ASSETS_PATH").unwrap_or_else(|_| "./data/assets".to_string());
-    // Derive branding path from ASSETS_PATH so it works in Docker AND dev
-    let branding_path = format!("{}/protected", assets_path);
-    
-    let mut proxies = Vec::new();
-    scan_dir_for_proxies(Path::new(&media_path), &mut proxies);
-    scan_dir_for_proxies(Path::new(&assets_path), &mut proxies);
-    scan_dir_for_proxies(Path::new(&branding_path), &mut proxies);
+fn get_all_system_paths() -> Vec<std::path::PathBuf> {
+    let media_path = std::env::var("MEDIA_PATH").unwrap_or_else(|_| "/var/lib/onepa-playout/media".to_string());
+    let assets_path = std::env::var("ASSETS_PATH").unwrap_or_else(|_| "/var/lib/onepa-playout/assets".to_string());
+    let fillers_path = std::env::var("FILLERS_PATH").unwrap_or_else(|_| "/var/lib/onepa-playout/fillers".to_string());
+    let protected_path = std::env::var("PROTECTED_PATH").unwrap_or_else(|_| format!("{}/protected", assets_path));
 
-    // Deduplicate by path to avoid counting same file via different pointers
+    vec![
+        Path::new(&media_path).to_path_buf(),
+        Path::new(&assets_path).to_path_buf(),
+        Path::new(&fillers_path).to_path_buf(),
+        Path::new(&protected_path).to_path_buf(),
+    ]
+}
+
+async fn get_proxy_stats(pool: web::Data<PgPool>) -> impl Responder {
+    let paths = get_all_system_paths();
+    let mut proxies = Vec::new();
+    
+    for path in &paths {
+        scan_dir_for_proxies(path, &mut proxies);
+    }
+
     let mut unique_paths = std::collections::HashSet::new();
     let mut total_bytes: u64 = 0;
     let mut proxy_count: u32 = 0;
@@ -1428,9 +1451,25 @@ async fn get_proxy_stats(_pool: web::Data<PgPool>) -> impl Responder {
         }
     }
 
+    // Realidade Física
+    let mut physical_media = Vec::new();
+    for path in &paths {
+        collect_media_files(path, &mut physical_media);
+    }
+    let physical_count = physical_media.len() as u64;
+
+    // Base de Dados
+    let db_count_res: Result<(i64,), _> = sqlx::query_as("SELECT COUNT(*) FROM media")
+        .fetch_one(pool.get_ref())
+        .await;
+    let db_count = db_count_res.map(|r| r.0 as u64).unwrap_or(0);
+
     HttpResponse::Ok().json(serde_json::json!({
         "total_bytes": total_bytes,
-        "proxy_count": proxy_count
+        "proxy_count": proxy_count,
+        "physical_media_count": physical_count,
+        "db_media_count": db_count,
+        "sync_needed": physical_count > db_count
     }))
 }
 
@@ -1475,67 +1514,102 @@ async fn purge_proxies(pool: web::Data<PgPool>) -> impl Responder {
 }
 
 async fn list_proxies(pool: web::Data<PgPool>) -> impl Responder {
-    let media_path = std::env::var("MEDIA_PATH").unwrap_or_else(|_| "./data/media".to_string());
-    let assets_path = std::env::var("ASSETS_PATH").unwrap_or_else(|_| "./data/assets".to_string());
-    // Derive branding path from ASSETS_PATH so it works in Docker AND dev
-    let branding_path = format!("{}/protected", assets_path);
-    
+    let paths = get_all_system_paths();
     let mut physical_proxies = Vec::new();
-    scan_dir_for_proxies(Path::new(&media_path), &mut physical_proxies);
-    scan_dir_for_proxies(Path::new(&assets_path), &mut physical_proxies);
-    scan_dir_for_proxies(Path::new(&branding_path), &mut physical_proxies);
+    for path in &paths {
+        scan_dir_for_proxies(path, &mut physical_proxies);
+    }
 
     // Fetch all media to match names/IDs
-    let media_result = sqlx::query_as::<_, Media>("SELECT * FROM media")
+    let media_result = sqlx::query_as::<_, Media>("SELECT * FROM media WHERE media_type = 'video'")
         .fetch_all(pool.get_ref())
         .await;
 
     let media_list = media_result.unwrap_or_default();
     let mut proxies = Vec::new();
-    let mut unique_id_tracker = std::collections::HashSet::new();
+    let mut matched_physical_paths = std::collections::HashSet::new();
 
-    for mut p in physical_proxies {
-        let proxy_path = p["proxy_path"].as_str().unwrap_or("").to_string();
+    // 1. Process all database media
+    for m in media_list {
+        let m_path_lower = m.path.to_lowercase();
         
-        // Find if this proxy belongs to a DB entry
-        let matched_media = media_list.iter().find(|m| {
-            let stem = if m.path.to_lowercase().ends_with(".mp4") {
-                &m.path[..m.path.len() - 4]
-            } else {
-                &m.path
-            };
-            // Exact path match or starting with stem
-            proxy_path.contains(stem)
+        // Find stem for matching
+        let m_stem = if let Some(dot) = m_path_lower.rfind('.') {
+            &m_path_lower[..dot]
+        } else {
+            &m_path_lower
+        };
+
+        // Find if any physical proxy matches this media
+        let physical_match = physical_proxies.iter().find(|p| {
+            let p_path = p["proxy_path"].as_str().unwrap_or("").to_lowercase();
+            // Match stem and end with .proxy.mp4
+            p_path.contains(m_stem) && p_path.ends_with(".proxy.mp4")
         });
 
-        if let Some(m) = matched_media {
-            p.as_object_mut().unwrap().insert("media_id".to_string(), serde_json::json!(m.id));
-            p.as_object_mut().unwrap().insert("filename".to_string(), serde_json::json!(m.filename));
-            let is_branding = proxy_path.contains("/assets/") || proxy_path.contains("branding");
-            let source_key = if is_branding { "branding" } else { "media_library" };
-            p.as_object_mut().unwrap().insert("source_type".to_string(), serde_json::json!(source_key));
-            p.as_object_mut().unwrap().insert("id".to_string(), serde_json::json!(proxy_path));
-        } else {
-            // It's a branding asset or orphan
-            let filename = Path::new(&proxy_path).file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or("unknown")
-                .replace(".proxy.mp4", "");
+        let mut p_obj = serde_json::json!({
+            "id": m.id.to_string(),
+            "media_id": m.id,
+            "filename": m.filename,
+            "source_type": "media_library",
+            "exists": false,
+            "size_bytes": 0,
+            "proxy_path": "",
+            "created_at": m.created_at
+        });
+
+        if let Some(p) = physical_match {
+            let proxy_path_str = p["proxy_path"].as_str().unwrap_or("").to_string();
+            matched_physical_paths.insert(proxy_path_str.clone());
             
-            let is_branding = proxy_path.contains("/assets/") || proxy_path.contains("branding");
-            let label = if is_branding { "Branding" } else { "Órfão" };
-            let source_key = if is_branding { "branding" } else { "orphan" };
-
-            p.as_object_mut().unwrap().insert("filename".to_string(), serde_json::json!(format!("{} ({})", filename, label)));
-            p.as_object_mut().unwrap().insert("source_type".to_string(), serde_json::json!(source_key));
-            p.as_object_mut().unwrap().insert("id".to_string(), serde_json::json!(proxy_path));
-        }
-
-        if let Some(id) = p["id"].as_str() {
-            if unique_id_tracker.insert(id.to_string()) {
-                proxies.push(p);
+            p_obj["exists"] = serde_json::json!(true);
+            p_obj["size_bytes"] = p["size_bytes"].clone();
+            p_obj["proxy_path"] = serde_json::json!(proxy_path_str);
+            
+            if let Ok(metadata) = std::fs::metadata(&proxy_path_str) {
+                if let Ok(created) = metadata.created() {
+                    p_obj["created_at"] = serde_json::json!(DateTime::<Utc>::from(created));
+                }
             }
         }
+
+        proxies.push(p_obj);
+    }
+
+    // 2. Add remaining physical proxies (orphans or branding)
+    for p in physical_proxies {
+        let proxy_path = p["proxy_path"].as_str().unwrap_or("").to_string();
+        if matched_physical_paths.contains(&proxy_path) {
+            continue;
+        }
+
+        let filename = Path::new(&proxy_path)
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("unknown")
+            .replace(".proxy.mp4", "");
+
+        let is_branding = proxy_path.contains("/assets/") || proxy_path.contains("branding");
+        let label = if is_branding { "Branding" } else { "Órfão" };
+        let source_key = if is_branding { "branding" } else { "orphan" };
+
+        let mut orphan_obj = serde_json::json!({
+            "id": proxy_path.clone(),
+            "filename": format!("{} ({})", filename, label),
+            "source_type": source_key,
+            "exists": true,
+            "size_bytes": p["size_bytes"],
+            "proxy_path": proxy_path.clone(),
+            "created_at": Utc::now()
+        });
+
+        if let Ok(metadata) = std::fs::metadata(&proxy_path) {
+            if let Ok(created) = metadata.created() {
+                orphan_obj["created_at"] = serde_json::json!(DateTime::<Utc>::from(created));
+            }
+        }
+
+        proxies.push(orphan_obj);
     }
 
     HttpResponse::Ok().json(proxies)
@@ -1663,11 +1737,142 @@ async fn media_health_check(pool: web::Data<PgPool>) -> impl Responder {
     }
 }
 
+async fn sync_media(pool: web::Data<PgPool>) -> impl Responder {
+    let paths_to_scan = get_all_system_paths();
+    let thumbnails_path = std::env::var("THUMBNAILS_PATH")
+        .unwrap_or_else(|_| "/var/lib/onepa-playout/thumbnails".to_string());
+
+    let mut added_count = 0;
+    let mut existed_count = 0;
+    let mut error_details = Vec::new();
+
+    // Ensure thumbnails directory exists
+    if let Err(e) = std::fs::create_dir_all(&thumbnails_path) {
+        log::error!("Failed to create thumbnails directory: {}", e);
+        error_details.push(format!("Erro ao aceder pasta de miniaturas: {}", e));
+    }
+
+    let ffmpeg = FFmpegService::new();
+    let mut entries = Vec::new();
+
+    for base_path in paths_to_scan {
+        if base_path.exists() {
+            collect_media_files(&base_path, &mut entries);
+        }
+    }
+
+    for path in entries {
+        let path_str = path.to_string_lossy().to_string();
+        let lower_path = path_str.to_lowercase();
+
+        // 1. Skip proxies and optimized files themselves
+        if lower_path.contains(".proxy.") || lower_path.contains(".optimized.") {
+            continue;
+        }
+
+        // 2. Strict Asset Filtering: Ignore system files in protected folders unless it's the standard test video
+        if lower_path.contains("/assets/protected/") && !lower_path.ends_with("big_buck_bunny_1080p_h264.mov") {
+            continue;
+        }
+
+        // Check if exists in DB
+        let exists_result = sqlx::query("SELECT id FROM media WHERE path = $1")
+            .bind(&path_str)
+            .fetch_optional(pool.get_ref())
+            .await;
+
+        match exists_result {
+            Ok(None) => {
+                // Not in DB, let's add it
+                match ffmpeg.get_media_info(&path_str) {
+                    Ok(info) => {
+                        let id = Uuid::new_v4();
+                        let filename = path
+                            .file_name()
+                            .and_then(|n| n.to_str())
+                            .unwrap_or("unknown")
+                            .to_string();
+                        let media_type = if info.has_video { "video" } else { "audio" };
+
+                        let thumbnail_filename = format!("{}.jpg", id);
+                        let thumbnail_path = format!("{}/{}", thumbnails_path, thumbnail_filename);
+
+                        if info.has_video {
+                            // Non-blocking thumbnail generation (we don't wait for it to be perfect)
+                            let _ = ffmpeg.generate_thumbnail(&path_str, &thumbnail_path, 1.0);
+                        }
+
+                        let res = sqlx::query("INSERT INTO media (id, filename, path, media_type, duration, width, height, codec, bitrate, thumbnail_path) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)")
+                            .bind(id)
+                            .bind(&filename)
+                            .bind(&path_str)
+                            .bind(media_type)
+                            .bind(info.duration)
+                            .bind(info.width)
+                            .bind(info.height)
+                            .bind(info.codec)
+                            .bind(info.bitrate)
+                            .bind(Some(thumbnail_path))
+                            .execute(pool.get_ref())
+                            .await;
+
+                        if res.is_ok() {
+                            added_count += 1;
+                        } else {
+                            let msg = format!("Erro ao inserir na base de dados ({}): {:?}", filename, res.err());
+                            log::error!("{}", msg);
+                            error_details.push(msg);
+                        }
+                    }
+                    Err(e) => {
+                        let msg = format!("Erro ao ler metadados de {}: {}", path.file_name().unwrap_or_default().to_string_lossy(), e);
+                        log::error!("{}", msg);
+                        error_details.push(msg);
+                    }
+                }
+            }
+            Ok(Some(_)) => {
+                existed_count += 1;
+            }
+            Err(e) => {
+                let msg = format!("Erro ao verificar existência no DB: {}", e);
+                log::error!("{}", msg);
+                error_details.push(msg);
+            }
+        }
+    }
+
+    HttpResponse::Ok().json(serde_json::json!({
+        "status": if error_details.is_empty() { "ok" } else { "partial" },
+        "added": added_count,
+        "already_existed": existed_count,
+        "errors": error_details.len(),
+        "details": error_details
+    }))
+}
+
+fn collect_media_files(dir: &Path, files: &mut Vec<std::path::PathBuf>) {
+    let extensions = ["mp4", "mov", "mkv", "avi", "mp3", "wav", "m4a", "webm"];
+    if let Ok(entries) = std::fs::read_dir(dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                collect_media_files(&path, files);
+            } else if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+                if extensions.contains(&ext.to_lowercase().as_str()) {
+                    files.push(path);
+                }
+            }
+        }
+    }
+}
+
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.route("", web::get().to(list_media))
         .route("/folders", web::get().to(list_folders))
         .route("/folders", web::post().to(create_folder))
         .route("/folders/{id}", web::delete().to(delete_folder))
+        .route("/sync", web::post().to(sync_media))
         .route("/stats/proxy", web::get().to(get_proxy_stats))
         .route("/proxies", web::get().to(list_proxies))
         .route("/proxies/delete", web::post().to(delete_specific_proxies))

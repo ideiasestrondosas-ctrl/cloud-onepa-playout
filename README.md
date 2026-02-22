@@ -5,7 +5,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB.svg)](https://reactjs.org/)
-[![Version](https://img.shields.io/badge/Version-2.2.0-ALPHA.24-PRO--PRO-blue.svg)]()
+[![Version](https://img.shields.io/badge/Version-2.2.0-ALPHA.25-PRO--PRO-blue.svg)]()
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)]()
 
 ## 📖 Sobre
@@ -105,15 +105,15 @@ Ver [docs/INSTALL.md](docs/INSTALL.md) para instruções detalhadas.
 - **Container**: Docker + Docker Compose
 - **Auth**: JWT
 
-## 📊 Estatísticas de Desenvolvimento (v2.2.0-ALPHA.24-PRO-PRO)
+## 📊 Estatísticas de Desenvolvimento (v2.2.0-ALPHA.25-PRO-PRO)
 
 Este projeto representa um esforço significativo de engenharia para criar uma solução de playout robusta e moderna.
 
 | Métrica          | Detalhe                    | Valor                                     |
 | ---------------- | -------------------------- | ----------------------------------------- |
-| **Código Fonte** | Frontend (React/JSX)       | ~13649 linhas                              |
-|                  | Backend (Rust)             | ~8914 linhas                              |
-|                  | Total                      | **~22563+ linhas**                        |
+| **Código Fonte** | Frontend (React/JSX)       | ~13781 linhas                              |
+|                  | Backend (Rust)             | ~9119 linhas                              |
+|                  | Total                      | **~22900+ linhas**                        |
 | **Arquitetura**  | Módulos Backend (Rust)     | 32                                        |
 |                  | Componentes Visuais        | 25+                                       |
 |                  | Migrações de Base de Dados | 26                                        |
@@ -136,7 +136,7 @@ Este sistema foi desenvolvido e validado em ambientes de alta performance e virt
   - **Especificações**: 4GB RAM, 32GB SSD
   - **OS**: Debian 12 (Linux)
 
-> _Dados aproximados baseados na versão v2.2.0-ALPHA.24-PRO-PRO
+> _Dados aproximados baseados na versão v2.2.0-ALPHA.25-PRO-PRO
 
 ## 🎯 Roadmap & Future
 
@@ -185,14 +185,17 @@ _Focus: Innovation and High Availability_
 
 Ver [RELEASE_NOTES.md](RELEASE_NOTES.md) para detalhes completos.
 
-### Versão Atual: v2.2.0-ALPHA.24-PRO-PRO (2026-02-20)
+### Versão Atual: v2.2.0-ALPHA.25-PRO-PRO (2026-02-22)
 
-**Principais Novidades:**
+**Principais Novidades (Elite Storage & Reality Sync):**
 
+- 🔄 **Reality Sync Engine**: Novo motor de sincronização proativo que deteta ficheiros adicionados via Terminal/FTP e os regista na App com metadados e miniaturas automáticas.
+- 📊 **Storage Transparency**: Dashboard de "Gestão de Espaço" remodelado para mostrar Bibliotecas (DB) vs Realidade Física (Disco).
+- ⚠️ **Gap Detection**: Alerta automático quando o disco tem ficheiros que a aplicação ainda não identificou.
+- 🔎 **Robust Proxy Matching**: Auditoria de proxies agora é case-insensitive e suporta múltiplas extensões de origem (.MOV, .MKV).
 - ⚡ **Enhanced Streaming**: Otimização profunda em Nginx (`proxy_buffering off`, `Accept-Ranges`) e suporte a Range Requests no backend (Rust).
 - 🎬 **Instant Media Preview**: O frontend agora gere buffers de vídeo de forma profissional, permitindo previews rápidos de ficheiros grandes.
 - 🐧 **Linux Excellence**: Scripts de instalação (`install.sh`) e atualização (`update.sh`) otimizados para Ubuntu com tratamento automático de permissões e Git security.
-- 💾 **Persistence Fixes**: Estabilização da gravação de metas e dias de guia EPG.
 
 ### Versão Anterior: 2.1.0-PRO (2026-01-25)
 

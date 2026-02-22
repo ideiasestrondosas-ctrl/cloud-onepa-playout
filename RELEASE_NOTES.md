@@ -1,10 +1,24 @@
 # Release Notes - Cloud Onepa Playout
 
-## v2.2.0-ALPHA.24-PRO-PRO (2026-02-20)
+## v2.2.0-ALPHA.25-PRO-PRO (2026-02-22)
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.
 - **Documentation**: Synced README.md and version history.
+
+## v2.2.0-ALPHA.24-PRO (2026-02-20)
+
+### 🚀 Release Highlights (Elite Storage & Reality Sync)
+- **Reality Sync Engine**: Novo motor de sincronização proativo que deteta ficheiros no disco e os regista na App.
+- **Storage Transparency**: Dashboard de "Gestão de Espaço" remodelado para mostrar Bibliotecas (DB) vs Disco.
+- **Gap Detection**: Alerta automático de desfasamento entre ficheiros físicos e registos na base de dados.
+- **Robust Proxy Matching**: Resolveram-se falhas de identificação de proxies com nomes complexos ou extensões mistas.
+- **Enhanced Streaming**: Otimização profunda em Nginx (`proxy_buffering off`, `Accept-Ranges`).
+- **Instant Media Preview**: Frontend com gestão de buffers nativa para carregamento instantâneo de media.
+- **Linux Excellence**: Scripts de instalação Ubuntu (`install.sh`) com gestão automática de permissões.
+
+---
+
 
 ## v2.2.0-ALPHA.23-PRO-PRO (2026-02-20)
 

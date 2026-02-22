@@ -87,6 +87,7 @@ export const mediaAPI = {
   purgeProxies: () => api.delete(`/media/proxies/purge`),
   getMediaTasks: (id) => api.get(`/media/${id}/tasks`),
   mediaHealthCheck: () => api.get(`/media/health-check`),
+  sync: () => api.post('/media/sync', {}, { timeout: 120000 }),
 };
 
 // Playlist endpoints

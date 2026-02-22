@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import ReactPlayer from 'react-player';
 import axios from 'axios';
 import { useNotification } from '../contexts/NotificationContext';
-import { authAPI, settingsAPI, protectedAPI, playoutAPI } from '../services/api';
+import { authAPI, settingsAPI, protectedAPI, playoutAPI, mediaAPI } from '../services/api';
 import {
   Box,
   Typography,
@@ -417,7 +417,14 @@ function Settings() {
   const [releaseHistory, setReleaseHistory] = useState([]);
   const [udpConfirmOpen, setUdpConfirmOpen] = useState(false);
   const [newPassword, setNewPassword] = useState('');
-  const [proxyStats, setProxyStats] = useState({ total_bytes: 0, proxy_count: 0 });
+  const [proxyStats, setProxyStats] = useState({
+    total_bytes: 0,
+    proxy_count: 0,
+    physical_media_count: 0,
+    db_media_count: 0,
+    sync_needed: false
+  });
+  const [syncing, setSyncing] = useState(false);
   const [purgingProxies, setPurgingProxies] = useState(false);
   const [proxiesList, setProxiesList] = useState([]);
   const [selectedProxyIds, setSelectedProxyIds] = useState([]);
@@ -749,6 +756,25 @@ function Settings() {
     }
   };
 
+  const handleSyncMedia = async () => {
+    try {
+      setSyncing(true);
+      const res = await mediaAPI.sync();
+      if (res.data.status === 'ok') {
+        showSuccess(`Sincronização concluída: ${res.data.added} novos ficheiros identificados.`);
+      } else {
+        showSuccess(`Sincronização parcial: ${res.data.added} adicionados, ${res.data.errors} erros.`);
+      }
+      await fetchProxyStats();
+      if (explorerOpen) await fetchProxiesList();
+    } catch (err) {
+      showError('Erro ao sincronizar ficheiros do disco');
+      console.error(err);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const fetchProxiesList = async () => {
     try {
       const response = await mediaAPI.listProxies();
@@ -873,7 +899,8 @@ function Settings() {
   const fetchReleaseHistory = () => {
     // Curated local history — no external API dependency, works offline
     setReleaseHistory([
-      { version: 'v2.2.0-ALPHA.23-PRO', date: '2026-02-19', changes: ['Streaming: Otimização profunda em Nginx (buffering off, byte ranges)', 'Frontend: Preview de media com suporte nativo a Buffering/Partial Content', 'Backend: Implementação de Range Requests no endpoint de stream (Rust)', 'Estabilidade: Melhor manuseamento de ficheiros grandes via Chunked Transfer', 'Versioning: Bump global para ALPHA.23 PRO'] },
+      { version: 'v2.2.0-ALPHA.24-PRO', date: '2026-02-21', changes: ['Reality Sync Engine: motor proativo que deteta ficheiros no disco e os regista na App automágicamente', 'Elite Storage Audit: Gestor de Espaço identifica bibliotecas vs realidade física e detecta proxies em falta', 'Sync Resiliente: novo motor com tratamento de erros detalhado, verificação de permissões e reporting granular', 'Resiliência de Metadados: correção de falhas na leitura de metadados em ficheiros com nomes complexos', 'Versioning: Consolidação total para ALPHA.24-PRO em todo o ecossistema'] },
+      { version: 'v2.2.0-ALPHA.23-PRO', date: '2026-02-19', changes: ['Streaming: Otimização profunda em Nginx (buffering off, byte ranges)', 'Frontend: Preview de media com suporte nativo a Buffering/Partial Content', 'Backend: Implementação de Range Requests no endpoint de stream (Rust)', 'Estabilidade: Melhor manuseamento de ficheiros grandes via Chunked Transfer'] },
       { version: 'v2.2.0-ALPHA.22-PRO', date: '2026-02-18', changes: ['Dashboard: painel de controlo com ícones profissionais (PlayCircle/StopCircle/Cast/Terminal/SkipNext)', 'Estados visuais dinâmicos: cor + ícone + glow por estado ON AIR/OFF AIR', 'Animações pulse/glow no botão principal e distribuição activa', 'Tooltip descritivo em hover em todos os controlos de emissão', 'Settings: histórico de versões completo até ALPHA.22'] },
       { version: 'v2.2.0-ALPHA.21-PRO', date: '2026-02-18', changes: ['Uptime com precisão ms (00h 00m 00s 000ms)', 'Stream clean preview (stream_clean.m3u8 sem overlay)', 'Protocol status real baseado em processo relay activo', 'SRT relay URL fix (publish: streamid)', 'Settings: botão REPOR PADRÕES para branding defaults'] },
       { version: 'v2.2.0-ALPHA.20-PRO', date: '2026-02-18', changes: ['Dashboard: redesign ícone UDP + estado real de protocolo', 'Settings: UI DASH/MSS/RTSP/WebRTC (desactivado, em breve)', 'Graphics: preview 16:9 proporcional sem imagens externas', 'EPG: barra TV Guide com data + ícones abrir/download', 'Logs: config de rotação (tamanho, ficheiros, compressão, retenção), filtro, export', 'Branding: botão RESTAURAR DEFAULTS + auto-assign em novo vídeo'] },
@@ -1576,6 +1603,9 @@ function Settings() {
                   <Typography variant="body2" sx={{ mt: 1, maxWidth: '600px', opacity: 0.8 }}>
                     As versões Proxy (720p H.264) são criadas automaticamente para garantir visualização e navegação instantânea no Portal, com zero-latência, sem pesar na largura de banda.
                   </Typography>
+                  <Typography variant="body2" sx={{ mt: 1, maxWidth: '600px', fontSize: '0.75rem', color: 'primary.main', opacity: 0.7, fontStyle: 'italic' }}>
+                    💡 <b>Reality Sync Engine:</b> Esta função varre fisicamente todas as pastas do servidor (Media, Fillers, Assets), extrai metadados via FFmpeg e regista-os na Base de Dados, permitindo que ficheiros adicionados via FTP/Terminal fiquem imediatamente prontos para emissão.
+                  </Typography>
                 </Box>
                 <Box sx={{ textAlign: 'right' }}>
                   <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 0.5 }}>ESPAÇO TOTAL EM DISCO (CACHE)</Typography>
@@ -1594,14 +1624,63 @@ function Settings() {
                 </Box>
               </Box>
 
-              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', p: 2, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2 }}>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
+                <Paper variant="outlined" sx={{ p: 2, flexGrow: 1, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center', borderRadius: 3 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', letterSpacing: 1 }}>BIBLIOTECAS (DB)</Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 900 }}>{proxyStats.db_media_count}</Typography>
+                </Paper>
+                <Paper variant="outlined" sx={{ p: 2, flexGrow: 1, bgcolor: 'rgba(0, 229, 255, 0.05)', border: '1px solid rgba(0, 229, 255, 0.1)', textAlign: 'center', borderRadius: 3 }}>
+                  <Typography variant="caption" color="primary" sx={{ fontWeight: 800, display: 'block', letterSpacing: 1 }}>REALIDADE (DISCO)</Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 900, color: 'primary.main' }}>{proxyStats.physical_media_count}</Typography>
+                </Paper>
+                <Paper variant="outlined" sx={{ p: 2, flexGrow: 1, bgcolor: 'rgba(156, 39, 176, 0.05)', border: '1px solid rgba(156, 39, 176, 0.1)', textAlign: 'center', borderRadius: 3 }}>
+                  <Typography variant="caption" color="secondary" sx={{ fontWeight: 800, display: 'block', letterSpacing: 1 }}>OTIMIZADOS (WEB)</Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 900, color: 'secondary.main' }}>{proxyStats.proxy_count}</Typography>
+                </Paper>
+              </Box>
+
+              {proxyStats.sync_needed && (
+                <Alert
+                  severity="warning"
+                  variant="outlined"
+                  sx={{ mb: 3, borderRadius: 3, border: '1px solid rgba(255, 152, 0, 0.3)', bgcolor: 'rgba(255, 152, 0, 0.05)' }}
+                  action={
+                    <Button
+                      color="warning"
+                      variant="contained"
+                      size="small"
+                      startIcon={syncing ? <CircularProgress size={16} /> : <RefreshIcon />}
+                      onClick={handleSyncMedia}
+                      disabled={syncing}
+                      sx={{ fontWeight: 900, borderRadius: 2 }}
+                    >
+                      SINCRONIZAR AGORA
+                    </Button>
+                  }
+                >
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>Diferença detetada!</Typography>
+                  Existem ficheiros no disco que ainda não foram identificados pela aplicação.
+                </Alert>
+              )}
+
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', p: 2.5, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 4, border: '1px solid rgba(255,255,255,0.05)' }}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={syncing ? <CircularProgress size={20} color="inherit" /> : <RefreshIcon />}
+                  onClick={handleSyncMedia}
+                  disabled={syncing}
+                  sx={{ fontWeight: 800, borderRadius: 2 }}
+                >
+                  {syncing ? 'A SINCRONIZAR...' : 'SINCRONIZAR DISCO'}
+                </Button>
                 <Button
                   variant="outlined"
                   color="secondary"
                   startIcon={purgingProxies ? <CircularProgress size={20} color="secondary" /> : <DeleteIcon />}
                   onClick={handlePurgeProxies}
                   disabled={purgingProxies || proxyStats.proxy_count === 0}
-                  sx={{ fontWeight: 800 }}
+                  sx={{ fontWeight: 800, borderRadius: 2 }}
                 >
                   {purgingProxies ? 'A LIMPAR...' : 'LIMPAR TUDO'}
                 </Button>
@@ -1610,13 +1689,13 @@ function Settings() {
                   color="secondary"
                   startIcon={<ViewIcon />}
                   onClick={() => { fetchProxiesList(); setExplorerOpen(true); }}
-                  disabled={proxyStats.proxy_count === 0}
-                  sx={{ fontWeight: 800 }}
+                  disabled={proxyStats.proxy_count === 0 && !syncing}
+                  sx={{ fontWeight: 800, borderRadius: 2 }}
                 >
-                  EXPLORAR & GESTÃO GRANULAR
+                  EXPLORAR GESTOR
                 </Button>
-                <Typography variant="caption" sx={{ color: 'text.disabled', maxWidth: '300px' }}>
-                  A limpeza afeta apenas os ficheiros otimizados (H.264). Os vídeos originais na Media Library nunca são apagados nesta ação.
+                <Typography variant="caption" sx={{ color: 'text.disabled', maxWidth: '250px', lineHeight: 1.2 }}>
+                  Se adicionares ficheiros via Terminal ou FTP, usa o botão Sincronizar para os trazer para a App.
                 </Typography>
               </Box>
             </Paper>
@@ -2784,10 +2863,31 @@ function Settings() {
                   />
                   <ListItemText
                     primary={proxy.filename}
-                    primaryTypographyProps={{ fontWeight: 700, fontSize: '0.85rem' }}
-                    secondary={`${(proxy.size_bytes / 1024 / 1024).toFixed(2)} MB • ${new Date(proxy.created_at).toLocaleString()}`}
+                    primaryTypographyProps={{
+                      fontWeight: 700,
+                      fontSize: '0.85rem',
+                      color: proxy.exists ? 'inherit' : 'warning.main'
+                    }}
+                    secondary={proxy.exists ?
+                      `${(proxy.size_bytes / 1024 / 1024).toFixed(2)} MB • ${new Date(proxy.created_at).toLocaleString()}` :
+                      `⚠️ PROXY EM FALTA (Identificado no Disco, falta optimizar)`
+                    }
                     secondaryTypographyProps={{ fontSize: '0.7rem' }}
                   />
+                  {!proxy.exists && proxy.media_id && (
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="warning"
+                      sx={{ fontSize: '0.6rem', fontWeight: 900 }}
+                      onClick={() => mediaAPI.generateProxy(proxy.media_id).then(() => {
+                        showSuccess('Geração de proxy iniciada em background');
+                        fetchProxiesList();
+                      })}
+                    >
+                      GERAR AGORA
+                    </Button>
+                  )}
                 </ListItem>
               ))}
               {proxiesList.length === 0 && (
