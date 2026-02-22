@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import ReactPlayer from 'react-player';
 import axios from 'axios';
 import { useNotification } from '../contexts/NotificationContext';
 import { authAPI, settingsAPI, protectedAPI, playoutAPI, mediaAPI } from '../services/api';
+import { OUTPUT_DEFAULTS, PRESETS, UDP_DEFAULTS, APP_VERSION_FALLBACK } from '../constants/settingsConfig';
 import {
   Box,
   Typography,
@@ -601,14 +602,9 @@ function Settings() {
     }
   };
 
-  // Output Defaults Configuration
-  const OUTPUT_DEFAULTS = {
-    rtmp: { url: 'rtmp://localhost:1935/live_stream', resolution: '1280x720', bitrate: '2500k' },
-    hls: { url: '/hls/stream.m3u8', resolution: '1920x1080', bitrate: '4000k' },
-    srt: { url: 'srt://mediamtx:8890?mode=caller&streamid=publish:live_stream_srt', resolution: '1920x1080', bitrate: '5000k' },
-    udp: { url: 'udp://239.0.0.1:1234', resolution: '1280x720', bitrate: '3000k' },
-    desktop: { url: 'local', resolution: '1920x1080', bitrate: '0' }
-  };
+  // OUTPUT_DEFAULTS and PRESETS are now stable module-level constants
+  // (imported from constants/settingsConfig.js) — no longer re-created on every render.
+  // UDP defaults are also imported: UDP_DEFAULTS.multicast / UDP_DEFAULTS.unicast
 
   const handleOutputTypeChange = (type) => {
     const defaults = OUTPUT_DEFAULTS[type];
@@ -628,12 +624,7 @@ function Settings() {
   };
 
   // PRESET LOGIC: Sync Resolution -> Preset Cards -> Bitrate Limits
-  const PRESETS = {
-    '3840x2160': { id: '4k', label: 'Ultra HD', bitrate: 15000, fps: '30' },
-    '1920x1080': { id: '1080p', label: 'Full HD', bitrate: 5000, fps: '25' },
-    '1280x720': { id: '720p', label: 'HD Ready', bitrate: 2500, fps: '25' },
-    '640x360': { id: '360p', label: 'SD', bitrate: 1000, fps: '25' },
-  };
+  // (PRESETS constant is now imported from constants/settingsConfig.js)
 
   const [activePreset, setActivePreset] = useState(null);
   const [pendingPreset, setPendingPreset] = useState(null); // { id, title, res, bitrate, fps }
@@ -716,17 +707,15 @@ function Settings() {
     setPendingPreset(null);
   };
 
-  const handleUdpModeChange = (mode) => {
-    // Define defaults based on protocol and mode
-    let newUrl = mode === 'multicast' ? 'udp://239.0.0.1:1234?ttl=2' : 'udp://127.0.0.1:1234';
-
+  const handleUdpModeChange = useCallback((mode) => {
+    const newUrl = mode === 'multicast' ? UDP_DEFAULTS.multicast : UDP_DEFAULTS.unicast;
     setSettings(prev => ({
       ...prev,
       outputUrl: newUrl,
       udpOutputUrl: newUrl,
       udpMode: mode
     }));
-  };
+  }, []);
 
   const fetchUsers = async () => {
     try {
@@ -761,7 +750,8 @@ function Settings() {
       setSyncing(true);
       const res = await mediaAPI.sync();
       if (res.data.status === 'ok') {
-        showSuccess(`Sincronização concluída: ${res.data.added} novos ficheiros identificados.`);
+        const addedFiles = res.data.added_files ? res.data.added_files.length : res.data.added;
+        showSuccess(`Sincronização concluída: ${addedFiles} novos ficheiros identificados.`);
       } else {
         showSuccess(`Sincronização parcial: ${res.data.added} adicionados, ${res.data.errors} erros.`);
       }
@@ -1595,110 +1585,71 @@ function Settings() {
               </Grid>
             </Paper>
 
-            {/* STORAGE MGMT SECTION */}
-            <Paper className="glass-panel" sx={{ p: 4, mb: 4, borderLeft: '4px solid #9c27b0' }}>
-              <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Box>
-                  <Typography variant="h6" sx={{ fontWeight: 800, color: 'secondary.main' }}>GESTÃO DE ESPAÇO (WEB PROXIES)</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>MONITORIZAÇÃO E CONTROLO DE CACHE</Typography>
-                  <Typography variant="body2" sx={{ mt: 1, maxWidth: '600px', opacity: 0.8 }}>
-                    As versões Proxy (720p H.264) são criadas automaticamente para garantir visualização e navegação instantânea no Portal, com zero-latência, sem pesar na largura de banda.
+            {/* COMPACT STORAGE MGMT SECTION */}
+            <Paper className="glass-panel" sx={{ p: 2, mb: 4, borderLeft: '4px solid #9c27b0' }}>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
+
+                {/* Left Side: Title & Description */}
+                <Box sx={{ flex: 1, minWidth: '300px' }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'secondary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                    GESTÃO DE ESPAÇO (WEB PROXIES)
+                    {proxyStats?.sync_needed && (
+                      <Tooltip title={`${proxyStats.new_files_count || 'Vários'} ficheiros novos no disco. Clique no ícone de Sincronizar.`}>
+                        <Chip size="small" color="warning" icon={<WarningIcon sx={{ fontSize: 14 }} />} label={`${proxyStats.new_files_count || '!'} Não Sincronizados`} sx={{ height: 20, fontSize: '0.65rem', fontWeight: 800 }} />
+                      </Tooltip>
+                    )}
                   </Typography>
-                  <Typography variant="body2" sx={{ mt: 1, maxWidth: '600px', fontSize: '0.75rem', color: 'primary.main', opacity: 0.7, fontStyle: 'italic' }}>
-                    💡 <b>Reality Sync Engine:</b> Esta função varre fisicamente todas as pastas do servidor (Media, Fillers, Assets), extrai metadados via FFmpeg e regista-os na Base de Dados, permitindo que ficheiros adicionados via FTP/Terminal fiquem imediatamente prontos para emissão.
+                  <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                    Monitorização de cache e sincronização física de directórios.
                   </Typography>
                 </Box>
-                <Box sx={{ textAlign: 'right' }}>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 0.5 }}>ESPAÇO TOTAL EM DISCO (CACHE)</Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
-                    <Typography variant="h4" sx={{ fontWeight: 'black', color: 'secondary.main', lineHeight: 1 }}>
-                      {((proxyStats?.total_bytes || 0) / 1024 / 1024).toFixed(2)}
-                      <Typography component="span" variant="h6" sx={{ fontWeight: 800, color: 'text.secondary', ml: 0.5 }}>MB</Typography>
-                    </Typography>
-                    <Tooltip title="Actualizar Métricas">
-                      <IconButton size="small" onClick={fetchProxyStats} sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}>
-                        <RefreshIcon sx={{ fontSize: 20 }} />
+
+                {/* Middle: Compact Stats Chips */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2 }}>
+                  <Tooltip title="Base de Dados">
+                    <Chip size="small" label={`DB: ${proxyStats?.db_media_count || 0}`} sx={{ bgcolor: 'rgba(255,255,255,0.05)', fontWeight: 600 }} />
+                  </Tooltip>
+                  <Tooltip title="Disco Físico">
+                    <Chip size="small" label={`Disco: ${proxyStats?.physical_media_count || 0}`} sx={{ bgcolor: 'rgba(0, 229, 255, 0.1)', color: 'primary.main', fontWeight: 600 }} />
+                  </Tooltip>
+                  <Tooltip title="Web Proxies (Espaço Ocupado)">
+                    <Chip size="small" label={`Proxies: ${proxyStats?.proxy_count || 0} (${((proxyStats?.total_bytes || 0) / 1024 / 1024).toFixed(1)}MB)`} sx={{ bgcolor: 'rgba(156, 39, 176, 0.1)', color: 'secondary.main', fontWeight: 600 }} />
+                  </Tooltip>
+                </Box>
+
+                {/* Right Side: Toolbar Actions */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Tooltip title="Explorar Gestor de Proxies">
+                    <IconButton onClick={() => { fetchProxiesList(); setExplorerOpen(true); }} disabled={proxyStats?.proxy_count === 0 && !syncing} color="secondary" sx={{ bgcolor: 'rgba(156, 39, 176, 0.05)' }}>
+                      <ViewIcon />
+                    </IconButton>
+                  </Tooltip>
+
+                  <Divider orientation="vertical" variant="middle" flexItem sx={{ mx: 1, borderColor: 'rgba(255,255,255,0.1)' }} />
+
+                  <Tooltip title="Sincronizar ficheiros do disco para a Base de Dados">
+                    <span>
+                      <IconButton onClick={handleSyncMedia} disabled={syncing} color={proxyStats?.sync_needed ? "warning" : "primary"} sx={{ bgcolor: proxyStats?.sync_needed ? 'rgba(255, 152, 0, 0.1)' : 'rgba(0, 229, 255, 0.05)' }}>
+                        {syncing ? <CircularProgress size={20} color="inherit" /> : <RefreshIcon />}
                       </IconButton>
-                    </Tooltip>
-                  </Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, mt: 1, display: 'block' }}>{proxyStats?.proxy_count || 0} PROXIES WEB ACTIVOS</Typography>
+                    </span>
+                  </Tooltip>
+
+                  <Tooltip title="Limpar todos os Proxies (Libertar Espaço)">
+                    <span>
+                      <IconButton onClick={handlePurgeProxies} disabled={purgingProxies || proxyStats?.proxy_count === 0} color="error" sx={{ bgcolor: 'rgba(244, 67, 54, 0.05)' }}>
+                        {purgingProxies ? <CircularProgress size={20} color="inherit" /> : <DeleteIcon />}
+                      </IconButton>
+                    </span>
+                  </Tooltip>
                 </Box>
+
               </Box>
 
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
-                <Paper variant="outlined" sx={{ p: 2, flexGrow: 1, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center', borderRadius: 3 }}>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', letterSpacing: 1 }}>BIBLIOTECAS (DB)</Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 900 }}>{proxyStats.db_media_count}</Typography>
-                </Paper>
-                <Paper variant="outlined" sx={{ p: 2, flexGrow: 1, bgcolor: 'rgba(0, 229, 255, 0.05)', border: '1px solid rgba(0, 229, 255, 0.1)', textAlign: 'center', borderRadius: 3 }}>
-                  <Typography variant="caption" color="primary" sx={{ fontWeight: 800, display: 'block', letterSpacing: 1 }}>REALIDADE (DISCO)</Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 900, color: 'primary.main' }}>{proxyStats.physical_media_count}</Typography>
-                </Paper>
-                <Paper variant="outlined" sx={{ p: 2, flexGrow: 1, bgcolor: 'rgba(156, 39, 176, 0.05)', border: '1px solid rgba(156, 39, 176, 0.1)', textAlign: 'center', borderRadius: 3 }}>
-                  <Typography variant="caption" color="secondary" sx={{ fontWeight: 800, display: 'block', letterSpacing: 1 }}>OTIMIZADOS (WEB)</Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 900, color: 'secondary.main' }}>{proxyStats.proxy_count}</Typography>
-                </Paper>
-              </Box>
-
-              {proxyStats.sync_needed && (
-                <Alert
-                  severity="warning"
-                  variant="outlined"
-                  sx={{ mb: 3, borderRadius: 3, border: '1px solid rgba(255, 152, 0, 0.3)', bgcolor: 'rgba(255, 152, 0, 0.05)' }}
-                  action={
-                    <Button
-                      color="warning"
-                      variant="contained"
-                      size="small"
-                      startIcon={syncing ? <CircularProgress size={16} /> : <RefreshIcon />}
-                      onClick={handleSyncMedia}
-                      disabled={syncing}
-                      sx={{ fontWeight: 900, borderRadius: 2 }}
-                    >
-                      SINCRONIZAR AGORA
-                    </Button>
-                  }
-                >
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>Diferença detetada!</Typography>
-                  Existem ficheiros no disco que ainda não foram identificados pela aplicação.
-                </Alert>
+              {/* Progress Bar (Only visible when doing operations) */}
+              {(syncing || purgingProxies) && (
+                <LinearProgress color={syncing ? 'primary' : 'error'} sx={{ mt: 2, borderRadius: 2 }} />
               )}
-
-              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', p: 2.5, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 4, border: '1px solid rgba(255,255,255,0.05)' }}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  startIcon={syncing ? <CircularProgress size={20} color="inherit" /> : <RefreshIcon />}
-                  onClick={handleSyncMedia}
-                  disabled={syncing}
-                  sx={{ fontWeight: 800, borderRadius: 2 }}
-                >
-                  {syncing ? 'A SINCRONIZAR...' : 'SINCRONIZAR DISCO'}
-                </Button>
-                <Button
-                  variant="outlined"
-                  color="secondary"
-                  startIcon={purgingProxies ? <CircularProgress size={20} color="secondary" /> : <DeleteIcon />}
-                  onClick={handlePurgeProxies}
-                  disabled={purgingProxies || proxyStats.proxy_count === 0}
-                  sx={{ fontWeight: 800, borderRadius: 2 }}
-                >
-                  {purgingProxies ? 'A LIMPAR...' : 'LIMPAR TUDO'}
-                </Button>
-                <Button
-                  variant="contained"
-                  color="secondary"
-                  startIcon={<ViewIcon />}
-                  onClick={() => { fetchProxiesList(); setExplorerOpen(true); }}
-                  disabled={proxyStats.proxy_count === 0 && !syncing}
-                  sx={{ fontWeight: 800, borderRadius: 2 }}
-                >
-                  EXPLORAR GESTOR
-                </Button>
-                <Typography variant="caption" sx={{ color: 'text.disabled', maxWidth: '250px', lineHeight: 1.2 }}>
-                  Se adicionares ficheiros via Terminal ou FTP, usa o botão Sincronizar para os trazer para a App.
-                </Typography>
-              </Box>
             </Paper>
 
             <Paper className="glass-panel" sx={{ p: 4, mb: 4 }}>

@@ -1,28 +1,60 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import CircularProgress from '@mui/material/CircularProgress';
+import Box from '@mui/material/Box';
 import theme from './theme';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
-import Dashboard from './pages/Dashboard';
-import MediaLibrary from './pages/MediaLibrary';
-import PlaylistEditor from './pages/PlaylistEditor';
-import Calendar from './pages/Calendar';
-import Settings from './pages/Settings';
-import Templates from './pages/Templates';
-import Login from './pages/Login';
 import useAuthStore from './stores/authStore';
-import SetupWizard from './pages/Setup/Wizard';
-import EPGView from './pages/EPGView';
-import GraphicsEditor from './pages/GraphicsEditor';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { HelpProvider } from './context/HelpContext';
 import HelpSystem from './components/HelpSystem';
 import ConnectivityStatus from './components/ConnectivityStatus';
 
+// ─── Lazy-loaded pages ─────────────────────────────────────────────────────
+// Each page is a separate JS chunk. The browser only downloads a page's
+// code when the user navigates to it for the first time. Subsequent visits
+// are served from the browser cache.
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const MediaLibrary = lazy(() => import('./pages/MediaLibrary'));
+const PlaylistEditor = lazy(() => import('./pages/PlaylistEditor'));
+const Calendar = lazy(() => import('./pages/Calendar'));
+const Settings = lazy(() => import('./pages/Settings'));
+const Templates = lazy(() => import('./pages/Templates'));
+const Login = lazy(() => import('./pages/Login'));
+const SetupWizard = lazy(() => import('./pages/Setup/Wizard'));
+const EPGView = lazy(() => import('./pages/EPGView'));
+const GraphicsEditor = lazy(() => import('./pages/GraphicsEditor'));
+
+// ─── Shared loading fallback ───────────────────────────────────────────────
+const PageLoader = () => (
+  <Box
+    sx={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: '100vh',
+      background: '#0a0a1a',
+    }}
+  >
+    <CircularProgress sx={{ color: '#00bcd4' }} />
+  </Box>
+);
+
+// ─── Protected layout wrapper ──────────────────────────────────────────────
+const ProtectedLayout = ({ children }) => (
+  <ProtectedRoute>
+    <Layout>
+      <Suspense fallback={<PageLoader />}>
+        {children}
+      </Suspense>
+    </Layout>
+  </ProtectedRoute>
+);
 
 function App() {
-  console.log('📦 App component rendering...');
   const { isAuthenticated } = useAuthStore();
 
   return (
@@ -33,108 +65,27 @@ function App() {
           <HelpSystem />
           <ConnectivityStatus />
           <Router>
-            <Routes>
-              <Route
-                path="/login"
-                element={isAuthenticated ? <Navigate to="/" replace /> : <Login />}
-              />
-              {/* Default redirect for unauthenticated root access */}
-              {!isAuthenticated && (
-                <Route path="*" element={<Navigate to="/login" replace />} />
-              )}
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <Layout>
-                      <Dashboard />
-                    </Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/media"
-                element={
-                  <ProtectedRoute>
-                    <Layout>
-                      <MediaLibrary />
-                    </Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/playlists"
-                element={
-                  <ProtectedRoute>
-                    <Layout>
-                      <PlaylistEditor />
-                    </Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/calendar"
-                element={
-                  <ProtectedRoute>
-                    <Layout>
-                      <Calendar />
-                    </Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/settings"
-                element={
-                  <ProtectedRoute>
-                    <Layout>
-                      <Settings />
-                    </Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/epg"
-                element={
-                  <ProtectedRoute>
-                    <Layout>
-                      <EPGView />
-                    </Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/setup"
-                element={
-                  <ProtectedRoute>
-                    <Layout>
-                      <SetupWizard />
-                    </Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/graphics"
-                element={
-                  <ProtectedRoute>
-                    <Layout>
-                      <GraphicsEditor />
-                    </Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/templates"
-                element={
-                  <ProtectedRoute>
-                    <Layout>
-                      <Templates />
-                    </Layout>
-                  </ProtectedRoute>
-                }
-              />
-              {/* Fallback for any unknown route */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route
+                  path="/login"
+                  element={isAuthenticated ? <Navigate to="/" replace /> : <Login />}
+                />
+                {!isAuthenticated && (
+                  <Route path="*" element={<Navigate to="/login" replace />} />
+                )}
+                <Route path="/" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />
+                <Route path="/media" element={<ProtectedLayout><MediaLibrary /></ProtectedLayout>} />
+                <Route path="/playlists" element={<ProtectedLayout><PlaylistEditor /></ProtectedLayout>} />
+                <Route path="/calendar" element={<ProtectedLayout><Calendar /></ProtectedLayout>} />
+                <Route path="/settings" element={<ProtectedLayout><Settings /></ProtectedLayout>} />
+                <Route path="/epg" element={<ProtectedLayout><EPGView /></ProtectedLayout>} />
+                <Route path="/setup" element={<ProtectedLayout><SetupWizard /></ProtectedLayout>} />
+                <Route path="/graphics" element={<ProtectedLayout><GraphicsEditor /></ProtectedLayout>} />
+                <Route path="/templates" element={<ProtectedLayout><Templates /></ProtectedLayout>} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </Suspense>
           </Router>
         </HelpProvider>
       </NotificationProvider>

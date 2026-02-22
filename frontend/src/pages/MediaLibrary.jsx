@@ -56,6 +56,7 @@ import {
   Speed as SpeedIcon,
   Bolt as BoltIcon,
   Refresh as SyncIcon,
+  Analytics as AnalyticsIcon,
 } from '@mui/icons-material';
 import { useDropzone } from 'react-dropzone';
 import { mediaAPI } from '../services/api';
@@ -116,6 +117,9 @@ export default function MediaLibrary() {
   const [activeTasks, setActiveTasks] = useState({}); // { mediaId: [task1, task2] }
   const finishedIdsRef = React.useRef([]); // Track IDs that just finished for safe fetchMedia call
   const [syncing, setSyncing] = useState(false);
+
+  // Auditing States
+  const [auditDialog, setAuditDialog] = useState({ open: false, data: null, loading: false });
 
   const fetchMedia = async () => {
     setLoading(true);
@@ -599,6 +603,33 @@ export default function MediaLibrary() {
     setSelectedItemIds(allIds);
   };
 
+  const handleOpenAudit = async () => {
+    setAuditDialog({ open: true, data: null, loading: true });
+    try {
+      const res = await mediaAPI.auditProxies();
+      setAuditDialog({ open: true, data: res.data, loading: false });
+    } catch (error) {
+      showError('Erro ao auditar proxies.');
+      setAuditDialog({ open: false, data: null, loading: false });
+    }
+  };
+
+  const handleAuditActionAll = async () => {
+    if (!auditDialog.data || auditDialog.data.missing_ids.length === 0) return;
+    setAuditDialog(prev => ({ ...prev, open: false }));
+    setPerformingBulkAction(true);
+    try {
+      showInfo(`Adicionando ${auditDialog.data.missing_ids.length} ficheiros à fila de proxies...`);
+      await mediaAPI.batchProxy(auditDialog.data.missing_ids);
+      showSuccess('Ficheiros adicionados à fila de proxies com sucesso!');
+      setTimeout(() => fetchMedia(), 1000);
+    } catch (e) {
+      showError('Erro ao iniciar proxies em massa.');
+    } finally {
+      setPerformingBulkAction(false);
+    }
+  };
+
   const handleSearchChange = (e) => {
     setSearch(e.target.value);
     setPage(1);
@@ -633,6 +664,42 @@ export default function MediaLibrary() {
       fetchMedia();
     } catch (error) {
       showError('Erro ao aplicar acção em massa');
+    } finally {
+      setPerformingBulkAction(false);
+    }
+  };
+
+  const handleBatchProxy = async () => {
+    if (selectedItemIds.length === 0) return;
+    setPerformingBulkAction(true);
+    try {
+      showInfo(`Adicionando ${selectedItemIds.length} ficheiros à fila de proxies...`);
+      await mediaAPI.batchProxy(selectedItemIds);
+      showSuccess('Ficheiros adicionados à fila com sucesso!');
+      setSelectedItemIds([]);
+      setSelectionMode(false);
+      // Wait a moment before fetching to let tasks register
+      setTimeout(() => fetchMedia(), 1000);
+    } catch (error) {
+      showError('Erro ao iniciar batch proxy: ' + (error.response?.data?.error || error.message));
+    } finally {
+      setPerformingBulkAction(false);
+    }
+  };
+
+  const handleBatchOptimize = async () => {
+    if (selectedItemIds.length === 0) return;
+    setPerformingBulkAction(true);
+    try {
+      showInfo(`Adicionando ${selectedItemIds.length} ficheiros à fila de otimização faststart...`);
+      await mediaAPI.batchOptimize(selectedItemIds);
+      showSuccess('Ficheiros adicionados à fila de otimização com sucesso!');
+      setSelectedItemIds([]);
+      setSelectionMode(false);
+      // Wait a moment before fetching
+      setTimeout(() => fetchMedia(), 1000);
+    } catch (error) {
+      showError('Erro ao iniciar batch optimize: ' + (error.response?.data?.error || error.message));
     } finally {
       setPerformingBulkAction(false);
     }
@@ -679,7 +746,16 @@ export default function MediaLibrary() {
             disabled={syncing}
             sx={{ fontWeight: 800, border: '1px solid rgba(0, 229, 255, 0.3)' }}
           >
-            {syncing ? 'SINCRONIZANDO...' : 'SINCRONIZAR DISCO'}
+            {syncing ? 'SINCRONIZANDO...' : 'SINCRONIZAR'}
+          </Button>
+          <Button
+            variant="outlined"
+            color="secondary"
+            startIcon={<AnalyticsIcon />}
+            onClick={handleOpenAudit}
+            sx={{ fontWeight: 800, border: '1px solid rgba(156, 39, 176, 0.3)' }}
+          >
+            AUDITORIA
           </Button>
           <Button
             variant="outlined"
@@ -1435,10 +1511,10 @@ export default function MediaLibrary() {
           <Button onClick={() => setMetadataOpen(false)}>Cancelar</Button>
           <Button variant="contained" onClick={handleSaveMetadata}>Guardar</Button>
         </DialogActions>
-      </Dialog >
+      </Dialog>
 
       {/* Preview Dialog */}
-      < Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="md" fullWidth >
+      <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle sx={{ bgcolor: 'primary.dark', color: '#fff' }}>Preview: {selectedMedia?.filename}</DialogTitle>
         <DialogContent sx={{ p: 0, bgcolor: '#000', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px' }}>
           {selectedMedia?.media_type === 'video' && (
@@ -1476,14 +1552,14 @@ export default function MediaLibrary() {
           {selectedMedia?.media_type === 'audio' && <Box sx={{ p: 4 }}><audio controls preload="metadata" src={`/api/media/${selectedMedia.id}/stream`} /></Box>}
         </DialogContent>
         <DialogActions><Button onClick={() => setPreviewOpen(false)}>Fechar</Button></DialogActions>
-      </Dialog >
+      </Dialog>
       {/* Multi-file Upload Progress Dialog */}
-      < Dialog open={uploadProgressOpen} onClose={() => {
+      <Dialog open={uploadProgressOpen} onClose={() => {
         // Only allow closing if all finished
         if (uploadFiles.every(f => f.status === 'success' || f.status === 'error')) {
           setUploadProgressOpen(false);
         }
-      }} maxWidth="sm" fullWidth >
+      }} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <UploadIcon color="primary" /> Gestor de Uploads
         </DialogTitle>
@@ -1566,7 +1642,59 @@ export default function MediaLibrary() {
             Fechar Janela
           </Button>
         </DialogActions>
-      </Dialog >
-    </Box >
+      </Dialog>
+      {/* Audit Proxies Dialog */}
+      <Dialog open={auditDialog.open} onClose={() => setAuditDialog({ open: false, data: null, loading: false })} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'secondary.main' }}>
+          <AnalyticsIcon /> Auditoria de Web Proxies
+        </DialogTitle>
+        <DialogContent dividers>
+          {auditDialog.loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress color="secondary" /></Box>
+          ) : auditDialog.data ? (
+            <Box>
+              {auditDialog.data.missing_count === 0 ? (
+                <Alert severity="success" variant="outlined" sx={{ borderRadius: 3 }}>
+                  Todos os vídeos da biblioteca contêm Web Proxies gerados! O sistema está otimizado.
+                </Alert>
+              ) : (
+                <Box>
+                  <Alert severity="warning" variant="outlined" sx={{ mb: 3, borderRadius: 3 }}>
+                    Foram detectados <b>{auditDialog.data.missing_count} vídeos</b> sem versão Proxy Web.
+                    Isto requer processamento extra do servidor durante o streaming e navegação.
+                  </Alert>
+                  <Grid container spacing={2}>
+                    <Grid item xs={6}>
+                      <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', borderColor: 'rgba(255,255,255,0.1)' }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>VÍDEOS SEM PROXY</Typography>
+                        <Typography variant="h4" color="warning.main" sx={{ fontWeight: 900 }}>{auditDialog.data.missing_count}</Typography>
+                      </Paper>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', borderColor: 'rgba(255,255,255,0.1)' }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>ESPAÇO ESTIMADO</Typography>
+                        <Typography variant="h4" color="secondary.main" sx={{ fontWeight: 900 }}>~{auditDialog.data.estimated_space_mb.toFixed(0)} MB</Typography>
+                      </Paper>
+                    </Grid>
+                  </Grid>
+                </Box>
+              )}
+            </Box>
+          ) : <Typography>Erro ao carregar auditoria.</Typography>}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, pt: 2, justifyContent: 'space-between' }}>
+          <Button onClick={() => setAuditDialog({ open: false, data: null, loading: false })}>Concluir</Button>
+          <Button
+            variant="contained"
+            color="secondary"
+            startIcon={<BoltIcon />}
+            disabled={auditDialog.loading || !auditDialog.data || auditDialog.data.missing_count === 0 || performingBulkAction}
+            onClick={handleAuditActionAll}
+          >
+            Gerar em Lote ({auditDialog.data?.missing_count || 0})
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 }

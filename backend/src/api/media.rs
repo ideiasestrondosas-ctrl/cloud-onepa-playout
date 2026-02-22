@@ -1451,25 +1451,55 @@ async fn get_proxy_stats(pool: web::Data<PgPool>) -> impl Responder {
         }
     }
 
+    // Base de Dados (Fetching paths to compute sync accurately)
+    let db_paths_res = sqlx::query_as::<_, (String,)>("SELECT path FROM media")
+        .fetch_all(pool.get_ref())
+        .await;
+        
+    let mut db_paths_set = std::collections::HashSet::new();
+    let mut db_count = 0;
+    if let Ok(records) = db_paths_res {
+        for row in records {
+            db_paths_set.insert(row.0);
+            db_count += 1;
+        }
+    }
+
     // Realidade Física
     let mut physical_media = Vec::new();
     for path in &paths {
-        collect_media_files(path, &mut physical_media);
+        collect_media_files(path, &mut physical_media, 0);
     }
     let physical_count = physical_media.len() as u64;
 
-    // Base de Dados
-    let db_count_res: Result<(i64,), _> = sqlx::query_as("SELECT COUNT(*) FROM media")
-        .fetch_one(pool.get_ref())
-        .await;
-    let db_count = db_count_res.map(|r| r.0 as u64).unwrap_or(0);
+    let mut sync_needed = false;
+    let mut new_files_count = 0;
+    for physical_path in &physical_media {
+        let p_str = physical_path.to_string_lossy().to_string();
+        let lower_path = p_str.to_lowercase();
+        
+        // Skip system files and proxies
+        if lower_path.contains(".proxy.") || lower_path.contains(".optimized.") {
+            continue;
+        }
+        // Strict Asset Filtering: Ignore system files in protected folders unless it's the standard test video
+        if lower_path.contains("/assets/protected/") && !lower_path.ends_with("big_buck_bunny_1080p_h264.mov") {
+            continue;
+        }
+        
+        if !db_paths_set.contains(&p_str) {
+            sync_needed = true;
+            new_files_count += 1;
+        }
+    }
 
     HttpResponse::Ok().json(serde_json::json!({
         "total_bytes": total_bytes,
         "proxy_count": proxy_count,
         "physical_media_count": physical_count,
         "db_media_count": db_count,
-        "sync_needed": physical_count > db_count
+        "sync_needed": sync_needed,
+        "new_files_count": new_files_count
     }))
 }
 
@@ -1745,6 +1775,7 @@ async fn sync_media(pool: web::Data<PgPool>) -> impl Responder {
     let mut added_count = 0;
     let mut existed_count = 0;
     let mut error_details = Vec::new();
+    let mut added_files = Vec::new();
 
     // Ensure thumbnails directory exists
     if let Err(e) = std::fs::create_dir_all(&thumbnails_path) {
@@ -1757,7 +1788,7 @@ async fn sync_media(pool: web::Data<PgPool>) -> impl Responder {
 
     for base_path in paths_to_scan {
         if base_path.exists() {
-            collect_media_files(&base_path, &mut entries);
+            collect_media_files(&base_path, &mut entries, 0);
         }
     }
 
@@ -1818,6 +1849,7 @@ async fn sync_media(pool: web::Data<PgPool>) -> impl Responder {
 
                         if res.is_ok() {
                             added_count += 1;
+                            added_files.push(filename.clone());
                         } else {
                             let msg = format!("Erro ao inserir na base de dados ({}): {:?}", filename, res.err());
                             log::error!("{}", msg);
@@ -1847,17 +1879,27 @@ async fn sync_media(pool: web::Data<PgPool>) -> impl Responder {
         "added": added_count,
         "already_existed": existed_count,
         "errors": error_details.len(),
-        "details": error_details
+        "details": error_details,
+        "added_files": added_files
     }))
 }
 
-fn collect_media_files(dir: &Path, files: &mut Vec<std::path::PathBuf>) {
+fn collect_media_files(dir: &Path, files: &mut Vec<std::path::PathBuf>, depth: u32) {
+    if depth > 10 {
+        return; // Prevent infinite symlink/directory loops
+    }
     let extensions = ["mp4", "mov", "mkv", "avi", "mp3", "wav", "m4a", "webm"];
     if let Ok(entries) = std::fs::read_dir(dir) {
         for entry in entries.flatten() {
             let path = entry.path();
             if path.is_dir() {
-                collect_media_files(&path, files);
+                // Ignore hidden directories
+                if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                    if name.starts_with('.') {
+                        continue;
+                    }
+                }
+                collect_media_files(&path, files, depth + 1);
             } else if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
                 if extensions.contains(&ext.to_lowercase().as_str()) {
                     files.push(path);
@@ -1867,6 +1909,193 @@ fn collect_media_files(dir: &Path, files: &mut Vec<std::path::PathBuf>) {
     }
 }
 
+#[derive(serde::Deserialize)]
+pub struct BatchRequest {
+    pub ids: Vec<Uuid>,
+}
+
+/// Audit missing proxies
+async fn audit_proxies(pool: web::Data<PgPool>) -> impl Responder {
+    let result = sqlx::query_as::<_, Media>(
+        "SELECT * FROM media WHERE media_type = 'video'"
+    )
+    .fetch_all(pool.get_ref())
+    .await;
+
+    match result {
+        Ok(all_videos) => {
+            let mut missing_proxies = Vec::new();
+            let mut total_duration_missing_seconds: f64 = 0.0;
+            
+            for media in all_videos {
+                let path = std::path::Path::new(&media.path);
+                let original_path = path.to_string_lossy().to_string();
+                let stem = if original_path.to_lowercase().ends_with(".mp4") {
+                    &original_path[..original_path.len() - 4]
+                } else {
+                    &original_path
+                };
+                let proxy_path = format!("{}.proxy.mp4", stem);
+                
+                if !std::path::Path::new(&proxy_path).exists() {
+                    missing_proxies.push(media.id);
+                    total_duration_missing_seconds += media.duration.unwrap_or(0.0);
+                }
+            }
+            
+            // Heuristic for proxy space: 35MB per minute of 720p H.264
+            let estimated_size_mb = (total_duration_missing_seconds / 60.0) * 35.0;
+
+            HttpResponse::Ok().json(serde_json::json!({
+                "missing_count": missing_proxies.len(),
+                "missing_ids": missing_proxies,
+                "total_duration_seconds": total_duration_missing_seconds,
+                "estimated_space_mb": estimated_size_mb
+            }))
+        }
+        Err(e) => {
+            log::error!("Database error during proxy audit: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({"error": "Database error"}))
+        }
+    }
+}
+
+/// Batch generate proxies
+async fn batch_proxy(
+    req: web::Json<BatchRequest>,
+    pool: web::Data<PgPool>,
+) -> impl Responder {
+    for id in &req.ids {
+        let pool_bg = pool.get_ref().clone();
+        let media_id_bg = *id;
+        
+        tokio::spawn(async move {
+            let media_res = sqlx::query_as::<_, Media>("SELECT * FROM media WHERE id = $1")
+                .bind(media_id_bg)
+                .fetch_optional(&pool_bg)
+                .await;
+                
+            if let Ok(Some(media)) = media_res {
+                if media.media_type != "video" { return; }
+                
+                let path = std::path::Path::new(&media.path);
+                if !path.exists() { return; }
+                
+                let original_path = path.to_string_lossy().to_string();
+                let stem = if original_path.to_lowercase().ends_with(".mp4") {
+                    &original_path[..original_path.len() - 4]
+                } else {
+                    &original_path
+                };
+                let proxy_path = format!("{}.proxy.mp4", stem);
+                if std::path::Path::new(&proxy_path).exists() { return; }
+                
+                // Fast path linking
+                if let (Some(height), Some(bitrate)) = (media.height, media.bitrate) {
+                    if height <= 720 && bitrate <= 5_000_000 {
+                        if std::fs::hard_link(&original_path, &proxy_path).is_ok() {
+                            return;
+                        }
+                    }
+                }
+                
+                let task_id = Uuid::new_v4();
+                let _ = sqlx::query("INSERT INTO media_tasks (id, media_id, task_type, status) VALUES ($1, $2, $3, $4)")
+                    .bind(task_id)
+                    .bind(media_id_bg)
+                    .bind("proxy")
+                    .bind("processing")
+                    .execute(&pool_bg)
+                    .await;
+                
+                let ffmpeg = FFmpegService::new();
+                match ffmpeg.generate_proxy(&original_path, &proxy_path) {
+                    Ok(_) => {
+                        let _ = sqlx::query("UPDATE media_tasks SET status = 'completed', progress = 1.0, updated_at = CURRENT_TIMESTAMP WHERE id = $1")
+                            .bind(task_id).execute(&pool_bg).await;
+                    }
+                    Err(e) => {
+                        let _ = std::fs::remove_file(&proxy_path);
+                        let _ = sqlx::query("UPDATE media_tasks SET status = 'failed', error_message = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2")
+                            .bind(e).bind(task_id).execute(&pool_bg).await;
+                    }
+                }
+            }
+        });
+    }
+
+    HttpResponse::Accepted().json(serde_json::json!({
+        "message": format!("Batch proxy generation queued for {} files", req.ids.len())
+    }))
+}
+
+/// Batch optimize for streaming
+async fn batch_optimize(
+    req: web::Json<BatchRequest>,
+    pool: web::Data<PgPool>,
+) -> impl Responder {
+    for id in &req.ids {
+        let pool_bg = pool.get_ref().clone();
+        let media_id_bg = *id;
+        
+        tokio::spawn(async move {
+            let media_res = sqlx::query_as::<_, Media>("SELECT * FROM media WHERE id = $1")
+                .bind(media_id_bg)
+                .fetch_optional(&pool_bg)
+                .await;
+                
+            if let Ok(Some(media)) = media_res {
+                if media.media_type != "video" { return; }
+                
+                let path = std::path::Path::new(&media.path);
+                if !path.exists() { return; }
+                
+                let original_path = path.to_string_lossy().to_string();
+                let stem = if original_path.to_lowercase().ends_with(".mp4") {
+                    &original_path[..original_path.len() - 4]
+                } else {
+                    &original_path
+                };
+                let optimized_path = format!("{}.optimized.mp4", stem);
+                
+                let ffmpeg = FFmpegService::new();
+                if ffmpeg.is_faststart_optimized(&original_path) { return; }
+                
+                let task_id = Uuid::new_v4();
+                let _ = sqlx::query("INSERT INTO media_tasks (id, media_id, task_type, status) VALUES ($1, $2, $3, $4)")
+                    .bind(task_id)
+                    .bind(media_id_bg)
+                    .bind("optimize")
+                    .bind("processing")
+                    .execute(&pool_bg)
+                    .await;
+                
+                match ffmpeg.optimize_for_streaming(&original_path, &optimized_path) {
+                    Ok(_) => {
+                         if let Err(e) = std::fs::rename(&optimized_path, &original_path) {
+                            let _ = std::fs::remove_file(&optimized_path);
+                            let _ = sqlx::query("UPDATE media_tasks SET status = 'failed', error_message = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2")
+                                .bind(format!("Rename failed: {}", e)).bind(task_id).execute(&pool_bg).await;
+                        } else {
+                            let _ = sqlx::query("UPDATE media_tasks SET status = 'completed', progress = 1.0, updated_at = CURRENT_TIMESTAMP WHERE id = $1")
+                                .bind(task_id).execute(&pool_bg).await;
+                        }
+                    }
+                    Err(e) => {
+                        let _ = std::fs::remove_file(&optimized_path);
+                        let _ = sqlx::query("UPDATE media_tasks SET status = 'failed', error_message = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2")
+                            .bind(e).bind(task_id).execute(&pool_bg).await;
+                    }
+                }
+            }
+        });
+    }
+
+    HttpResponse::Accepted().json(serde_json::json!({
+        "message": format!("Batch streaming optimization queued for {} files", req.ids.len())
+    }))
+}
+
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.route("", web::get().to(list_media))
         .route("/folders", web::get().to(list_folders))
@@ -1874,6 +2103,9 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         .route("/folders/{id}", web::delete().to(delete_folder))
         .route("/sync", web::post().to(sync_media))
         .route("/stats/proxy", web::get().to(get_proxy_stats))
+        .route("/audit/proxies", web::get().to(audit_proxies))
+        .route("/batch/proxy", web::post().to(batch_proxy))
+        .route("/batch/optimize", web::post().to(batch_optimize))
         .route("/proxies", web::get().to(list_proxies))
         .route("/proxies/delete", web::post().to(delete_specific_proxies))
         .route("/proxies/purge", web::delete().to(purge_proxies))

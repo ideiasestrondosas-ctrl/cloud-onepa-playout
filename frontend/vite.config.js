@@ -13,7 +13,7 @@ export default defineConfig({
         changeOrigin: true,
       },
       "/hls": {
-        target: "http://localhost:8993", // Correct SRT/HLS port or backend port
+        target: "http://localhost:8993",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/hls/, ""),
       },
@@ -27,6 +27,6 @@ export default defineConfig({
     outDir: "dist",
     assetsDir: "static",
     sourcemap: false,
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 700,
   },
 });

@@ -121,16 +121,26 @@ export default function Dashboard() {
 
   const [scheduleAlertOpen, setScheduleAlertOpen] = useState(false);
 
+  const fetchStatus = useCallback(async () => {
+    try {
+      const response = await playoutAPI.status();
+      setStatus(response.data);
+    } catch (error) {
+      console.warn('[Dashboard] Status fetch failed:', error.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchStatus();
-    // checkSchedule(); // MOVED TO START BUTTON
     const interval = setInterval(fetchStatus, 2000);
     return () => {
       clearInterval(interval);
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       if (audioCtxRef.current) audioCtxRef.current.close().catch(e => console.warn('AudioContext close failed:', e));
     };
-  }, []);
+  }, [fetchStatus]);
 
   const checkSchedule = async () => {
     try {
@@ -282,18 +292,7 @@ export default function Dashboard() {
     }
   }, []);
 
-  const fetchStatus = async () => {
-    try {
-      const settingsRes = await settingsAPI.get();
-      setSettings(settingsRes.data);
-      const response = await playoutAPI.status();
-      setStatus(response.data);
-    } catch (error) {
-      console.error('Failed to fetch status:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   const handleToggleAllDistribution = async (enabled) => {
     try {
