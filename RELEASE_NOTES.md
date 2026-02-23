@@ -6,18 +6,6 @@
 - **Automated Release**: Version bump and statistics update.
 - **Documentation**: Synced README.md and version history.
 
-## v2.2.0-ALPHA.27-PRO-PRO (2026-02-23)
-
-### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
-
-## v2.2.0-ALPHA.27-PRO-PRO (2026-02-23)
-
-### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
-
 ## v2.2.0-ALPHA.27-PRO (2026-02-23)
 
 ### 🚀 Release Highlights
@@ -32,13 +20,13 @@
 - **Automated Release**: Version bump and statistics update.
 - **Documentation**: Synced README.md and version history.
 
-## v2.2.0-ALPHA.26-PRO-PRO (2026-02-22)
+## v2.2.0-ALPHA.26-PRO (2026-02-22)
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.
 - **Documentation**: Synced README.md and version history.
 
-## v2.2.0-ALPHA.25-PRO-PRO (2026-02-22)
+## v2.2.0-ALPHA.25-PRO (2026-02-22)
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.
