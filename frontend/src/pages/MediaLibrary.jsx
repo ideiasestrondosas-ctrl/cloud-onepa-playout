@@ -721,10 +721,10 @@ export default function MediaLibrary() {
         zIndex: 0
       }} />
 
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 1 }}>
+      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 1 }}>
         <Box>
-          <Typography variant="h4" className="neon-text" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>Media Library</Typography>
-          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase' }}>
+          <Typography variant="h4" className="neon-text" sx={{ fontWeight: 800, letterSpacing: '-0.02em', fontSize: '1.8rem' }}>Media Library</Typography>
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', fontSize: '0.65rem' }}>
             Gestão Inteligente de Conteúdo
           </Typography>
         </Box>
@@ -810,11 +810,11 @@ export default function MediaLibrary() {
         )
       }
 
-      <Grid container spacing={3}>
+      <Grid container spacing={2}>
         {/* Sidebar Folders */}
         <Grid item xs={12} md={3} sx={{ position: 'relative', zIndex: 1 }}>
-          <Paper className="glass-panel" sx={{ p: 2, height: '100%', minHeight: '60vh', display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 800, mb: 2, display: 'flex', alignItems: 'center', gap: 1, letterSpacing: 2 }}>
+          <Paper className="glass-panel" sx={{ p: 1.5, height: '100%', minHeight: '60vh', display: 'flex', flexDirection: 'column' }}>
+            <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 800, mb: 1, display: 'flex', alignItems: 'center', gap: 1, letterSpacing: 1, fontSize: '0.65rem' }}>
               <FolderIcon sx={{ fontSize: 18 }} /> ESTRUTURA
             </Typography>
             <List size="small" sx={{ flexGrow: 1 }}>
@@ -868,7 +868,7 @@ export default function MediaLibrary() {
         {/* Media Content */}
         <Grid item xs={12} md={9}>
           {/* Breadcrumbs */}
-          <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
             <Breadcrumbs separator={<NextIcon sx={{ fontSize: 14, color: 'text.disabled' }} />}>
               <Link
                 color="inherit"
@@ -889,8 +889,8 @@ export default function MediaLibrary() {
           <Paper
             className="glass-panel"
             sx={{
-              mb: 3,
-              p: 4,
+              mb: 2,
+              p: 2,
               border: '2px dashed',
               borderColor: isDragActive ? 'primary.main' : 'rgba(255, 255, 255, 0.1)',
               bgcolor: isDragActive ? 'rgba(0, 229, 255, 0.05)' : 'rgba(255, 255, 255, 0.02)',
@@ -911,7 +911,7 @@ export default function MediaLibrary() {
           </Paper>
 
           {/* Filters */}
-          <Paper className="glass-panel" sx={{ mb: 4, p: 2, border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+          <Paper className="glass-panel" sx={{ mb: 2, p: 1.5, border: '1px solid rgba(255, 255, 255, 0.05)' }}>
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>
                 <TextField
@@ -963,7 +963,7 @@ export default function MediaLibrary() {
           {loading && <LinearProgress sx={{ mb: 2 }} />}
 
           {/* Media Grid */}
-          <Grid container spacing={2}>
+          <Grid container spacing={1.5}>
             {media.map(item => (
               <Grid item xs={12} sm={6} md={4} key={item.id}>
                 <Paper className="glass-panel" sx={{

@@ -1423,32 +1423,33 @@ function Settings() {
             </Paper>
 
             {/* Secondary Protocols Section */}
-            <Paper className="glass-panel" sx={{ p: 2, mb: 2 }}>
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800, fontSize: '1rem' }}>MULTI-STREAMING</Typography>
+            <Paper className="glass-panel" sx={{ p: 1.5, mb: 2 }}>
+              <Box sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800, fontSize: '0.9rem' }}>MULTI-STREAMING</Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.65rem' }}>ACTIVAÇÃO DE PROTOCOLOS ADICIONAIS</Typography>
               </Box>
 
               {/* Active protocols */}
-              <Grid container spacing={2}>
+              <Grid container spacing={1}>
                 {[
                   { id: 'rtmp', label: 'RTMP Server', icon: <PlatformIcon /> },
                   { id: 'srt', label: 'SRT (Caller/Listener)', icon: <PlatformIcon /> },
                   { id: 'udp', label: 'UDP Streaming', icon: <PlatformIcon /> },
                   { id: 'hls', label: 'HLS Distribution', icon: <TvIcon /> }
                 ].map(proto => (
-                  <Grid item xs={12} md={6} key={proto.id}>
-                    <Box sx={{ p: 1.5, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 4, border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Box sx={{ p: 1, bgcolor: 'rgba(0,229,255,0.1)', borderRadius: 2, color: 'primary.main' }}>
-                          {proto.icon}
+                  <Grid item xs={12} md={3} sm={6} key={proto.id}>
+                    <Box sx={{ p: 1, py: 0.5, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ p: 0.5, bgcolor: 'rgba(0,229,255,0.1)', borderRadius: 1.5, color: 'primary.main' }}>
+                          {React.cloneElement(proto.icon, { fontSize: 'small' })}
                         </Box>
-                        <Typography variant="body2" sx={{ fontWeight: 800 }}>{proto.label}</Typography>
+                        <Typography variant="caption" sx={{ fontWeight: 800, whiteSpace: 'nowrap' }}>{proto.label}</Typography>
                       </Box>
                       <Checkbox
+                        size="small"
                         checked={settings[`${proto.id}Enabled`]}
                         onChange={(e) => setSettings({ ...settings, [`${proto.id}Enabled`]: e.target.checked })}
-                        sx={{ color: 'primary.main', '&.Mui-checked': { color: 'primary.main' } }}
+                        sx={{ color: 'primary.main', p: 0.5, '&.Mui-checked': { color: 'primary.main' } }}
                       />
                     </Box>
                   </Grid>
@@ -1456,40 +1457,33 @@ function Settings() {
 
                 {/* Divider */}
                 <Grid item xs={12}>
-                  <Divider sx={{ opacity: 0.08, my: 1 }}>
-                    <Chip label="EM DESENVOLVIMENTO — BREVEMENTE DISPONÍVEIS" size="small" sx={{ fontWeight: 800, fontSize: '0.55rem', color: 'warning.main', bgcolor: 'rgba(255,152,0,0.08)', borderColor: 'rgba(255,152,0,0.2)', border: '1px solid' }} />
+                  <Divider sx={{ opacity: 0.08, my: 0.5 }}>
+                    <Chip label="BREVEMENTE" size="small" sx={{ height: 20, fontWeight: 800, fontSize: '0.55rem', color: 'warning.main', bgcolor: 'rgba(255,152,0,0.08)', borderColor: 'rgba(255,152,0,0.2)', border: '1px solid' }} />
                   </Divider>
                 </Grid>
 
                 {/* Future protocols - disabled, not shown on dashboard */}
                 {[
-                  { id: 'dash', label: 'MPEG-DASH Adaptive', desc: 'Streaming adaptativo multi-bitrate' },
-                  { id: 'mss', label: 'MSS (Microsoft Smooth)', desc: 'Smooth Streaming para Azure/CDN' },
-                  { id: 'rtsp', label: 'RTSP Server', desc: 'Protocolo para IPTV e câmeras IP' },
-                  { id: 'webrtc', label: 'WebRTC (Ultra Low Lat.)', desc: 'Latência sub-segundo para browser' }
+                  { id: 'dash', label: 'DASH', desc: 'Streaming adaptativo multi-bitrate' },
+                  { id: 'mss', label: 'MSS', desc: 'Smooth Streaming para Azure/CDN' },
+                  { id: 'rtsp', label: 'RTSP', desc: 'Protocolo para IPTV e câmeras IP' },
+                  { id: 'webrtc', label: 'WebRTC', desc: 'Latência sub-segundo para browser' }
                 ].map(proto => (
-                  <Grid item xs={12} md={6} key={proto.id}>
-                    <Tooltip title={proto.desc + ' — Não aparece no dashboard quando desactivado'} arrow>
-                      <Box sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.01)', borderRadius: 4, border: '1px dashed rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', opacity: 0.55 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Box sx={{ p: 1, bgcolor: 'rgba(255,152,0,0.07)', borderRadius: 2, color: 'warning.main' }}>
-                            <PlatformIcon />
+                  <Grid item xs={12} md={3} sm={6} key={proto.id}>
+                    <Tooltip title={proto.desc} arrow>
+                      <Box sx={{ p: 1, py: 0.5, bgcolor: 'rgba(255,255,255,0.01)', borderRadius: 2, border: '1px dashed rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', opacity: 0.55 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Box sx={{ p: 0.5, bgcolor: 'rgba(255,152,0,0.07)', borderRadius: 1.5, color: 'warning.main' }}>
+                            <PlatformIcon fontSize="small" />
                           </Box>
-                          <Box>
-                            <Typography variant="body2" sx={{ fontWeight: 800, color: 'text.disabled' }}>{proto.label}</Typography>
-                            <Typography variant="caption" sx={{ color: 'warning.main', fontSize: '0.6rem', fontWeight: 700 }}>EM DESENVOLVIMENTO</Typography>
-                          </Box>
+                          <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.disabled', whiteSpace: 'nowrap' }}>{proto.label}</Typography>
                         </Box>
-                        <Tooltip title="Desactivado por defeito — brevemente disponível">
-                          <span>
-                            <Switch
-                              size="small"
-                              checked={settings[`${proto.id}Enabled`] || false}
-                              onChange={(e) => setSettings({ ...settings, [`${proto.id}Enabled`]: e.target.checked })}
-                              sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: 'warning.main' }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: 'warning.main' } }}
-                            />
-                          </span>
-                        </Tooltip>
+                        <Switch
+                          size="small"
+                          checked={settings[`${proto.id}Enabled`] || false}
+                          onChange={(e) => setSettings({ ...settings, [`${proto.id}Enabled`]: e.target.checked })}
+                          sx={{ '& .MuiSwitch-root': { mr: -1 }, '& .MuiSwitch-switchBase.Mui-checked': { color: 'warning.main' }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: 'warning.main' } }}
+                        />
                       </Box>
                     </Tooltip>
                   </Grid>
@@ -1501,10 +1495,11 @@ function Settings() {
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
                   <LanguageIcon fontSize="small" /> LINKS DIRECTOS DE CONEXÃO (VLC, OBS)
                 </Typography>
-                <Grid container spacing={2}>
+                <Grid container spacing={1.5}>
                   {settings.rtmpEnabled && (
                     <Grid item xs={12}>
                       <TextField
+                        size="small"
                         fullWidth
                         label="RTMP (Mestre de Distribuição Local)"
                         value={`rtmp://${window.location.hostname}:1935/live_stream`}
@@ -1525,6 +1520,7 @@ function Settings() {
                   {settings.srtEnabled && (
                     <Grid item xs={12}>
                       <TextField
+                        size="small"
                         fullWidth
                         label="SRT - Secure Reliable Transport (UDP)"
                         value={`srt://${window.location.hostname}:8890?streamid=read:live_stream_srt`}
@@ -1546,15 +1542,16 @@ function Settings() {
                   {settings.hlsEnabled && (
                     <Grid item xs={12}>
                       <TextField
+                        size="small"
                         fullWidth
-                        label="HLS Playlist"
-                        value={`${window.location.origin}/hls/stream.m3u8`}
+                        label="HLS Playlist (MediaMTX via Browser/VLC)"
+                        value={`http://${window.location.hostname}:8888/master/index.m3u8`}
                         InputProps={{
                           readOnly: true,
                           sx: { fontFamily: 'monospace', fontSize: '0.85rem', bgcolor: 'rgba(0,0,0,0.2)' },
                           endAdornment: (
                             <IconButton onClick={() => {
-                              navigator.clipboard.writeText(`${window.location.origin}/hls/stream.m3u8`);
+                              navigator.clipboard.writeText(`http://${window.location.hostname}:8888/master/index.m3u8`);
                             }}>
                               <ContentCopyIcon fontSize="small" />
                             </IconButton>
@@ -1577,13 +1574,13 @@ function Settings() {
 
           {/* CATEGORY 1: CAMINHOS & MEDIA (Combined Old 1 & 3) */}
           <TabPanel value={tabValue} index={1}>
-            <Paper className="glass-panel" sx={{ p: 2, mb: 2 }}>
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800, fontSize: '1rem' }}>CAMINHOS DE ARMAZENAMENTO</Typography>
+            <Paper className="glass-panel" sx={{ p: 1.5, mb: 1.5 }}>
+              <Box sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800, fontSize: '0.9rem' }}>CAMINHOS DE ARMAZENAMENTO</Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.65rem' }}>CONFIGURAÇÃO DE DIRETÓRIOS E VOLUMES</Typography>
               </Box>
 
-              <Grid container spacing={3}>
+              <Grid container spacing={1.5}>
                 {[
                   { label: 'MEDIA & VIDEO', value: settings.mediaPath, key: 'mediaPath', helper: 'Armazenamento principal de conteúdos' },
                   { label: 'THUMBNAILS', value: settings.thumbnailsPath, key: 'thumbnailsPath', helper: 'Cache de miniaturas geradas' },
@@ -1602,15 +1599,16 @@ function Settings() {
                   },
                   { label: 'BRANDING & ASSETS PROTEGIDOS', value: settings.protectedPath, key: 'protectedPath', helper: 'Localização de logos e vídeos institucionais' }
                 ].map(field => (
-                  <Grid item xs={12} key={field.key}>
+                  <Grid item xs={12} md={6} key={field.key}>
                     <TextField
+                      size="small"
                       fullWidth
                       label={field.label}
                       value={field.value}
                       onChange={(e) => setSettings({ ...settings, [field.key]: e.target.value })}
                       helperText={field.helper}
                       InputProps={{
-                        sx: { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3 },
+                        sx: { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2, fontSize: '0.85rem' },
                         endAdornment: field.endAdornment
                       }}
                     />
@@ -2393,44 +2391,46 @@ function Settings() {
 
           {/* CATEGORY 4: SOBRE O SISTEMA */}
           <TabPanel value={tabValue} index={4}>
-            <Paper className="glass-panel" sx={{ p: 4, mb: 4 }}>
-              <Box sx={{ mb: 4 }}>
-                <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>INFORMAÇÃO DO SISTEMA</Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>DETALHES DO DEPLOYMENT E AMBIENTE</Typography>
+            <Paper className="glass-panel" sx={{ p: 2, mb: 2 }}>
+              <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800, fontSize: '0.9rem' }}>INFORMAÇÃO DO SISTEMA</Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.65rem' }}>DETALHES DO DEPLOYMENT E AMBIENTE</Typography>
               </Box>
-              <Grid container spacing={3}>
+              <Grid container spacing={1.5}>
                 {[
-                  { label: 'VERSÃO DO SISTEMA', value: settings.system_version || settings.version || 'v2.2.0-ALPHA.19-PRO', icon: <WizardIcon /> },
-                  { label: 'ÚLTIMA ATUALIZAÇÃO', value: settings.release_date || settings.releaseDate || '2026-02-18', icon: <CheckIcon /> },
-                  { label: 'DEPLOYMENT', value: 'Docker Container (Linux)', icon: <FolderIcon /> }
+                  { label: 'VERSÃO DO SISTEMA', value: settings.system_version || settings.version || 'v2.2.0-ALPHA.19-PRO', icon: <WizardIcon fontSize="small" /> },
+                  { label: 'ÚLTIMA ATUALIZAÇÃO', value: settings.release_date || settings.releaseDate || '2026-02-18', icon: <CheckIcon fontSize="small" /> },
+                  { label: 'DEPLOYMENT', value: 'Docker Container (Linux)', icon: <FolderIcon fontSize="small" /> }
                 ].map((item, id) => (
                   <Grid item xs={12} sm={6} md={4} key={id}>
-                    <Box sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 3, border: '1px solid rgba(255,255,255,0.05)' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, color: 'primary.main' }}>
+                    <Box sx={{ p: 1, py: 0.5, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                      <Box sx={{ color: 'primary.main', display: 'flex' }}>
                         {item.icon}
-                        <Typography variant="caption" sx={{ fontWeight: 800, fontSize: '0.6rem', opacity: 0.8 }}>{item.label}</Typography>
                       </Box>
-                      <Typography variant="body2" sx={{ fontWeight: 800 }}>{item.value}</Typography>
+                      <Box>
+                        <Typography variant="caption" sx={{ fontWeight: 800, fontSize: '0.55rem', opacity: 0.8, display: 'block' }}>{item.label}</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 800, fontSize: '0.75rem', mt: -0.5 }}>{item.value}</Typography>
+                      </Box>
                     </Box>
                   </Grid>
                 ))}
               </Grid>
 
               {/* ROADMAP & FUTURE section integrated here for visibility */}
-              <Box sx={{ mt: 6, mb: 2 }}>
-                <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 800, letterSpacing: 2 }}>DESTAQUES DO DESENVOLVIMENTO (FUTUROS)</Typography>
-                <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Box sx={{ mt: 3, mb: 1 }}>
+                <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 800, letterSpacing: 1, fontSize: '0.6rem' }}>DESTAQUES DO DESENVOLVIMENTO (FUTUROS)</Typography>
+                <Grid container spacing={1} sx={{ mt: 0.5 }}>
                   {[
-                    { label: 'MULTI-IDIOMA', value: 'i18n Ready', icon: <LanguageIcon /> },
-                    { label: 'MULTI-CANAL', value: 'Independent Core', icon: <PlatformIcon /> },
-                    { label: 'LOW-LATENCY', value: 'Low-HLS / SRT', icon: <ScalabilityIcon /> }
+                    { label: 'MULTI-IDIOMA', value: 'i18n Ready', icon: <LanguageIcon fontSize="small" /> },
+                    { label: 'MULTI-CANAL', value: 'Independent Core', icon: <PlatformIcon fontSize="small" /> },
+                    { label: 'LOW-LATENCY', value: 'Low-HLS / SRT', icon: <ScalabilityIcon fontSize="small" /> }
                   ].map((item, id) => (
                     <Grid item xs={12} sm={4} key={id}>
-                      <Box sx={{ p: 1.5, display: 'flex', alignItems: 'center', gap: 1.5, bgcolor: 'rgba(0,229,255,0.03)', borderRadius: 2, border: '1px solid rgba(0,229,255,0.08)' }}>
-                        <Box sx={{ color: 'primary.main' }}>{item.icon}</Box>
+                      <Box sx={{ p: 1, py: 0.5, display: 'flex', alignItems: 'center', gap: 1, bgcolor: 'rgba(0,229,255,0.03)', borderRadius: 2, border: '1px solid rgba(0,229,255,0.08)' }}>
+                        <Box sx={{ color: 'primary.main', display: 'flex' }}>{item.icon}</Box>
                         <Box>
-                          <Typography variant="caption" sx={{ fontWeight: 800, display: 'block', fontSize: '0.6rem', opacity: 0.6 }}>{item.label}</Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 800, fontSize: '0.75rem' }}>{item.value}</Typography>
+                          <Typography variant="caption" sx={{ fontWeight: 800, display: 'block', fontSize: '0.55rem', opacity: 0.6 }}>{item.label}</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 800, fontSize: '0.7rem', mt: -0.5 }}>{item.value}</Typography>
                         </Box>
                       </Box>
                     </Grid>
@@ -2438,45 +2438,39 @@ function Settings() {
                 </Grid>
               </Box>
 
-              <Box sx={{ mt: 4, display: 'flex', gap: 2 }}>
+              <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
                 <Button
+                  size="small"
                   variant="outlined"
                   onClick={() => {
-                    // Determine tag: if version starts with 'v', use it; else fallback to 'alpha'
-                    const tag = settings.version && settings.version.startsWith('v') ? settings.version : 'alpha';
-                    // If it's a dev version like v2.2.0-ALPHA.4, it might be a tag.
-                    // The user requested: /tree/alpha specifically if it's alpha.
-                    // Let's use logic: if it contains "ALPHA", link to alpha branch? 
-                    // Or just default to the tag. 
-                    // User said: "should analyze the version and use the tag in question, in this case, the alpha tag"
                     const targetRef = settings.version?.includes('ALPHA') ? 'alpha' : (settings.version || 'main');
                     window.open(`https://github.com/ideiasestrondosas-ctrl/cloud-onepa-playout/tree/${targetRef}`, '_blank');
                   }}
-                  sx={{ borderRadius: 2, fontWeight: 800 }}
+                  sx={{ borderRadius: 2, fontWeight: 800, py: 0.2 }}
                 >
                   GITHUB REPO
                 </Button>
               </Box>
             </Paper>
 
-            <Paper className="glass-panel" sx={{ p: 4 }}>
-              <Box sx={{ mb: 4 }}>
-                <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>HISTÓRICO DE VERSÕES</Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>NOTAS CRÍTICAS E EVOLUÇÃO DO PROJETO</Typography>
+            <Paper className="glass-panel" sx={{ p: 2 }}>
+              <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800, fontSize: '0.9rem' }}>HISTÓRICO DE VERSÕES</Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.65rem' }}>NOTAS CRÍTICAS E EVOLUÇÃO DO PROJETO</Typography>
               </Box>
-              <Box sx={{ maxHeight: '65vh', overflowY: 'auto', pr: 1, '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-track': { bgcolor: 'rgba(255,255,255,0.02)' }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(0,229,255,0.3)', borderRadius: 3 } }}>
-                <List sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <Box sx={{ maxHeight: '65vh', overflowY: 'auto', pr: 1, '&::-webkit-scrollbar': { width: '4px' }, '&::-webkit-scrollbar-track': { bgcolor: 'rgba(255,255,255,0.02)' }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(0,229,255,0.3)', borderRadius: 3 } }}>
+                <List sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                   {releaseHistory.length > 0 ? releaseHistory.map((release, idx) => (
                     <ListItem key={idx} sx={{ display: 'block', p: 0 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'primary.main' }}>{release.version.startsWith('v') ? release.version : 'v' + release.version}</Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 0.5 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 800, color: 'primary.main', fontSize: '0.8rem' }}>{release.version.startsWith('v') ? release.version : 'v' + release.version}</Typography>
                         <Divider sx={{ flexGrow: 1, opacity: 0.1 }} />
-                        <Typography variant="caption" sx={{ opacity: 0.5 }}>{release.date}</Typography>
+                        <Typography variant="caption" sx={{ opacity: 0.5, fontSize: '0.65rem' }}>{release.date}</Typography>
                       </Box>
-                      <Box sx={{ pl: 4, borderLeft: '2px dashed rgba(0,229,255,0.2)' }}>
+                      <Box sx={{ pl: 2, borderLeft: '2px solid rgba(0,229,255,0.2)' }}>
                         {release.changes.map((change, cIdx) => (
-                          <Typography key={cIdx} variant="body2" sx={{ mb: 1, opacity: 0.8, display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Box sx={{ width: 4, height: 4, bgcolor: 'primary.main', borderRadius: '50%' }} /> {change}
+                          <Typography key={cIdx} variant="caption" sx={{ mb: 0.2, opacity: 0.8, display: 'flex', alignItems: 'flex-start', gap: 1, fontSize: '0.7rem', lineHeight: 1.2 }}>
+                            <Box sx={{ width: 4, height: 4, bgcolor: 'primary.main', borderRadius: '50%', mt: 0.6, flexShrink: 0 }} /> {change}
                           </Typography>
                         ))}
                       </Box>

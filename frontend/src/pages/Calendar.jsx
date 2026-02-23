@@ -392,9 +392,9 @@ export default function Calendar() {
         </Box>
       </Box>
 
-      <Grid container spacing={2} sx={{ flexGrow: 1, overflow: 'hidden' }}>
+      <Grid container spacing={1.5} sx={{ flexGrow: 1, overflow: 'hidden' }}>
         <Grid item xs={12} md={9} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-          <Paper className="glass-panel" sx={{ p: 1.5, flexGrow: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <Paper className="glass-panel" sx={{ p: 1, flexGrow: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <style>{`
                     .fc { --fc-border-color: rgba(255,255,255,0.05); font-family: 'Inter', sans-serif; }
                     .fc .fc-toolbar-title { font-weight: 800; text-transform: uppercase; letter-spacing: 1px; font-size: 1.1rem; color: #00e5ff; }
@@ -525,13 +525,13 @@ export default function Calendar() {
                     <Box sx={{ width: 8, height: 8, bgcolor: '#ff4081', mr: 2, borderRadius: '50%', boxShadow: '0 0 10px #ff4081' }} />
                     <Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.8 }}>AGENDAMENTO ÚNICO</Typography>
                   </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', p: 1, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.02)' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', p: 0.5, borderRadius: 1.5, bgcolor: 'rgba(255,255,255,0.02)' }}>
                     <Box sx={{ width: 8, height: 8, bgcolor: '#00e5ff', mr: 2, borderRadius: '50%', boxShadow: '0 0 10px #00e5ff' }} />
-                    <Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.8 }}>SÉRIE DE REPETIÇÃO</Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.8, fontSize: '0.65rem' }}>SÉRIE DE REPETIÇÃO</Typography>
                   </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', p: 1, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.02)' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', p: 0.5, borderRadius: 1.5, bgcolor: 'rgba(255,255,255,0.02)' }}>
                     <Box sx={{ width: 8, height: 8, bgcolor: '#fff', mr: 2, borderRadius: '50%', boxShadow: '0 0 10px #fff' }} />
-                    <Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.8 }}>EM REPRODUÇÃO AGORA</Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.8, fontSize: '0.65rem' }}>EM REPRODUÇÃO AGORA</Typography>
                   </Box>
                 </Stack>
               </Box>
@@ -548,32 +548,34 @@ export default function Calendar() {
         fullWidth
         PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
       >
-        <DialogTitle sx={{ borderBottom: '1px solid rgba(255,255,255,0.05)', fontWeight: 800, color: 'primary.main' }}>
+        <DialogTitle sx={{ borderBottom: '1px solid rgba(255,255,255,0.05)', fontWeight: 800, color: 'primary.main', py: 1 }}>
           GERIR AGENDAMENTO
         </DialogTitle>
-        <DialogContent sx={{ mt: 2 }}>
-          <Typography variant="h6" sx={{ fontWeight: 800, color: 'primary.main' }}>{selectedEvent?.title?.toUpperCase()}</Typography>
+        <DialogContent sx={{ mt: 1, p: 2 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'primary.main', lineHeight: 1.2 }}>{selectedEvent?.title?.toUpperCase()}</Typography>
           <Typography variant="caption" sx={{ fontWeight: 600, opacity: 0.6 }}>DATA: {selectedEvent?.startStr.split('T')[0]}</Typography>
           {selectedEvent?.extendedProps.repeatPattern && (
-            <Alert severity="info" sx={{ mt: 2, borderRadius: 2, bgcolor: 'rgba(0,229,255,0.05)', color: 'primary.main', border: '1px solid rgba(0,229,255,0.1)' }}>
-              ESTE É UM EVENTO RECORRENTE ({selectedEvent.extendedProps.repeatPattern.toUpperCase()})
+            <Alert severity="info" sx={{ mt: 1, p: 0.5, px: 2, borderRadius: 1.5, bgcolor: 'rgba(0,229,255,0.05)', color: 'primary.main', border: '1px solid rgba(0,229,255,0.1)', '& .MuiAlert-message': { p: 0.5 } }}>
+              <Typography variant="caption" sx={{ fontWeight: 800 }}>RECORRE ({selectedEvent.extendedProps.repeatPattern.toUpperCase()})</Typography>
             </Alert>
           )}
         </DialogContent>
-        <DialogActions sx={{ flexDirection: 'column', gap: 1.5, p: 3 }}>
+        <DialogActions sx={{ flexDirection: 'column', gap: 1, p: 2, pt: 0 }}>
           <Button
+            size="small"
             variant="contained"
             color="primary"
             fullWidth
             startIcon={<PlayIcon />}
             onClick={() => { handleEditSchedule(selectedEvent); setActionDialogOpen(false); }}
-            sx={{ borderRadius: 2, fontWeight: 800, py: 1.2 }}
+            sx={{ borderRadius: 1.5, fontWeight: 800, py: 0.8 }}
           >
             EDITAR SÉRIE / EVENTO
           </Button>
 
           {selectedEvent?.extendedProps.repeatPattern && (
             <Button
+              size="small"
               variant="outlined"
               color="warning"
               fullWidth
@@ -584,13 +586,14 @@ export default function Calendar() {
                 }
                 setActionDialogOpen(false);
               }}
-              sx={{ borderRadius: 2, fontWeight: 800, py: 1 }}
+              sx={{ borderRadius: 1.5, fontWeight: 800, py: 0.6 }}
             >
               IGNORAR APENAS HOJE
             </Button>
           )}
 
           <Button
+            size="small"
             variant="outlined"
             color="error"
             fullWidth
@@ -607,7 +610,7 @@ export default function Calendar() {
             {selectedEvent?.extendedProps.repeatPattern ? 'PARAR SÉRIE DE REPETIÇÃO' : 'ELIMINAR AGENDAMENTO'}
           </Button>
 
-          <Button onClick={() => setActionDialogOpen(false)} sx={{ fontWeight: 800, opacity: 0.5 }}>FECHAR</Button>
+          <Button onClick={() => setActionDialogOpen(false)} sx={{ fontWeight: 800, opacity: 0.5, py: 0.5 }}>FECHAR</Button>
         </DialogActions>
       </Dialog>
 
@@ -703,6 +706,6 @@ export default function Calendar() {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </Box >
   );
 }

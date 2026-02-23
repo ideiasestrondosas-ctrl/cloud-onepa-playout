@@ -1377,14 +1377,14 @@ impl PlayoutEngine {
         // 1. RTMP
         let rtmp_enabled = settings.rtmp_enabled
             || (settings.output_type == "rtmp" && settings.auto_start_protocols);
-        let rtmp_url = if settings.rtmp_enabled
-            && settings
-                .rtmp_output_url
-                .as_ref()
-                .map(|s| !s.is_empty())
-                .unwrap_or(false)
-        {
-            settings.rtmp_output_url.as_deref().unwrap_or("")
+        let rtmp_internal_relay_url = format!("rtmp://{}:1935/live_stream", mediamtx_host);
+        let rtmp_url = if settings.rtmp_enabled {
+            let user_url = settings.rtmp_output_url.as_deref().unwrap_or("");
+            if !user_url.is_empty() {
+                user_url
+            } else {
+                &rtmp_internal_relay_url
+            }
         } else if settings.output_type == "rtmp" {
             &settings.output_url
         } else {

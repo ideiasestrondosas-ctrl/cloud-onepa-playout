@@ -277,11 +277,11 @@ export default function GraphicsEditor() {
         </Stack>
       </Box>
 
-      <Grid container spacing={3} sx={{ flexGrow: 1, minHeight: 0 }}>
+      <Grid container spacing={2} sx={{ flexGrow: 1, minHeight: 0 }}>
         {/* Preview Area */}
         <Grid item xs={12} lg={8} sx={{ height: '100%' }}>
           <Paper className="glass-panel" sx={{
-            p: 1.5,
+            p: 1,
             height: '100%',
             display: 'flex',
             flexDirection: 'column',
@@ -375,9 +375,9 @@ export default function GraphicsEditor() {
                 {/* Position Information Overlay */}
                 <Box sx={{
                   position: 'absolute',
-                  bottom: 20,
-                  left: 20,
-                  p: 1.5,
+                  bottom: 10,
+                  left: 10,
+                  p: 1,
                   bgcolor: 'rgba(0,0,0,0.8)',
                   borderRadius: 2,
                   border: '1px solid rgba(255,255,255,0.1)',
@@ -424,8 +424,8 @@ export default function GraphicsEditor() {
 
         {/* Controls Area */}
         <Grid item xs={12} lg={4} sx={{ height: '100%' }}>
-          <Paper className="glass-panel" sx={{ p: 2, height: '100%', overflowY: 'auto' }}>
-            <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)} sx={{ mb: 2, minHeight: 36 }}>
+          <Paper className="glass-panel" sx={{ p: 1.5, height: '100%', overflowY: 'auto' }}>
+            <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)} sx={{ mb: 1.5, minHeight: 36 }}>
               <Tab label="POSIÇÃO" sx={{ fontWeight: 800, minHeight: 36, fontSize: '0.75rem' }} />
               <Tab label="ESTILO" sx={{ fontWeight: 800, minHeight: 36, fontSize: '0.75rem' }} />
               <Tab label="LAYER" sx={{ fontWeight: 800, minHeight: 36, fontSize: '0.75rem' }} />
