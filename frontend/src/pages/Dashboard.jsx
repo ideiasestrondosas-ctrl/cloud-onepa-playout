@@ -557,7 +557,7 @@ export default function Dashboard() {
         }
       `}</style>
 
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 1 }}>
+      <Box sx={{ mb: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Typography variant="h4" className="neon-text" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>
             {settings?.channel_name || 'Cloud Onepa'}
@@ -767,11 +767,11 @@ export default function Dashboard() {
         });
         if (visibleStreams.length === 0) return null;
         return (
-          <Box sx={{ mt: 3, position: 'relative', zIndex: 1 }}>
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, mb: 1.5, display: 'flex', alignItems: 'center', gap: 1, textTransform: 'uppercase', letterSpacing: 1.5 }}>
+          <Box sx={{ mt: 1.5, position: 'relative', zIndex: 1 }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, mb: 1, display: 'flex', alignItems: 'center', gap: 1, textTransform: 'uppercase', letterSpacing: 1.2 }}>
               <LaunchIcon sx={{ fontSize: 14 }} /> Protocolos de Transmissão
             </Typography>
-            <Paper className="glass-panel" sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+            <Paper className="glass-panel" sx={{ p: 1.5, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
               {visibleStreams.map((stream, idx) => {
                 const isActive = stream.status === 'active';
                 const isError = stream.status === 'error';
@@ -849,7 +849,7 @@ export default function Dashboard() {
         );
       })()}
 
-      <Paper className="glass-panel" sx={{ mt: 3, p: 0, height: 420, position: 'relative', bgcolor: '#000', borderRadius: 4, overflow: 'hidden', border: '2px solid', borderColor: isPlaying ? 'primary.main' : 'rgba(255, 255, 255, 0.1)', boxShadow: isPlaying ? '0 0 30px rgba(0, 229, 255, 0.15)' : 'none', zIndex: 1 }}>
+      <Paper className="glass-panel" sx={{ mt: 1.5, p: 0, height: 380, position: 'relative', bgcolor: '#000', borderRadius: 3, overflow: 'hidden', border: '2px solid', borderColor: isPlaying ? 'primary.main' : 'rgba(255, 255, 255, 0.1)', boxShadow: isPlaying ? '0 0 20px rgba(0, 229, 255, 0.1)' : 'none', zIndex: 1 }}>
         <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, p: 2, display: 'flex', justifyContent: 'space-between', background: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%)' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <TvIcon className={isPlaying ? "neon-text" : ""} sx={{ fontSize: 20 }} />
@@ -903,10 +903,10 @@ export default function Dashboard() {
                 }
               }}
             />
-            <Box sx={{ position: 'absolute', right: 20, bottom: 20, height: 300, zIndex: 50 }}>
+            <Box sx={{ position: 'absolute', right: 15, bottom: 15, height: 260, zIndex: 50 }}>
               <LufsMeter level={audioLevel} active={isPlaying && !previewPaused && !previewMuted} />
             </Box>
-            <Box sx={{ position: 'absolute', left: 20, bottom: 20, zIndex: 50 }}>
+            <Box sx={{ position: 'absolute', left: 15, bottom: 15, zIndex: 50 }}>
               <Chip
                 icon={<PlayIcon />}
                 label={`VLC: ${window.location.origin}/hls/stream.m3u8`}
@@ -982,7 +982,7 @@ export default function Dashboard() {
       <Grid container spacing={2} sx={{ mt: 1, position: 'relative', zIndex: 1 }}>
         <Grid item xs={12} md={7}>
           <Paper className="glass-panel" sx={{ p: 2, height: '100%', minHeight: 350 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
               <InfoIcon className="neon-text" sx={{ fontSize: 18 }} />
               <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.5 }}>Informação da Emissão</Typography>
             </Box>
@@ -1057,10 +1057,10 @@ export default function Dashboard() {
               <SensorsIcon className="neon-text" sx={{ fontSize: 18 }} />
               <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.5 }}>Próximos na Lista</Typography>
             </Box>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
               {status.next_clips?.length > 0 ? status.next_clips.map((c, i) => (
                 <Box key={i} sx={{
-                  p: 1.2,
+                  p: 0.8,
                   borderRadius: 2,
                   bgcolor: i === 0 ? 'rgba(255, 255, 255, 0.04)' : 'transparent',
                   border: '1px solid',

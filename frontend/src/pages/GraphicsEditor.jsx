@@ -246,10 +246,10 @@ export default function GraphicsEditor() {
 
   return (
     <Box sx={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
         <Box>
-          <Typography variant="h4" className="neon-text" sx={{ fontWeight: 800 }}>GRAPHICS ENGINE</Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: 2 }}>WYSIWYG ON-AIR BRANDING EDITOR</Typography>
+          <Typography variant="h5" className="neon-text" sx={{ fontWeight: 800 }}>GRAPHICS ENGINE</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: 1.2, fontSize: '0.65rem' }}>WYSIWYG ON-AIR BRANDING EDITOR</Typography>
         </Box>
         <Stack direction="row" spacing={2}>
           <Tooltip title="Restaurar definições guardadas" arrow>
@@ -281,14 +281,14 @@ export default function GraphicsEditor() {
         {/* Preview Area */}
         <Grid item xs={12} lg={8} sx={{ height: '100%' }}>
           <Paper className="glass-panel" sx={{
-            p: 2,
+            p: 1.5,
             height: '100%',
             display: 'flex',
             flexDirection: 'column',
             position: 'relative',
             overflow: 'hidden'
           }}>
-            <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box sx={{ mb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Typography variant="caption" sx={{ fontWeight: 800, opacity: 0.6, display: 'flex', alignItems: 'center', gap: 1 }}>
                 <VisibilityIcon sx={{ fontSize: 16 }} /> PRÉ-VISUALIZAÇÃO EM TEMPO REAL (16:9)
               </Typography>
@@ -424,15 +424,15 @@ export default function GraphicsEditor() {
 
         {/* Controls Area */}
         <Grid item xs={12} lg={4} sx={{ height: '100%' }}>
-          <Paper className="glass-panel" sx={{ p: 4, height: '100%', overflowY: 'auto' }}>
-            <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)} sx={{ mb: 4, minHeight: 40 }}>
-              <Tab label="POSIÇÃO" sx={{ fontWeight: 800, minHeight: 40 }} />
-              <Tab label="ESTILO" sx={{ fontWeight: 800, minHeight: 40 }} />
-              <Tab label="LAYER" sx={{ fontWeight: 800, minHeight: 40 }} />
+          <Paper className="glass-panel" sx={{ p: 2, height: '100%', overflowY: 'auto' }}>
+            <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)} sx={{ mb: 2, minHeight: 36 }}>
+              <Tab label="POSIÇÃO" sx={{ fontWeight: 800, minHeight: 36, fontSize: '0.75rem' }} />
+              <Tab label="ESTILO" sx={{ fontWeight: 800, minHeight: 36, fontSize: '0.75rem' }} />
+              <Tab label="LAYER" sx={{ fontWeight: 800, minHeight: 36, fontSize: '0.75rem' }} />
             </Tabs>
 
             {activeTab === 0 && (
-              <Stack spacing={4}>
+              <Stack spacing={2}>
                 <Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
@@ -506,8 +506,8 @@ export default function GraphicsEditor() {
                 <Divider sx={{ opacity: 0.1 }} />
 
                 <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 3 }}>AJUSTE FINO (OFFSET)</Typography>
-                  <Box sx={{ mb: 3 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5, fontSize: '0.8rem' }}>AJUSTE FINO (OFFSET)</Typography>
+                  <Box sx={{ mb: 1.5 }}>
                     <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', mb: 1, display: 'block' }}>
                       EIXO X ({selectedLayer ? selectedLayer.position_x : logoPos.x}px)
                     </Typography>

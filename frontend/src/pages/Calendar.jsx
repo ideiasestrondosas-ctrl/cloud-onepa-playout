@@ -354,28 +354,28 @@ export default function Calendar() {
 
   return (
     <Box sx={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Box sx={{ mb: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>
-          <Typography variant="h4" className="neon-text" sx={{ fontWeight: 800 }}>CENTRAL DE AGENDAMENTO</Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: 2 }}>GESTOR DE PROGRAMAÇÃO & RECORRÊNCIA</Typography>
+          <Typography variant="h5" className="neon-text" sx={{ fontWeight: 800 }}>CENTRAL DE AGENDAMENTO</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: 1.2, fontSize: '0.65rem' }}>GESTOR DE PROGRAMAÇÃO & RECORRÊNCIA</Typography>
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
           {playoutStatus?.current_playlist_id && (
             <Box className="glass-panel" sx={{
-              px: 3,
-              py: 1,
+              px: 2,
+              py: 0.8,
               display: 'flex',
               alignItems: 'center',
-              borderRadius: 3,
+              borderRadius: 2,
               border: '1px solid rgba(76, 175, 80, 0.3)',
               bgcolor: 'rgba(76, 175, 80, 0.05)',
-              boxShadow: '0 0 15px rgba(76, 175, 80, 0.1)',
+              boxShadow: '0 0 10px rgba(76, 175, 80, 0.1)',
             }}>
-              <PlayIcon sx={{ mr: 1.5, fontSize: 20, color: 'success.main' }} />
+              <PlayIcon sx={{ mr: 1, fontSize: 16, color: 'success.main' }} />
               <Box>
-                <Typography variant="caption" sx={{ opacity: 0.6, display: 'block', fontWeight: 800, fontSize: '0.55rem' }}>ON-AIR NOW</Typography>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'success.main', fontSize: '0.85rem' }}>{playoutStatus.current_playlist_name?.toUpperCase() || 'PLAYLIST ATIVA'}</Typography>
+                <Typography variant="caption" sx={{ opacity: 0.6, display: 'block', fontWeight: 800, fontSize: '0.5rem' }}>ON-AIR NOW</Typography>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'success.main', fontSize: '0.75rem' }}>{playoutStatus.current_playlist_name?.toUpperCase() || 'PLAYLIST ATIVA'}</Typography>
               </Box>
             </Box>
           )}
@@ -392,9 +392,9 @@ export default function Calendar() {
         </Box>
       </Box>
 
-      <Grid container spacing={3} sx={{ flexGrow: 1, overflow: 'hidden' }}>
+      <Grid container spacing={2} sx={{ flexGrow: 1, overflow: 'hidden' }}>
         <Grid item xs={12} md={9} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-          <Paper className="glass-panel" sx={{ p: 2, flexGrow: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <Paper className="glass-panel" sx={{ p: 1.5, flexGrow: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <style>{`
                     .fc { --fc-border-color: rgba(255,255,255,0.05); font-family: 'Inter', sans-serif; }
                     .fc .fc-toolbar-title { font-weight: 800; text-transform: uppercase; letter-spacing: 1px; font-size: 1.1rem; color: #00e5ff; }
@@ -407,8 +407,8 @@ export default function Calendar() {
                     .fc-day-today { background: rgba(0, 229, 255, 0.2) !important; box-shadow: inset 0 0 20px rgba(0, 229, 255, 0.1); }
                 `}</style>
             {/* EPG Export Bar */}
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1, mb: 1 }}>
-              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: 1, mr: 'auto' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5, mb: 0.5 }}>
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: 1, mr: 'auto', fontSize: '0.65rem' }}>
                 📺 TV GUIDE · {new Date().toLocaleDateString('pt-PT', { weekday: 'short', day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase()}
               </Typography>
               {settings?.epgUrl && (
@@ -494,10 +494,10 @@ export default function Calendar() {
         </Grid>
 
         <Grid item xs={12} md={3} sx={{ height: '100%' }}>
-          <Stack spacing={2} sx={{ height: '100%' }}>
-            <Paper className="glass-panel" sx={{ p: 2, flexGrow: 1 }}>
-              <Typography variant="overline" sx={{ fontWeight: 800, color: 'primary.main', display: 'block', mb: 2 }}>ATALHOS DE LIMPEZA</Typography>
-              <Stack spacing={1.5}>
+          <Stack spacing={1.5} sx={{ height: '100%' }}>
+            <Paper className="glass-panel" sx={{ p: 1.5, flexGrow: 1 }}>
+              <Typography variant="overline" sx={{ fontWeight: 800, color: 'primary.main', display: 'block', mb: 1.5 }}>ATALHOS DE LIMPEZA</Typography>
+              <Stack spacing={1}>
                 {[
                   { label: 'LIMPAR HOJE', type: 'today' },
                   { label: 'ESTA SEMANA', type: 'week' },
@@ -518,9 +518,9 @@ export default function Calendar() {
                 ))}
               </Stack>
 
-              <Box sx={{ mt: 4 }}>
-                <Typography variant="overline" sx={{ fontWeight: 800, color: 'primary.main', display: 'block', mb: 2 }}>LEGENDA</Typography>
-                <Stack spacing={1.5}>
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="overline" sx={{ fontWeight: 800, color: 'primary.main', display: 'block', mb: 1.5 }}>LEGENDA</Typography>
+                <Stack spacing={1}>
                   <Box sx={{ display: 'flex', alignItems: 'center', p: 1, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.02)' }}>
                     <Box sx={{ width: 8, height: 8, bgcolor: '#ff4081', mr: 2, borderRadius: '50%', boxShadow: '0 0 10px #ff4081' }} />
                     <Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.8 }}>AGENDAMENTO ÚNICO</Typography>

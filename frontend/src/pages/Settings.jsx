@@ -97,7 +97,8 @@ import {
   NorthEast as NeIcon,
   SouthWest as SwIcon,
   SouthEast as SeIcon,
-  RadioButtonChecked as TargetIcon
+  RadioButtonChecked as TargetIcon,
+  Edit as EditIcon
 } from '@mui/icons-material';
 
 // --- Error Boundary for Safety ---
@@ -918,6 +919,7 @@ function Settings() {
   const fetchReleaseHistory = () => {
     // Curated local history — no external API dependency, works offline
     setReleaseHistory([
+      { version: 'v2.2.0-ALPHA.27-PRO', date: '2026-02-23', changes: ['Surgical Compact Redesign: Aperfeiçoamento massivo de paddings e margens em todas as vistas principais', 'EPG & Calendar optimization: Maior densidade vertical na cronologia e barras laterais', 'Dashboard Protocol Focus: Barra de protocolos compactada para melhor visibilidade de telemetria', 'Bug Fix: Resolvido ReferenceError de EditIcon que afectava a gestão de perfis'] },
       { version: 'v2.2.0-ALPHA.26-PRO', date: '2026-02-23', changes: ['Branding & UI Consistency: Consolidação total da identidade visual em todas as definições', 'Compact Redesign: Caminhos, Media e Playout Engine optimizados para menor ocupação vertical', 'Fix Estrutural: Resolução definitiva de erros de JSX em Settings e Layout', 'Versioning Global: Sincronização automática de versões entre DB, Backend e Frontend'] },
       { version: 'v2.2.0-ALPHA.25-PRO', date: '2026-02-22', changes: ['Reality Sync Engine: Motor robusto com suporte global a caminhos (Media, Assets, Fillers, Protected)', 'Filtro Profissional: Assets de sistema protegidos ficam ocultos da Media Library por defeito', 'Storage Audit: Métricas em tempo real de ocupação de disco para proxies web', 'Sync Resiliente: Timeout aumentado para 120s e tratamento de erros de permissão agressivo', 'Limpeza Automática: Base de dados higienizada de ficheiros residuais de sistema'] },
       { version: 'v2.2.0-ALPHA.24-PRO', date: '2026-02-21', changes: ['Reality Sync Engine: motor proativo que deteta ficheiros no disco e os regista na App automágicamente', 'Elite Storage Audit: Gestor de Espaço identifica bibliotecas vs realidade física e detecta proxies em falta', 'Sync Resiliente: novo motor com tratamento de erros detalhado, verificação de permissões e reporting granular', 'Resiliência de Metadados: correção de falhas na leitura de metadados em ficheiros com nomes complexos', 'Versioning: Consolidação total para ALPHA.24-PRO em todo o ecossistema'] },
@@ -1352,31 +1354,33 @@ function Settings() {
         <Grid item xs={12} md={9.5}>
           <TabPanel value={tabValue} index={0}>
             {/* Protocolo Section */}
-            <Paper className="glass-panel" sx={{ p: 4, mb: 4 }}>
-              <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Paper className="glass-panel" sx={{ p: 2, mb: 2 }}>
+              <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Box>
-                  <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>CONFIGURAÇÃO DE SAÍDA</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>GESTÃO DE PROTOCOLOS E DISTRIBUIÇÃO</Typography>
+                  <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800, fontSize: '1rem' }}>CONFIGURAÇÃO DE SAÍDA</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.65rem' }}>GESTÃO DE PROTOCOLOS E DISTRIBUIÇÃO</Typography>
                 </Box>
-                <Chip label="ONLINE • ENGINE READY" color="success" sx={{ fontWeight: 800, fontSize: '0.65rem', height: 24 }} />
+                <Chip label="ONLINE • ENGINE READY" color="success" sx={{ fontWeight: 800, fontSize: '0.65rem', height: 20 }} />
               </Box>
 
-              <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 800, letterSpacing: 1 }}>PROTOCOLO PRINCIPAL</Typography>
+              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 800, letterSpacing: 1, fontSize: '0.75rem' }}>PROTOCOLO PRINCIPAL</Typography>
               <ToggleButtonGroup
                 value={settings.outputType}
                 exclusive
                 onChange={(e, val) => val && handleOutputTypeChange(val)}
                 fullWidth
-                sx={{ mb: 4, gap: 1 }}
+                sx={{ mb: 2, gap: 1 }}
               >
                 {['rtmp', 'srt', 'udp', 'hls', 'desktop'].map(type => (
                   <ToggleButton
                     key={type}
                     value={type}
                     sx={{
-                      borderRadius: '12px !important',
+                      borderRadius: '8px !important',
+                      py: 0.5,
                       border: '1px solid rgba(255,255,255,0.05) !important',
                       fontWeight: 800,
+                      fontSize: '0.7rem',
                       '&.Mui-selected': { bgcolor: 'primary.main', color: '#000', '&:hover': { bgcolor: 'primary.light' } }
                     }}
                   >
@@ -1419,14 +1423,14 @@ function Settings() {
             </Paper>
 
             {/* Secondary Protocols Section */}
-            <Paper className="glass-panel" sx={{ p: 4 }}>
-              <Box sx={{ mb: 4 }}>
-                <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>MULTI-STREAMING</Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>ACTIVAÇÃO DE PROTOCOLOS ADICIONAIS</Typography>
+            <Paper className="glass-panel" sx={{ p: 2, mb: 2 }}>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800, fontSize: '1rem' }}>MULTI-STREAMING</Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.65rem' }}>ACTIVAÇÃO DE PROTOCOLOS ADICIONAIS</Typography>
               </Box>
 
               {/* Active protocols */}
-              <Grid container spacing={4}>
+              <Grid container spacing={2}>
                 {[
                   { id: 'rtmp', label: 'RTMP Server', icon: <PlatformIcon /> },
                   { id: 'srt', label: 'SRT (Caller/Listener)', icon: <PlatformIcon /> },
@@ -1434,7 +1438,7 @@ function Settings() {
                   { id: 'hls', label: 'HLS Distribution', icon: <TvIcon /> }
                 ].map(proto => (
                   <Grid item xs={12} md={6} key={proto.id}>
-                    <Box sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 4, border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box sx={{ p: 1.5, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 4, border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                         <Box sx={{ p: 1, bgcolor: 'rgba(0,229,255,0.1)', borderRadius: 2, color: 'primary.main' }}>
                           {proto.icon}
@@ -1573,10 +1577,10 @@ function Settings() {
 
           {/* CATEGORY 1: CAMINHOS & MEDIA (Combined Old 1 & 3) */}
           <TabPanel value={tabValue} index={1}>
-            <Paper className="glass-panel" sx={{ p: 4, mb: 4 }}>
-              <Box sx={{ mb: 4 }}>
-                <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>CAMINHOS DE ARMAZENAMENTO</Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>CONFIGURAÇÃO DE DIRETÓRIOS E VOLUMES</Typography>
+            <Paper className="glass-panel" sx={{ p: 2, mb: 2 }}>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800, fontSize: '1rem' }}>CAMINHOS DE ARMAZENAMENTO</Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.65rem' }}>CONFIGURAÇÃO DE DIRETÓRIOS E VOLUMES</Typography>
               </Box>
 
               <Grid container spacing={3}>
@@ -1616,7 +1620,7 @@ function Settings() {
             </Paper>
 
             {/* COMPACT STORAGE MGMT SECTION */}
-            <Paper className="glass-panel" sx={{ p: 2, mb: 4, borderLeft: '4px solid #9c27b0' }}>
+            <Paper className="glass-panel" sx={{ p: 1.5, mb: 2, borderLeft: '4px solid #9c27b0' }}>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
 
                 {/* Left Side: Title & Description */}
@@ -1682,11 +1686,11 @@ function Settings() {
               )}
             </Paper>
 
-            <Paper className="glass-panel" sx={{ p: 4, mb: 4 }}>
-              <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Paper className="glass-panel" sx={{ p: 2, mb: 2 }}>
+              <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Box>
-                  <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>APIS DE METADADOS</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>INDEXAÇÃO INTELIGENTE (TMDB / OMDB)</Typography>
+                  <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800, fontSize: '1rem' }}>APIS DE METADADOS</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.65rem' }}>INDEXAÇÃO INTELIGENTE (TMDB / OMDB)</Typography>
                 </Box>
                 <Button
                   variant="outlined"
@@ -1771,13 +1775,13 @@ function Settings() {
               </Grid>
             </Paper>
 
-            <Paper className="glass-panel" sx={{ p: 4 }}>
-              <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Paper className="glass-panel" sx={{ p: 2, mb: 2 }}>
+              <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
                     <Box>
-                      <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>BRANDING & ASSETS PROTEGIDOS</Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>IDENTIDADE VISUAL E FALLBACKS</Typography>
+                      <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800, fontSize: '1rem' }}>BRANDING & ASSETS PROTEGIDOS</Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.65rem' }}>IDENTIDADE VISUAL E FALLBACKS</Typography>
                     </Box>
                     <Button
                       variant="outlined"
@@ -1962,11 +1966,11 @@ function Settings() {
 
           {/* CATEGORY 2: PLAYOUT & PRESETS */}
           <TabPanel value={tabValue} index={2}>
-            <Paper className="glass-panel" sx={{ p: 4, mb: 4 }}>
-              <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Paper className="glass-panel" sx={{ p: 2, mb: 2 }}>
+              <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Box>
-                  <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>MOTOR DE PLAYOUT</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>PERFORMANCE E SINCRONIZAÇÃO EM TEMPO REAL</Typography>
+                  <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800, fontSize: '1rem' }}>MOTOR DE PLAYOUT</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.65rem' }}>PERFORMANCE E SINCRONIZAÇÃO EM TEMPO REAL</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1 }}>
                   <Button variant="outlined" startIcon={<WizardIcon />} onClick={() => navigate('/setup')} sx={{ borderRadius: 2, fontWeight: 800 }}>ASSISTENTE</Button>

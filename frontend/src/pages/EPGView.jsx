@@ -130,7 +130,7 @@ export default function EPGView() {
         return (
             <Box sx={{
                 display: 'flex',
-                height: 50,
+                height: 32,
                 borderBottom: `1px solid rgba(255, 255, 255, 0.05)`,
                 position: 'sticky',
                 top: 0,
@@ -198,7 +198,7 @@ export default function EPGView() {
         let currentTime = 0; // seconds from start of playlist (00:00:00)
 
         return (
-            <Box sx={{ position: 'relative', height: 100, borderBottom: `1px solid ${theme.palette.divider}`, minWidth: DAY_WIDTH }}>
+            <Box sx={{ position: 'relative', height: 75, borderBottom: `1px solid ${theme.palette.divider}`, minWidth: DAY_WIDTH }}>
                 {playlist.content.program.map((item, index) => {
                     // Calculate width based on duration
                     const duration = item.duration || 0;
@@ -282,12 +282,12 @@ export default function EPGView() {
                                     position: 'absolute',
                                     left: left,
                                     width: Math.max(width - 2, 4), // 2px margin
-                                    height: 70,
-                                    top: 15,
+                                    height: 50,
+                                    top: 12.5,
                                     background: item.is_filler ? 'rgba(255, 255, 255, 0.03)' : 'linear-gradient(135deg, rgba(0, 229, 255, 0.15) 0%, rgba(0, 229, 255, 0.05) 100%)',
                                     color: item.is_filler ? 'rgba(255, 255, 255, 0.3)' : '#fff',
                                     overflow: 'hidden',
-                                    p: 1.5,
+                                    p: 1,
                                     cursor: 'pointer',
                                     borderRadius: 2,
                                     border: '1px solid',
@@ -301,7 +301,7 @@ export default function EPGView() {
                                     },
                                 }}
                             >
-                                <Typography variant="caption" sx={{ fontWeight: 800, display: 'block', lineHeight: 1.2, mb: 0.5, fontSize: '0.75rem' }}>
+                                <Typography variant="caption" sx={{ fontWeight: 800, display: 'block', lineHeight: 1.1, mb: 0.2, fontSize: '0.7rem' }}>
                                     {(item.metadata?.title || item.filename || 'Sem Nome').toUpperCase()}
                                 </Typography>
                                 <Typography variant="caption" sx={{ fontSize: '0.65rem', fontWeight: 700, opacity: 0.6, letterSpacing: 1 }}>
@@ -332,7 +332,7 @@ export default function EPGView() {
             }} />
 
             {/* Header Controls */}
-            <Paper className="glass-panel" sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 20, borderRadius: 0, borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}>
+            <Paper className="glass-panel" sx={{ p: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 20, borderRadius: 0, borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <Box>
                         <Typography variant="h5" className="neon-text" sx={{ fontWeight: 800, letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -351,8 +351,8 @@ export default function EPGView() {
                             color: 'primary.main',
                             fontWeight: 800,
                             border: '1px solid rgba(0, 229, 255, 0.2)',
-                            height: 32,
-                            fontSize: '0.7rem'
+                            height: 28,
+                            fontSize: '0.65rem'
                         }}
                         onClick={scrollToNow}
                         clickable
@@ -419,14 +419,14 @@ export default function EPGView() {
                                     left: 0,
                                     zIndex: 15,
                                     bgcolor: 'rgba(10, 11, 16, 0.98)',
-                                    p: 2,
+                                    p: 1,
                                     borderBottom: `1px solid rgba(255, 255, 255, 0.05)`,
                                     borderRight: `1px solid rgba(0, 229, 255, 0.2)`,
                                     borderTop: 'none', borderLeft: 'none',
-                                    width: 200,
+                                    width: 180,
                                     display: 'inline-block',
                                     verticalAlign: 'top',
-                                    height: 100,
+                                    height: 75,
                                     borderRadius: 0
                                 }}>
                                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.main', mb: 0.5 }} noWrap>{playlist.name}</Typography>
@@ -436,7 +436,7 @@ export default function EPGView() {
                                 </Box>
 
                                 {/* Timeline Content */}
-                                <Box sx={{ display: 'inline-block', verticalAlign: 'top', width: `calc(100% - 200px)` }}>
+                                <Box sx={{ display: 'inline-block', verticalAlign: 'top', width: `calc(100% - 180px)` }}>
                                     {renderPlaylistRow(playlist)}
                                 </Box>
                             </Box>

@@ -42,4 +42,4 @@ export const UDP_DEFAULTS = {
  * Application version — single source of truth for display use.
  * Authoritative value is always the database setting.
  */
-export const APP_VERSION_FALLBACK = 'v2.2.0-ALPHA.26-PRO';
+export const APP_VERSION_FALLBACK = 'v2.2.0-ALPHA.27-PRO';
