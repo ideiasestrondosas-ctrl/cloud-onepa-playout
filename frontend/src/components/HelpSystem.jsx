@@ -41,27 +41,27 @@ import {
 import { useHelp } from '../context/HelpContext';
 
 const Section = ({ title, children, severity = null }) => (
-  <Box sx={{ mb: 3 }}>
+  <Box sx={{ mb: 1.5 }}>
     {severity ? (
-      <Alert severity={severity} sx={{ mb: 1 }}><strong>{title}</strong></Alert>
+      <Alert severity={severity} sx={{ mb: 0.75, py: 0.3, '& .MuiAlert-message': { py: 0 } }}><strong>{title}</strong></Alert>
     ) : (
-      <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'primary.main', mb: 1, borderBottom: '1px solid rgba(0,229,255,0.15)', pb: 0.5 }}>{title}</Typography>
+      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.main', mb: 0.5, borderBottom: '1px solid rgba(0,229,255,0.15)', pb: 0.3, fontSize: '0.8rem' }}>{title}</Typography>
     )}
     {children}
   </Box>
 );
 
 const Step = ({ n, text }) => (
-  <Box sx={{ display: 'flex', gap: 1.5, mb: 1 }}>
-    <Box sx={{ minWidth: 24, height: 24, borderRadius: '50%', bgcolor: 'primary.main', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.7rem', flexShrink: 0 }}>{n}</Box>
-    <Typography variant="body2" sx={{ pt: 0.3 }}>{text}</Typography>
+  <Box sx={{ display: 'flex', gap: 1, mb: 0.5 }}>
+    <Box sx={{ minWidth: 20, height: 20, borderRadius: '50%', bgcolor: 'primary.main', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.6rem', flexShrink: 0 }}>{n}</Box>
+    <Typography variant="caption" sx={{ pt: 0.2, lineHeight: 1.5 }}>{text}</Typography>
   </Box>
 );
 
 const Kv = ({ k, v }) => (
-  <Box sx={{ display: 'flex', gap: 1, mb: 0.5 }}>
-    <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', minWidth: 160, flexShrink: 0 }}>{k}</Typography>
-    <Typography variant="caption" sx={{ color: 'text.secondary' }}>{v}</Typography>
+  <Box sx={{ display: 'flex', gap: 1, mb: 0.4 }}>
+    <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', minWidth: 130, flexShrink: 0, fontSize: '0.65rem' }}>{k}</Typography>
+    <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.65rem' }}>{v}</Typography>
   </Box>
 );
 
@@ -70,20 +70,20 @@ const Kv = ({ k, v }) => (
 const HelpDashboard = () => (
   <Box>
     <Section title="Dashboard — Centro de Comando">
-      <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+      <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
         O Dashboard é a página principal de operação do playout. A partir daqui controla tudo o que acontece na emissão em tempo real.
       </Typography>
     </Section>
 
     <Section title="Indicador ON AIR / OFF AIR">
-      <Typography variant="body2" sx={{ mb: 1 }}>
+      <Typography variant="caption" sx={{ mb: 0.5, display: 'block' }}>
         No topo do Dashboard existe um indicador de estado da emissão:
       </Typography>
-      <Box sx={{ display: 'flex', gap: 2, mb: 1 }}>
+      <Box sx={{ display: 'flex', gap: 2, mb: 0.5 }}>
         <Chip label="● ON AIR" sx={{ bgcolor: 'rgba(211,47,47,0.15)', color: '#f44336', fontWeight: 800, fontFamily: 'monospace' }} size="small" />
         <Typography variant="caption" sx={{ pt: 0.5, color: 'text.secondary' }}>Motor FFmpeg activo e a emitir</Typography>
       </Box>
-      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+      <Box sx={{ display: 'flex', gap: 2, mb: 1 }}>
         <Chip label="◯ OFF AIR" sx={{ bgcolor: 'rgba(255,255,255,0.05)', color: '#555', fontWeight: 800, fontFamily: 'monospace' }} size="small" />
         <Typography variant="caption" sx={{ pt: 0.5, color: 'text.secondary' }}>Motor parado ou sem playlist</Typography>
       </Box>
@@ -95,13 +95,13 @@ const HelpDashboard = () => (
       <Step n="3" text="Escolha os protocolos a activar (RTMP, SRT, UDP) e clique em 'Iniciar Engine'." />
       <Step n="4" text="O monitor de LIVE PREVIEW começa a mostrar a emissão após 6-10 segundos (tempo de HLS)." />
       <Step n="5" text="Para parar, clique em PARAR. Todos os protocolos são desligados automaticamente." />
-      <Alert severity="warning" sx={{ mt: 1, py: 0.5 }}>
+      <Alert severity="warning" sx={{ mt: 0.75, py: 0.3, '& .MuiAlert-message': { py: 0 } }}>
         <Typography variant="caption">Se não houver playlist agendada, o playout não inicia. Configure o calendário primeiro.</Typography>
       </Alert>
     </Section>
 
     <Section title="Protocolos de Transmissão">
-      <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary' }}>
+      <Typography variant="caption" sx={{ mb: 0.75, color: 'text.secondary', display: 'block' }}>
         Os protocolos aparecem como ícones compactos numa barra horizontal. Clicar num ícone liga ou desliga esse protocolo individualmente.
       </Typography>
       <Kv k="MASTER / HLS" v="Protocolo principal (só leitura). Activado automaticamente com o playout." />
@@ -109,13 +109,11 @@ const HelpDashboard = () => (
       <Kv k="SRT" v="Protocolo de baixa latência para distribuição profissional. Porta 9000." />
       <Kv k="UDP" v="Transmissão multicast/unicast para redes locais e satélite." />
       <Kv k="DASH / MSS / RTSP / WebRTC" v="Protocolos adicionais — activar em Settings → Multi-streaming." />
-      <Box sx={{ mt: 1 }}>
-        <Typography variant="caption" sx={{ color: 'text.secondary' }}>🟢 Verde = Activo &nbsp;|&nbsp; ⚫ Cinza = Offline &nbsp;|&nbsp; 🟠 Laranja = Erro</Typography>
-      </Box>
+      <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}>🟢 Verde = Activo &nbsp;|&nbsp; ⚫ Cinza = Offline &nbsp;|&nbsp; 🟠 Laranja = Erro</Typography>
     </Section>
 
     <Section title="Monitor de Clips">
-      <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary' }}>
+      <Typography variant="caption" sx={{ mb: 0.75, color: 'text.secondary', display: 'block' }}>
         Na zona central inferior estão o clip em reprodução e os próximos clips da lista.
       </Typography>
       <Kv k="CLIP EM REPRODUÇÃO" v="Nome do ficheiro, posição actual e duração com barra de progresso animada." />
@@ -124,7 +122,7 @@ const HelpDashboard = () => (
     </Section>
 
     <Section title="Botão LOGS (Diagnóstico)">
-      <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary' }}>
+      <Typography variant="caption" sx={{ mb: 0.75, color: 'text.secondary', display: 'block' }}>
         Abre um painel detalhado com o estado completo do sistema, actualizado automaticamente a cada 5 segundos:
       </Typography>
       <Kv k="Motor FFmpeg" v="Estado do processo (em execução / parado)" />
@@ -139,7 +137,7 @@ const HelpDashboard = () => (
 const HelpLibrary = () => (
   <Box>
     <Section title="Biblioteca de Media">
-      <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+      <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
         Repositório central de todos os vídeos, áudios e outros conteúdos disponíveis para emissão.
       </Typography>
     </Section>
@@ -149,13 +147,13 @@ const HelpLibrary = () => (
       <Step n="2" text="Formatos suportados: MP4, MOV, MKV, AVI, TS, MXF (H.264/H.265)." />
       <Step n="3" text="O sistema extrai automaticamente metadados (duração, resolução, codec)." />
       <Step n="4" text="Um thumbnail é gerado automaticamente a partir do frame central." />
-      <Alert severity="info" sx={{ mt: 1, py: 0.5 }}>
+      <Alert severity="info" sx={{ mt: 0.75, py: 0.3, '& .MuiAlert-message': { py: 0 } }}>
         <Typography variant="caption">Para volumes grandes, use o caminho NFS/NAS configurado em Settings → Caminhos. Os ficheiros não são copiados, apenas indexados.</Typography>
       </Alert>
     </Section>
 
     <Section title="Metadados & EPG">
-      <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary' }}>
+      <Typography variant="caption" sx={{ mb: 0.75, color: 'text.secondary', display: 'block' }}>
         Cada clip pode ter metadados enriquecidos para o guia de programação (EPG):
       </Typography>
       <Kv k="Título" v="Nome do programa para o guia EPG" />
@@ -166,13 +164,13 @@ const HelpLibrary = () => (
     </Section>
 
     <Section title="Revisão Automática de Metadados">
-      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+      <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
         O botão "REVER METADADOS" utiliza a API TVMaze para pesquisar automaticamente informação do programa com base no nome do ficheiro. Configure a chave API em Settings → Sistema → API Keys.
       </Typography>
     </Section>
 
     <Section title="Fillers (Preenchimento Automático)">
-      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+      <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
         Marque um clip como "Filler" para que o motor o insira automaticamente quando houver lacunas na programação. Ideal para spots publicitários, jingles ou separadores.
       </Typography>
     </Section>
@@ -182,7 +180,7 @@ const HelpLibrary = () => (
 const HelpPlaylists = () => (
   <Box>
     <Section title="Editor de Playlists">
-      <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+      <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
         As playlists são sequências de conteúdo que o motor de playout reproduz em ordem. São a base do agendamento.
       </Typography>
     </Section>
@@ -204,7 +202,7 @@ const HelpPlaylists = () => (
     </Section>
 
     <Section title="Boas Práticas">
-      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+      <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
         • Crie playlists com duração próxima do slot agendado (ex: 4h para emissão de 4h).<br />
         • Adicione sempre alguns fillers no final para evitar emissão em negro.<br />
         • Nomeie as playlists com data e horário para facilitar a gestão (ex: "2026-02-18 Manhã").
@@ -216,7 +214,7 @@ const HelpPlaylists = () => (
 const HelpCalendar = () => (
   <Box>
     <Section title="Central de Agendamento (Calendário)">
-      <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+      <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
         O calendário é onde se programa a emissão. Define quando cada playlist começa a ser transmitida.
       </Typography>
     </Section>
@@ -243,12 +241,12 @@ const HelpCalendar = () => (
     </Section>
 
     <Section title="EPG — Guia de Programação">
-      <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary' }}>
+      <Typography variant="caption" sx={{ mb: 0.5, color: 'text.secondary', display: 'block' }}>
         Na barra TV GUIDE, dois ícones permitem:
       </Typography>
       <Kv k="🌐 Abrir no Browser" v="Abre o ficheiro EPG XML para visualização directa." />
       <Kv k="⬇️ Descarregar" v="Gera e descarrega o ficheiro epg_YYYY-MM-DD.xml para o disco." />
-      <Typography variant="caption" sx={{ color: 'text.disabled' }}>
+      <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block', mt: 0.5 }}>
         O EPG é gerado automaticamente com base nos agendamentos e metadados dos clips. Compatível com players IPTV (Kodi, VLC, Plex, etc.).
       </Typography>
     </Section>
@@ -258,13 +256,13 @@ const HelpCalendar = () => (
 const HelpGraphics = () => (
   <Box>
     <Section title="Graphics Engine — Editor de Gráficos">
-      <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+      <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
         O Graphics Engine permite posicionar o logo da estação e adicionar camadas gráficas animadas sobre a emissão em tempo real.
       </Typography>
     </Section>
 
     <Section title="Pré-Visualização ao Vivo">
-      <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary' }}>
+      <Typography variant="caption" sx={{ mb: 0.5, color: 'text.secondary', display: 'block' }}>
         O painel de PRÉ-VISUALIZAÇÃO (16:9) mostra o fundo da emissão em tempo real:
       </Typography>
       <Kv k="Quando em emissão" v="O feed HLS ao vivo aparece como fundo (75% de opacidade) para posicionamento preciso." />
@@ -280,13 +278,13 @@ const HelpGraphics = () => (
     </Section>
 
     <Section title="Camadas Gráficas (Layers)">
-      <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary' }}>
+      <Typography variant="caption" sx={{ mb: 0.5, color: 'text.secondary', display: 'block' }}>
         No tab LAYER pode criar e gerir camadas gráficas animadas:
       </Typography>
       <Kv k="Lower Third" v="Faixa inferior com nome e título (ex: apresentador). Animação de entrada/saída." />
       <Kv k="Marquee (Ticker)" v="Texto corrido horizontal no rodapé. Velocidade e cor configuráveis." />
       <Kv k="Relógio (Clock)" v="Relógio digital em tempo real, com fusos horários." />
-      <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 1 }}>
+      <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}>
         Cada layer pode ser activada/desactivada individualmente. As alterações são aplicadas automaticamente ao playout em execução.
       </Typography>
     </Section>
@@ -296,7 +294,7 @@ const HelpGraphics = () => (
 const HelpSettings = () => (
   <Box>
     <Section title="Configurações do Sistema">
-      <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+      <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
         O menu Settings tem 5 áreas principais. As alterações são guardadas na base de dados e aplicadas ao motor na próxima sessão.
       </Typography>
     </Section>
@@ -311,14 +309,14 @@ const HelpSettings = () => (
     </Section>
 
     <Section title="Multi-streaming (Protocolos Adicionais)">
-      <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary' }}>
+      <Typography variant="caption" sx={{ mb: 0.5, color: 'text.secondary', display: 'block' }}>
         Para além do protocolo principal, pode activar protocolos adicionais simultaneamente:
       </Typography>
       <Kv k="DASH" v="Dynamic Adaptive Streaming over HTTP. Para players web modernos." />
       <Kv k="MSS" v="Microsoft Smooth Streaming. Para compatibilidade com Azure e Silverlight." />
       <Kv k="RTSP" v="Real Time Streaming Protocol. Para câmaras IP e sistemas CCTV." />
       <Kv k="WebRTC" v="Latência ultra-baixa (<1s) para aplicações web interactivas." />
-      <Alert severity="info" sx={{ mt: 1, py: 0.5 }}>
+      <Alert severity="info" sx={{ mt: 0.75, py: 0.3, '& .MuiAlert-message': { py: 0 } }}>
         <Typography variant="caption">Por defeito, DASH/MSS/RTSP/WebRTC estão desactivados e não aparecem no Dashboard. Active apenas os que necessitar.</Typography>
       </Alert>
     </Section>
@@ -342,7 +340,7 @@ const HelpSettings = () => (
       <Kv k="Admin" v="Acesso total: configurações, utilizadores, playout, media." />
       <Kv k="Editor" v="Gere media, playlists e agendamentos. Não acede a configurações sensíveis." />
       <Kv k="Viewer" v="Apenas visualiza o estado do playout. Sem permissão de escrita." />
-      <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 1 }}>
+      <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}>
         Permissões granulares: READ, WRITE, DELETE, EXECUTE por módulo (media, schedule, settings, playout).
       </Typography>
     </Section>
@@ -352,7 +350,7 @@ const HelpSettings = () => (
 const HelpTroubleshooting = () => (
   <Box>
     <Section title="Resolução de Problemas" severity="warning">
-      <Typography variant="body2">Soluções para os problemas mais comuns do Cloud Onepa Playout.</Typography>
+      <Typography variant="caption">Soluções para os problemas mais comuns do Cloud Onepa Playout.</Typography>
     </Section>
 
     {[
@@ -389,18 +387,18 @@ const HelpTroubleshooting = () => (
         a: 'Execute a rotação de logs em Settings → Caminhos → Gestão de Logs. Para o Docker: docker system prune -f. Verifique o disco com: df -h no servidor.'
       }
     ].map((item, i) => (
-      <Accordion key={i} sx={{ bgcolor: 'rgba(255,255,255,0.02)', mb: 0.5, border: '1px solid rgba(255,255,255,0.05)', '&:before': { display: 'none' } }}>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="body2" sx={{ fontWeight: 700 }}>{item.q}</Typography>
+      <Accordion key={i} sx={{ bgcolor: 'rgba(255,255,255,0.02)', mb: 0, border: '1px solid rgba(255,255,255,0.05)', '&:before': { display: 'none' }, '&:not(:last-child)': { borderBottom: 0 } }}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ fontSize: 18 }} />} sx={{ minHeight: 36, '& .MuiAccordionSummary-content': { my: 0.5 } }}>
+          <Typography variant="caption" sx={{ fontWeight: 700 }}>{item.q}</Typography>
         </AccordionSummary>
-        <AccordionDetails>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>{item.a}</Typography>
+        <AccordionDetails sx={{ pt: 0, pb: 1, px: 2 }}>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>{item.a}</Typography>
         </AccordionDetails>
       </Accordion>
     ))}
 
-    <Section title="Contacto & Suporte">
-      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+    <Section title="Contacto & Suporte" >
+      <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}>
         Para problemas não cobertos aqui, use o botão LOGS no Dashboard para exportar o relatório de diagnóstico e partilhe com o suporte técnico.
       </Typography>
     </Section>
@@ -410,13 +408,13 @@ const HelpTroubleshooting = () => (
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
 
 const TABS = [
-  { label: 'Dashboard', icon: <DashboardIcon sx={{ fontSize: 16 }} />, content: <HelpDashboard /> },
-  { label: 'Media', icon: <LibraryIcon sx={{ fontSize: 16 }} />, content: <HelpLibrary /> },
-  { label: 'Playlists', icon: <PlaylistIcon sx={{ fontSize: 16 }} />, content: <HelpPlaylists /> },
-  { label: 'Calendário', icon: <CalendarIcon sx={{ fontSize: 16 }} />, content: <HelpCalendar /> },
-  { label: 'Graphics', icon: <GraphicsIcon sx={{ fontSize: 16 }} />, content: <HelpGraphics /> },
-  { label: 'Settings', icon: <SettingsIcon sx={{ fontSize: 16 }} />, content: <HelpSettings /> },
-  { label: 'Problemas', icon: <BugIcon sx={{ fontSize: 16 }} />, content: <HelpTroubleshooting /> },
+  { label: 'Dashboard', icon: <DashboardIcon sx={{ fontSize: 14 }} />, content: <HelpDashboard /> },
+  { label: 'Media', icon: <LibraryIcon sx={{ fontSize: 14 }} />, content: <HelpLibrary /> },
+  { label: 'Playlists', icon: <PlaylistIcon sx={{ fontSize: 14 }} />, content: <HelpPlaylists /> },
+  { label: 'Calendário', icon: <CalendarIcon sx={{ fontSize: 14 }} />, content: <HelpCalendar /> },
+  { label: 'Graphics', icon: <GraphicsIcon sx={{ fontSize: 14 }} />, content: <HelpGraphics /> },
+  { label: 'Settings', icon: <SettingsIcon sx={{ fontSize: 14 }} />, content: <HelpSettings /> },
+  { label: 'Problemas', icon: <BugIcon sx={{ fontSize: 14 }} />, content: <HelpTroubleshooting /> },
 ];
 
 export default function HelpSystem() {
@@ -431,23 +429,23 @@ export default function HelpSystem() {
       fullWidth
       PaperProps={{
         className: 'glass-panel',
-        sx: { backgroundImage: 'none', border: '1px solid rgba(0,229,255,0.15)', maxHeight: '85vh' }
+        sx: { backgroundImage: 'none', border: '1px solid rgba(0,229,255,0.15)', maxHeight: '80vh' }
       }}
     >
-      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', pb: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <TvIcon color="primary" />
+      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', py: 0.75, px: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <TvIcon color="primary" sx={{ fontSize: 20 }} />
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1, fontSize: '1rem' }}>
               {helpContent?.title || 'Central de Ajuda'}
             </Typography>
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: 1 }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: 0.5, fontSize: '0.6rem' }}>
               CLOUD ONEPA PLAYOUT — GUIA DE OPERAÇÕES
             </Typography>
           </Box>
         </Box>
         <IconButton onClick={closeHelp} size="small">
-          <CloseIcon />
+          <CloseIcon sx={{ fontSize: 18 }} />
         </IconButton>
       </DialogTitle>
 
@@ -458,25 +456,25 @@ export default function HelpSystem() {
           variant="scrollable"
           scrollButtons="auto"
           sx={{
-            '& .MuiTab-root': { minHeight: 44, fontSize: '0.7rem', fontWeight: 700 },
+            '& .MuiTab-root': { minHeight: 36, fontSize: '0.65rem', fontWeight: 700, py: 0.5, px: 1.5 },
             '& .Mui-selected': { color: 'primary.main !important' }
           }}
         >
           {TABS.map((t, i) => (
-            <Tab key={i} label={t.label} icon={t.icon} iconPosition="start" sx={{ gap: 0.5 }} />
+            <Tab key={i} label={t.label} icon={t.icon} iconPosition="start" sx={{ gap: 0.4 }} />
           ))}
         </Tabs>
       </Box>
 
-      <DialogContent sx={{ p: 3, overflowY: 'auto' }}>
+      <DialogContent sx={{ p: 2, overflowY: 'auto' }}>
         {helpContent?.content ? (
-          <Typography>{helpContent.content}</Typography>
+          <Typography variant="caption">{helpContent.content}</Typography>
         ) : (
           TABS[tabIndex]?.content
         )}
       </DialogContent>
 
-      <DialogActions sx={{ justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.05)', px: 3, py: 1.5 }}>
+      <DialogActions sx={{ justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.05)', px: 2, py: 0.75 }}>
         {helpMode && toggleHelpMode && (
           <Button variant="outlined" color="warning" size="small" onClick={() => { toggleHelpMode(); closeHelp(); }}>
             Desactivar Modo Ajuda
