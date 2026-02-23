@@ -47,6 +47,14 @@ import {
   Tooltip,
   CircularProgress,
   ListSubheader,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Avatar,
+  Drawer,
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -81,7 +89,15 @@ import {
   Speed as ScalabilityIcon,
   RocketLaunch as RocketIcon,
   Memory as AiIcon,
-  BugReport as BugIcon // Added for ErrorBoundary
+  BugReport as BugIcon,
+  VisibilityOff as ViewOffIcon,
+  Science as TestIcon,
+  ContentCopy as CopyIcon,
+  NorthWest as NwIcon,
+  NorthEast as NeIcon,
+  SouthWest as SwIcon,
+  SouthEast as SeIcon,
+  RadioButtonChecked as TargetIcon
 } from '@mui/icons-material';
 
 // --- Error Boundary for Safety ---
@@ -818,15 +834,28 @@ function Settings() {
 
   const roadmapData = [
     {
-      phase: 'Phase 22',
+      phase: 'Phase 25',
       title: 'CONECTIVIDADE & LIVE INPUTS',
-      focus: 'Expansão além da reprodução de ficheiros',
+      focus: 'Distribuição Inteligente e Redundância SRT',
       icon: <SensorsIcon />,
       color: '#00e5ff',
       items: [
-        { text: 'Suporte SRT: Implementação (Caller & Listener) para contribuição remota fiável', done: true },
-        { text: 'Live Inputs: Integração de WebRTC, NDI e SDI para switching em direto', done: false },
-        { text: 'Smart Folder Playback: Reprodução aleatória direta de pastas (sem checklists)', done: false }
+        { text: 'Suporte SRT: Implementação (Caller & Listener) - ESTÁVEL', done: true },
+        { text: 'Dynamic Bitrate: Ajuste em tempo real baseado em rede', done: true },
+        { text: 'Smart Folder Playback: Auto-sync de novos conteúdos', done: true }
+      ]
+    },
+    {
+      phase: 'Phase 26',
+      title: 'ELITE USER EXPERIENCE',
+      focus: 'Nova Consola de Comando e Gestão de Média',
+      icon: <RocketIcon />,
+      color: '#ce93d8',
+      items: [
+        { text: 'Gestor de Espaço: Auditoria física vs DB em tempo real', done: true },
+        { text: 'Branding Unificado: Sincronização inteligente de assets', done: true },
+        { text: 'RBAC: Perfis de sistema com permissões granulares', done: true },
+        { text: 'Fix Estrutural: Motor React optimizado para estabilidade', done: true }
       ]
     },
     {
@@ -889,6 +918,7 @@ function Settings() {
   const fetchReleaseHistory = () => {
     // Curated local history — no external API dependency, works offline
     setReleaseHistory([
+      { version: 'v2.2.0-ALPHA.26-PRO', date: '2026-02-23', changes: ['Branding & UI Consistency: Consolidação total da identidade visual em todas as definições', 'Compact Redesign: Caminhos, Media e Playout Engine optimizados para menor ocupação vertical', 'Fix Estrutural: Resolução definitiva de erros de JSX em Settings e Layout', 'Versioning Global: Sincronização automática de versões entre DB, Backend e Frontend'] },
       { version: 'v2.2.0-ALPHA.25-PRO', date: '2026-02-22', changes: ['Reality Sync Engine: Motor robusto com suporte global a caminhos (Media, Assets, Fillers, Protected)', 'Filtro Profissional: Assets de sistema protegidos ficam ocultos da Media Library por defeito', 'Storage Audit: Métricas em tempo real de ocupação de disco para proxies web', 'Sync Resiliente: Timeout aumentado para 120s e tratamento de erros de permissão agressivo', 'Limpeza Automática: Base de dados higienizada de ficheiros residuais de sistema'] },
       { version: 'v2.2.0-ALPHA.24-PRO', date: '2026-02-21', changes: ['Reality Sync Engine: motor proativo que deteta ficheiros no disco e os regista na App automágicamente', 'Elite Storage Audit: Gestor de Espaço identifica bibliotecas vs realidade física e detecta proxies em falta', 'Sync Resiliente: novo motor com tratamento de erros detalhado, verificação de permissões e reporting granular', 'Resiliência de Metadados: correção de falhas na leitura de metadados em ficheiros com nomes complexos', 'Versioning: Consolidação total para ALPHA.24-PRO em todo o ecossistema'] },
       { version: 'v2.2.0-ALPHA.23-PRO', date: '2026-02-19', changes: ['Streaming: Otimização profunda em Nginx (buffering off, byte ranges)', 'Frontend: Preview de media com suporte nativo a Buffering/Partial Content', 'Backend: Implementação de Range Requests no endpoint de stream (Rust)', 'Estabilidade: Melhor manuseamento de ficheiros grandes via Chunked Transfer'] },
@@ -1669,24 +1699,73 @@ function Settings() {
                 </Button>
               </Box>
 
-              <Grid container spacing={3}>
+              <Grid container spacing={2}>
                 {[
-                  { id: 'tmdb', label: 'TMDB API KEY', key: 'tmdbApiKey' },
-                  { id: 'omdb', label: 'OMDB API KEY', key: 'omdbApiKey' },
-                  { id: 'tvmaze', label: 'TVMAZE KEY', key: 'tvmazeApiKey' }
+                  { id: 'tmdb', label: 'TMDB API', key: 'tmdbApiKey' },
+                  { id: 'omdb', label: 'OMDB API', key: 'omdbApiKey' },
+                  { id: 'tvmaze', label: 'TVMAZE', key: 'tvmazeApiKey' }
                 ].map(api => (
-                  <Grid item xs={12} md={4} key={api.id}>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Grid item xs={12} key={api.id}>
+                    <Paper
+                      variant="outlined"
+                      sx={{
+                        p: 1.5,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 2,
+                        bgcolor: 'rgba(255,255,255,0.02)',
+                        borderColor: 'rgba(255,255,255,0.05)',
+                        borderRadius: 3
+                      }}
+                    >
+                      <Typography variant="caption" sx={{ fontWeight: 900, minWidth: 100, color: 'primary.main' }}>
+                        {api.label}
+                      </Typography>
+
                       <TextField
-                        fullWidth
-                        label={api.label}
-                        value={settings[api.key]}
-                        type="password"
+                        size="small"
+                        placeholder="Insira a API Key..."
+                        value={settings[api.key] || ''}
+                        type={settings[`show_${api.id}`] ? "text" : "password"}
                         onChange={(e) => setSettings({ ...settings, [api.key]: e.target.value })}
-                        InputProps={{ sx: { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3, fontSize: '0.8rem' } }}
+                        sx={{ flexGrow: 1 }}
+                        InputProps={{
+                          sx: { height: 36, bgcolor: 'rgba(0,0,0,0.3)', borderRadius: 2, fontSize: '0.75rem' },
+                          endAdornment: (
+                            <IconButton
+                              size="small"
+                              onClick={() => setSettings(s => ({ ...s, [`show_${api.id}`]: !s[`show_${api.id}`] }))}
+                              sx={{ opacity: 0.7 }}
+                            >
+                              {settings[`show_${api.id}`] ? <ViewOffIcon sx={{ fontSize: 16 }} /> : <ViewIcon sx={{ fontSize: 16 }} />}
+                            </IconButton>
+                          )
+                        }}
                       />
-                      <IconButton onClick={() => handleTestApi(api.id)} color="primary" sx={{ mt: 1 }}><RefreshIcon /></IconButton>
-                    </Box>
+
+                      <Stack direction="row" spacing={1}>
+                        <Tooltip title="Testar Ligação">
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            onClick={() => handleTestApi(api.id)}
+                            sx={{ bgcolor: 'rgba(0, 229, 255, 0.1)', border: '1px solid rgba(0, 229, 255, 0.2)' }}
+                          >
+                            <TestIcon sx={{ fontSize: 18 }} />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Guardar">
+                          <IconButton
+                            size="small"
+                            color="success"
+                            onClick={handleSaveSettings}
+                            sx={{ bgcolor: 'rgba(76, 175, 80, 0.1)', border: '1px solid rgba(76, 175, 80, 0.2)' }}
+                          >
+                            <SaveIcon sx={{ fontSize: 18 }} />
+                          </IconButton>
+                        </Tooltip>
+                      </Stack>
+                    </Paper>
                   </Grid>
                 ))}
               </Grid>
@@ -1735,87 +1814,148 @@ function Settings() {
                       REPOR PADRÕES
                     </Button>
                   </Box>
-                </Box>
-                <Tooltip title="Restaurar branding e assets para os valores por defeito do sistema" arrow>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={<RefreshIcon />}
-                    onClick={async () => {
-                      const defaults = {
-                        branding_type: 'video',
-                        logo_path: '/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4',
-                        default_image_path: '/assets/protected/Cloud_Onepa_Playout_Infinity_Logo_remodelado.png',
-                        default_video_path: '/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4',
-                      };
-                      try {
-                        await settingsAPI.update(defaults);
-                        setSettings(prev => ({
-                          ...prev,
+                  <Tooltip title="Restaurar branding e assets para os valores por defeito do sistema" arrow>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<RefreshIcon />}
+                      onClick={async () => {
+                        const defaults = {
                           branding_type: 'video',
-                          logoPath: defaults.logo_path,
-                          defaultImagePath: defaults.default_image_path,
-                          defaultVideoPath: defaults.default_video_path,
-                        }));
-                        await fetchProtectedAssets();
-                        showSuccess('Branding restaurado para os valores por defeito!');
-                      } catch (e) { showError('Erro ao restaurar branding'); }
-                    }}
-                    sx={{ fontWeight: 800, fontSize: '0.7rem', borderColor: 'rgba(0,229,255,0.2)', color: 'primary.main' }}
-                  >
-                    RESTAURAR DEFAULTS
-                  </Button>
-                </Tooltip>
+                          logo_path: '/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4',
+                          default_image_path: '/assets/protected/Cloud_Onepa_Playout_Infinity_Logo_remodelado.png',
+                          default_video_path: '/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4',
+                        };
+                        try {
+                          await settingsAPI.update(defaults);
+                          setSettings(prev => ({
+                            ...prev,
+                            branding_type: 'video',
+                            logoPath: defaults.logo_path,
+                            defaultImagePath: defaults.default_image_path,
+                            defaultVideoPath: defaults.default_video_path,
+                          }));
+                          await fetchProtectedAssets();
+                          showSuccess('Branding restaurado para os valores por defeito!');
+                        } catch (e) { showError('Erro ao restaurar branding'); }
+                      }}
+                      sx={{ fontWeight: 800, fontSize: '0.7rem', borderColor: 'rgba(0,229,255,0.2)', color: 'primary.main' }}
+                    >
+                      RESTAURAR DEFAULTS
+                    </Button>
+                  </Tooltip>
+                </Box>
               </Box>
 
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <Box sx={{ p: 3, bgcolor: 'rgba(0,0,0,0.4)', borderRadius: 4, border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                    <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 800, mb: 2, display: 'block' }}>PREVIEW LOGO/VIDEO</Typography>
-                    <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 180 }}>
-                      {(settings.branding_type === 'video') ? (
-                        <video key={`vid-${settings.logo_path || 'default'}-${Date.now()}`} src={`${settings.logo_path || "/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4"}?cb=${Date.now()}`} autoPlay loop muted style={{ maxWidth: '100%', maxHeight: '100%' }} />
-                      ) : (
-                        <img key={`img-${settings.logo_path || 'default'}-${Date.now()}`} src={`${settings.logo_path || "/assets/protected/Cloud_Onepa_Playout_Infinity_Logo_remodelado.png"}?cb=${Date.now()}`} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
-                      )}
-                    </Box>
-                    <ToggleButtonGroup
-                      value={settings.branding_type || 'video'}
-                      exclusive
-                      onChange={(e, v) => {
-                        if (!v) return;
-                        setSettings({
-                          ...settings,
-                          branding_type: v,
-                          logo_path: (v === 'video') ? '/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4' : '/assets/protected/Cloud_Onepa_Playout_Infinity_Logo_remodelado.png'
-                        });
+              <Grid container spacing={2}>
+                {[
+                  {
+                    id: 'logo',
+                    label: 'LOGO DA APP',
+                    path: settings.logoPath,
+                    type: settings.branding_type,
+                    onSelect: () => { setMediaTypeSelector(settings.branding_type === 'video' ? 'video' : 'image'); setMediaSelectorOpen(true); }
+                  },
+                  {
+                    id: 'image_fb',
+                    label: 'IMAGEM FALLBACK',
+                    path: settings.defaultImagePath,
+                    type: 'static',
+                    onSelect: () => { setMediaTypeSelector('image'); setMediaSelectorOpen(true); }
+                  },
+                  {
+                    id: 'video_fb',
+                    label: 'VÍDEO FALLBACK',
+                    path: settings.defaultVideoPath,
+                    type: 'video',
+                    onSelect: () => { setMediaTypeSelector('video'); setMediaSelectorOpen(true); }
+                  }
+                ].map(asset => (
+                  <Grid item xs={12} md={4} key={asset.id}>
+                    <Paper
+                      elevation={0}
+                      sx={{
+                        p: 2,
+                        height: '100%',
+                        borderRadius: 4,
+                        bgcolor: 'rgba(255,255,255,0.02)',
+                        border: '1px solid rgba(255,255,255,0.05)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 1.5,
+                        transition: 'all 0.2s',
+                        '&:hover': { bgcolor: 'rgba(255,255,255,0.04)', borderColor: 'primary.main' }
                       }}
-                      fullWidth
-                      sx={{ mt: 3 }}
                     >
-                      <ToggleButton value="static" sx={{ fontWeight: 800 }}>ESTÁTICO</ToggleButton>
-                      <ToggleButton value="video" sx={{ fontWeight: 800 }}>ANIMADO</ToggleButton>
-                    </ToggleButtonGroup>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <Typography variant="overline" sx={{ fontWeight: 900, color: 'text.secondary', lineHeight: 1.2 }}>
+                          {asset.label}
+                        </Typography>
+                        <Chip
+                          label={asset.path ? 'DEFINIDO' : 'AUSENTE'}
+                          size="small"
+                          color={asset.path ? 'success' : 'warning'}
+                          sx={{ height: 16, fontSize: '0.6rem', fontWeight: 900 }}
+                        />
+                      </Box>
 
-                  </Box>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Stack spacing={2}>
-                    <Button variant="outlined" component="label" fullWidth sx={{ py: 2, borderRadius: 3, fontWeight: 800 }}>
-                      CARREGAR LOGO DA APP
-                      <input type="file" hidden accept="image/*" onChange={(e) => {/* handle upload */ }} />
-                    </Button>
-                    <Divider sx={{ opacity: 0.1 }}>OU SELECIONAR FALLBACKS</Divider>
-                    <Grid container spacing={2}>
-                      <Grid item xs={6}>
-                        <Button variant="contained" fullWidth onClick={() => { setMediaTypeSelector('image'); setMediaSelectorOpen(true); }} sx={{ bgcolor: 'rgba(255,255,255,0.05)', fontWeight: 800 }}>IMAGE FB</Button>
-                      </Grid>
-                      <Grid item xs={6}>
-                        <Button variant="contained" fullWidth onClick={() => { setMediaTypeSelector('video'); setMediaSelectorOpen(true); }} sx={{ bgcolor: 'rgba(255,255,255,0.05)', fontWeight: 800 }}>VIDEO FB</Button>
-                      </Grid>
-                    </Grid>
-                  </Stack>
-                </Grid>
+                      <Box
+                        sx={{
+                          height: 100,
+                          bgcolor: 'rgba(0,0,0,0.3)',
+                          borderRadius: 2,
+                          overflow: 'hidden',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          border: '1px dashed rgba(255,255,255,0.1)'
+                        }}
+                      >
+                        {asset.path ? (
+                          asset.type === 'video' ? (
+                            <video src={asset.path} style={{ width: '100%', height: '100%', objectFit: 'contain' }} muted loop onMouseOver={e => e.target.play()} onMouseOut={e => e.target.pause()} />
+                          ) : (
+                            <img src={asset.path} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                          )
+                        ) : (
+                          <Box sx={{ opacity: 0.2, textAlign: 'center' }}>
+                            {asset.type === 'video' ? <MovieIcon sx={{ fontSize: 40 }} /> : <ImageIcon sx={{ fontSize: 40 }} />}
+                          </Box>
+                        )}
+                      </Box>
+
+                      <Box sx={{ display: 'flex', gap: 1, mt: 'auto' }}>
+                        <Button
+                          fullWidth
+                          size="small"
+                          variant="contained"
+                          onClick={asset.onSelect}
+                          sx={{
+                            fontSize: '0.65rem',
+                            fontWeight: 900,
+                            borderRadius: 2,
+                            bgcolor: 'rgba(255,255,255,0.05)',
+                            '&:hover': { bgcolor: 'primary.main' }
+                          }}
+                        >
+                          ALTERAR
+                        </Button>
+                        {asset.id === 'logo' && (
+                          <ToggleButtonGroup
+                            size="small"
+                            value={settings.branding_type || 'static'}
+                            exclusive
+                            onChange={(e, v) => v && setSettings({ ...settings, branding_type: v })}
+                            sx={{ bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2 }}
+                          >
+                            <ToggleButton value="static" sx={{ px: 1, py: 0, fontSize: '0.6rem', fontWeight: 800 }}>IMG</ToggleButton>
+                            <ToggleButton value="video" sx={{ px: 1, py: 0, fontSize: '0.6rem', fontWeight: 800 }}>VID</ToggleButton>
+                          </ToggleButtonGroup>
+                        )}
+                      </Box>
+                    </Paper>
+                  </Grid>
+                ))}
               </Grid>
             </Paper>
           </TabPanel>
@@ -1834,47 +1974,41 @@ function Settings() {
                 </Box>
               </Box>
 
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="INÍCIO DO DIA (PROGRAMAÇÃO)"
-                    type="time"
-                    value={settings.dayStart}
-                    onChange={(e) => setSettings({ ...settings, dayStart: e.target.value })}
-                    InputLabelProps={{ shrink: true }}
-                    InputProps={{ sx: { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3 } }}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="NOME DO CANAL"
-                    value={settings.channelName}
-                    onChange={(e) => setSettings({ ...settings, channelName: e.target.value })}
-                    InputProps={{ sx: { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3 } }}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="FPS (BASE)"
-                    value={settings.fps}
-                    onChange={(e) => setSettings({ ...settings, fps: e.target.value })}
-                    InputProps={{ sx: { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3 } }}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <FormControl fullWidth>
-                    <InputLabel>ENCODING PRESET</InputLabel>
-                    <Select value={settings.encodingPreset || 'medium'} label="ENCODING PRESET" onChange={(e) => setSettings({ ...settings, encodingPreset: e.target.value })} sx={{ bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3 }}>
-                      <MenuItem value="ultrafast">Ultra Fast</MenuItem>
-                      <MenuItem value="veryfast">Very Fast</MenuItem>
-                      <MenuItem value="medium">Medium</MenuItem>
-                      <MenuItem value="slow">Slow</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
+              <Grid container spacing={2}>
+                {[
+                  { label: 'INÍCIO DO DIA', value: settings.dayStart, type: 'time', key: 'dayStart', tooltip: 'Hora de reset da grelha diária' },
+                  { label: 'NOME DO CANAL', value: settings.channelName, type: 'text', key: 'channelName', tooltip: 'Identificador público do stream' },
+                  { label: 'FRAME RATE (FPS)', value: settings.fps, type: 'number', key: 'fps', tooltip: 'Frames por segundo base' },
+                  { label: 'ENCODING PRESET', value: settings.encodingPreset || 'medium', type: 'select', key: 'encodingPreset', options: ['ultrafast', 'veryfast', 'medium', 'slow'], tooltip: 'Eficiência de compressão CPU' }
+                ].map(item => (
+                  <Grid item xs={12} md={6} key={item.key}>
+                    <Tooltip title={item.tooltip} arrow placement="top">
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, bgcolor: 'rgba(0,0,0,0.2)', p: 1.5, borderRadius: 3, border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <Typography variant="caption" sx={{ fontWeight: 900, minWidth: 100, color: 'text.secondary' }}>{item.label}</Typography>
+                        {item.type === 'select' ? (
+                          <Select
+                            size="small"
+                            fullWidth
+                            value={item.value}
+                            onChange={(e) => setSettings({ ...settings, [item.key]: e.target.value })}
+                            sx={{ borderRadius: 2, fontSize: '0.75rem', fontWeight: 800 }}
+                          >
+                            {item.options.map(opt => <MenuItem key={opt} value={opt}>{opt.toUpperCase()}</MenuItem>)}
+                          </Select>
+                        ) : (
+                          <TextField
+                            size="small"
+                            fullWidth
+                            type={item.type}
+                            value={item.value}
+                            onChange={(e) => setSettings({ ...settings, [item.key]: e.target.value })}
+                            sx={{ '& .MuiInputBase-root': { borderRadius: 2, fontSize: '0.75rem', fontWeight: 800 } }}
+                          />
+                        )}
+                      </Box>
+                    </Tooltip>
+                  </Grid>
+                ))}
               </Grid>
             </Paper>
 
@@ -1884,41 +2018,63 @@ function Settings() {
                 <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>PROGRAMAÇÃO & EPG</Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>DISTRIBUIÇÃO DE GUIA DE PROGRAMAÇÃO (XMLTV)</Typography>
               </Box>
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={8}>
-                  <Tooltip title="URL estática para o seu fornecedor (M3U/IPTV)" arrow>
-                    <TextField
-                      fullWidth
-                      label="URL DO EPG (LOCAL/REF)"
-                      value={settings.epgUrl || `${window.location.protocol}//${window.location.host}/api/playlists/epg.xml`}
-                      onChange={(e) => setSettings({ ...settings, epgUrl: e.target.value })}
-                      helperText="URL para referenciar o seu guia de programação (XMLTV)"
-                      InputProps={{
-                        sx: { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3 },
-                        endAdornment: (
-                          <IconButton onClick={() => {
-                            navigator.clipboard.writeText(`${window.location.protocol}//${window.location.host}/api/playlists/epg.xml`);
-                            showSuccess('URL copiada para a área de transferência!');
-                          }}>
-                            <MagicIcon />
-                          </IconButton>
-                        )
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 1.5,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  bgcolor: 'rgba(0,0,0,0.3)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 3
+                }}
+              >
+                <Box sx={{ flexGrow: 1 }}>
+                  <Typography variant="overline" sx={{ fontWeight: 900, color: 'primary.main', display: 'block', lineHeight: 1 }}>URL DO EPG FINAL</Typography>
+                  <Typography variant="caption" sx={{ fontFamily: 'monospace', opacity: 0.7, wordBreak: 'break-all' }}>
+                    {`${window.location.protocol}//${window.location.host}/api/playlists/epg.xml`}
+                  </Typography>
+                </Box>
+
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Chip label="LIVE" size="small" color="success" sx={{ height: 20, fontSize: '0.6rem', fontWeight: 900 }} />
+                  <Tooltip title="Copiar Endpoint">
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.protocol}//${window.location.host}/api/playlists/epg.xml`);
+                        showSuccess('Endpoint copiado!');
                       }}
-                    />
+                      sx={{ bgcolor: 'rgba(255,255,255,0.05)' }}
+                    >
+                      <CopyIcon sx={{ fontSize: 18 }} />
+                    </IconButton>
                   </Tooltip>
+                </Box>
+              </Paper>
+
+              <Grid container spacing={2} sx={{ mt: 1 }}>
+                <Grid item xs={12} md={9}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="REFRESCAMENTO INTERNO"
+                    value={settings.epgUrl || '(AUTO-GERADO PELO SISTEMA)'}
+                    disabled
+                    InputProps={{ sx: { borderRadius: 2, fontSize: '0.75rem', opacity: 0.6 } }}
+                  />
                 </Grid>
-                <Grid item xs={12} md={4}>
-                  <Tooltip title="Número de dias futuros a incluir no guia" arrow>
-                    <TextField
-                      fullWidth
-                      label="DIAS DE EPG (ANTECEDÊNCIA)"
-                      type="number"
-                      value={settings.epgDays}
-                      onChange={(e) => setSettings({ ...settings, epgDays: parseInt(e.target.value) || 7 })}
-                      inputProps={{ min: 1, max: 30 }}
-                      InputProps={{ sx: { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3 } }}
-                    />
-                  </Tooltip>
+                <Grid item xs={12} md={3}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="DIAS"
+                    type="number"
+                    value={settings.epgDays}
+                    onChange={(e) => setSettings({ ...settings, epgDays: parseInt(e.target.value) || 7 })}
+                    InputProps={{ sx: { borderRadius: 2, fontSize: '0.75rem' } }}
+                  />
                 </Grid>
               </Grid>
             </Paper>
@@ -1929,81 +2085,171 @@ function Settings() {
                 <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>GESTÃO DE MARCA D'ÁGUA EM TEMPO REAL</Typography>
               </Box>
 
-              <Box sx={{ p: 3, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 4, border: '1px solid rgba(255,255,255,0.05)', mb: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                  <Box>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>ESTADO DO OVERLAY</Typography>
-                    <Typography variant="caption" color="text.secondary">Ativar/Desativar camada de gráficos no output</Typography>
-                  </Box>
-                  <Switch
-                    checked={settings.overlay_enabled}
-                    onChange={(e) => setSettings({ ...settings, overlay_enabled: e.target.checked })}
-                    sx={{
-                      '& .MuiSwitch-switchBase.Mui-checked': { color: 'primary.main' },
-                      '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: 'primary.main' }
-                    }}
-                  />
-                </Box>
-                <Grid container spacing={4}>
-                  <Grid item xs={12} md={6}>
-                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', mb: 1, display: 'block' }}>OPACIDADE ({Math.round((settings.overlayOpacity ?? 0.6) * 100)}%)</Typography>
-                    <Slider value={settings.overlayOpacity ?? 0.6} min={0} max={1} step={0.1} onChange={(e, v) => setSettings({ ...settings, overlayOpacity: v })} />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', mb: 1, display: 'block' }}>ESCALA ({Math.round((settings.overlayScale ?? 0.6) * 100)}%)</Typography>
-                    <Slider value={settings.overlayScale ?? 0.6} min={0.1} max={2.0} step={0.1} onChange={(e, v) => setSettings({ ...settings, overlayScale: v })} />
-                  </Grid>
-                </Grid>
-              </Box>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={4}>
+                  <Box sx={{
+                    height: 180,
+                    bgcolor: 'rgba(0,0,0,0.4)',
+                    borderRadius: 3,
+                    border: '1px solid rgba(255,255,255,0.05)',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <Typography variant="overline" sx={{ position: 'absolute', top: 8, left: 12, opacity: 0.3, fontWeight: 900 }}>PREVIEW</Typography>
 
-              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                    {/* Simulated Viewport for Watermark placement */}
+                    <Box sx={{ width: '80%', height: '80%', border: '1px dashed rgba(255,255,255,0.1)', position: 'relative' }}>
+                      {settings.overlay_enabled && (
+                        <Box sx={{
+                          position: 'absolute',
+                          width: 30, height: 30,
+                          top: (settings.logoPosition || '').includes('top') ? '5%' : 'auto',
+                          bottom: (settings.logoPosition || '').includes('bottom') ? '5%' : 'auto',
+                          left: (settings.logoPosition || '').includes('left') ? '5%' : 'auto',
+                          right: (settings.logoPosition || '').includes('right') ? '5%' : 'auto',
+                          bgcolor: 'primary.main',
+                          borderRadius: '50%',
+                          boxShadow: '0 0 15px rgba(0, 229, 255, 0.5)',
+                          opacity: settings.overlayOpacity || 1,
+                          transform: `scale(${settings.overlayScale || 1})`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        }}>
+                          <ImageIcon sx={{ fontSize: 14, color: '#000' }} />
+                        </Box>
+                      )}
+                      {!settings.overlay_enabled && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', opacity: 0.2 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 800 }}>DESACTIVADO</Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  </Box>
+                </Grid>
+
+                <Grid item xs={12} md={8}>
+                  <Box sx={{ bgcolor: 'rgba(255,255,255,0.02)', p: 2, borderRadius: 3, border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                      <Typography variant="caption" sx={{ fontWeight: 900, color: 'primary.main' }}>CONTROLO DE POSIÇÃO (D-PAD)</Typography>
+                      <Switch
+                        size="small"
+                        checked={settings.overlay_enabled}
+                        onChange={(e) => setSettings({ ...settings, overlay_enabled: e.target.checked })}
+                      />
+                    </Box>
+
+                    <Box sx={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                      {/* D-PAD Grid */}
+                      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0.5, bgcolor: 'rgba(0,0,0,0.2)', p: 1, borderRadius: 2 }}>
+                        {[
+                          { pos: 'top-left', icon: <NwIcon fontSize="small" /> },
+                          { pos: 'spacer', icon: null },
+                          { pos: 'top-right', icon: <NeIcon fontSize="small" /> },
+                          { pos: 'spacer2', icon: <TargetIcon sx={{ fontSize: 10, opacity: 0.2 }} /> },
+                          { pos: 'center', icon: <TargetIcon sx={{ fontSize: 14, color: 'primary.main', opacity: 0.5 }} /> },
+                          { pos: 'spacer3', icon: <TargetIcon sx={{ fontSize: 10, opacity: 0.2 }} /> },
+                          { pos: 'bottom-left', icon: <SwIcon fontSize="small" /> },
+                          { pos: 'spacer4', icon: null },
+                          { pos: 'bottom-right', icon: <SeIcon fontSize="small" /> }
+                        ].map((btn, idx) => (
+                          btn.pos.startsWith('spacer') ? (
+                            <Box key={idx} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{btn.icon}</Box>
+                          ) : (
+                            <IconButton
+                              size="small"
+                              key={btn.pos}
+                              onClick={() => setSettings({ ...settings, logoPosition: btn.pos })}
+                              sx={{
+                                bgcolor: settings.logoPosition === btn.pos ? 'primary.main' : 'rgba(255,255,255,0.05)',
+                                color: settings.logoPosition === btn.pos ? '#000' : 'inherit',
+                                '&:hover': { bgcolor: 'primary.dark' },
+                                width: 32, height: 32
+                              }}
+                            >
+                              {btn.icon || <TargetIcon sx={{ fontSize: 14 }} />}
+                            </IconButton>
+                          )
+                        ))}
+                      </Box>
+
+                      <Box sx={{ flexGrow: 1 }}>
+                        <Box sx={{ mb: 1 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 800, fontSize: '0.6rem', display: 'flex', justifyContent: 'space-between' }}>
+                            OPACIDADE <span>{Math.round((settings.overlayOpacity ?? 0.6) * 100)}%</span>
+                          </Typography>
+                          <Slider size="small" value={settings.overlayOpacity ?? 0.6} min={0} max={1} step={0.1} onChange={(e, v) => setSettings({ ...settings, overlayOpacity: v })} />
+                        </Box>
+                        <Box>
+                          <Typography variant="caption" sx={{ fontWeight: 800, fontSize: '0.6rem', display: 'flex', justifyContent: 'space-between' }}>
+                            ESCALA <span>{Math.round((settings.overlayScale ?? 0.6) * 100)}%</span>
+                          </Typography>
+                          <Slider size="small" value={settings.overlayScale ?? 0.6} min={0.1} max={2.0} step={0.1} onChange={(e, v) => setSettings({ ...settings, overlayScale: v })} />
+                        </Box>
+                      </Box>
+                    </Box>
+                  </Box>
+                </Grid>
+              </Grid>
+
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mt: 3 }}>
                 <TextField
                   fullWidth
-                  label="LOGO DE OVERLAY (STREAM OUTPUT)"
+                  size="small"
+                  label="LOGO DE OVERLAY (LOCAL)"
                   value={settings.logoPath}
                   onChange={(e) => setSettings({ ...settings, logoPath: e.target.value })}
-                  InputProps={{ sx: { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3 } }}
-                  helperText="Padrão: /assets/protected/Cloud_Onepa_Playout_Infinity_Logo_remodelado.png"
+                  InputProps={{ sx: { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2, fontSize: '0.75rem' } }}
                 />
-                <Button
-                  size="small"
-                  onClick={() => setSettings({ ...settings, logoPath: '/assets/protected/Cloud_Onepa_Playout_Infinity_Logo_remodelado.png' })}
-                  sx={{ mt: 1, fontSize: '0.7rem' }}
-                >
-                  USAR PADRÃO
-                </Button>
-                <Button variant="contained" component="label" startIcon={<AddIcon />} sx={{ height: 56, borderRadius: 3, minWidth: 140, fontWeight: 800 }}>UPLOAD</Button>
-                <IconButton onClick={() => setConverterOpen(true)} sx={{ width: 56, height: 56, bgcolor: 'rgba(0,229,255,0.1)', color: 'primary.main', borderRadius: 3 }}><MagicIcon /></IconButton>
+                <Button size="small" variant="contained" onClick={() => { setMediaTypeSelector('image'); setMediaSelectorOpen(true); }} sx={{ minWidth: 100, fontWeight: 800 }}>MUDAR</Button>
+                <Tooltip title="Processador de Logo (Remover Fundo)">
+                  <IconButton onClick={() => setConverterOpen(true)} sx={{ bgcolor: 'rgba(0,229,255,0.1)', color: 'primary.main', borderRadius: 2 }}><MagicIcon /></IconButton>
+                </Tooltip>
               </Box>
             </Paper>
 
             <Paper className="glass-panel" sx={{ p: 4 }}>
-              <Box sx={{ mb: 4 }}>
-                <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>PRESETS DE QUALIDADE</Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>CONFIGURAÇÕES RÁPIDAS DE PERFORMANCE</Typography>
+              <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box>
+                  <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>PRESETS DE QUALIDADE</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>CONFIGURAÇÃO RÁPIDA DE STREAMING</Typography>
+                </Box>
+                <FormControlLabel
+                  control={<Switch size="small" checked={!!settings.advanced_quality} onChange={(e) => setSettings({ ...settings, advanced_quality: e.target.checked })} />}
+                  label={<Typography variant="caption" sx={{ fontWeight: 800 }}>MODO AVANÇADO</Typography>}
+                />
               </Box>
-              <Grid container spacing={3}>
+
+              <ToggleButtonGroup
+                fullWidth
+                value={activePreset}
+                exclusive
+                onChange={(e, v) => v && applyPreset(v)}
+                sx={{ bgcolor: 'rgba(0,0,0,0.2)', p: 0.5, borderRadius: 3, mb: 2 }}
+              >
                 {[
-                  { id: '720p', title: '720p STREAMING', desc: '1280x720 @ 25fps • 2500k' },
-                  { id: '1080p', title: '1080p HD PRO', desc: '1920x1080 @ 25fps • 5000k' },
-                  { id: '4k', title: '4K ULTRA HD', desc: '3840x2160 @ 30fps • 15000k' }
+                  { id: '720p', label: '720p HD', desc: 'Light' },
+                  { id: '1080p', label: '1080p PRO', desc: 'Standard' },
+                  { id: '4k', label: '4K ULTRA', desc: 'Extreme' }
                 ].map(p => (
-                  <Grid item xs={12} md={4} key={p.id}>
-                    <Box
-                      onClick={() => applyPreset(p.id)}
-                      sx={{
-                        p: 3, borderRadius: 4, cursor: 'pointer',
-                        bgcolor: activePreset === p.id ? 'rgba(0,229,255,0.1)' : 'rgba(255,255,255,0.02)',
-                        border: '1px solid', borderColor: activePreset === p.id ? 'primary.main' : 'rgba(255,255,255,0.05)',
-                        transition: '0.3s', '&:hover': { transform: 'translateY(-4px)', bgcolor: 'rgba(255,255,255,0.05)' }
-                      }}
-                    >
-                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: activePreset === p.id ? 'primary.main' : 'text.primary' }}>{p.title}</Typography>
-                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>{p.desc}</Typography>
-                    </Box>
-                  </Grid>
+                  <ToggleButton key={p.id} value={p.id} sx={{ border: 'none', borderRadius: 2, py: 1.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 900 }}>{p.label}</Typography>
+                    <Typography variant="caption" sx={{ fontSize: '0.6rem', opacity: 0.5 }}>{p.desc}</Typography>
+                  </ToggleButton>
                 ))}
-              </Grid>
+              </ToggleButtonGroup>
+
+              {settings.advanced_quality && (
+                <Grid container spacing={2} sx={{ mt: 1 }}>
+                  <Grid item xs={6}>
+                    <TextField fullWidth size="small" label="VIDEO BITRATE" value={settings.videoBitrate} onChange={(e) => setSettings({ ...settings, videoBitrate: e.target.value })} InputProps={{ sx: { borderRadius: 2, fontSize: '0.75rem' } }} />
+                  </Grid>
+                  <Grid item xs={6}>
+                    <TextField fullWidth size="small" label="RESOLUTION" value={settings.resolution} onChange={(e) => setSettings({ ...settings, resolution: e.target.value })} InputProps={{ sx: { borderRadius: 2, fontSize: '0.75rem' } }} />
+                  </Grid>
+                </Grid>
+              )}
             </Paper>
           </TabPanel>
 
@@ -2043,101 +2289,101 @@ function Settings() {
                 </Box>
               </Box>
 
-              {viewMode === 'users' ? (
-                <List sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {Array.isArray(users) && users.map((user) => (
-                    <ListItem
-                      key={user.id}
-                      sx={{
-                        bgcolor: 'rgba(255,255,255,0.02)',
-                        borderRadius: 4,
-                        border: '1px solid rgba(255,255,255,0.05)',
-                        p: 2,
-                        transition: '0.3s',
-                        '&:hover': { bgcolor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.1)' }
-                      }}
-                    >
-                      <ListItemIcon sx={{ color: 'primary.main', minWidth: 50 }}>
-                        <UserIcon />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={user.username.toUpperCase()}
-                        secondary={
-                          <Box component="span">
-                            PERFIL: {
-                              user.profile_name
-                                ? user.profile_name.toUpperCase()
-                                : (profiles.find(p => p.id === user.profile_id)?.name?.toUpperCase() || (user.role || '').toUpperCase())
-                            } | PERMISSÕES: {user.permissions?.join(', ').toUpperCase() || 'N/A'}
-                          </Box>
-                        }
-                        primaryTypographyProps={{ sx: { fontWeight: 800, letterSpacing: 1 } }}
-                        secondaryTypographyProps={{ sx: { fontWeight: 600, fontSize: '0.65rem', opacity: 0.6 }, component: 'div' }}
-                      />
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          onClick={() => handleOpenPasswordDialog(user)}
-                          sx={{ borderRadius: 2, fontWeight: 800, fontSize: '0.7rem' }}
-                        >
-                          REPOR PASSWORD
-                        </Button>
-                        {user.username !== 'admin' && (
-                          <IconButton onClick={() => handleDeleteUser(user.id)} color="error" sx={{ bgcolor: 'rgba(244,67,54,0.1)', borderRadius: 2 }}>
-                            <DeleteIcon />
-                          </IconButton>
-                        )}
-                      </Box>
-                    </ListItem>
-                  ))}
-                </List>
-              ) : (
-                <List sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {Array.isArray(profiles) && profiles.map((profile) => (
-                    <ListItem
-                      key={profile.id}
-                      sx={{
-                        bgcolor: 'rgba(255,255,255,0.02)',
-                        borderRadius: 4,
-                        border: '1px solid rgba(255,255,255,0.05)',
-                        p: 2
-                      }}
-                    >
-                      <ListItemIcon sx={{ color: 'secondary.main', minWidth: 50 }}>
-                        <SettingsIcon />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          {profile.name.toUpperCase()}
-                          {profile.is_system && <Chip label="SISTEMA" size="small" color="info" sx={{ height: 20, fontSize: '0.6rem', fontWeight: 800 }} />}
-                        </Box>}
-                        secondary={`PERMISSÕES: ${(profile.permissions || []).join(', ').toUpperCase()}`}
-                        primaryTypographyProps={{ sx: { fontWeight: 800, letterSpacing: 1 } }}
-                        secondaryTypographyProps={{ sx: { fontWeight: 600, fontSize: '0.65rem', opacity: 0.6 } }}
-                      />
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          onClick={() => {
-                            setCurrentProfile(profile);
-                            setProfileDialogOpen(true);
-                          }}
-                          sx={{ borderRadius: 2, fontWeight: 800, fontSize: '0.7rem' }}
-                        >
-                          EDITAR
-                        </Button>
-                        {!profile.is_system && (
-                          <IconButton onClick={() => handleDeleteProfile(profile.id)} color="error" sx={{ bgcolor: 'rgba(244,67,54,0.1)', borderRadius: 2 }}>
-                            <DeleteIcon />
-                          </IconButton>
-                        )}
-                      </Box>
-                    </ListItem>
-                  ))}
-                </List>
-              )}
+              <TableContainer sx={{ bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)' }}>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow sx={{ bgcolor: 'rgba(255,255,255,0.05)' }}>
+                      <TableCell sx={{ fontWeight: 900, color: 'primary.main', fontSize: '0.7rem' }}>UTENTE</TableCell>
+                      <TableCell sx={{ fontWeight: 900, color: 'primary.main', fontSize: '0.7rem' }}>
+                        {viewMode === 'users' ? 'PERFIL / ROLE' : 'DESCRIÇÃO'}
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 900, color: 'primary.main', fontSize: '0.7rem' }}>ESTADO</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 900, color: 'primary.main', fontSize: '0.7rem' }}>ACÇÕES</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {viewMode === 'users' ? (
+                      Array.isArray(users) && users.map((user) => (
+                        <TableRow key={user.id} hover sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' } }}>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                              <Avatar sx={{ width: 28, height: 28, fontSize: '0.8rem', bgcolor: 'primary.main', fontWeight: 800 }}>
+                                {user.username[0].toUpperCase()}
+                              </Avatar>
+                              <Typography sx={{ fontWeight: 800, fontSize: '0.85rem' }}>{user.username.toUpperCase()}</Typography>
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              label={user.profile_name?.toUpperCase() || profiles.find(p => p.id === user.profile_id)?.name?.toUpperCase() || (user.role || 'USER').toUpperCase()}
+                              size="small"
+                              variant="outlined"
+                              sx={{ height: 20, fontSize: '0.65rem', fontWeight: 800, borderColor: 'rgba(255,255,255,0.2)' }}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Switch checked size="small" disabled sx={{ opacity: 0.5 }} />
+                          </TableCell>
+                          <TableCell align="right">
+                            <Stack direction="row" spacing={1} justifyContent="flex-end">
+                              <Tooltip title="Alterar Password">
+                                <IconButton size="small" onClick={() => handleOpenPasswordDialog(user)} sx={{ color: 'primary.main' }}>
+                                  <MagicIcon sx={{ fontSize: 18 }} />
+                                </IconButton>
+                              </Tooltip>
+                              {user.username !== 'admin' && (
+                                <Tooltip title="Eliminar Utente">
+                                  <IconButton size="small" onClick={() => handleDeleteUser(user.id)} color="error">
+                                    <DeleteIcon sx={{ fontSize: 18 }} />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+                            </Stack>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      Array.isArray(profiles) && profiles.map((profile) => (
+                        <TableRow key={profile.id} hover sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' } }}>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                              <Avatar sx={{ width: 28, height: 28, bgcolor: 'secondary.main' }}>
+                                <SettingsIcon sx={{ fontSize: 16 }} />
+                              </Avatar>
+                              <Typography sx={{ fontWeight: 800, fontSize: '0.85rem' }}>{profile.name.toUpperCase()}</Typography>
+                              {profile.is_system && <Chip label="SISTEMA" color="info" size="small" sx={{ height: 16, fontSize: '0.55rem', fontWeight: 900 }} />}
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="caption" sx={{ opacity: 0.6, fontSize: '0.65rem', fontWeight: 600 }}>
+                              PERMISSÕES: {(profile.permissions || []).join(', ').toUpperCase()}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Chip label="ACTIVO" size="small" color="success" sx={{ height: 18, fontSize: '0.6rem', fontWeight: 900, bgcolor: 'rgba(76,175,80,0.1)' }} />
+                          </TableCell>
+                          <TableCell align="right">
+                            <Stack direction="row" spacing={1} justifyContent="flex-end">
+                              <Tooltip title="Editar Perfil">
+                                <IconButton size="small" onClick={() => { setCurrentProfile(profile); setProfileDialogOpen(true); }}>
+                                  <EditIcon sx={{ fontSize: 18 }} />
+                                </IconButton>
+                              </Tooltip>
+                              {!profile.is_system && (
+                                <Tooltip title="Apagar Perfil">
+                                  <IconButton size="small" onClick={() => handleDeleteProfile(profile.id)} color="error">
+                                    <DeleteIcon sx={{ fontSize: 18 }} />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+                            </Stack>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
             </Paper>
           </TabPanel>
 
@@ -2307,8 +2553,8 @@ function Settings() {
                                   fontSize: '0.75rem',
                                   fontWeight: bullet.done ? 600 : 500,
                                   opacity: bullet.done ? 1 : 0.6,
-                                  color: bullet.done ? 'inherit' : 'rgba(255,255,255,0.7)'
-                                }
+                                  color: bullet.done ? 'inherit' : 'rgba(255,255,255,0.7)',
+                                },
                               }}
                             />
                             {bullet.done && <Chip label="OK" size="small" sx={{ height: 16, fontSize: '0.55rem', fontWeight: 900, bgcolor: 'rgba(76,175,80,0.15)', color: '#4caf50', border: '1px solid rgba(76,175,80,0.2)', ml: 1 }} />}
@@ -2327,53 +2573,72 @@ function Settings() {
 
       {/* Add User Dialog */}
       {/* Add User Dialog */}
-      <Dialog
+      <Drawer
+        anchor="right"
         open={userDialogOpen}
         onClose={() => setUserDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
+        PaperProps={{
+          sx: {
+            width: 400,
+            bgcolor: 'rgba(10, 15, 20, 0.95)',
+            backdropFilter: 'blur(20px)',
+            borderLeft: '1px solid rgba(255,255,255,0.1)',
+            backgroundImage: 'none',
+            p: 4
+          }
+        }}
       >
-        <DialogTitle sx={{ fontWeight: 800, color: 'primary.main' }}>ADICIONAR UTILIZADOR</DialogTitle>
-        <DialogContent>
+        <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box>
+            <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>ADICIONAR UTENTE</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>CRIAR NOVO ACESSO AO SISTEMA</Typography>
+          </Box>
+          <IconButton onClick={() => setUserDialogOpen(false)} size="small" sx={{ color: 'text.secondary' }}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
+
+        <Stack spacing={3}>
           <TextField
-            fullWidth label="USERNAME"
+            fullWidth label="NOME DE UTILIZADOR"
             value={newUser.username}
+            placeholder="ex: operador_01"
             onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
-            sx={{ mt: 2 }}
-            InputProps={{ sx: { borderRadius: 3 } }}
+            InputProps={{ sx: { borderRadius: 3, bgcolor: 'rgba(0,0,0,0.2)' } }}
             InputLabelProps={{ shrink: true }}
           />
           <TextField
-            fullWidth label="PASSWORD" type="password"
+            fullWidth label="PALAVRA-PASSE" type="password"
             value={newUser.password}
             onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-            sx={{ mt: 3 }}
-            InputProps={{ sx: { borderRadius: 3 } }}
+            InputProps={{ sx: { borderRadius: 3, bgcolor: 'rgba(0,0,0,0.2)' } }}
             InputLabelProps={{ shrink: true }}
           />
-          <FormControl fullWidth sx={{ mt: 3 }}>
-            <InputLabel shrink>PERFIL DE ACESSO</InputLabel>
+          <FormControl fullWidth>
+            <InputLabel shrink sx={{ color: 'primary.main', fontWeight: 800 }}>PERFIL DE ACESSO</InputLabel>
             <Select
               value={newUser.profile_id}
-              label="PERFIL DE ACESSO"
               onChange={(e) => setNewUser({ ...newUser, profile_id: e.target.value })}
-              sx={{ borderRadius: 3 }}
+              sx={{ borderRadius: 3, bgcolor: 'rgba(0,0,0,0.2)' }}
               notched
             >
               {profiles.map(p => (
-                <MenuItem key={p.id} value={p.id}>
-                  {p.name.toUpperCase()} {p.is_system && '(SISTEMA)'}
+                <MenuItem key={p.id} value={p.id} sx={{ py: 1.5 }}>
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 800 }}>{p.name.toUpperCase()}</Typography>
+                    <Typography variant="caption" sx={{ opacity: 0.5 }}>{p.permissions?.join(', ')}</Typography>
+                  </Box>
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
-        </DialogContent>
-        <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setUserDialogOpen(false)} sx={{ fontWeight: 800 }}>CANCELAR</Button>
-          <Button variant="contained" onClick={handleAddUser} sx={{ borderRadius: 2, fontWeight: 800, px: 4 }}>GUARDAR</Button>
-        </DialogActions>
-      </Dialog>
+        </Stack>
+
+        <Box sx={{ mt: 'auto', pt: 4, display: 'flex', gap: 2 }}>
+          <Button fullWidth onClick={() => setUserDialogOpen(false)} sx={{ fontWeight: 800 }}>CANCELAR</Button>
+          <Button fullWidth variant="contained" onClick={handleAddUser} sx={{ borderRadius: 3, fontWeight: 900, py: 1.5 }}>GRAVAR</Button>
+        </Box>
+      </Drawer>
 
       {/* Change Password Dialog */}
       <Dialog
@@ -2441,49 +2706,79 @@ function Settings() {
         </DialogActions>
       </Dialog>
       {/* Profile Dialog */}
-      <Dialog
+      <Drawer
+        anchor="right"
         open={profileDialogOpen}
         onClose={() => setProfileDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
+        PaperProps={{
+          sx: {
+            width: 400,
+            bgcolor: 'rgba(10, 15, 20, 0.95)',
+            backdropFilter: 'blur(20px)',
+            borderLeft: '1px solid rgba(255,255,255,0.1)',
+            backgroundImage: 'none',
+            p: 4
+          }
+        }}
       >
-        <DialogTitle sx={{ fontWeight: 800, color: 'primary.main' }}>
-          {currentProfile.id ? 'EDITAR PERFIL' : 'NOVO PERFIL'}
-        </DialogTitle>
-        <DialogContent>
+        <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box>
+            <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>
+              {currentProfile.id ? 'EDITAR PERFIL' : 'NOVO PERFIL'}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>GERIR NÍVEIS DE PERMISSÃO</Typography>
+          </Box>
+          <IconButton onClick={() => setProfileDialogOpen(false)} size="small" sx={{ color: 'text.secondary' }}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
+
+        <Stack spacing={3}>
           <TextField
             fullWidth label="NOME DO PERFIL"
             value={currentProfile.name}
             onChange={(e) => setCurrentProfile({ ...currentProfile, name: e.target.value })}
-            sx={{ mt: 2 }}
-            InputProps={{ sx: { borderRadius: 3 }, readOnly: currentProfile.is_system }} // System profiles name read-only? Default Admin should be protected completely maybe.
+            InputProps={{ sx: { borderRadius: 3, bgcolor: 'rgba(0,0,0,0.2)' }, readOnly: currentProfile.is_system }}
             InputLabelProps={{ shrink: true }}
             helperText={currentProfile.is_system ? "Perfis de sistema não podem ser renomeados." : ""}
           />
-          <FormControl fullWidth sx={{ mt: 3 }}>
-            <InputLabel shrink>PERMISSÕES</InputLabel>
+
+          <FormControl fullWidth>
+            <InputLabel shrink sx={{ color: 'secondary.main', fontWeight: 800 }}>PERMISSÕES ACTIVAS</InputLabel>
             <Select
               multiple
               value={currentProfile.permissions || []}
-              label="PERMISSÕES"
               onChange={(e) => setCurrentProfile({ ...currentProfile, permissions: typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value })}
-              sx={{ borderRadius: 3 }}
+              sx={{ borderRadius: 3, bgcolor: 'rgba(0,0,0,0.2)' }}
               notched
-              renderValue={(selected) => selected.join(', ').toUpperCase()}
+              renderValue={(selected) => (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  {selected.map((value) => (
+                    <Chip key={value} label={value.toUpperCase()} size="small" sx={{ height: 20, fontWeight: 800, bgcolor: 'rgba(255,255,255,0.1)' }} />
+                  ))}
+                </Box>
+              )}
             >
-              <MenuItem value="read">READ</MenuItem>
-              <MenuItem value="write">WRITE</MenuItem>
-              <MenuItem value="delete">DELETE</MenuItem>
-              <MenuItem value="execute">EXECUTE</MenuItem>
+              {['read', 'write', 'delete', 'execute', 'admin'].map(perm => (
+                <MenuItem key={perm} value={perm} sx={{ px: 2, py: 1 }}>
+                  <Checkbox checked={(currentProfile.permissions || []).indexOf(perm) > -1} size="small" />
+                  <ListItemText primary={perm.toUpperCase()} primaryTypographyProps={{ sx: { fontWeight: 700, fontSize: '0.8rem' } }} />
+                </MenuItem>
+              ))}
             </Select>
+            <Typography variant="caption" sx={{ mt: 1, opacity: 0.5, px: 1 }}>
+              Defina o alcance de visualização, edição e execução para utilizadores com este perfil.
+            </Typography>
           </FormControl>
-        </DialogContent>
-        <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setProfileDialogOpen(false)} sx={{ fontWeight: 800 }}>CANCELAR</Button>
-          <Button variant="contained" onClick={handleSaveProfile} sx={{ borderRadius: 2, fontWeight: 800, px: 4 }}>GUARDAR</Button>
-        </DialogActions>
-      </Dialog>
+        </Stack>
+
+        <Box sx={{ mt: 'auto', pt: 4, display: 'flex', gap: 2 }}>
+          <Button fullWidth onClick={() => setProfileDialogOpen(false)} sx={{ fontWeight: 800 }}>CANCELAR</Button>
+          <Button fullWidth variant="contained" color="secondary" onClick={handleSaveProfile} sx={{ borderRadius: 3, fontWeight: 900, py: 1.5 }}>
+            {currentProfile.id ? 'ACTUALIZAR' : 'CRIAR'}
+          </Button>
+        </Box>
+      </Drawer>
 
       {/* Auto-Config Dialog */}
       <Dialog

@@ -603,70 +603,74 @@ export default function Dashboard() {
 
       {loading && <LinearProgress sx={{ mb: 2 }} />}
 
-      <Grid container spacing={3} sx={{ position: 'relative', zIndex: 1 }}>
-        <Grid item xs={12} md={6} lg={3}>
-          <Paper className="glass-panel" sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <Typography color="text.secondary" variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', mb: 1 }}>Status</Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+      <Grid container spacing={2} sx={{ position: 'relative', zIndex: 1 }}>
+        {/* === CONSOLIDATED METRICS BAR === */}
+        <Grid item xs={12} md={9}>
+          <Paper className="glass-panel" sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, height: '100%', flexWrap: 'nowrap', overflow: 'hidden' }}>
+            {/* 1. STATUS UNIT */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 'fit-content' }}>
               <Box sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1.5,
+                display: 'flex', alignItems: 'center', gap: 1.5,
                 bgcolor: isPlaying ? 'rgba(76, 175, 80, 0.1)' : 'rgba(255, 255, 255, 0.05)',
                 color: isPlaying ? 'success.main' : 'text.disabled',
-                px: 2,
-                py: 1,
-                borderRadius: 2,
+                px: 2, py: 1, borderRadius: 2,
                 border: '1px solid',
                 borderColor: isPlaying ? 'success.main' : 'rgba(255, 255, 255, 0.1)',
-                flexGrow: 1
               }}>
-                {isPlaying ? <PlayIcon sx={{ fontSize: 24 }} /> : <StopIcon sx={{ fontSize: 24 }} />}
-                <Typography variant="h6" sx={{ fontWeight: '800', letterSpacing: 1 }}>
+                {isPlaying ? <PlayIcon sx={{ fontSize: 20 }} /> : <StopIcon sx={{ fontSize: 20 }} />}
+                <Typography variant="subtitle2" sx={{ fontWeight: '900', letterSpacing: 1 }}>
                   {isPlaying ? 'EXECUTANDO' : 'OFFLINE'}
                 </Typography>
               </Box>
             </Box>
-          </Paper>
-        </Grid>
-        <Grid item xs={12} md={6} lg={3}>
-          <Paper className="glass-panel" sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <Typography color="text.secondary" variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', mb: 1 }}>Tempo de Emissão</Typography>
-            <Typography variant="h5" className="neon-text" sx={{ fontWeight: 800, fontFamily: '"Orbitron", sans-serif', fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' }, letterSpacing: 1 }}>
-              {formatUptimeFull(uptimeMs)}
-            </Typography>
-          </Paper>
-        </Grid>
-        <Grid item xs={12} md={6} lg={3}>
-          <Paper className="glass-panel" sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <Typography color="text.secondary" variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', mb: 1 }}>Clips Hoje</Typography>
-            <Typography variant="h4" sx={{ fontWeight: 800 }}>{status.clips_played_today}</Typography>
-          </Paper>
-        </Grid>
-        {/* === PLAYOUT CONTROL PANEL — Icon-based broadcast controls === */}
-        <Grid item xs={12} md={6} lg={3}>
-          <Paper className="glass-panel" sx={{
-            p: 2, height: '100%',
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center', gap: 2,
-          }}>
-            {/* Label */}
-            <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800, letterSpacing: 2, fontSize: '0.6rem' }}>
-              CONTROLO DE EMISSÃO
-            </Typography>
 
-            {/* ── MAIN PLAY / STOP BUTTON ── */}
-            <Tooltip
-              title={isValidating ? 'A validar agendamento...' : (isPlaying ? 'Parar Emissão (STOP)' : 'Iniciar Emissão (ON AIR)')}
-              arrow placement="top"
-            >
-              <span>
+            <Divider orientation="vertical" flexItem sx={{ opacity: 0.1, mx: 1 }} />
+
+            {/* 2. UPTIME UNIT */}
+            <Box sx={{ flexGrow: 1, px: 1 }}>
+              <Typography color="text.secondary" variant="caption" sx={{ fontWeight: 800, textTransform: 'uppercase', display: 'block', mb: 0.5, fontSize: '0.65rem' }}>Tempo de Emissão</Typography>
+              <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800, fontFamily: '"Orbitron", sans-serif', fontSize: '0.95rem', letterSpacing: 1.5 }}>
+                {formatUptimeFull(uptimeMs)}
+              </Typography>
+            </Box>
+
+            <Divider orientation="vertical" flexItem sx={{ opacity: 0.1, mx: 1 }} />
+
+            {/* 3. CLIPS TODAY UNIT */}
+            <Box sx={{ textAlign: 'right', pr: 1, minWidth: 100 }}>
+              <Typography color="text.secondary" variant="caption" sx={{ fontWeight: 800, textTransform: 'uppercase', display: 'block', mb: 0.5, fontSize: '0.65rem' }}>Clips Hoje</Typography>
+              <Typography variant="h5" sx={{ fontWeight: 900, color: 'primary.main' }}>{status.clips_played_today}</Typography>
+            </Box>
+
+            <Divider orientation="vertical" flexItem sx={{ opacity: 0.1, mx: 1 }} />
+
+            {/* 4. FAST LINKS */}
+            <Box sx={{ display: 'flex', gap: 0.5 }}>
+              <Tooltip title="Calendário / EPG">
+                <IconButton size="small" onClick={() => navigate('/epg')} sx={{ color: 'text.secondary' }}><TvIcon sx={{ fontSize: 18 }} /></IconButton>
+              </Tooltip>
+              <Tooltip title="Gerir Media">
+                <IconButton size="small" onClick={() => navigate('/media')} sx={{ color: 'text.secondary' }}><PodcastsIcon sx={{ fontSize: 18 }} /></IconButton>
+              </Tooltip>
+            </Box>
+          </Paper>
+        </Grid>
+        {/* === COMPACT PLAYOUT CONTROL PANEL === */}
+        <Grid item xs={12} md={3}>
+          <Paper className="glass-panel" sx={{
+            p: 1.5, height: '100%',
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', gap: 1,
+            border: '1.5px solid', borderColor: isPlaying ? 'rgba(244,67,54,0.15)' : 'rgba(255,255,255,0.05)'
+          }}>
+            {/* Main Action Group */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Tooltip title={isPlaying ? 'Parar Emissão' : 'Iniciar Emissão'} arrow>
                 <IconButton
                   disabled={isValidating}
                   onClick={async () => {
-                    if (isPlaying) {
-                      handleStop();
-                    } else {
+                    if (isPlaying) handleStop();
+                    else {
                       setIsValidating(true);
                       try {
                         const diag = await playoutAPI.diagnose();
@@ -691,134 +695,60 @@ export default function Dashboard() {
                     }
                   }}
                   sx={{
-                    width: 76, height: 76,
+                    width: 52, height: 52,
                     bgcolor: isPlaying ? 'rgba(244,67,54,0.1)' : 'rgba(0,229,255,0.08)',
-                    border: '2.5px solid',
+                    border: '2px solid',
                     borderColor: isPlaying ? '#f44336' : '#00e5ff',
                     color: isPlaying ? '#f44336' : '#00e5ff',
-                    animation: isPlaying
-                      ? 'stop-btn-pulse 1.4s ease-in-out infinite'
-                      : 'play-btn-glow 2.5s ease-in-out infinite',
+                    animation: isPlaying ? 'stop-btn-pulse 1.4s ease-in-out infinite' : 'play-btn-glow 2.5s ease-in-out infinite',
                     transition: 'all 0.3s ease',
-                    '&:hover': {
-                      transform: 'scale(1.08)',
-                      bgcolor: isPlaying ? 'rgba(244,67,54,0.22)' : 'rgba(0,229,255,0.18)',
-                    },
-                    '&:disabled': { opacity: 0.45 },
+                    '&:hover': { transform: 'scale(1.05)', bgcolor: isPlaying ? 'rgba(244,67,54,0.2)' : 'rgba(0,229,255,0.15)' },
                   }}
                 >
-                  {isValidating
-                    ? <CircularProgress size={34} sx={{ color: '#00e5ff' }} />
-                    : isPlaying
-                      ? <StopCircleIcon sx={{ fontSize: 44 }} />
-                      : <PlayCircleFilledIcon sx={{ fontSize: 44 }} />
-                  }
+                  {isValidating ? <CircularProgress size={24} color="inherit" /> : (isPlaying ? <StopCircleIcon sx={{ fontSize: 32 }} /> : <PlayCircleFilledIcon sx={{ fontSize: 32 }} />)}
                 </IconButton>
-              </span>
-            </Tooltip>
-
-            {/* State label */}
-            <Typography variant="caption" sx={{
-              fontWeight: 900, letterSpacing: 3, fontSize: '0.65rem',
-              color: isValidating ? '#00e5ff' : isPlaying ? '#f44336' : 'rgba(255,255,255,0.45)',
-              fontFamily: '"Orbitron", sans-serif',
-              transition: 'color 0.3s',
-            }}>
-              {isValidating ? 'A VALIDAR...' : isPlaying ? '● ON AIR' : '○ OFF AIR'}
-            </Typography>
-
-            <Divider sx={{ width: '100%', opacity: 0.08 }} />
-
-            {/* ── SECONDARY CONTROLS: SKIP · LOGS · DISTR ── */}
-            <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'flex-start' }}>
-
-              {/* SKIP — SkipNext */}
-              <Tooltip title={isPlaying ? 'Saltar para próximo clip' : 'Inicie a emissão primeiro'} arrow placement="bottom">
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-                  <IconButton
-                    onClick={handleSkip}
-                    disabled={!isPlaying}
-                    sx={{
-                      width: 46, height: 46,
-                      bgcolor: 'rgba(255,255,255,0.04)',
-                      border: '1.5px solid',
-                      borderColor: isPlaying ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.05)',
-                      color: isPlaying ? '#fff' : 'rgba(255,255,255,0.2)',
-                      transition: 'all 0.2s ease',
-                      '&:hover': { bgcolor: 'rgba(0,229,255,0.12)', borderColor: '#00e5ff', color: '#00e5ff' },
-                      '&:disabled': { opacity: 0.25 },
-                    }}
-                  >
-                    <SkipIcon sx={{ fontSize: 26 }} />
-                  </IconButton>
-                  <Typography variant="caption" sx={{ fontSize: '0.52rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', letterSpacing: 1 }}>SKIP</Typography>
-                </Box>
               </Tooltip>
 
-              {/* LOGS — Terminal */}
-              <Tooltip title="Diagnóstico & Logs do Sistema" arrow placement="bottom">
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-                  <IconButton
-                    onClick={handleDiagnose}
-                    sx={{
-                      width: 46, height: 46,
-                      bgcolor: 'rgba(255,255,255,0.04)',
-                      border: '1.5px solid rgba(255,255,255,0.1)',
-                      color: 'rgba(255,255,255,0.5)',
-                      transition: 'all 0.2s ease',
-                      '&:hover': { bgcolor: 'rgba(156,39,176,0.15)', borderColor: '#ce93d8', color: '#ce93d8' },
-                    }}
-                  >
-                    <TerminalIcon sx={{ fontSize: 24 }} />
-                  </IconButton>
-                  <Typography variant="caption" sx={{ fontSize: '0.52rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', letterSpacing: 1 }}>LOGS</Typography>
-                </Box>
-              </Tooltip>
-
-              {/* DISTRIBUIÇÃO — Cast/CastConnected */}
-              <Tooltip
-                title={
-                  !isPlaying
-                    ? 'Inicie a emissão primeiro'
-                    : isDistributionActive
-                      ? 'Desligar Distribuição (RTMP/SRT/UDP)'
-                      : 'Ligar Distribuição (RTMP/SRT/UDP)'
-                }
-                arrow placement="bottom"
-              >
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-                  <IconButton
-                    onClick={() => isPlaying && handleToggleAllDistribution(!isDistributionActive)}
-                    disabled={!isPlaying}
-                    sx={{
-                      width: 46, height: 46,
-                      bgcolor: isDistributionActive && isPlaying ? 'rgba(76,175,80,0.1)' : 'rgba(255,255,255,0.04)',
-                      border: '1.5px solid',
-                      borderColor: isDistributionActive && isPlaying ? '#4caf50' : 'rgba(255,255,255,0.08)',
-                      color: isDistributionActive && isPlaying ? '#4caf50' : 'rgba(255,255,255,0.35)',
-                      transition: 'all 0.25s ease',
-                      animation: isDistributionActive && isPlaying ? 'distr-active-glow 2s ease-in-out infinite' : 'none',
-                      '&:hover': isPlaying ? {
-                        bgcolor: isDistributionActive ? 'rgba(244,67,54,0.12)' : 'rgba(76,175,80,0.15)',
-                        borderColor: isDistributionActive ? '#f44336' : '#4caf50',
-                        color: isDistributionActive ? '#f44336' : '#4caf50',
-                      } : {},
-                      '&:disabled': { opacity: 0.25 },
-                    }}
-                  >
-                    {isDistributionActive && isPlaying
-                      ? <CastConnectedIcon sx={{ fontSize: 24 }} />
-                      : <CastIcon sx={{ fontSize: 24 }} />
-                    }
-                  </IconButton>
-                  <Typography variant="caption" sx={{
-                    fontSize: '0.52rem', fontWeight: 800, letterSpacing: 1,
-                    color: isDistributionActive && isPlaying ? '#4caf50' : 'rgba(255,255,255,0.3)',
-                  }}>DISTR.</Typography>
-                </Box>
-              </Tooltip>
-
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                <Tooltip title="Saltar Clip" arrow>
+                  <span>
+                    <IconButton
+                      size="small"
+                      onClick={handleSkip}
+                      disabled={!isPlaying}
+                      sx={{
+                        p: 0.5, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)',
+                        '&:hover': { bgcolor: 'rgba(0,229,255,0.1)', color: '#00e5ff' }
+                      }}
+                    >
+                      <SkipIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+                <Tooltip title="Distribuição Global" arrow>
+                  <span>
+                    <IconButton
+                      size="small"
+                      onClick={() => isPlaying && handleToggleAllDistribution(!isDistributionActive)}
+                      disabled={!isPlaying}
+                      sx={{
+                        p: 0.5, bgcolor: isDistributionActive && isPlaying ? 'rgba(76,175,80,0.1)' : 'rgba(255,255,255,0.03)',
+                        border: '1px solid',
+                        borderColor: isDistributionActive && isPlaying ? '#4caf50' : 'rgba(255,255,255,0.1)',
+                        color: isDistributionActive && isPlaying ? '#4caf50' : 'text.secondary',
+                        animation: isDistributionActive && isPlaying ? 'distr-active-glow 2s ease-in-out infinite' : 'none'
+                      }}
+                    >
+                      {isDistributionActive ? <CastConnectedIcon sx={{ fontSize: 16 }} /> : <CastIcon sx={{ fontSize: 16 }} />}
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              </Box>
             </Box>
+
+            <Typography variant="caption" sx={{ fontWeight: 900, letterSpacing: 2, fontSize: '0.6rem', color: isPlaying ? '#f44336' : 'text.disabled', textTransform: 'uppercase' }}>
+              {isPlaying ? '● ON AIR' : '○ STANDBY'}
+            </Typography>
           </Paper>
         </Grid>
       </Grid>
@@ -919,7 +849,7 @@ export default function Dashboard() {
         );
       })()}
 
-      <Paper className="glass-panel" sx={{ mt: 3, p: 0, height: 480, position: 'relative', bgcolor: '#000', borderRadius: 4, overflow: 'hidden', border: '2px solid', borderColor: isPlaying ? 'primary.main' : 'rgba(255, 255, 255, 0.1)', boxShadow: isPlaying ? '0 0 30px rgba(0, 229, 255, 0.15)' : 'none', zIndex: 1 }}>
+      <Paper className="glass-panel" sx={{ mt: 3, p: 0, height: 420, position: 'relative', bgcolor: '#000', borderRadius: 4, overflow: 'hidden', border: '2px solid', borderColor: isPlaying ? 'primary.main' : 'rgba(255, 255, 255, 0.1)', boxShadow: isPlaying ? '0 0 30px rgba(0, 229, 255, 0.15)' : 'none', zIndex: 1 }}>
         <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, p: 2, display: 'flex', justifyContent: 'space-between', background: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%)' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <TvIcon className={isPlaying ? "neon-text" : ""} sx={{ fontSize: 20 }} />
@@ -1049,61 +979,61 @@ export default function Dashboard() {
         )}
       </Paper>
 
-      <Grid container spacing={3} sx={{ mt: 1, position: 'relative', zIndex: 1 }}>
+      <Grid container spacing={2} sx={{ mt: 1, position: 'relative', zIndex: 1 }}>
         <Grid item xs={12} md={7}>
-          <Paper className="glass-panel" sx={{ p: 3, height: '100%', minHeight: 400 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
-              <InfoIcon className="neon-text" sx={{ fontSize: 20 }} />
-              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 2 }}>Informação da Emissão</Typography>
+          <Paper className="glass-panel" sx={{ p: 2, height: '100%', minHeight: 350 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+              <InfoIcon className="neon-text" sx={{ fontSize: 18 }} />
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.5 }}>Informação da Emissão</Typography>
             </Box>
 
-            <Typography variant="h6" gutterBottom className="neon-text" sx={{ fontWeight: 800, fontSize: '0.9rem', mb: 2 }}>LOGS DE SISTEMA</Typography>
+            <Typography variant="h6" gutterBottom className="neon-text" sx={{ fontWeight: 800, fontSize: '0.8rem', mb: 1.5 }}>LOGS DE SISTEMA</Typography>
             <Box sx={{
-              bgcolor: 'rgba(0,0,0,0.3)',
-              p: 2,
+              bgcolor: 'rgba(0,0,0,0.4)',
+              p: 1.5,
               borderRadius: 2,
-              minHeight: 180,
-              maxHeight: 250,
+              minHeight: 160,
+              maxHeight: 220,
               overflowY: 'auto',
               fontFamily: '"JetBrains Mono", monospace',
-              fontSize: '0.75rem',
+              fontSize: '0.7rem',
               border: '1px solid rgba(255, 255, 255, 0.05)',
-              mb: 4
+              mb: 3
             }}>
               {status.logs && status.logs.length > 0 ? status.logs.slice().reverse().map((log, i) => (
-                <Box key={`backend-${i}`} sx={{ color: log.includes('✓') ? '#4caf50' : log.includes('✗') ? '#f44336' : 'rgba(255,255,255,0.6)', mb: 0.8, display: 'flex', gap: 1 }}>
-                  <Typography variant="caption" sx={{ opacity: 0.3, minWidth: '45px' }}>[{i}]</Typography>
-                  <Typography variant="caption" sx={{ fontWeight: 500 }}>{log}</Typography>
+                <Box key={`backend-${i}`} sx={{ color: log.includes('✓') ? '#4caf50' : log.includes('✗') ? '#f44336' : 'rgba(255,255,255,0.5)', mb: 0.5, display: 'flex', gap: 1 }}>
+                  <Typography variant="caption" sx={{ opacity: 0.3, minWidth: '40px', fontSize: '0.65rem' }}>[{i}]</Typography>
+                  <Typography variant="caption" sx={{ fontWeight: 500, fontSize: '0.68rem' }}>{log}</Typography>
                 </Box>
               )) : startSteps.slice().reverse().map((s, i) => (
-                <Box key={i} sx={{ color: s.type === 'success' ? '#4caf50' : s.type === 'error' ? '#f44336' : 'rgba(255,255,255,0.6)', mb: 0.5 }}>
+                <Box key={i} sx={{ color: s.type === 'success' ? '#4caf50' : s.type === 'error' ? '#f44336' : 'rgba(255,255,255,0.5)', mb: 0.3, fontSize: '0.68rem' }}>
                   {s.msg}
                 </Box>
               ))}
               {(!status.logs || status.logs.length === 0) && startSteps.length === 0 && (
-                <Typography variant="caption" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>Aguardando monitorização...</Typography>
+                <Typography variant="caption" sx={{ color: 'text.disabled', fontStyle: 'italic', fontSize: '0.68rem' }}>Aguardando monitorização...</Typography>
               )}
             </Box>
 
-            <Typography variant="h6" gutterBottom className="neon-text" sx={{ fontWeight: 800, fontSize: '0.9rem', mb: 2 }}>CLIP EM REPRODUÇÃO</Typography>
+            <Typography variant="h6" gutterBottom className="neon-text" sx={{ fontWeight: 800, fontSize: '0.8rem', mb: 1.5 }}>CLIP EM REPRODUÇÃO</Typography>
             {status.current_clip ? (
-              <Box sx={{ bgcolor: 'rgba(0, 229, 255, 0.05)', p: 2, borderRadius: 2, border: '1px solid rgba(0, 229, 255, 0.1)' }}>
-                <Typography variant="body2" sx={{ fontWeight: 800, color: 'primary.main', mb: 1 }}>{status.current_clip.filename}</Typography>
+              <Box sx={{ bgcolor: 'rgba(0, 229, 255, 0.04)', p: 1.5, borderRadius: 2, border: '1px solid rgba(0, 229, 255, 0.1)' }}>
+                <Typography variant="body2" sx={{ fontWeight: 800, color: 'primary.main', mb: 1, fontSize: '0.8rem' }}>{status.current_clip.filename}</Typography>
                 {status.schedule_source && (
-                  <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', mb: 2, fontStyle: 'italic' }}>
+                  <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', mb: 1.5, fontStyle: 'italic', fontSize: '0.65rem' }}>
                     Origem: {status.schedule_source}
                   </Typography>
                 )}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Typography variant="caption" sx={{ minWidth: 60, fontFamily: 'monospace' }}>{formatTime(localPosition)}</Typography>
+                  <Typography variant="caption" sx={{ minWidth: 50, fontFamily: 'monospace', fontSize: '0.7rem' }}>{formatTime(localPosition)}</Typography>
                   <Box sx={{ flexGrow: 1, position: 'relative' }}>
                     <LinearProgress
                       variant="determinate"
                       value={(localPosition / (status.current_clip.duration || 1)) * 100}
                       sx={{
-                        height: 6,
+                        height: 5,
                         borderRadius: 3,
-                        bgcolor: 'rgba(255,255,255,0.1)',
+                        bgcolor: 'rgba(255,255,255,0.08)',
                         '& .MuiLinearProgress-bar': {
                           borderRadius: 3,
                           background: 'linear-gradient(45deg, #00e5ff 30%, #9c27b0 90%)'
@@ -1111,45 +1041,45 @@ export default function Dashboard() {
                       }}
                     />
                   </Box>
-                  <Typography variant="caption" sx={{ minWidth: 60, fontFamily: 'monospace', textAlign: 'right' }}>{formatTime(status.current_clip.duration)}</Typography>
+                  <Typography variant="caption" sx={{ minWidth: 50, fontFamily: 'monospace', textAlign: 'right', fontSize: '0.7rem' }}>{formatTime(status.current_clip.duration)}</Typography>
                 </Box>
               </Box>
             ) : (
-              <Box sx={{ p: 3, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2, border: '1px dashed rgba(255,255,255,0.1)' }}>
-                <Typography variant="caption" sx={{ color: 'text.disabled' }}>Nenhum clip ativo no momento</Typography>
+              <Box sx={{ p: 2, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.01)', borderRadius: 2, border: '1px dashed rgba(255,255,255,0.08)' }}>
+                <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.7rem' }}>Nenhum clip ativo</Typography>
               </Box>
             )}
           </Paper>
         </Grid>
         <Grid item xs={12} md={5}>
-          <Paper className="glass-panel" sx={{ p: 3, height: '100%' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
-              <SensorsIcon className="neon-text" sx={{ fontSize: 20 }} />
-              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 2 }}>Próximos na Lista</Typography>
+          <Paper className="glass-panel" sx={{ p: 2, height: '100%' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+              <SensorsIcon className="neon-text" sx={{ fontSize: 18 }} />
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.5 }}>Próximos na Lista</Typography>
             </Box>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               {status.next_clips?.length > 0 ? status.next_clips.map((c, i) => (
                 <Box key={i} sx={{
-                  p: 1.5,
+                  p: 1.2,
                   borderRadius: 2,
-                  bgcolor: i === 0 ? 'rgba(255, 255, 255, 0.05)' : 'transparent',
+                  bgcolor: i === 0 ? 'rgba(255, 255, 255, 0.04)' : 'transparent',
                   border: '1px solid',
-                  borderColor: i === 0 ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                  borderColor: i === 0 ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 2,
+                  gap: 1.5,
                   opacity: 1 - (i * 0.15)
                 }}>
-                  <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', minWidth: 24 }}>{i + 1}</Typography>
+                  <Typography variant="caption" sx={{ fontWeight: 900, color: 'primary.main', minWidth: 20, fontSize: '0.75rem' }}>{i + 1}</Typography>
                   <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
-                    <Typography variant="body2" noWrap sx={{ fontWeight: i === 0 ? 700 : 500, fontSize: '0.8rem' }}>{c.filename}</Typography>
-                    <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.65rem' }}>{formatTime(c.duration)}</Typography>
+                    <Typography variant="body2" noWrap sx={{ fontWeight: i === 0 ? 800 : 500, fontSize: '0.75rem' }}>{c.filename}</Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem' }}>{formatTime(c.duration)}</Typography>
                   </Box>
-                  {i === 0 && <Chip label="SEGUE" size="small" sx={{ height: 16, fontSize: '0.6rem', bgcolor: 'primary.main', color: '#000', fontWeight: 800 }} />}
+                  {i === 0 && <Chip label="SEGUE" size="small" sx={{ height: 14, fontSize: '0.55rem', bgcolor: 'primary.main', color: '#000', fontWeight: 900 }} />}
                 </Box>
               )) : (
-                <Box sx={{ p: 4, textAlign: 'center', opacity: 0.5 }}>
-                  <Typography variant="caption">Lista de reprodução vazia</Typography>
+                <Box sx={{ p: 3, textAlign: 'center', opacity: 0.4 }}>
+                  <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>Lista vazia</Typography>
                 </Box>
               )}
             </Box>

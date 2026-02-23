@@ -88,7 +88,7 @@ async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
                 overlay_anchor: Some("top-right".to_string()),
                 srt_mode: Some("caller".to_string()),
                 updated_at: chrono::Utc::now(),
-                system_version: Some("v2.2.0-ALPHA.25-PRO".to_string()),
+                system_version: Some("v2.2.0-ALPHA.26-PRO".to_string()),
                 release_date: Some("2026-02-04".to_string()),
                 protected_path: Some(protected_path),
                 docs_path: Some(docs_path),
