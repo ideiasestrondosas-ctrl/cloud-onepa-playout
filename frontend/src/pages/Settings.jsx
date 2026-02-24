@@ -75,6 +75,7 @@ import {
   Warning as WarningIcon,
   History as HistoryIcon,
   Refresh as RefreshIcon,
+  RestartAlt as RestartAltIcon,
   AutoFixHigh as MagicIcon,
   AspectRatio as AspectRatioIcon,
   Crop as CropIcon,
@@ -1775,48 +1776,47 @@ function Settings() {
             </Paper>
 
             <Paper className="glass-panel" sx={{ p: 2, mb: 2 }}>
-              <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box sx={{ mb: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 1 }}>
                 <Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
-                    <Box>
-                      <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800, fontSize: '1rem' }}>BRANDING & ASSETS PROTEGIDOS</Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.65rem' }}>IDENTIDADE VISUAL E FALLBACKS</Typography>
-                    </Box>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      startIcon={<RefreshIcon />}
-                      onClick={async () => {
-                        const defaults = {
+                  <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800, fontSize: '1rem' }}>BRANDING & ASSETS PROTEGIDOS</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.65rem', display: 'block', mt: -0.5 }}>IDENTIDADE VISUAL E FALLBACKS</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button
+                    variant="outlined"
+                    color="warning"
+                    size="small"
+                    startIcon={<RestartAltIcon />}
+                    onClick={async () => {
+                      const defaults = {
+                        branding_type: 'video',
+                        logo_path: '',
+                        overlay_enabled: true,
+                        overlay_opacity: 1.0,
+                        overlay_scale: 0.3,
+                        overlay_x: 30,
+                        overlay_y: 20,
+                        overlay_anchor: 'top-right',
+                      };
+                      try {
+                        await settingsAPI.update(defaults);
+                        setSettings(prev => ({
+                          ...prev,
                           branding_type: 'video',
-                          logo_path: '/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4',
-                          overlay_enabled: true,
-                          overlay_opacity: 1.0,
-                          overlay_scale: 0.3,
-                          overlay_x: 30,
-                          overlay_y: 20,
+                          logoPath: defaults.logo_path,
+                          overlayOpacity: 1.0,
                           overlay_anchor: 'top-right',
-                        };
-                        try {
-                          await settingsAPI.update(defaults);
-                          setSettings(prev => ({
-                            ...prev,
-                            branding_type: 'video',
-                            logoPath: defaults.logo_path,
-                            overlayOpacity: 1.0,
-                            overlay_anchor: 'top-right',
-                          }));
-                          showSuccess('Branding reposto para os valores por defeito!');
-                          fetchSettings();
-                        } catch (e) {
-                          showError('Erro ao repor branding');
-                        }
-                      }}
-                      sx={{ fontWeight: 800, borderRadius: 2, fontSize: '0.7rem', whiteSpace: 'nowrap' }}
-                    >
-                      REPOR PADRÕES
-                    </Button>
-                  </Box>
+                        }));
+                        showSuccess('Branding reposto para os valores por defeito!');
+                        fetchSettings();
+                      } catch (e) {
+                        showError('Erro ao repor branding');
+                      }
+                    }}
+                    sx={{ fontWeight: 800, borderRadius: 2, fontSize: '0.7rem', whiteSpace: 'nowrap' }}
+                  >
+                    REPOR PADRÕES
+                  </Button>
                   <Tooltip title="Restaurar branding e assets para os valores por defeito do sistema" arrow>
                     <Button
                       variant="outlined"
@@ -1842,7 +1842,7 @@ function Settings() {
                           showSuccess('Branding restaurado para os valores por defeito!');
                         } catch (e) { showError('Erro ao restaurar branding'); }
                       }}
-                      sx={{ fontWeight: 800, fontSize: '0.7rem', borderColor: 'rgba(0,229,255,0.2)', color: 'primary.main' }}
+                      sx={{ fontWeight: 800, borderRadius: 2, fontSize: '0.7rem', borderColor: 'rgba(0,229,255,0.2)', color: 'primary.main', whiteSpace: 'nowrap' }}
                     >
                       RESTAURAR DEFAULTS
                     </Button>

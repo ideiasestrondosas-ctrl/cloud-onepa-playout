@@ -42,7 +42,7 @@ paths:
   # RTMP distribution relay target
   # Relay process reads from master and pushes here
   # publishUser/publishPass left empty so internal relay doesn't need credentials
-  live_stream:
+  live/stream:
     source: publisher
     sourceOnDemand: no
     readUser: ""
@@ -51,7 +51,7 @@ paths:
     publishPass: ""
 
   # SRT distribution relay target
-  live_stream_srt:
+  live/stream_srt:
     source: publisher
     sourceOnDemand: no
     readUser: ""

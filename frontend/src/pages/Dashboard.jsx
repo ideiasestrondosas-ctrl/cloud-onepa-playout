@@ -909,13 +909,18 @@ export default function Dashboard() {
             <Box sx={{ position: 'absolute', left: 15, bottom: 15, zIndex: 50 }}>
               <Chip
                 icon={<PlayIcon />}
-                label={`VLC: ${window.location.origin}/hls/stream.m3u8`}
+                label="URL HLS (Clique para copiar)"
                 onClick={() => {
-                  const url = `${window.location.origin}/hls/stream.m3u8`;
+                  // Usa o host atual garantindo porta 3011 para nginx (HLS bypass)
+                  let hlsOrigin = window.location.origin;
+                  if (!hlsOrigin.includes(':3011')) {
+                    hlsOrigin = `${window.location.protocol}//${window.location.hostname}:3011`;
+                  }
+                  const url = `${hlsOrigin}/hls/stream.m3u8`;
                   navigator.clipboard.writeText(url);
                   showSuccess('Link HLS copiado!');
                 }}
-                sx={{ bgcolor: 'rgba(0,0,0,0.6)', color: '#fff', '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' } }}
+                sx={{ bgcolor: 'rgba(0,0,0,0.6)', color: '#fff', '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' }, cursor: 'pointer' }}
                 size="small"
               />
             </Box>
