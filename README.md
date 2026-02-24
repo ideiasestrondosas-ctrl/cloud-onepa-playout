@@ -127,8 +127,8 @@ Este sistema foi desenvolvido e validado em ambientes de alta performance e virt
 
 - **Desenvolvimento e Testes Locais**:
   - **Hardware**: MacBook Pro 2024 (Apple M4)
-  - **Especificações**: 8GB RAM, 512GB SSD
-  - **OS**: macOS Sequoia (Native ARM)
+  - **Especificações**: 16GB RAM, 512GB SSD
+  - **OS**: macOS tahoe (Native ARM)
 
 - **ALPHA/Staging Testing**:
   - **Plataforma**: Virtualização Proxmox VE

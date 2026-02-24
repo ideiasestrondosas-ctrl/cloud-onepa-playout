@@ -917,8 +917,33 @@ export default function Dashboard() {
                     hlsOrigin = `${window.location.protocol}//${window.location.hostname}:3011`;
                   }
                   const url = `${hlsOrigin}/hls/stream.m3u8`;
-                  navigator.clipboard.writeText(url);
-                  showSuccess('Link HLS copiado!');
+
+                  // Fallback for non-HTTPS or Direct IP access where navigator.clipboard might fail
+                  const copyFunc = (text) => {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                      navigator.clipboard.writeText(text)
+                        .then(() => showSuccess('Link HLS copiado!'))
+                        .catch(() => fallbackCopy(text));
+                    } else {
+                      fallbackCopy(text);
+                    }
+                  };
+
+                  const fallbackCopy = (text) => {
+                    const textArea = document.createElement("textarea");
+                    textArea.value = text;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    try {
+                      document.execCommand('copy');
+                      showSuccess('Link HLS copiado!');
+                    } catch (err) {
+                      console.error('Bypass copy failed', err);
+                    }
+                    document.body.removeChild(textArea);
+                  };
+
+                  copyFunc(url);
                 }}
                 sx={{ bgcolor: 'rgba(0,0,0,0.6)', color: '#fff', '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' }, cursor: 'pointer' }}
                 size="small"

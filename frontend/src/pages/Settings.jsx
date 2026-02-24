@@ -518,7 +518,33 @@ function Settings() {
     }
   };
 
-  const fetchSettings = async () => {
+  // Helper for clipboard copy with fallback for non-secure contexts (HTTP IP access)
+  const handleCopyToClipboard = (text, successMsg = 'Copiado para o clipboard!') => {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text)
+        .then(() => showSuccess(successMsg))
+        .catch(() => fallbackCopy(text, successMsg));
+    } else {
+      fallbackCopy(text, successMsg);
+    }
+  };
+
+  const fallbackCopy = (text, successMsg) => {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      showSuccess(successMsg);
+    } catch (err) {
+      console.error('Fallback copy failed', err);
+      showError('Erro ao copiar');
+    }
+    document.body.removeChild(textArea);
+  };
+
+  const fetchSettings = useCallback(async () => {
     try {
       const response = await settingsAPI.get();
       const data = response.data;
@@ -587,7 +613,7 @@ function Settings() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showError]);
 
   const fetchProtectedAssets = async () => {
     try {
@@ -1504,14 +1530,12 @@ function Settings() {
                         size="small"
                         fullWidth
                         label="RTMP (Mestre de Distribuição Local)"
-                        value={`rtmp://${window.location.hostname}:1935/live_stream`}
+                        value={`rtmp://${window.location.hostname}:1935/live/stream`}
                         InputProps={{
                           readOnly: true,
                           sx: { fontFamily: 'monospace', fontSize: '0.85rem', bgcolor: 'rgba(0,0,0,0.2)' },
                           endAdornment: (
-                            <IconButton onClick={() => {
-                              navigator.clipboard.writeText(`rtmp://${window.location.hostname}:1935/live_stream`);
-                            }}>
+                            <IconButton onClick={() => handleCopyToClipboard(`rtmp://${window.location.hostname}:1935/live/stream`, 'Link RTMP copiado!')}>
                               <ContentCopyIcon fontSize="small" />
                             </IconButton>
                           )
@@ -1525,15 +1549,13 @@ function Settings() {
                         size="small"
                         fullWidth
                         label="SRT - Secure Reliable Transport (UDP)"
-                        value={`srt://${window.location.hostname}:8890?streamid=read:live_stream_srt`}
+                        value={`srt://${window.location.hostname}:8890?streamid=read:live/stream_srt`}
                         helperText="Atenção: A porta deve estar aberta em UDP. Clients devem solicitar explicitamente 'read:'"
                         InputProps={{
                           readOnly: true,
                           sx: { fontFamily: 'monospace', fontSize: '0.85rem', bgcolor: 'rgba(0,0,0,0.2)' },
                           endAdornment: (
-                            <IconButton onClick={() => {
-                              navigator.clipboard.writeText(`srt://${window.location.hostname}:8890?streamid=read:live_stream_srt`);
-                            }}>
+                            <IconButton onClick={() => handleCopyToClipboard(`srt://${window.location.hostname}:8890?streamid=read:live/stream_srt`, 'Link SRT copiado!')}>
                               <ContentCopyIcon fontSize="small" />
                             </IconButton>
                           )
@@ -1546,15 +1568,13 @@ function Settings() {
                       <TextField
                         size="small"
                         fullWidth
-                        label="HLS Playlist (MediaMTX via Browser/VLC)"
-                        value={`http://${window.location.hostname}:8888/master/index.m3u8`}
+                        label="HLS Playlist (Nginx Proxy 3011)"
+                        value={`http://${window.location.hostname}:3011/hls/stream.m3u8`}
                         InputProps={{
                           readOnly: true,
                           sx: { fontFamily: 'monospace', fontSize: '0.85rem', bgcolor: 'rgba(0,0,0,0.2)' },
                           endAdornment: (
-                            <IconButton onClick={() => {
-                              navigator.clipboard.writeText(`http://${window.location.hostname}:8888/master/index.m3u8`);
-                            }}>
+                            <IconButton onClick={() => handleCopyToClipboard(`http://${window.location.hostname}:3011/hls/stream.m3u8`, 'Link HLS copiado!')}>
                               <ContentCopyIcon fontSize="small" />
                             </IconButton>
                           )
@@ -2045,10 +2065,7 @@ function Settings() {
                   <Tooltip title="Copiar Endpoint">
                     <IconButton
                       size="small"
-                      onClick={() => {
-                        navigator.clipboard.writeText(`${window.location.protocol}//${window.location.host}/api/playlists/epg.xml`);
-                        showSuccess('Endpoint copiado!');
-                      }}
+                      onClick={() => handleCopyToClipboard(`${window.location.protocol}//${window.location.host}/api/playlists/epg.xml`, 'URL do XMLTV copiado!')}
                       sx={{ bgcolor: 'rgba(255,255,255,0.05)' }}
                     >
                       <CopyIcon sx={{ fontSize: 18 }} />
