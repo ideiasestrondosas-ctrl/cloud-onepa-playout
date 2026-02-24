@@ -1,16 +1,20 @@
 # Release Notes - Cloud Onepa Playout
 
-## v2.2.0-ALPHA.28-PRO-PRO (2026-02-23)
+## v2.2.0-ALPHA.28-PRO ()
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.
 - **Documentation**: Synced README.md and version history.
 
-## v2.2.0-ALPHA.27-PRO-PRO (2026-02-23)
+## v2.2.0-ALPHA.28-PRO (2026-02-24)
 
 ### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
+- **High-Density Help System**: Redesign massivo do menu ? para máxima ocupação e legibilidade eficiente.
+- **Protocol Stability**: Correção de falha RTMP quando o output url está vazio (fallback inteligente).
+- **Backend Recovery**: Resolução do conflito `VersionMismatch` e estabilização de arranque do container.
+- **Automation Integrity**: Correção da lógica de sufixos de versão nos scripts de build e release.
+
+## v2.2.0-ALPHA.27-PRO (2026-02-23)
 
 ## v2.2.0-ALPHA.27-PRO (2026-02-23)
 

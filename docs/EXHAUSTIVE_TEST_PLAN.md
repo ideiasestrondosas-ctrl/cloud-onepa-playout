@@ -1,4 +1,4 @@
-# Plano de Testes Exaustivos - Cloud Onepa Playout (ALPHA.27-PRO)
+# Plano de Testes Exaustivos - Cloud Onepa Playout (ALPHA.28-PRO)
 
 Este documento detalha o conjunto de testes funcionais sector a sector para validação total do ecossistema.
 

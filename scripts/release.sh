@@ -1,7 +1,7 @@
 #!/bin/bash
 # Cloud Onepa Playout - Master Release Automation (Enhanced UX)
 # Author: Antigravity Agent
-# Version: 2.1.0
+# Version: 2.1.1 (Fixed redundant suffix logic)
 
 # Set up error handling
 set -e
@@ -120,31 +120,25 @@ log_success "Statistics calculated successfully."
 # 5. Documentation Update
 log_step "Updating Public Documentation"
 echo "Injecting new version and stats into README.md..."
-sed -i '' "s/Version-[^)]*-blue/Version-$NEW_VERSION--PRO-blue/" README.md
-sed -i '' "s/Frontend (React\/JSX)       | ~[0-9,]* linhas/Frontend (React\/JSX)       | ~$FE_LINES linhas/" README.md
-sed -i '' "s/Backend (Rust)             | ~[0-9,]* linhas/Backend (Rust)             | ~$BE_LINES linhas/" README.md
-sed -i '' "s/Total                      | \*\*~[0-9,]*+ linhas\*\*/Total                      | \*\*~$TOTAL_LINES+ linhas\*\*/" README.md
-
-# Enhanced Documentation Updates (User Request)
-RELEASE_DATE=$(date +%Y-%m-%d)
-
 # 1. Update Development Statistics Header
-sed -i '' "s/Estatísticas de Desenvolvimento (v.*)/Estatísticas de Desenvolvimento (v$NEW_VERSION-PRO)/" README.md
+sed -i '' "s/Estatísticas de Desenvolvimento (v.*)/Estatísticas de Desenvolvimento ($RELEASE_NAME)/" README.md
 
 # 2. Update Footer Note
-sed -i '' "s/Dados aproximados baseados na versão v.*/Dados aproximados baseados na versão v$NEW_VERSION-PRO/" README.md
+sed -i '' "s/Dados aproximados baseados na versão v.*/Dados aproximados baseados na versão $RELEASE_NAME/" README.md
 
 # 3. Update Current Version Section in README
 # This updates the "Versão Atual" header to the new release
-sed -i '' "s/### Versão Atual: .*/### Versão Atual: v$NEW_VERSION-PRO ($RELEASE_DATE)/" README.md
+sed -i '' "s/### Versão Atual: .*/### Versão Atual: $RELEASE_NAME ($RELEASE_DATE)/" README.md
+
+# 4. Update Badge (Handles possible double hyphen or incorrect template)
+sed -i '' "s/Version-[^)]*-blue/Version-$NEW_VERSION-blue/" README.md
 
 # 4. Prepend New Version to RELEASE_NOTES.md
 # Adds a new header at line 3 (after title)
-# We use a temporary file to prepend robustly on macOS
 cat <<EOF > RELEASE_NOTES.tmp.md
 # Release Notes - Cloud Onepa Playout
 
-## v$NEW_VERSION-PRO ($RELEASE_DATE)
+## $RELEASE_NAME ($RELEASE_DATE)
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.

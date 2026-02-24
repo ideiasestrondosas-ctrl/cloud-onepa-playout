@@ -1,4 +1,4 @@
-# Plano de Testes Semi-Produção - Cloud Onepa Playout (ALPHA.27-PRO)
+# Plano de Testes Semi-Produção - Cloud Onepa Playout (ALPHA.28-PRO)
 
 Este plano foca-se na estabilidade de longo prazo e prontidão operativa para cenários reais de broadcasting 24/7.
 
@@ -38,7 +38,7 @@ Este plano foca-se na estabilidade de longo prazo e prontidão operativa para ce
 - **Firewall Ubuntu:** Testar acesso externo às portas 8182 (API) e 3011 (UI) apenas por IPs permitidos.
 
 ## 5. Plano de Rollback
-- Caso a versão ALPHA.27-PRO apresente instabilidade na VM:
+- Caso a versão ALPHA.28-PRO apresente instabilidade na VM:
   1. Parar containers: `docker-compose down`.
   2. Reverter base de dados para Snapshot anterior.
   3. Deploy da tag estável anterior via Git.
