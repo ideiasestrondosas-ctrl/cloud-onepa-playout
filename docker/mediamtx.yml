@@ -6,7 +6,6 @@ authInternalUsers:
   - user: backend
     pass: backend
     permissions:
-      - action: api
       - action: read
       - action: publish
   - user: any
@@ -36,12 +35,14 @@ hlsPartDuration: 200ms
 # API settings
 api: yes
 apiAddress: :9997
+# API credentials (required by backend check_master_feed_active)
+apiUser: backend
+apiPass: backend
 
 # Path settings
 paths:
   # Internal master feed — engine pushes here via RTMP
-  # Path name: "master" (matches rtmp://mediamtx:1935/master)
-  master:
+  "master":
     source: publisher
     sourceOnDemand: no
     readUser: backend
@@ -50,8 +51,7 @@ paths:
     publishPass: backend
 
   # RTMP distribution relay target
-  # Relay process reads from master and pushes here
-  live/stream:
+  "live/stream":
     source: publisher
     sourceOnDemand: no
     readUser: ""
@@ -60,7 +60,7 @@ paths:
     publishPass: ""
 
   # SRT distribution relay target
-  live/stream_srt:
+  "live/stream_srt":
     source: publisher
     sourceOnDemand: no
     readUser: ""
@@ -69,7 +69,7 @@ paths:
     publishPass: ""
 
   # Clean master feed (no overlay) for GraphicsEditor preview
-  master_clean:
+  "master_clean":
     source: publisher
     sourceOnDemand: no
     readUser: backend
@@ -77,6 +77,6 @@ paths:
     publishUser: backend
     publishPass: backend
 
-  # Catch-all for any other paths (HLS preview, etc.)
-  all:
+  # Catch-all
+  "all":
     source: publisher

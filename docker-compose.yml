@@ -78,7 +78,7 @@ services:
       - "1935:1935" # RTMP
       - "8888:8888" # HLS
       - "8992:8989" # WebRTC
-      - "0.0.0.0:8890:8890/udp" # SRT
+      - "8890:8890/udp" # SRT
     environment:
       # Use internal auth defined in mediamtx.yml
       - MTX_PATHS_ALL_SOURCE=publisher
