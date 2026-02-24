@@ -971,6 +971,12 @@ impl FFmpegService {
             "1024".to_string(),
             "-fflags".to_string(),
             "+genpts".to_string(),
+            "-reconnect".to_string(),
+            "1".to_string(),
+            "-reconnect_streamed".to_string(),
+            "1".to_string(),
+            "-reconnect_delay_max".to_string(),
+            "5".to_string(),
         ];
 
         args.extend(vec![

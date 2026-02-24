@@ -2,7 +2,17 @@
 
 # Global authentication
 authMethod: internal
-# authInternalUsers: (Managed via Environment Variables in docker-compose.yml)
+authInternalUsers:
+  - user: backend
+    pass: backend
+    permissions:
+      - action: api
+      - action: read
+      - action: publish
+  - user: any
+    pass: ""
+    permissions:
+      - action: read
 
 # Listeners
 rtmp: yes
@@ -41,7 +51,6 @@ paths:
 
   # RTMP distribution relay target
   # Relay process reads from master and pushes here
-  # publishUser/publishPass left empty so internal relay doesn't need credentials
   live/stream:
     source: publisher
     sourceOnDemand: no

@@ -1377,7 +1377,7 @@ impl PlayoutEngine {
         // 1. RTMP
         let rtmp_enabled = settings.rtmp_enabled
             || (settings.output_type == "rtmp" && settings.auto_start_protocols);
-        let rtmp_internal_relay_url = format!("rtmp://{}:1935/live/stream", mediamtx_host);
+        let rtmp_internal_relay_url = format!("rtmp://backend:backend@{}:1935/live/stream", mediamtx_host);
         let rtmp_url = if settings.rtmp_enabled {
             let user_url = settings.rtmp_output_url.as_deref().unwrap_or("");
             if !user_url.is_empty() {
@@ -1621,7 +1621,7 @@ impl PlayoutEngine {
                     log::debug!(
                         "[DEBUG-RELAY] key={} successfully registered in last_urls with '{}'",
                         key,
-                        url
+                        current_url
                     );
 
                     // Log to system logs
@@ -1632,7 +1632,6 @@ impl PlayoutEngine {
                     .await;
                 }
                 Err(e) => {
-                    log::error!("Failed to start relay for {}: {}", key, e);
                     cooldowns.insert(key.to_string(), now);
 
                     // Log to system logs
@@ -1680,7 +1679,6 @@ impl PlayoutEngine {
                     if let Ok(json) = resp.json::<serde_json::Value>().await {
                         if let Some(items) = json.get("items") {
                             // MediaMTX path items can be a list or a map
-                            // The engine pushes to rtmp://mediamtx:1935/master → path name is "master"
                             let master_path = if items.is_object() {
                                 items.get("master")
                             } else if items.is_array() {
@@ -1709,7 +1707,11 @@ impl PlayoutEngine {
                             }
                         }
                     }
+                } else {
+                    log::warn!("[DEBUG-RELAY] MediaMTX API returned error status: {} for {}", resp.status(), api_url);
                 }
+            } else if let Ok(Err(e)) = tokio::time::timeout(Duration::from_secs(1), client.get(api_url).basic_auth("backend", Some("backend")).send()).await {
+                 log::error!("[DEBUG-RELAY] Failed to connect to MediaMTX API: {}", e);
             }
         }
         log::warn!("[DEBUG-RELAY] Master feed API check failed or timed out. Falling back to engine status.");
