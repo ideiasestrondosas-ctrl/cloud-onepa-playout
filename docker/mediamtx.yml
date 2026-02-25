@@ -38,7 +38,16 @@ api: yes
 apiAddress: :9997
 
 # Path settings
-# We use standard naming for paths. The engine uses "master" and distribution uses "live/stream"
 paths:
-  "all":
+  all:
+    # Allow reading with credentials
     source: publisher
+  master:
+    # Internal path for the engine push
+    source: publisher
+    # Trust internal Docker network and localhost for publishing to master
+    publishIps: ["127.0.0.1", "172.16.0.0/12", "192.168.0.0/16"]
+  live:
+    # Distribution paths
+    source: publisher
+    publishIps: ["127.0.0.1", "172.16.0.0/12", "192.168.0.0/16"]
