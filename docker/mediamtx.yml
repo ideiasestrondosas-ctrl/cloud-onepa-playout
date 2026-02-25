@@ -14,7 +14,8 @@ authInternalUsers:
     permissions:
       - action: read
   # IP-based trust for internal Docker publishing (no password needed)
-  - ips: ["127.0.0.1", "172.16.0.0/12", "192.168.0.0/16"]
+  - user: "any"
+    ips: ["127.0.0.1", "172.16.0.0/12", "192.168.0.0/16"]
     permissions:
       - action: publish
       - action: read
