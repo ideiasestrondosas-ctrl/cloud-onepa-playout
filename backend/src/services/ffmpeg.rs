@@ -416,7 +416,11 @@ impl FFmpegService {
         log::info!("✅ Final output URL: {}", effective_output_url);
 
         let mut args = vec![
-            "-re".to_string(), // Read at native frame rate
+            "-re".to_string(),
+            "-fflags".to_string(),
+            "+genpts+igndts".to_string(),
+            "-avoid_negative_ts".to_string(),
+            "make_zero".to_string(),
         ];
 
         // 1. INPUTS
@@ -948,8 +952,12 @@ impl FFmpegService {
             "-thread_queue_size".to_string(),
             "1024".to_string(),
             "-fflags".to_string(),
-            "+genpts".to_string(),
+            "+genpts+igndts".to_string(),
+            "-avoid_negative_ts".to_string(),
+            "make_zero".to_string(),
             "-reconnect".to_string(),
+            "1".to_string(),
+            "-reconnect_at_eof".to_string(),
             "1".to_string(),
             "-reconnect_streamed".to_string(),
             "1".to_string(),
@@ -972,25 +980,14 @@ impl FFmpegService {
         // Format specific adjustments with FIFO robustness
         // We use the FIFO muxer to prevent the relay process from crashing if the destination is temporarily unavailable
         if final_output_url.starts_with("rtmp://") {
-            // RTMP FIFO
+            // Direct RTMP output
             args.extend(vec![
                 "-f".to_string(),
-                "fifo".to_string(),
-                "-fifo_format".to_string(),
                 "flv".to_string(),
-                "-queue_size".to_string(),
-                "60000".to_string(),
-                "-attempt_recovery".to_string(),
-                "1".to_string(),
-                "-recovery_wait_time".to_string(),
-                "1".to_string(),
-                "-drop_pkts_on_overflow".to_string(),
-                "1".to_string(),
                 final_output_url.to_string(),
             ]);
         } else if final_output_url.starts_with("srt://") {
-            // SRT FIFO
-            // Add robust SRT parameters first
+            // SRT distribution
             let separator = if final_output_url.contains('?') {
                 "&"
             } else {
@@ -1005,7 +1002,6 @@ impl FFmpegService {
                 "?"
             };
             if !final_output_url.contains("latency=") {
-                // FFmpeg SRT expects integer milliseconds, NOT "200ms" suffix
                 final_output_url = format!("{}{}latency=200", final_output_url, separator2);
             }
             if !final_output_url.contains("pkt_size=") {
@@ -1019,17 +1015,7 @@ impl FFmpegService {
 
             args.extend(vec![
                 "-f".to_string(),
-                "fifo".to_string(),
-                "-fifo_format".to_string(),
                 "mpegts".to_string(),
-                "-queue_size".to_string(),
-                "60000".to_string(),
-                "-attempt_recovery".to_string(),
-                "1".to_string(),
-                "-drop_pkts_on_overflow".to_string(),
-                "1".to_string(),
-                "-recovery_wait_time".to_string(),
-                "1".to_string(),
                 final_output_url.to_string(),
             ]);
         } else if final_output_url.starts_with("udp://") {

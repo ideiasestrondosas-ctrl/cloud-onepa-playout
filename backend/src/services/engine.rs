@@ -1706,10 +1706,9 @@ impl PlayoutEngine {
                                 {
                                     let is_ready = ready.as_bool().unwrap_or(false);
                                     if !is_ready {
-                                        log::debug!("[DEBUG-RELAY] Master feed 'master' found but NOT READY (waiting for frames)");
+                                        log::debug!("[DEBUG-RELAY] Master feed 'master' found but NOT READY (waiting for frames). Distribution delayed.");
+                                        return false;
                                     }
-                                    // If path EXISTS in MediaMTX, we consider it "active enough" to start relays.
-                                    // This avoids blocking distribution when MediaMTX takes 1-2s to toggle 'ready'.
                                     return true;
                                 }
                             }
