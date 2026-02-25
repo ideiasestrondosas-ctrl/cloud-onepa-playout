@@ -6,6 +6,7 @@ authInternalUsers:
   - user: backend
     pass: backend
     permissions:
+      - action: api
       - action: read
       - action: publish
   - user: any
@@ -35,9 +36,6 @@ hlsPartDuration: 200ms
 # API settings
 api: yes
 apiAddress: :9997
-# API credentials (required by backend check_master_feed_active)
-apiUser: backend
-apiPass: backend
 
 # Path settings
 paths:

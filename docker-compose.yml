@@ -19,7 +19,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
+    restart: always
 
   # Rust Backend
   backend:
@@ -68,12 +68,13 @@ services:
       timeout: 5s
       retries: 5
       start_period: 180s
-    restart: unless-stopped
+    restart: always
 
   mediamtx:
     image: bluenviron/mediamtx:latest
     container_name: alpha-mediamtx
     hostname: mediamtx
+    restart: always
     ports:
       - "1935:1935" # RTMP
       - "8888:8888" # HLS
@@ -112,7 +113,7 @@ services:
     depends_on:
       backend:
         condition: service_healthy
-    restart: unless-stopped
+    restart: always
 
 networks:
   alpha-network:
