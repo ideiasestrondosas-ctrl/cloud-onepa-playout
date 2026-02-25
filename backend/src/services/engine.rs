@@ -1706,9 +1706,11 @@ impl PlayoutEngine {
                                 {
                                     let is_ready = ready.as_bool().unwrap_or(false);
                                     if !is_ready {
-                                        log::debug!("[DEBUG-RELAY] Master feed 'master' found but NOT READY");
+                                        log::debug!("[DEBUG-RELAY] Master feed 'master' found but NOT READY (waiting for frames)");
                                     }
-                                    return is_ready;
+                                    // If path EXISTS in MediaMTX, we consider it "active enough" to start relays.
+                                    // This avoids blocking distribution when MediaMTX takes 1-2s to toggle 'ready'.
+                                    return true;
                                 }
                             }
                         }
@@ -1720,7 +1722,22 @@ impl PlayoutEngine {
                  log::error!("[DEBUG-RELAY] Failed to connect to MediaMTX API: {}", e);
             }
         }
-        log::warn!("[DEBUG-RELAY] Master feed API check failed or timed out. Falling back to engine status.");
+        // Final Fallback: If API checks fail/timeout, check if the FFmpeg master process is actually running
+        let process_alive = {
+            let mut proc_lock = self.current_process.lock().await;
+            if let Some(ref mut child) = *proc_lock {
+                matches!(child.try_wait(), Ok(None))
+            } else {
+                false
+            }
+        };
+
+        if process_alive {
+            log::debug!("[DEBUG-RELAY] MediaMTX API uncertain, but FFmpeg master process is ALIVE. Considering feed active.");
+            return true;
+        }
+
+        log::warn!("[DEBUG-RELAY] Master feed API check failed and process is dead. Falling back to engine status.");
         *self.is_running.lock().await
     }
 
