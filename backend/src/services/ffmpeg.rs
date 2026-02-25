@@ -353,10 +353,10 @@ impl FFmpegService {
         let mut final_url = output_url.to_string();
 
         if output_url.starts_with("rtmp://") {
-            log::info!("📡 RTMP: Mapping host to mediamtx (with auth)");
+            log::debug!("📡 RTMP mapping for host: {}", output_url);
             final_url = final_url
-                .replace("rtmp://localhost", "rtmp://backend:backend@mediamtx")
-                .replace("rtmp://127.0.0.1", "rtmp://backend:backend@mediamtx");
+                .replace("rtmp://localhost", "rtmp://mediamtx")
+                .replace("rtmp://127.0.0.1", "rtmp://mediamtx");
         } else if output_url.starts_with("srt://") {
             if output_url.contains("mode=listener") || output_url.contains("listen=1") {
                 log::info!("🎧 SRT LISTENER: Binding to all interfaces (empty host)");
@@ -369,31 +369,9 @@ impl FFmpegService {
                 final_url = final_url
                     .replace("localhost", "mediamtx")
                     .replace("127.0.0.1", "mediamtx");
-
-                if final_url.contains("mediamtx") && !final_url.contains("user=") {
-                    if final_url.contains("streamid=") {
-                        // action:pathname:user:pass[:query]
-                        if let Some(pos) = final_url.find("publish:") {
-                            let after_publish = &final_url[pos + 8..];
-                            let end_pos = after_publish
-                                .find(|c| c == '?' || c == '&')
-                                .unwrap_or(after_publish.len());
-                            let pathname = &after_publish[..end_pos];
-
-                            if !pathname.contains(":backend:backend") {
-                                let new_streamid_val = format!("{}:backend:backend", pathname);
-                                let mut new_url = final_url.clone();
-                                new_url.replace_range(
-                                    pos + 8..pos + 8 + end_pos,
-                                    &new_streamid_val,
-                                );
-                                final_url = new_url;
-                            }
-                        }
-                    }
-                }
             }
-        } else if output_url.starts_with("udp://") {
+        }
+ else if output_url.starts_with("udp://") {
             if output_url.contains("@") {
                 log::info!("📡 UDP LISTENER: Mapping to all interfaces (empty host)");
                 final_url = final_url
