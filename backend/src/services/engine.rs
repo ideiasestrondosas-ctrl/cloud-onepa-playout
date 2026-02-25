@@ -1347,7 +1347,7 @@ impl PlayoutEngine {
                 let current_count = *count;
                 drop(count);
                 if current_count < 20 {
-                    log::debug!("[DEBUG-RELAY] Master feed is inactive (count={}/20). Waiting for stabilization.", current_count);
+                    log::warn!("[DEBUG-RELAY] Master feed is inactive (count={}/20). Distribution relays will not start until 'master' path is READY on MediaMTX.", current_count);
                     return;
                 }
                 let mut procs = self.distribution_processes.lock().await;
@@ -1436,6 +1436,7 @@ impl PlayoutEngine {
         };
 
         if !srt_url.is_empty() {
+            log::info!("[SRT-RELAY] Attempting to start SRT distribution to {}; streamid=publish:live/stream_srt", srt_url);
             self.handle_relay(
                 "srt",
                 srt_enabled,

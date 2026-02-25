@@ -9,15 +9,16 @@ authInternalUsers:
       - action: api
       - action: read
       - action: publish
+  # Combined rule: allow internal IPs to read/publish without password, others can only read
   - user: "any"
     pass: ""
-    permissions:
-      - action: read
-  # IP-based trust for internal Docker publishing (no password needed)
-  - user: "any"
     ips: ["127.0.0.1", "172.16.0.0/12", "192.168.0.0/16"]
     permissions:
       - action: publish
+      - action: read
+  - user: "any"
+    pass: ""
+    permissions:
       - action: read
 
 # Listeners
