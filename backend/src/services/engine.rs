@@ -223,20 +223,25 @@ impl PlayoutEngine {
                 .fetch_one(&self.pool)
                 .await
         {
+            let is_run = settings.is_running;
+            let clips_played = settings.clips_played_today.unwrap_or(0);
+            
+            log::info!("DATABASE LOADED: is_running={}, clips_played_today={}", is_run, clips_played);
+
             let mut r = self.is_running.lock().await;
-            *r = settings.is_running;
+            *r = is_run;
             let mut err = self.last_error.lock().await;
             *err = settings.last_error;
 
             // If running, initialize start time
-            if settings.is_running {
+            if is_run {
                 let mut start_time = self.engine_start_time.lock().await;
                 *start_time = Some(Local::now());
             }
 
             // Sync clips counter from DB
             let mut status = self.status.lock().await;
-            status.clips_played_today = settings.clips_played_today.unwrap_or(0);
+            status.clips_played_today = clips_played;
         }
 
         loop {

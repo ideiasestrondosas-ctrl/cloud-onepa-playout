@@ -3,13 +3,13 @@
 # Global authentication
 authMethod: internal
 authInternalUsers:
-  - user: backend
-    pass: backend
+  - user: "backend"
+    pass: "backend"
     permissions:
       - action: api
       - action: read
       - action: publish
-  - user: any
+  - user: "any"
     pass: ""
     permissions:
       - action: read
@@ -38,27 +38,7 @@ api: yes
 apiAddress: :9997
 
 # Path settings
+# We use standard naming for paths. The engine uses "master" and distribution uses "live/stream"
 paths:
-  # Internal master feed — engine pushes here via RTMP
-  "master":
-    source: publisher
-    sourceOnDemand: no
-
-  # RTMP distribution relay target
-  "live/stream":
-    source: publisher
-    sourceOnDemand: no
-
-  # SRT distribution relay target
-  "live/stream_srt":
-    source: publisher
-    sourceOnDemand: no
-
-  # Clean master feed (no overlay) for GraphicsEditor preview
-  "master_clean":
-    source: publisher
-    sourceOnDemand: no
-
-  # Catch-all
   "all":
     source: publisher
