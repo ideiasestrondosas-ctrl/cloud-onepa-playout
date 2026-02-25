@@ -43,37 +43,21 @@ paths:
   "master":
     source: publisher
     sourceOnDemand: no
-    readUser: backend
-    readPass: backend
-    publishUser: backend
-    publishPass: backend
 
   # RTMP distribution relay target
   "live/stream":
     source: publisher
     sourceOnDemand: no
-    readUser: ""
-    readPass: ""
-    publishUser: ""
-    publishPass: ""
 
   # SRT distribution relay target
   "live/stream_srt":
     source: publisher
     sourceOnDemand: no
-    readUser: ""
-    readPass: ""
-    publishUser: ""
-    publishPass: ""
 
   # Clean master feed (no overlay) for GraphicsEditor preview
   "master_clean":
     source: publisher
     sourceOnDemand: no
-    readUser: backend
-    readPass: backend
-    publishUser: backend
-    publishPass: backend
 
   # Catch-all
   "all":
