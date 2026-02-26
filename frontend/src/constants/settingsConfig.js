@@ -7,9 +7,9 @@
  * Used by handleOutputTypeChange to auto-populate settings fields.
  */
 export const OUTPUT_DEFAULTS = {
-    rtmp: { url: 'rtmp://mediamtx:1935/live/stream', resolution: '1280x720', bitrate: '2500k' },
+    rtmp: { url: 'rtmp://mediamtx:1935/live_stream', resolution: '1280x720', bitrate: '2500k' },
     hls: { url: '/hls/stream.m3u8', resolution: '1920x1080', bitrate: '4000k' },
-    srt: { url: 'srt://mediamtx:8890?mode=caller&streamid=publish:live/stream_srt', resolution: '1920x1080', bitrate: '5000k' },
+    srt: { url: 'srt://mediamtx:8890?mode=caller&streamid=publish:live_stream_srt', resolution: '1920x1080', bitrate: '5000k' },
     udp: { url: 'udp://239.0.0.1:1234', resolution: '1280x720', bitrate: '3000k' },
     desktop: { url: 'local', resolution: '1920x1080', bitrate: '0' },
 };

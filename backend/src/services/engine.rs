@@ -1037,7 +1037,7 @@ impl PlayoutEngine {
 
         // 1. RTMP Status — primary: relay process alive; secondary: MediaMTX path ready
         let rtmp_active = settings.rtmp_enabled || settings.output_type == "rtmp";
-        let rtmp_path_info = mediamtx_paths.get("live/stream");
+        let rtmp_path_info = mediamtx_paths.get("live_stream");
         let rtmp_status = if rtmp_active && master_ready {
             let mut procs = self.distribution_processes.lock().await;
             let relay_alive = procs.get_mut("rtmp")
@@ -1066,7 +1066,7 @@ impl PlayoutEngine {
                 settings
                     .rtmp_output_url
                     .as_deref()
-                    .unwrap_or("rtmp://localhost:1935/live/stream")
+                    .unwrap_or("rtmp://localhost:1935/live_stream")
                     .replace("mediamtx", "localhost")
             ),
         });
@@ -1098,7 +1098,7 @@ impl PlayoutEngine {
 
         // 3. SRT Status — primary: relay process alive; secondary: MediaMTX path ready
         let srt_active = settings.srt_enabled || settings.output_type == "srt";
-        let srt_path_info = mediamtx_paths.get("live/stream_srt");
+        let srt_path_info = mediamtx_paths.get("live_stream_srt");
         let srt_status = if srt_active && master_ready {
             let mut procs = self.distribution_processes.lock().await;
             let relay_alive = procs.get_mut("srt")
@@ -1127,7 +1127,7 @@ impl PlayoutEngine {
                 settings
                     .srt_output_url
                     .as_deref()
-                    .unwrap_or("srt://localhost:8890?mode=caller&streamid=read:live/stream_srt")
+                    .unwrap_or("srt://localhost:8890?mode=caller&streamid=read:live_stream_srt")
                     .replace("mediamtx", "localhost")
             ),
         });
@@ -1178,7 +1178,7 @@ impl PlayoutEngine {
         });
 
         // 5. Extended
-        let default_path_info = mediamtx_paths.get("live/stream");
+        let default_path_info = mediamtx_paths.get("live_stream");
         let default_ready = default_path_info.map(|i| i.ready).unwrap_or(false);
 
         streams.push(ActiveStream {
@@ -1395,7 +1395,7 @@ impl PlayoutEngine {
         // 1. RTMP
         let rtmp_enabled = settings.rtmp_enabled
             || (settings.output_type == "rtmp" && settings.auto_start_protocols);
-        let rtmp_internal_relay_url = format!("rtmp://{}:1935/live/stream", mediamtx_host);
+        let rtmp_internal_relay_url = format!("rtmp://{}:1935/live_stream", mediamtx_host);
         let rtmp_url = if settings.rtmp_enabled {
             let user_url = settings.rtmp_output_url.as_deref().unwrap_or("");
             if !user_url.is_empty() {
@@ -1430,7 +1430,7 @@ impl PlayoutEngine {
         // The user-configured srt_output_url is for READING; relay needs publish.
         // Use the internal MediaMTX SRT publish URL directly for the relay.
         let srt_internal_relay_url = format!(
-            "srt://{}:8890?mode=caller&streamid=publish:live/stream_srt",
+            "srt://{}:8890?mode=caller&streamid=publish:live_stream_srt",
             mediamtx_host
         );
         let srt_url = if settings.srt_enabled {
