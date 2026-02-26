@@ -17,14 +17,61 @@ pub struct MediaInfo {
 pub struct FFmpegService {
     ffmpeg_path: String,
     ffprobe_path: String,
+    pub hw_encoder: String,
 }
 
 impl FFmpegService {
     pub fn new() -> Self {
-        FFmpegService {
+        let mut service = FFmpegService {
             ffmpeg_path: env::var("FFMPEG_PATH").unwrap_or_else(|_| "ffmpeg".to_string()),
             ffprobe_path: env::var("FFPROBE_PATH").unwrap_or_else(|_| "ffprobe".to_string()),
+            hw_encoder: "libx264".to_string(), // Default placeholder
+        };
+        // Detect and store the best encoder
+        service.hw_encoder = service.detect_hw_encoder();
+        log::info!("[FFmpeg] Auto-detected H.264 encoder: {}", service.hw_encoder);
+        service
+    }
+
+    /// Probe system for the best available H.264 hardware encoder.
+    /// Priority: h264_videotoolbox (macOS) > h264_nvenc (NVIDIA) > h264_vaapi (Intel/AMD) > h264_qsv (Intel) > libx264 (CPU)
+    pub fn detect_hw_encoder(&self) -> String {
+        let output = Command::new(&self.ffmpeg_path)
+            .args(&["-encoders", "-hide_banner"])
+            .output();
+
+        let encoders_list = match output {
+            Ok(out) => String::from_utf8_lossy(&out.stdout).to_string(),
+            Err(_) => return "libx264".to_string(),
+        };
+
+        // Priority order: Apple Silicon > NVIDIA > VAAPI > QSV > CPU
+        // We also check for the device path to ensure it's not just a software stub
+        let hw_encoders = [
+            ("h264_videotoolbox", "Apple VideoToolbox (macOS)", None),
+            ("h264_nvenc", "NVIDIA NVENC", Some("/dev/nvidia0")),
+            ("h264_vaapi", "VAAPI (Intel/AMD)", Some("/dev/dri")),
+            ("h264_qsv", "Intel QuickSync", Some("/dev/dri")),
+        ];
+
+        for (encoder, label, device) in &hw_encoders {
+            if encoders_list.contains(encoder) {
+                // If a device path is required, check if it exists
+                let device_exists = if let Some(path) = device {
+                    std::path::Path::new(path).exists()
+                } else {
+                    true // No device required or handled by OS (like VideoToolbox)
+                };
+
+                if device_exists {
+                    log::info!("[FFmpeg] Hardware encoder available and verified: {} ({})", encoder, label);
+                    return encoder.to_string();
+                }
+            }
         }
+
+        log::info!("[FFmpeg] No usable hardware encoder found (or device nodes missing), using CPU (libx264)");
+        "libx264".to_string()
     }
 
     /// Extract media information using ffprobe
@@ -470,6 +517,13 @@ impl FFmpegService {
         let mut filter_complex = String::new();
 
         // Video Chain
+        // 1. Initial scale of input video (Source for everyone)
+        filter_complex.push_str(&format!("[0:v]scale={}[v_src_scaled];", resolution));
+
+        // 2. Split for Overlay chain vs Clean chain
+        filter_complex.push_str("[v_src_scaled]split=2[v_for_overlay][v_clean_src];");
+
+        // 3. Prepare graphics backdrop (if has logo)
         if has_logo {
             // Get opacity and scale values with defaults
             let opacity = overlay_opacity.unwrap_or(1.0).clamp(0.0, 1.0);
@@ -484,24 +538,22 @@ impl FFmpegService {
             };
 
             filter_complex.push_str(&format!(
-                "[0:v]scale={}[bg];[1:v]scale=iw*{}:ih*{},format=rgba,colorchannelmixer=aa={}[logo];[bg][logo]overlay={}[v_processed];",
-                resolution, scale, scale, opacity, pos_coords
+                "[1:v]scale=iw*{}:ih*{},format=rgba,colorchannelmixer=aa={}[logo];[v_for_overlay][logo]overlay={}[v_out];",
+                scale, scale, opacity, pos_coords
             ));
         } else {
-            filter_complex.push_str(&format!("[0:v]scale={}[v_processed];", resolution));
+            filter_complex.push_str("[v_for_overlay]copy[v_out];");
         }
 
-        // Split for Monitor
-        filter_complex.push_str("[v_processed]split=2[v_out][v_monitor_pre];");
-        filter_complex.push_str("[v_monitor_pre]scale=640:360[v_monitor];");
+        // 4. Create CLEAN preview (no logo, mid-res for editor)
+        filter_complex.push_str("[v_clean_src]scale=640:360,fps=25[v_clean];");
 
-        // Clean stream (no overlay) for GraphicsEditor preview — always from raw input
-        if has_logo {
-            // Only needed when logo is active; when no logo, v_monitor IS already clean
-            filter_complex.push_str(&format!("[0:v]scale=640:360[v_clean];"));
-        }
+        // 5. Create MONITOR preview (with logo, ultra low res for dashboard)
+        filter_complex.push_str("[v_out]split=2[v_main][v_monitor_pre];");
+        filter_complex.push_str("[v_monitor_pre]scale=320:180,fps=15[v_monitor];");
 
         // Audio Chain (Standardize to EBU R128)
+        // Audio is shared: [a_out] goes to main, monitor/clean can share [a_monitor] if needed
         filter_complex.push_str("[0:a]volume=0.8,asplit=2[a_out][a_monitor]");
 
         // 3. CODEC SELECTION LOGIC
@@ -529,39 +581,55 @@ impl FFmpegService {
         let gop = fps_val * 2;
 
         match v_codec {
-            "h264" => args.extend(vec![
-                "-c:v".to_string(),
-                "libx264".to_string(),
-                "-tune".to_string(),
-                "zerolatency".to_string(),
-                "-flags".to_string(),
-                "+global_header".to_string(),
-                "-profile:v".to_string(),
-                "high".to_string(),
-                "-level".to_string(),
-                "4.1".to_string(),
-                "-preset".to_string(),
-                "veryfast".to_string(),
-                "-bf".to_string(),
-                "0".to_string(),
-                "-b:v".to_string(),
-                video_bitrate.to_string(),
-                "-maxrate".to_string(),
-                video_bitrate.to_string(),
-                "-bufsize".to_string(),
-                format!(
-                    "{}k",
-                    video_bitrate
-                        .replace("k", "")
-                        .parse::<i32>()
-                        .unwrap_or(5000)
-                        * 2
-                ),
-                "-pix_fmt".to_string(),
-                "yuv420p".to_string(),
-                "-g".to_string(),
-                format!("{}", gop),
-            ]),
+            "h264" => {
+                args.extend(vec![
+                    "-c:v".to_string(),
+                    self.hw_encoder.clone(),
+                ]);
+
+                // Only add libx264 specific options if we are actually using libx264
+                if self.hw_encoder == "libx264" {
+                    args.extend(vec![
+                        "-tune".to_string(), "zerolatency".to_string(),
+                        "-preset".to_string(), "ultrafast".to_string(),
+                        "-profile:v".to_string(), "high".to_string(),
+                        "-level".to_string(), "4.1".to_string(),
+                        "-bf".to_string(), "0".to_string(),
+                    ]);
+                } else if self.hw_encoder.contains("vaapi") {
+                    // VAAPI specific optimizations
+                    args.extend(vec![
+                        "-preset".to_string(), "ultrafast".to_string(), // Some vaapi versions support this
+                    ]);
+                } else if self.hw_encoder.contains("nvenc") {
+                    args.extend(vec![
+                        "-preset".to_string(), "p1".to_string(), // fastest
+                        "-tune".to_string(), "ull".to_string(), // ultra low latency
+                    ]);
+                }
+
+                args.extend(vec![
+                    "-flags".to_string(),
+                    "+global_header".to_string(),
+                    "-b:v".to_string(),
+                    video_bitrate.to_string(),
+                    "-maxrate".to_string(),
+                    video_bitrate.to_string(),
+                    "-bufsize".to_string(),
+                    format!(
+                        "{}k",
+                        video_bitrate
+                            .replace("k", "")
+                            .parse::<i32>()
+                            .unwrap_or(5000)
+                            * 2
+                    ),
+                    "-pix_fmt".to_string(),
+                    "yuv420p".to_string(),
+                    "-g".to_string(),
+                    format!("{}", gop),
+                ]);
+            },
             "hevc" => args.extend(vec![
                 "-c:v".to_string(),
                 "libx265".to_string(),
@@ -846,14 +914,13 @@ impl FFmpegService {
                 "-f".to_string(),
                 "tee".to_string(),
                 "-map".to_string(),
-                "[v_out]".to_string(),
+                "[v_main]".to_string(),
                 "-map".to_string(),
                 "[a_out]".to_string(),
                 tee_outputs.join("|"),
             ]);
 
-            // 5. SECONDARY OUTPUT: Low-Res Monitor HLS
-            // We use a separate encode to save user bandwidth in the browser
+            // 5. SECONDARY OUTPUT: Low-Res Monitor HLS (320x180 @ 250k, ultrafast)
             args.extend(vec![
                 "-map".to_string(),
                 "[v_monitor]".to_string(),
@@ -861,60 +928,65 @@ impl FFmpegService {
                 "libx264".to_string(),
                 "-preset".to_string(),
                 "ultrafast".to_string(),
+                "-tune".to_string(),
+                "zerolatency".to_string(),
                 "-b:v".to_string(),
-                "800k".to_string(),
+                "250k".to_string(),
                 "-maxrate".to_string(),
-                "800k".to_string(),
+                "300k".to_string(),
                 "-bufsize".to_string(),
-                "1600k".to_string(),
+                "500k".to_string(),
                 "-g".to_string(),
-                format!("{}", gop),
+                "30".to_string(),
                 "-map".to_string(),
                 "[a_monitor]".to_string(),
                 "-c:a".to_string(),
                 "aac".to_string(),
                 "-b:a".to_string(),
-                "96k".to_string(),
+                "64k".to_string(),
+                "-ar".to_string(),
+                "22050".to_string(),
                 "-f".to_string(),
                 "hls".to_string(),
                 "-hls_time".to_string(),
                 "2".to_string(),
                 "-hls_list_size".to_string(),
-                "10".to_string(),
+                "8".to_string(),
                 "-hls_flags".to_string(),
                 "delete_segments+independent_segments".to_string(),
                 format!("{}/stream_low.m3u8", hls_path),
             ]);
 
             // 6. CLEAN OUTPUT: No-overlay stream for GraphicsEditor preview (only when logo active)
-            if has_logo {
-                args.extend(vec![
-                    "-map".to_string(),
-                    "[v_clean]".to_string(),
-                    "-c:v".to_string(),
-                    "libx264".to_string(),
-                    "-preset".to_string(),
-                    "ultrafast".to_string(),
-                    "-b:v".to_string(),
-                    "600k".to_string(),
-                    "-maxrate".to_string(),
-                    "600k".to_string(),
-                    "-bufsize".to_string(),
-                    "1200k".to_string(),
-                    "-g".to_string(),
-                    format!("{}", gop),
-                    "-an".to_string(), // No audio needed for clean preview
-                    "-f".to_string(),
-                    "hls".to_string(),
-                    "-hls_time".to_string(),
-                    "2".to_string(),
-                    "-hls_list_size".to_string(),
-                    "8".to_string(),
-                    "-hls_flags".to_string(),
-                    "delete_segments+independent_segments".to_string(),
-                    format!("{}/stream_clean.m3u8", hls_path),
-                ]);
-            }
+            // Restore clean mapping for Graphics menu as requested by user
+            args.extend(vec![
+                "-map".to_string(),
+                "[v_clean]".to_string(),
+                "-c:v".to_string(),
+                "libx264".to_string(), // Software encode for preview stability
+                "-preset".to_string(),
+                "ultrafast".to_string(),
+                "-tune".to_string(),
+                "zerolatency".to_string(),
+                "-b:v".to_string(),
+                "600k".to_string(),
+                "-maxrate".to_string(),
+                "600k".to_string(),
+                "-bufsize".to_string(),
+                "1200k".to_string(),
+                "-g".to_string(),
+                format!("{}", gop),
+                "-an".to_string(), // No audio needed for clean graphics preview
+                "-f".to_string(),
+                "hls".to_string(),
+                "-hls_time".to_string(),
+                "2".to_string(),
+                "-hls_list_size".to_string(),
+                "8".to_string(),
+                "-hls_flags".to_string(),
+                "delete_segments+independent_segments".to_string(),
+                format!("{}/stream_clean.m3u8", hls_path),
+            ]);
         } else {
             // Single output
             args.extend(vec![
@@ -955,14 +1027,6 @@ impl FFmpegService {
             "+genpts+igndts".to_string(),
             "-avoid_negative_ts".to_string(),
             "make_zero".to_string(),
-            "-reconnect".to_string(),
-            "1".to_string(),
-            "-reconnect_at_eof".to_string(),
-            "1".to_string(),
-            "-reconnect_streamed".to_string(),
-            "1".to_string(),
-            "-reconnect_delay_max".to_string(),
-            "5".to_string(),
         ];
 
         args.extend(vec![

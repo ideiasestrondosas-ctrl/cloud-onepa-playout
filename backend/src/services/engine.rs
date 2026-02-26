@@ -745,7 +745,8 @@ impl PlayoutEngine {
                 );
 
                 if let Some(mut child) = proc_lock.take() {
-                    child.kill().ok();
+                    let _ = child.kill();
+                    let _ = child.wait(); // Reap zombie
                 }
 
                 // 2. Build the Concat Playlist (Current + Next 5 items)
@@ -907,7 +908,8 @@ impl PlayoutEngine {
         let mut proc_lock = self.current_process.lock().await;
         if let Some(mut child) = proc_lock.take() {
             log::info!("Stopping playout process");
-            child.kill().ok();
+            let _ = child.kill();
+            let _ = child.wait(); // Reap zombie
         }
         let mut current_id = self.current_clip_id.lock().await;
         *current_id = None;
@@ -1005,7 +1007,7 @@ impl PlayoutEngine {
             }
         }
 
-        // 0. Master Feed Status — primary: FFmpeg process alive; secondary: MediaMTX API
+        // 0. Master Feed Status — requires BOTH FFmpeg alive AND MediaMTX receiving frames
         let master_process_alive = {
             let mut proc_lock = self.current_process.lock().await;
             if let Some(ref mut child) = *proc_lock {
@@ -1015,11 +1017,15 @@ impl PlayoutEngine {
             }
         };
         let master_info = mediamtx_paths.get("master");
-        let master_ready = master_process_alive || master_info.map(|i| i.ready).unwrap_or(false);
+        let master_mediamtx_ready = master_info.map(|i| i.ready).unwrap_or(false);
+        // Master is only truly active when FFmpeg is running AND MediaMTX confirms frames
+        let master_ready = master_process_alive && master_mediamtx_ready;
         streams.push(ActiveStream {
             protocol: "MASTER".to_string(),
             status: if master_ready && engine_running {
                 "active".to_string()
+            } else if master_process_alive && engine_running {
+                "starting".to_string()
             } else {
                 "idle".to_string()
             },
@@ -1032,18 +1038,21 @@ impl PlayoutEngine {
         // 1. RTMP Status — primary: relay process alive; secondary: MediaMTX path ready
         let rtmp_active = settings.rtmp_enabled || settings.output_type == "rtmp";
         let rtmp_path_info = mediamtx_paths.get("live/stream");
-        let rtmp_status = if rtmp_active {
+        let rtmp_status = if rtmp_active && master_ready {
             let mut procs = self.distribution_processes.lock().await;
             let relay_alive = procs.get_mut("rtmp")
                 .map(|child| matches!(child.try_wait(), Ok(None)))
                 .unwrap_or(false);
-            if relay_alive {
+            let path_ready = rtmp_path_info.map(|i| i.ready).unwrap_or(false);
+            if relay_alive && path_ready {
                 "active".to_string()
-            } else if rtmp_path_info.map(|i| i.ready).unwrap_or(false) {
-                "active".to_string()
+            } else if relay_alive {
+                "starting".to_string()
             } else {
                 "idle".to_string()
             }
+        } else if rtmp_active && master_process_alive {
+            "starting".to_string()
         } else {
             "idle".to_string()
         };
@@ -1090,18 +1099,21 @@ impl PlayoutEngine {
         // 3. SRT Status — primary: relay process alive; secondary: MediaMTX path ready
         let srt_active = settings.srt_enabled || settings.output_type == "srt";
         let srt_path_info = mediamtx_paths.get("live/stream_srt");
-        let srt_status = if srt_active {
+        let srt_status = if srt_active && master_ready {
             let mut procs = self.distribution_processes.lock().await;
             let relay_alive = procs.get_mut("srt")
                 .map(|child| matches!(child.try_wait(), Ok(None)))
                 .unwrap_or(false);
-            if relay_alive {
+            let path_ready = srt_path_info.map(|i| i.ready).unwrap_or(false);
+            if relay_alive && path_ready {
                 "active".to_string()
-            } else if srt_path_info.map(|i| i.ready).unwrap_or(false) {
-                "active".to_string()
+            } else if relay_alive {
+                "starting".to_string()
             } else {
                 "idle".to_string()
             }
+        } else if srt_active && master_process_alive {
+            "starting".to_string()
         } else {
             "idle".to_string()
         };
@@ -1436,7 +1448,7 @@ impl PlayoutEngine {
         };
 
         if !srt_url.is_empty() {
-            log::info!("[SRT-RELAY] Attempting to start SRT distribution to {}; streamid=publish:live/stream_srt", srt_url);
+            log::info!("[SRT-RELAY] Attempting to start SRT distribution to {}", srt_url);
             self.handle_relay(
                 "srt",
                 srt_enabled,

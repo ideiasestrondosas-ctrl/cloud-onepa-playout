@@ -774,18 +774,19 @@ export default function Dashboard() {
             <Paper className="glass-panel" sx={{ p: 1.5, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
               {visibleStreams.map((stream, idx) => {
                 const isActive = stream.status === 'active';
+                const isStarting = stream.status === 'starting';
                 const isError = stream.status === 'error';
                 const isReadOnly = stream.protocol === 'MASTER' || stream.protocol === 'HLS';
                 const isLoading = toggleLoading[stream.protocol];
-                const dotColor = isActive ? '#4caf50' : isError ? '#ff9800' : '#555';
+                const dotColor = isActive ? '#4caf50' : isStarting ? '#ff9800' : isError ? '#f44336' : '#555';
                 return (
                   <Tooltip
                     key={idx}
                     title={
                       <Box sx={{ textAlign: 'center', p: 0.5 }}>
                         <Typography variant="caption" sx={{ fontWeight: 800, display: 'block' }}>{stream.protocol}</Typography>
-                        <Typography variant="caption" sx={{ color: isActive ? '#4caf50' : isError ? '#ff9800' : '#aaa', display: 'block' }}>
-                          {isActive ? '● ACTIVO' : isError ? '⚠ ERRO' : '○ OFFLINE'}
+                        <Typography variant="caption" sx={{ color: isActive ? '#4caf50' : isStarting ? '#ff9800' : isError ? '#f44336' : '#aaa', display: 'block' }}>
+                          {isActive ? '● ACTIVO' : isStarting ? '◐ A INICIAR' : isError ? '⚠ ERRO' : '○ OFFLINE'}
                         </Typography>
                         {!isReadOnly && <Typography variant="caption" sx={{ opacity: 0.7, display: 'block', mt: 0.5 }}>{isActive ? 'Clique para desligar' : 'Clique para ligar'}</Typography>}
                         {isReadOnly && <Typography variant="caption" sx={{ opacity: 0.5, display: 'block', mt: 0.5 }}>Protocolo principal (apenas leitura)</Typography>}
@@ -1138,24 +1139,17 @@ export default function Dashboard() {
                     fullWidth
                     size="small"
                     value={() => {
-                      const type = settings?.output_type;
-                      const originalUrl = settings?.output_url || '';
+                      const type = settings?.output_type?.toUpperCase();
+                      const displayUrl = settings?.display_urls?.[type];
+                      if (displayUrl) return displayUrl;
 
-                      if (type === 'udp') {
-                        // Extract Port
+                      // Fallback logic
+                      const originalUrl = settings?.output_url || '';
+                      if (settings?.output_type === 'udp') {
                         const portMatch = originalUrl.match(/:(\d+)$/);
                         const port = portMatch ? portMatch[1] : '1234';
-
-                        // Check for Multicast (224.0.0.0 to 239.255.255.255)
                         const isMulticast = originalUrl.match(/@(2(?:2[4-9]|3\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d?|0)){3})/);
-
-                        if (isMulticast) {
-                          // Multicast: Play directly from that IP
-                          return originalUrl;
-                        } else {
-                          // Unicast: Listen on all interfaces on that port
-                          return `udp://@:${port}`;
-                        }
+                        return isMulticast ? originalUrl : `udp://@:${port}`;
                       }
                       return originalUrl;
                     }}
@@ -1166,17 +1160,17 @@ export default function Dashboard() {
                     variant="contained"
                     disabled={!settings?.output_url}
                     onClick={() => {
-                      let url = settings?.output_url;
+                      const type = settings?.output_type?.toUpperCase();
+                      let url = settings?.display_urls?.[type];
 
-                      // Smart UDP handling for VLC
-                      if (settings?.output_type === 'udp') {
-                        const portMatch = url.match(/:(\d+)$/);
-                        const port = portMatch ? portMatch[1] : '1234';
-                        const isMulticast = url.match(/@(2(?:2[4-9]|3\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d?|0)){3})/);
-                        if (isMulticast) {
-                          url = url; // Use as is
-                        } else {
-                          url = `udp://@:${port}`; // Listen mode
+                      if (!url) {
+                        url = settings?.output_url;
+                        // Fallback Smart UDP handling for VLC
+                        if (settings?.output_type === 'udp') {
+                          const portMatch = url.match(/:(\d+)$/);
+                          const port = portMatch ? portMatch[1] : '1234';
+                          const isMulticast = url.match(/@(2(?:2[4-9]|3\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d?|0)){3})/);
+                          url = isMulticast ? url : `udp://@:${port}`;
                         }
                       }
 

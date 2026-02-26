@@ -85,26 +85,30 @@ impl Settings {
         let rtmp = self
             .rtmp_output_url
             .as_deref()
-            .unwrap_or("rtmp://localhost:1935/live/stream");
+            .unwrap_or("rtmp://mediamtx:1935/live/stream");
         urls.insert(
             "RTMP".to_string(),
-            rtmp.replace("mediamtx", host).replace("127.0.0.1", host),
+            rtmp.replace("mediamtx", host)
+                .replace("localhost", host)
+                .replace("127.0.0.1", host),
         );
 
         // 2. SRT
         let srt = self
             .srt_output_url
             .as_deref()
-            .unwrap_or("srt://localhost:8890?mode=caller&streamid=read:live/stream");
-        let srt_final = srt.replace("mediamtx", host).replace("127.0.0.1", host);
-        // Ensure read mode for display
-        let srt_final = if srt_final.contains("streamid=publish") {
-            srt_final.replace("streamid=publish", "streamid=read")
+            .unwrap_or("srt://mediamtx:8890?mode=caller&streamid=publish:live/stream_srt");
+        let mut srt_final = srt
+            .replace("mediamtx", host)
+            .replace("localhost", host)
+            .replace("127.0.0.1", host);
+
+        // Ensure read mode for display (VLC is a consumer/reader)
+        if srt_final.contains("streamid=publish") {
+            srt_final = srt_final.replace("streamid=publish", "streamid=read");
         } else if !srt_final.contains("streamid=") {
-            format!("{}&streamid=read:live/stream", srt_final)
-        } else {
-            srt_final
-        };
+            srt_final = format!("{}&streamid=read:live/stream_srt", srt_final);
+        }
         urls.insert("SRT".to_string(), srt_final);
 
         // 3. UDP (Smart formatting)

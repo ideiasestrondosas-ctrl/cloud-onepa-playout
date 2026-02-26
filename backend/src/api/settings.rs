@@ -101,7 +101,7 @@ async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
                     std::env::var("MEDIAMTX_HOST").unwrap_or_else(|_| "localhost".to_string())
                 )),
                 srt_output_url: Some(format!(
-                    "srt://{}:8890?mode=caller&streamid=publish:live/stream",
+                    "srt://{}:8890?mode=caller&streamid=publish:live/stream_srt",
                     std::env::var("MEDIAMTX_HOST").unwrap_or_else(|_| "localhost".to_string())
                 )),
                 udp_output_url: Some("udp://@239.0.0.1:1234".to_string()),
@@ -585,11 +585,11 @@ async fn reset_all(pool: web::Data<PgPool>) -> impl Responder {
         log::error!("Failed to truncate schedule: {}", e);
     }
 
-    // Reset settings to defaults
-    let result = sqlx::query(
+    let mediamtx_host = std::env::var("MEDIAMTX_HOST").unwrap_or_else(|_| "mediamtx".to_string());
+    let reset_sql = format!(
         "UPDATE settings SET 
         output_type = 'rtmp', 
-        output_url = 'rtmp://localhost:1935/stream', 
+        output_url = 'rtmp://{}:1935/live/stream', 
         resolution = '1920x1080', 
         fps = '25', 
         video_bitrate = '5000k', 
@@ -597,9 +597,14 @@ async fn reset_all(pool: web::Data<PgPool>) -> impl Responder {
         is_running = false,
         overlay_enabled = true,
         clips_played_today = 0,
+        rtmp_output_url = 'rtmp://{}:1935/live/stream',
+        srt_output_url = 'srt://{}:8890?mode=caller&streamid=publish:live/stream_srt',
+        udp_output_url = 'udp://@239.0.0.1:1234',
         updated_at = CURRENT_TIMESTAMP
         WHERE id = TRUE",
-    )
+        mediamtx_host, mediamtx_host, mediamtx_host
+    );
+    let result = sqlx::query(&reset_sql)
     .execute(pool.get_ref())
     .await;
 
