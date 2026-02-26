@@ -865,7 +865,7 @@ impl FFmpegService {
                 )
             } else {
                 // Simplified RTMP output and other direct mappings
-                format!("[f={}]{}", output_format, escaped_url)
+                format!("[f={}]'{}'", output_format, escaped_url)
             };
 
             // 1. Primary Distribution Output (RTMP/SRT)
@@ -873,8 +873,8 @@ impl FFmpegService {
 
             // 2. Mandatory HLS Output (for internal preview)
             tee_outputs.push(format!(
-                "[f=hls:hls_time=2:hls_list_size=10:hls_flags=delete_segments+independent_segments]{}/stream.m3u8",
-                hls_path
+                "[f=hls:hls_time=2:hls_list_size=10:hls_flags=delete_segments+independent_segments]'{}'",
+                format!("{}/stream.m3u8", hls_path)
             ));
 
             // 2b. Secondary Low-Res HLS Output (for Dashboard Monitor)

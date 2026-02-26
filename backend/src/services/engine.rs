@@ -790,7 +790,7 @@ impl PlayoutEngine {
                 std::fs::create_dir_all(hls_preview_path).ok();
 
                 // Main engine always pushes to an internal master feed
-                let output_url = "rtmp://mediamtx:1935/master".to_string();
+                let output_url = "rtmp://backend:backend@mediamtx:1935/master".to_string();
 
                 let logo_path = if settings.overlay_enabled {
                     settings
@@ -1389,7 +1389,8 @@ impl PlayoutEngine {
         let ffmpeg = FFmpegService::new();
         let mediamtx_host =
             std::env::var("MEDIAMTX_HOST").unwrap_or_else(|_| "localhost".to_string());
-        let master_url = format!("rtmp://{}:1935/master", mediamtx_host);
+        // Use internal credentials for the master feed to ensure reliable publishing
+        let master_url = format!("rtmp://backend:backend@{}:1935/master", mediamtx_host);
 
         // 1. RTMP
         let rtmp_enabled = settings.rtmp_enabled
