@@ -1,25 +1,8 @@
 # MediaMTX Configuration for ONEPA Playout PRO
 
-# Global authentication
-authMethod: internal
-authInternalUsers:
-  - user: "backend"
-    pass: "backend"
-    permissions:
-      - action: api
-      - action: read
-      - action: publish
-  # Combined rule: allow internal IPs to read/publish without password, others can only read
-  - user: "any"
-    pass: ""
-    ips: ["127.0.0.1", "172.16.0.0/12", "192.168.0.0/16"]
-    permissions:
-      - action: publish
-      - action: read
-  - user: "any"
-    pass: ""
-    permissions:
-      - action: read
+# No global authentication method - using path-based IP restrictions instead
+authMethod: none
+
 
 # Listeners
 rtmp: yes
@@ -47,4 +30,8 @@ apiAddress: :9997
 # Path settings
 paths:
   all:
+    # Restrict publishing to internal networks (Docker, Local LAN, VPN)
+    publishIPs: ["127.0.0.1", "172.16.0.0/12", "192.168.0.0/16"]
+    # Reading is public/anonymous
     source: publisher
+
