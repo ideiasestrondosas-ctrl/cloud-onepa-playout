@@ -517,13 +517,10 @@ impl FFmpegService {
         let mut filter_complex = String::new();
 
         // Video Chain
-        // 1. Initial scale of input video (Source for everyone)
+        // 1. Initial scale of input video
         filter_complex.push_str(&format!("[0:v]scale={}[v_src_scaled];", resolution));
 
-        // 2. Split for Overlay chain vs Clean chain
-        filter_complex.push_str("[v_src_scaled]split=2[v_for_overlay][v_clean_src];");
-
-        // 3. Prepare graphics backdrop (if has logo)
+        // 2. Prepare graphics backdrop (if has logo)
         if has_logo {
             // Get opacity and scale values with defaults
             let opacity = overlay_opacity.unwrap_or(1.0).clamp(0.0, 1.0);
@@ -538,23 +535,15 @@ impl FFmpegService {
             };
 
             filter_complex.push_str(&format!(
-                "[1:v]scale=iw*{}:ih*{},format=rgba,colorchannelmixer=aa={}[logo];[v_for_overlay][logo]overlay={}[v_out];",
+                "[1:v]scale=iw*{}:ih*{},format=rgba,colorchannelmixer=aa={}[logo];[v_src_scaled][logo]overlay={}[v_out];",
                 scale, scale, opacity, pos_coords
             ));
         } else {
-            filter_complex.push_str("[v_for_overlay]copy[v_out];");
+            filter_complex.push_str("[v_src_scaled]copy[v_out];");
         }
 
-        // 4. Create CLEAN preview (no logo, mid-res for editor)
-        filter_complex.push_str("[v_clean_src]scale=640:360,fps=25[v_clean];");
-
-        // 5. Create MONITOR preview (with logo, ultra low res for dashboard)
-        filter_complex.push_str("[v_out]split=2[v_main][v_monitor_pre];");
-        filter_complex.push_str("[v_monitor_pre]scale=320:180,fps=15[v_monitor];");
-
-        // Audio Chain (Standardize to EBU R128)
-        // Audio is shared: [a_out] goes to main, monitor/clean can share [a_monitor] if needed
-        filter_complex.push_str("[0:a]volume=0.8,asplit=2[a_out][a_monitor]");
+        // 3. Audio Chain (Standardize to EBU R128)
+        filter_complex.push_str("[0:a]volume=0.8[a_out]");
 
         // 3. CODEC SELECTION LOGIC
         // Force transcoding if logo/overlay is enabled, even if "copy" was selected.
@@ -594,6 +583,7 @@ impl FFmpegService {
                         "-preset".to_string(), "ultrafast".to_string(),
                         "-profile:v".to_string(), "high".to_string(),
                         "-level".to_string(), "4.1".to_string(),
+                        "-threads".to_string(), "4".to_string(),
                         "-bf".to_string(), "0".to_string(),
                     ]);
                 } else if self.hw_encoder.contains("vaapi") {
@@ -914,78 +904,10 @@ impl FFmpegService {
                 "-f".to_string(),
                 "tee".to_string(),
                 "-map".to_string(),
-                "[v_main]".to_string(),
+                "[v_out]".to_string(),
                 "-map".to_string(),
                 "[a_out]".to_string(),
                 tee_outputs.join("|"),
-            ]);
-
-            // 5. SECONDARY OUTPUT: Low-Res Monitor HLS (320x180 @ 250k, ultrafast)
-            args.extend(vec![
-                "-map".to_string(),
-                "[v_monitor]".to_string(),
-                "-c:v".to_string(),
-                "libx264".to_string(),
-                "-preset".to_string(),
-                "ultrafast".to_string(),
-                "-tune".to_string(),
-                "zerolatency".to_string(),
-                "-b:v".to_string(),
-                "250k".to_string(),
-                "-maxrate".to_string(),
-                "300k".to_string(),
-                "-bufsize".to_string(),
-                "500k".to_string(),
-                "-g".to_string(),
-                "30".to_string(),
-                "-map".to_string(),
-                "[a_monitor]".to_string(),
-                "-c:a".to_string(),
-                "aac".to_string(),
-                "-b:a".to_string(),
-                "64k".to_string(),
-                "-ar".to_string(),
-                "22050".to_string(),
-                "-f".to_string(),
-                "hls".to_string(),
-                "-hls_time".to_string(),
-                "2".to_string(),
-                "-hls_list_size".to_string(),
-                "8".to_string(),
-                "-hls_flags".to_string(),
-                "delete_segments+independent_segments".to_string(),
-                format!("{}/stream_low.m3u8", hls_path),
-            ]);
-
-            // 6. CLEAN OUTPUT: No-overlay stream for GraphicsEditor preview (only when logo active)
-            // Restore clean mapping for Graphics menu as requested by user
-            args.extend(vec![
-                "-map".to_string(),
-                "[v_clean]".to_string(),
-                "-c:v".to_string(),
-                "libx264".to_string(), // Software encode for preview stability
-                "-preset".to_string(),
-                "ultrafast".to_string(),
-                "-tune".to_string(),
-                "zerolatency".to_string(),
-                "-b:v".to_string(),
-                "600k".to_string(),
-                "-maxrate".to_string(),
-                "600k".to_string(),
-                "-bufsize".to_string(),
-                "1200k".to_string(),
-                "-g".to_string(),
-                format!("{}", gop),
-                "-an".to_string(), // No audio needed for clean graphics preview
-                "-f".to_string(),
-                "hls".to_string(),
-                "-hls_time".to_string(),
-                "2".to_string(),
-                "-hls_list_size".to_string(),
-                "8".to_string(),
-                "-hls_flags".to_string(),
-                "delete_segments+independent_segments".to_string(),
-                format!("{}/stream_clean.m3u8", hls_path),
             ]);
         } else {
             // Single output

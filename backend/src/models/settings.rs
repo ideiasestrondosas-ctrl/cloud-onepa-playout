@@ -85,7 +85,7 @@ impl Settings {
         let rtmp = self
             .rtmp_output_url
             .as_deref()
-            .unwrap_or("rtmp://mediamtx:1935/live_stream");
+            .unwrap_or("rtmp://mediamtx:1935/live/stream");
         urls.insert(
             "RTMP".to_string(),
             rtmp.replace("mediamtx", host)
@@ -97,7 +97,7 @@ impl Settings {
         let srt = self
             .srt_output_url
             .as_deref()
-            .unwrap_or("srt://mediamtx:8890?mode=caller&streamid=publish:live_stream_srt");
+            .unwrap_or("srt://mediamtx:8890?mode=caller&streamid=publish:live/stream_srt");
         let mut srt_final = srt
             .replace("mediamtx", host)
             .replace("localhost", host)
@@ -107,7 +107,7 @@ impl Settings {
         if srt_final.contains("streamid=publish") {
             srt_final = srt_final.replace("streamid=publish", "streamid=read");
         } else if !srt_final.contains("streamid=") {
-            srt_final = format!("{}&streamid=read:live_stream_srt", srt_final);
+            srt_final = format!("{}&streamid=read:live/stream_srt", srt_final);
         }
         urls.insert("SRT".to_string(), srt_final);
 

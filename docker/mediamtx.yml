@@ -9,20 +9,11 @@ authInternalUsers:
       - action: api
       - action: read
       - action: publish
-  # Allow internal IPs to publish (Anonymous User for FFmpeg)
-  - user: "any"
-    pass: ""
-    ips: ["127.0.0.1", "172.16.0.0/12", "192.168.0.0/16"]
-    permissions:
-      - action: publish
-      - action: read
-      - action: api
-  # Allow everyone else to read ONLY (Anonymous User for VLC)
+  # Allow anonymous read
   - user: "any"
     pass: ""
     permissions:
       - action: read
-      - action: api
 
 # Listeners
 rtmp: yes
@@ -50,5 +41,6 @@ apiAddress: :9997
 # Path settings
 paths:
   all:
-    # Restrict path source (Reading is already handled by 'any' user above)
-    source: publisher
+    # Restrict publishing to Docker subnets and local networks
+    # Reading is universally permitted without ANY authentication handshake overhead
+    publishIPs: [127.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 10.0.0.0/8]

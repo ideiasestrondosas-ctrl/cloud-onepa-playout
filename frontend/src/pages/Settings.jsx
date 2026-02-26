@@ -1530,12 +1530,12 @@ function Settings() {
                         size="small"
                         fullWidth
                         label="RTMP (Mestre de Distribuição Local)"
-                        value={`rtmp://${window.location.hostname}:1935/live_stream`}
+                        value={`rtmp://${window.location.hostname}:1935/live/stream`}
                         InputProps={{
                           readOnly: true,
                           sx: { fontFamily: 'monospace', fontSize: '0.85rem', bgcolor: 'rgba(0,0,0,0.2)' },
                           endAdornment: (
-                            <IconButton onClick={() => handleCopyToClipboard(`rtmp://${window.location.hostname}:1935/live_stream`, 'Link RTMP copiado!')}>
+                            <IconButton onClick={() => handleCopyToClipboard(`rtmp://${window.location.hostname}:1935/live/stream`, 'Link RTMP copiado!')}>
                               <ContentCopyIcon fontSize="small" />
                             </IconButton>
                           )
@@ -1549,13 +1549,13 @@ function Settings() {
                         size="small"
                         fullWidth
                         label="SRT - Secure Reliable Transport (UDP)"
-                        value={`srt://${window.location.hostname}:8890?streamid=read:live_stream_srt`}
+                        value={`srt://${window.location.hostname}:8890?streamid=read:live/stream_srt`}
                         helperText="Atenção: A porta deve estar aberta em UDP. Clients devem solicitar explicitamente 'read:'"
                         InputProps={{
                           readOnly: true,
                           sx: { fontFamily: 'monospace', fontSize: '0.85rem', bgcolor: 'rgba(0,0,0,0.2)' },
                           endAdornment: (
-                            <IconButton onClick={() => handleCopyToClipboard(`srt://${window.location.hostname}:8890?streamid=read:live_stream_srt`, 'Link SRT copiado!')}>
+                            <IconButton onClick={() => handleCopyToClipboard(`srt://${window.location.hostname}:8890?streamid=read:live/stream_srt`, 'Link SRT copiado!')}>
                               <ContentCopyIcon fontSize="small" />
                             </IconButton>
                           )

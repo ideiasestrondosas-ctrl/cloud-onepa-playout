@@ -86,7 +86,7 @@ fi
 
 # HLS Path via MediaMTX Internal
 echo -n "Checking HLS Service Path... "
-if docker exec alpha-frontend curl -s -o /dev/null -w "%{http_code}" http://mediamtx:8888/live_stream/index.m3u8 | grep -q "200"; then
+if docker exec alpha-frontend curl -s -o /dev/null -w "%{http_code}" http://mediamtx:8888/live/stream/index.m3u8 | grep -q "200"; then
     echo -e "${GREEN}✅ READY${NC}"
 else
     echo -e "${NC}○ STANDBY${NC} (No active stream)"

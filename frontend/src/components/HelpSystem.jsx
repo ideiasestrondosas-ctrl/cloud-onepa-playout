@@ -301,7 +301,7 @@ const HelpSettings = () => (
 
     <Section title="Emissão & Saída">
       <Kv k="Tipo de Saída" v="RTMP, SRT, UDP, HLS. Define o protocolo principal de emissão." />
-      <Kv k="URL de Saída" v="Endereço destino (ex: rtmp://192.168.1.100:1935/live_stream)." />
+      <Kv k="URL de Saída" v="Endereço destino (ex: rtmp://192.168.1.100:1935/live/stream)." />
       <Kv k="Resolução" v="1920×1080 (Full HD), 1280×720 (HD), 720×576 (SD)." />
       <Kv k="Bitrate de Vídeo" v="Em kbps. Recomendado: 4000 para HD, 2000 para SD." />
       <Kv k="FPS" v="Frames por segundo: 25 (PAL/Europa), 30 (NTSC/EUA), 50/60 (progressivo)." />
