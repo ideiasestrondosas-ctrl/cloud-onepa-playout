@@ -5,8 +5,8 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB.svg)](https://reactjs.org/)
-[![Version](https://img.shields.io/badge/Version-2.2.0-ALPHA.29-PRO-blue.svg)]()
-[![Status](https://img.shields.io/badge/Status-Stable-green.svg)]()
+[![Version](https://img.shields.io/badge/Version-2.2.0-ALPHA.29-PRO-blue.svg)](https://github.com/onepa/cloud-onepa-playout)
+[![Status](https://img.shields.io/badge/Status-Stable-green.svg)](https://github.com/onepa/cloud-onepa-playout)
 
 ## 📖 Sobre
 
@@ -133,12 +133,12 @@ Este sistema foi desenvolvido e validado em ambientes de alta performance e virt
 - **ALPHA/Staging Testing**:
   - **Plataforma**: Virtualização Proxmox VE
   - **Hardware**: Servidor Intel Xeon (Dedicated 4 Cores)
-  - **Especificações**: 4GB RAM, 32GB SSD
-  - **OS**: Debian 12 (Linux)
+  - **Especificações**: 4GB RAM, 80GB SSD
+  - **OS**: Ubuntu 24.04 64bit (Linux 6.8.0-100-generic)
 
 > _Dados aproximados baseados na versão v2.2.0-ALPHA.29-PRO
 
-## 🎯 Roadmap & Future
+## 🎯 Roadmap & Future (v2.2.0-ALPHA.29-PRO — 2026-02-27)
 
 ### 📡 Phase 22: Connectivity & Live Inputs
 

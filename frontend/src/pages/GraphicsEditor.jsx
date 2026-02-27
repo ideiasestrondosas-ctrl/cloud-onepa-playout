@@ -116,13 +116,13 @@ export default function GraphicsEditor() {
         liveui: true,
         html5: { vhs: { overrideNative: true } },
         sources: [
-          { src: '/hls/stream_clean.m3u8', type: 'application/x-mpegURL' },
+          { src: '/hls-live/stream_clean/index.m3u8', type: 'application/x-mpegURL' },
         ],
       });
       cleanPlayerRef.current.on('error', () => {
         // Fallback to low quality stream if clean not yet available
         if (cleanPlayerRef.current) {
-          cleanPlayerRef.current.src({ src: '/hls/stream_low.m3u8', type: 'application/x-mpegURL' });
+          cleanPlayerRef.current.src({ src: '/hls-live/stream_clean/index.m3u8', type: 'application/x-mpegURL' });
         }
       });
     }

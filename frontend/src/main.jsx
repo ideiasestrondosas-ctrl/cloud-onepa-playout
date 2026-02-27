@@ -77,7 +77,7 @@ class GlobalErrorBoundary extends React.Component {
   }
 }
 
-console.log('🚀 Cloud Onepa Playout — v2.2.0-ALPHA.19-PRO booting...')
+console.log('🚀 Cloud Onepa Playout — v2.2.0-ALPHA.29-PRO booting...')
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <GlobalErrorBoundary>

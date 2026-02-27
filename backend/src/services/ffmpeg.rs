@@ -521,6 +521,10 @@ impl FFmpegService {
         filter_complex.push_str(&format!("[0:v]scale={}[v_src_scaled];", resolution));
 
         // 2. Prepare graphics backdrop (if has logo)
+        // We split the source so we can send a "clean" feed (without logo) to the Graphics editor preview.
+        filter_complex.push_str("[v_src_scaled]split=2[v_to_logo][v_clean_scaled];");
+        filter_complex.push_str("[v_clean_scaled]scale=640:-2[v_clean];");
+
         if has_logo {
             // Get opacity and scale values with defaults
             let opacity = overlay_opacity.unwrap_or(1.0).clamp(0.0, 1.0);
@@ -535,15 +539,15 @@ impl FFmpegService {
             };
 
             filter_complex.push_str(&format!(
-                "[1:v]scale=iw*{}:ih*{},format=rgba,colorchannelmixer=aa={}[logo];[v_src_scaled][logo]overlay={}[v_out];",
+                "[1:v]scale=iw*{}:ih*{},format=rgba,colorchannelmixer=aa={}[logo];[v_to_logo][logo]overlay={}[v_out];",
                 scale, scale, opacity, pos_coords
             ));
         } else {
-            filter_complex.push_str("[v_src_scaled]copy[v_out];");
+            filter_complex.push_str("[v_to_logo]copy[v_out];");
         }
 
-        // 3. Audio Chain (Standardize to EBU R128)
-        filter_complex.push_str("[0:a]volume=0.8[a_out]");
+        // 3. Audio Chain (Standardize to EBU R128 and split for dual output)
+        filter_complex.push_str("[0:a]volume=0.8,asplit=2[a_out1][a_out2]");
 
         // 3. CODEC SELECTION LOGIC
         // Force transcoding if logo/overlay is enabled, even if "copy" was selected.
@@ -841,16 +845,38 @@ impl FFmpegService {
             "flv" // Default fallback
         };
 
-        // 4. OUTPUT MAPPING & FORMAT (Single RTMP Output for MediaMTX Internal HLS)
-        // MediaMTX port 8888 will now serve HLS from this RTMP push.
+        // 4. OUTPUT MAPPING & FORMAT (Dual Output: Branded Master + Clean Graphics Background)
+        // Master Branded Output
         args.extend(vec![
             "-f".to_string(),
             "flv".to_string(),
             "-map".to_string(),
             "[v_out]".to_string(),
             "-map".to_string(),
-            "[a_out]".to_string(),
+            "[a_out1]".to_string(),
             final_output_url.to_string(),
+        ]);
+
+        // Clean Background Preview (Lower resolution, high compression for minimal CPU impact)
+        let clean_output_url = final_output_url.replace("master", "stream_clean");
+        args.extend(vec![
+            "-f".to_string(),
+            "flv".to_string(),
+            "-map".to_string(),
+            "[v_clean]".to_string(),
+            "-map".to_string(),
+            "[a_out2]".to_string(),
+            "-c:v".to_string(),
+            "libx264".to_string(),
+            "-preset".to_string(),
+            "ultrafast".to_string(),
+            "-crf".to_string(),
+            "30".to_string(),
+            "-c:a".to_string(),
+            "aac".to_string(), // Encode audio too for the second stream
+            "-b:a".to_string(),
+            "64k".to_string(),
+            clean_output_url,
         ]);
 
         // Log the complete FFmpeg command for debugging
