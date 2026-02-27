@@ -431,7 +431,7 @@ export default function Dashboard() {
   const handleLaunchVLC = () => {
     setVlcLogs([]);
     setVlcDialogOpen(true);
-    const hlsUrl = `${window.location.origin}/hls/stream.m3u8`;
+    const hlsUrl = `${window.location.origin}/hls-live/master/index.m3u8`;
     const vlcProtocolUrl = `vlc://${hlsUrl}`;
 
     addVlcLog('Iniciando Smart Launcher VLC...', 'info');
@@ -881,7 +881,7 @@ export default function Dashboard() {
             <ReactPlayer
               key={playerKey}
               ref={playerRef}
-              url="/hls/stream_low.m3u8"
+              url="/hls-live/master/index.m3u8"
               playing={!previewPaused}
               muted={previewMuted}
               width="100%"
@@ -912,12 +912,9 @@ export default function Dashboard() {
                 icon={<PlayIcon />}
                 label="URL HLS (Clique para copiar)"
                 onClick={() => {
-                  // Usa o host atual garantindo porta 3011 para nginx (HLS bypass)
+                  // Usa o host atual e proxy do nginx
                   let hlsOrigin = window.location.origin;
-                  if (!hlsOrigin.includes(':3011')) {
-                    hlsOrigin = `${window.location.protocol}//${window.location.hostname}:3011`;
-                  }
-                  const url = `${hlsOrigin}/hls/stream.m3u8`;
+                  const url = `${hlsOrigin}/hls-live/master/index.m3u8`;
 
                   // Fallback for non-HTTPS or Direct IP access where navigator.clipboard might fail
                   const copyFunc = (text) => {

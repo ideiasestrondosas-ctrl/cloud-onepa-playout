@@ -1,19 +1,14 @@
 # MediaMTX Configuration for ONEPA Playout PRO
-
-# Internal authentication
+ 
+# Authentication settings
 authMethod: internal
 authInternalUsers:
-  - user: "backend"
-    pass: "backend"
+  - user: "any"
+    pass: ""
     permissions:
       - action: api
       - action: read
       - action: publish
-  # Allow anonymous read
-  - user: "any"
-    pass: ""
-    permissions:
-      - action: read
 
 # Listeners
 rtmp: yes
@@ -29,10 +24,12 @@ webrtcAddress: :8989
 srtAddress: :8890
 
 # HLS settings
-hlsVariant: lowLatency
-hlsSegmentCount: 5
+hlsVariant: fmp4
+hlsSegmentCount: 7
 hlsSegmentDuration: 2s
 hlsPartDuration: 200ms
+hlsMuxerCloseAfter: 60s
+hlsAlwaysRemux: yes
 
 # API settings
 api: yes
@@ -40,7 +37,10 @@ apiAddress: :9997
 
 # Path settings
 paths:
+  # Master feed (FFmpeg push point)
+  master:
+    # RTMP pushes to this path will be accepted anonymously
+  # Final distribution point (relayed from master)
+  live/stream:
+    # This matches the internal relay path in engine.rs
   all:
-    # Restrict publishing to Docker subnets and local networks
-    # Reading is universally permitted without ANY authentication handshake overhead
-    publishIPs: [127.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 10.0.0.0/8]

@@ -507,6 +507,8 @@ impl PlayoutEngine {
         start_time: NaiveTime,
         settings: &Settings,
     ) -> Result<(), String> {
+        let mediamtx_host =
+            std::env::var("MEDIAMTX_HOST").unwrap_or_else(|_| "localhost".to_string());
         let now = Local::now().time();
         let duration_since_start = now - start_time;
         let seconds_since_start = duration_since_start.num_milliseconds() as f64 / 1000.0;
@@ -789,8 +791,8 @@ impl PlayoutEngine {
                 let hls_preview_path = hls_preview_path_str.as_str();
                 std::fs::create_dir_all(hls_preview_path).ok();
 
-                // Main engine always pushes to an internal master feed
-                let output_url = "rtmp://backend:backend@mediamtx:1935/master".to_string();
+                // Main engine always pushes to an internal master feed. Anonymous publishing in mediamtx.yml
+                let output_url = format!("rtmp://{}:1935/master", mediamtx_host);
 
                 let logo_path = if settings.overlay_enabled {
                     settings
@@ -941,7 +943,6 @@ impl PlayoutEngine {
             let client = reqwest::Client::new();
             if let Ok(resp) = client
                 .get(format!("http://{}:9997/v3/paths/list", mediamtx_host)) // Always use localhost for backend-to-mediamtx on host
-                .basic_auth("backend", Some("backend"))
                 .send()
                 .await
             {
@@ -1389,8 +1390,8 @@ impl PlayoutEngine {
         let ffmpeg = FFmpegService::new();
         let mediamtx_host =
             std::env::var("MEDIAMTX_HOST").unwrap_or_else(|_| "localhost".to_string());
-        // Use internal credentials for the master feed to ensure reliable publishing
-        let master_url = format!("rtmp://backend:backend@{}:1935/master", mediamtx_host);
+        // Use standard URL for internal push. Anonymous publishing allowed in mediamtx.yml
+        let master_url = format!("rtmp://{}:1935/master", mediamtx_host);
 
         // 1. RTMP
         let rtmp_enabled = settings.rtmp_enabled
@@ -1689,7 +1690,6 @@ impl PlayoutEngine {
                 Duration::from_secs(1),
                 client
                     .get(api_url)
-                    .basic_auth("backend", Some("backend"))
                     .send(),
             )
             .await
@@ -1714,10 +1714,10 @@ impl PlayoutEngine {
                             };
 
                             if let Some(path) = master_path {
-                                if let Some(ready) =
+                                if let Some(ready_val) =
                                     path.get("ready").or_else(|| path.get("sourceReady"))
                                 {
-                                    let is_ready = ready.as_bool().unwrap_or(false);
+                                    let is_ready = ready_val.as_bool().unwrap_or(false);
                                     if !is_ready {
                                         log::debug!("[DEBUG-RELAY] Master feed 'master' found but NOT READY (waiting for frames). Distribution delayed.");
                                         return false;
@@ -1730,7 +1730,7 @@ impl PlayoutEngine {
                 } else {
                     log::warn!("[DEBUG-RELAY] MediaMTX API returned error status: {} for {}", resp.status(), api_url);
                 }
-            } else if let Ok(Err(e)) = tokio::time::timeout(Duration::from_secs(1), client.get(api_url).basic_auth("backend", Some("backend")).send()).await {
+            } else if let Ok(Err(e)) = tokio::time::timeout(Duration::from_secs(1), client.get(api_url).send()).await {
                  log::error!("[DEBUG-RELAY] Failed to connect to MediaMTX API: {}", e);
             }
         }

@@ -109,6 +109,8 @@ impl Settings {
         } else if !srt_final.contains("streamid=") {
             srt_final = format!("{}&streamid=read:live/stream_srt", srt_final);
         }
+        // Change mode to listener for readers
+        srt_final = srt_final.replace("mode=caller", "mode=listener");
         urls.insert("SRT".to_string(), srt_final);
 
         // 3. UDP (Smart formatting)
@@ -124,10 +126,10 @@ impl Settings {
         };
         urls.insert("UDP".to_string(), udp_final);
 
-        // 4. HLS (Served via Nginx/Frontend)
+        // 4. HLS (proxied via nginx at /hls-live/ → mediamtx:8888)
         urls.insert(
             "HLS".to_string(),
-            format!("http://{}/hls/stream.m3u8", host),
+            format!("http://{}/hls-live/master/index.m3u8", host),
         );
 
         // 5. MASTER

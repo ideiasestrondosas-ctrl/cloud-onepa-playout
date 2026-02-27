@@ -80,10 +80,6 @@ services:
       - "8888:8888" # HLS
       - "8992:8989" # WebRTC
       - "8890:8890/udp" # SRT
-    environment:
-      # Use internal auth defined in mediamtx.yml
-      - MTX_PATHS_ALL_SOURCE=publisher
-      - MTX_PATHS_MASTER_SOURCE=publisher
     volumes:
       - ./docker/mediamtx.yml:/mediamtx.yml:ro
     networks:

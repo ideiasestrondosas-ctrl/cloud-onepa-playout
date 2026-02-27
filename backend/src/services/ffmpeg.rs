@@ -442,7 +442,7 @@ impl FFmpegService {
         output_url: &str,
         offset: f64,
         settings: &Settings,
-        hls_preview_path: Option<&str>,
+        _hls_preview_path: Option<&str>,
         logo_path: Option<&str>,
     ) -> Result<std::process::Child, String> {
         let resolution = &settings.resolution;
@@ -482,10 +482,10 @@ impl FFmpegService {
             ]);
         }
 
+        args.extend(vec!["-i".to_string(), input_path.to_string()]);
         if offset > 0.0 {
             args.extend(vec!["-ss".to_string(), offset.to_string()]);
         }
-        args.extend(vec!["-i".to_string(), input_path.to_string()]);
 
         // Input 1: Logo/Overlay (if present)
         let has_logo = if let Some(logo_path) = logo_path {
@@ -694,6 +694,8 @@ impl FFmpegService {
                 "aac".to_string(),
                 "-b:a".to_string(),
                 audio_bitrate.to_string(),
+                "-ac".to_string(),
+                "2".to_string(),
                 "-ar".to_string(),
                 "44100".to_string(),
             ]),
@@ -822,7 +824,7 @@ impl FFmpegService {
             }
         }
 
-        let output_format = if final_output_url.starts_with("rtmp://") {
+        let _output_format = if final_output_url.starts_with("rtmp://") {
             "flv"
         } else if final_output_url.starts_with("srt://") || final_output_url.starts_with("udp://") {
             // Add pkt_size=1316 for MPEG-TS over UDP/SRT to avoid fragmentation
@@ -839,88 +841,17 @@ impl FFmpegService {
             "flv" // Default fallback
         };
 
-        // 4. OUTPUT MAPPING & FORMAT (Tee or Single)
-        // Explicitly map [v_out] and [a_out] from the filter complex
-        if let Some(hls_path) = hls_preview_path {
-            // Escape any existing single quotes for the tee muxer
-            // Only escape pipes for tee separator, colons usually don't need escaping in this context
-            // and over-escaping them can break the protocol detection.
-            let escaped_url = final_output_url.replace("|", "\\|");
-
-            let slave_url = if final_output_url.starts_with("srt://") {
-                // SRT NEEDS fifo + onfail=ignore to prevents blocking the whole pipeline
-                format!(
-                    "[f=fifo:fifo_format=mpegts:onfail=ignore:drop_pkts_on_overflow=1:restart_with_keyframe=1:queue_size=60000]'{}'",
-                    escaped_url
-                )
-            } else {
-                // Simplified RTMP output and other direct mappings
-                format!("[f={}]'{}'", output_format, escaped_url)
-            };
-
-            // 1. Primary Distribution Output (RTMP/SRT)
-            let mut tee_outputs = vec![slave_url];
-
-            // 2. Mandatory HLS Output (for internal preview)
-            tee_outputs.push(format!(
-                "[f=hls:hls_time=2:hls_list_size=10:hls_flags=delete_segments+independent_segments]'{}'",
-                format!("{}/stream.m3u8", hls_path)
-            ));
-
-            // 2b. Secondary Low-Res HLS Output (for Dashboard Monitor)
-            // We use a separate sub-folder to avoid manifest collision, or separate filename
-            // Using different filename in the same dir for simplicity if FFmpeg allows it via map
-            // BUT tee muxer usually wants different files.
-            // Better: Add a dedicated low-res scaler and output
-            // Let's stick to the plan of a dedicated low-res segments chain
-            // We need a separate scaling chain for the low-res output
-            // This requires modifying the filter_complex to have two video outputs.
-
-            // 3. Optional DASH Output
-            if settings.dash_enabled {
-                if let Some(ref url) = settings.dash_output_url {
-                    tee_outputs.push(format!(
-                        "[f=dash:window_size=5:extra_window_size=5:remove_at_exit=1:dash_segment_type=webm]'{}'",
-                        url
-                    ));
-                }
-            }
-
-            // 4. Optional MSS Output (Smooth Streaming)
-            if settings.mss_enabled {
-                if let Some(ref url) = settings.mss_output_url {
-                    tee_outputs.push(format!("[f=ismv]'{}'", url));
-                }
-            }
-
-            // 5. Optional RIST Output (Reliable Transport)
-            if settings.rist_enabled {
-                if let Some(ref url) = settings.rist_output_url {
-                    tee_outputs.push(format!("[f=rist:pkt_size=1316]'{}'", url));
-                }
-            }
-
-            args.extend(vec![
-                "-f".to_string(),
-                "tee".to_string(),
-                "-map".to_string(),
-                "[v_out]".to_string(),
-                "-map".to_string(),
-                "[a_out]".to_string(),
-                tee_outputs.join("|"),
-            ]);
-        } else {
-            // Single output
-            args.extend(vec![
-                "-f".to_string(),
-                output_format.to_string(),
-                "-map".to_string(),
-                "[v_out]".to_string(),
-                "-map".to_string(),
-                "[a_out]".to_string(),
-                final_output_url.to_string(),
-            ]);
-        }
+        // 4. OUTPUT MAPPING & FORMAT (Single RTMP Output for MediaMTX Internal HLS)
+        // MediaMTX port 8888 will now serve HLS from this RTMP push.
+        args.extend(vec![
+            "-f".to_string(),
+            "flv".to_string(),
+            "-map".to_string(),
+            "[v_out]".to_string(),
+            "-map".to_string(),
+            "[a_out]".to_string(),
+            final_output_url.to_string(),
+        ]);
 
         // Log the complete FFmpeg command for debugging
         log::info!("FFmpeg command: {} {}", self.ffmpeg_path, args.join(" "));
