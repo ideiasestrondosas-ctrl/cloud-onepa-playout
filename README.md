@@ -5,7 +5,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB.svg)](https://reactjs.org/)
-[![Version](https://img.shields.io/badge/Version-2.2.0-ALPHA.30-PRO-blue.svg)](https://github.com/onepa/cloud-onepa-playout)
+[![Version](https://img.shields.io/badge/Version-2.2.0-ALPHA.31-PRO-blue.svg)](https://github.com/onepa/cloud-onepa-playout)
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)](https://github.com/onepa/cloud-onepa-playout)
 
 ## 📖 Sobre
@@ -105,7 +105,7 @@ Ver [docs/INSTALL.md](docs/INSTALL.md) para instruções detalhadas.
 - **Container**: Docker + Docker Compose
 - **Auth**: JWT
 
-## 📊 Estatísticas de Desenvolvimento (v2.2.0-ALPHA.30-PRO)
+## 📊 Estatísticas de Desenvolvimento (v2.2.0-ALPHA.31-PRO)
 
 Este projeto representa um esforço significativo de engenharia para criar uma solução de playout robusta e moderna.
 
@@ -136,7 +136,7 @@ Este sistema foi desenvolvido e validado em ambientes de alta performance e virt
   - **Especificações**: 4GB RAM, 80GB SSD
   - **OS**: Ubuntu 24.04 64bit (Linux 6.8.0-100-generic)
 
-> _Dados aproximados baseados na versão v2.2.0-ALPHA.30-PRO
+> _Dados aproximados baseados na versão v2.2.0-ALPHA.31-PRO
 
 ## 🎯 Roadmap & Future (v2.2.0-ALPHA.30-PRO — 2026-03-01)
 
@@ -185,7 +185,7 @@ _Focus: Innovation and High Availability_
 
 Ver [RELEASE_NOTES.md](RELEASE_NOTES.md) para detalhes completos.
 
-### Versão Atual: v2.2.0-ALPHA.30-PRO ()
+### Versão Atual: v2.2.0-ALPHA.31-PRO ()
 
 **Principais Novidades (VLC Push + Audit Visibility Fixes):**
 - 📡 **UDP Push Stability**: O stream UDP interno migrou para um modelo de "Push-to-Localhost" (`udp://@:1234`), erradicando os falsos-positivos "cannot peek" inerentes a conexões VLC baseadas em listeners, garantindo visualização sem perdas.
