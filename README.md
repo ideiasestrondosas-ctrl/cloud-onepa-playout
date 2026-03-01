@@ -138,7 +138,7 @@ Este sistema foi desenvolvido e validado em ambientes de alta performance e virt
 
 > _Dados aproximados baseados na versão v2.2.0-ALPHA.31-PRO
 
-## 🎯 Roadmap & Future (v2.2.0-ALPHA.30-PRO — 2026-03-01)
+## 🎯 Roadmap & Future (v2.2.0-ALPHA.31-PRO — 2026-03-01)
 
 ### 📡 Phase 22: Connectivity & Live Inputs
 
@@ -185,14 +185,14 @@ _Focus: Innovation and High Availability_
 
 Ver [RELEASE_NOTES.md](RELEASE_NOTES.md) para detalhes completos.
 
-### Versão Atual: v2.2.0-ALPHA.31-PRO ()
+### Versão Atual: v2.2.0-ALPHA.31-PRO (2026-03-01)
 
 **Principais Novidades (VLC Push + Audit Visibility Fixes):**
 - 📡 **UDP Push Stability**: O stream UDP interno migrou para um modelo de "Push-to-Localhost" (`udp://@:1234`), erradicando os falsos-positivos "cannot peek" inerentes a conexões VLC baseadas em listeners, garantindo visualização sem perdas.
 - 📊 **Precisão do Dashboard de Auditoria (`audit_ports.sh`)**: Integradas consultas reais na API Master do MediaMTX, resolvendo o bug visual de contabilizar a zero leitores `HLS`. Agora a monitorização de utilizadores em Dashboard distingue conexões reais em HTTP/WebSockets.
 - 🐛 **UI Bugfixes de Links de Conexão**: Limpeza drástica em lógicas client-side dos placeholders de SRT e UDP, acabando com confusão de `locahost/127.0.0.1`.
 
-### Versão Anterior: v2.2.0-ALPHA.29-PRO (28/02/2026)
+### Versão Anterior: v2.2.0-ALPHA.29-PRO (2026-02-27)
 
 **Principais Novidades (Gold Standard V2 & Protocol Stability):**
 - 📡 **"Gold Standard V2" Multiplexer**: Implementação definitiva do algoritmo perfeito para muxing via FFmpeg.
