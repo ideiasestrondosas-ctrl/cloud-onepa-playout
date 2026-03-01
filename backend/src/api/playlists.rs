@@ -6,6 +6,7 @@ use chrono::{Datelike, Utc};
 use serde::Deserialize;
 use serde_json::json;
 use sqlx::PgPool;
+use std::collections::HashMap;
 use uuid::Uuid;
 
 #[derive(Deserialize)]
@@ -134,7 +135,14 @@ async fn list_playlists(
                         .collect();
 
                     playlists.sort_by(|a, b| a.name.cmp(&b.name));
-                    Ok(playlists)
+
+                    // Hydrate with fresh media metadata
+                    let mut hydrated = Vec::new();
+                    for mut pl in playlists {
+                        pl.content = hydrate_playlist_content(&pl.content, pool.get_ref()).await;
+                        hydrated.push(pl);
+                    }
+                    Ok(hydrated)
                 }
                 Err(e) => {
                     log::error!("Database error in EPG fetch: {}", e);
@@ -187,7 +195,10 @@ async fn get_playlist(pool: web::Data<PgPool>, id: web::Path<Uuid>) -> impl Resp
         .await;
 
     match result {
-        Ok(Some(playlist)) => HttpResponse::Ok().json(playlist),
+        Ok(Some(mut playlist)) => {
+            playlist.content = hydrate_playlist_content(&playlist.content, pool.get_ref()).await;
+            HttpResponse::Ok().json(playlist)
+        }
         Ok(None) => HttpResponse::NotFound().json(json!({"error": "Playlist not found"})),
         Err(_) => {
             HttpResponse::InternalServerError().json(json!({"error": "Failed to fetch playlist"}))
@@ -304,6 +315,63 @@ fn calculate_duration_from_json(content: &serde_json::Value) -> f64 {
     }
 }
 
+/// Hydrates the metadata of each PlaylistItem with the latest values from the `media` table.
+/// This is done in a single batch query to avoid N+1 performance issues.
+async fn hydrate_playlist_content(content: &serde_json::Value, pool: &PgPool) -> serde_json::Value {
+    let mut program = match serde_json::from_value::<PlaylistContent>(content.clone()) {
+        Ok(pc) => pc,
+        Err(_) => return content.clone(),
+    };
+
+    // Collect all unique media_ids present in the playlist
+    let media_ids: Vec<String> = program
+        .program
+        .iter()
+        .filter_map(|item| item.media_id.clone())
+        .collect::<std::collections::HashSet<_>>()
+        .into_iter()
+        .collect();
+
+    if media_ids.is_empty() {
+        return content.clone();
+    }
+
+    // Batch-fetch fresh metadata for every media_id
+    let rows: Vec<(String, Option<serde_json::Value>)> = match sqlx::query_as(
+        "SELECT id::text, metadata FROM media WHERE id::text = ANY($1)",
+    )
+    .bind(&media_ids)
+    .fetch_all(pool)
+    .await
+    {
+        Ok(r) => r,
+        Err(e) => {
+            log::warn!("[EPG Hydration] Could not fetch media metadata: {}", e);
+            return content.clone();
+        }
+    };
+
+    // Build a lookup map: media_id -> fresh metadata
+    let meta_map: HashMap<String, serde_json::Value> = rows
+        .into_iter()
+        .filter_map(|(id, meta)| meta.map(|m| (id, m)))
+        .collect();
+
+    // Replace stale metadata in each PlaylistItem
+    for item in &mut program.program {
+        if let Some(media_id) = &item.media_id {
+            if let Some(fresh_meta) = meta_map.get(media_id) {
+                item.metadata = Some(fresh_meta.clone());
+            }
+        }
+    }
+
+    match serde_json::to_value(program) {
+        Ok(v) => v,
+        Err(_) => content.clone(),
+    }
+}
+
 async fn get_epg(pool: web::Data<PgPool>) -> impl Responder {
     let settings = match sqlx::query_as::<_, Settings>("SELECT * FROM settings WHERE id = TRUE")
         .fetch_one(pool.get_ref())
@@ -393,10 +461,13 @@ async fn get_epg(pool: web::Data<PgPool>) -> impl Responder {
                             is_active
                         );
 
+                        // Hydrate with fresh media metadata before XML generation
+                        let hydrated_content = hydrate_playlist_content(content, pool.get_ref()).await;
+
                         append_playlist_to_xml(
                             &mut xml,
                             schedule.playlist_name.as_deref().unwrap_or("Untitled"),
-                            content,
+                            &hydrated_content,
                             &schedule,
                             is_active,
                             now_naive,
@@ -486,10 +557,43 @@ fn append_playlist_to_xml(
                 "    <title lang=\"pt\">{}</title>\n",
                 escape_xml(title)
             ));
-            xml.push_str(&format!(
-                "    <desc lang=\"pt\">Clip da playlist: {}</desc>\n",
-                escape_xml(playlist_name)
-            ));
+            // Use media description if available, otherwise fall back to playlist name
+            let desc = item
+                .metadata
+                .as_ref()
+                .and_then(|m| m.get("description"))
+                .and_then(|d| d.as_str())
+                .unwrap_or("");
+            let category = item
+                .metadata
+                .as_ref()
+                .and_then(|m| m.get("genre").or_else(|| m.get("tags")))
+                .and_then(|g| {
+                    if g.is_array() {
+                        g.as_array()?.first()?.as_str()
+                    } else {
+                        g.as_str()
+                    }
+                })
+                .unwrap_or("");
+
+            if !desc.is_empty() {
+                xml.push_str(&format!(
+                    "    <desc lang=\"pt\">{}</desc>\n",
+                    escape_xml(desc)
+                ));
+            } else {
+                xml.push_str(&format!(
+                    "    <desc lang=\"pt\">Clip da playlist: {}</desc>\n",
+                    escape_xml(playlist_name)
+                ));
+            }
+            if !category.is_empty() {
+                xml.push_str(&format!(
+                    "    <category lang=\"pt\">{}</category>\n",
+                    escape_xml(category)
+                ));
+            }
             xml.push_str("  </programme>\n");
 
             current_start = current_end;
