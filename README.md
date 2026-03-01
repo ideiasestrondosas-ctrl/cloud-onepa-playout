@@ -138,7 +138,7 @@ Este sistema foi desenvolvido e validado em ambientes de alta performance e virt
 
 > _Dados aproximados baseados na versão v2.2.0-ALPHA.30-PRO
 
-## 🎯 Roadmap & Future (v2.2.0-ALPHA.29-PRO — 2026-02-27)
+## 🎯 Roadmap & Future (v2.2.0-ALPHA.30-PRO — 2026-03-01)
 
 ### 📡 Phase 22: Connectivity & Live Inputs
 
@@ -187,27 +187,17 @@ Ver [RELEASE_NOTES.md](RELEASE_NOTES.md) para detalhes completos.
 
 ### Versão Atual: v2.2.0-ALPHA.30-PRO ()
 
-**Principais Novidades (Elite Storage & Reality Sync):**
+**Principais Novidades (VLC Push + Audit Visibility Fixes):**
+- 📡 **UDP Push Stability**: O stream UDP interno migrou para um modelo de "Push-to-Localhost" (`udp://@:1234`), erradicando os falsos-positivos "cannot peek" inerentes a conexões VLC baseadas em listeners, garantindo visualização sem perdas.
+- 📊 **Precisão do Dashboard de Auditoria (`audit_ports.sh`)**: Integradas consultas reais na API Master do MediaMTX, resolvendo o bug visual de contabilizar a zero leitores `HLS`. Agora a monitorização de utilizadores em Dashboard distingue conexões reais em HTTP/WebSockets.
+- 🐛 **UI Bugfixes de Links de Conexão**: Limpeza drástica em lógicas client-side dos placeholders de SRT e UDP, acabando com confusão de `locahost/127.0.0.1`.
 
-- 🔄 **Reality Sync Engine**: Novo motor de sincronização proativo que deteta ficheiros adicionados via Terminal/FTP e os regista na App com metadados e miniaturas automáticas.
-- 📊 **Storage Transparency**: Dashboard de "Gestão de Espaço" remodelado para mostrar Bibliotecas (DB) vs Realidade Física (Disco).
-- ⚠️ **Gap Detection**: Alerta automático quando o disco tem ficheiros que a aplicação ainda não identificou.
-- 🔎 **Robust Proxy Matching**: Auditoria de proxies agora é case-insensitive e suporta múltiplas extensões de origem (.MOV, .MKV).
-- ⚡ **Enhanced Streaming**: Otimização profunda em Nginx (`proxy_buffering off`, `Accept-Ranges`) e suporte a Range Requests no backend (Rust).
-- 🎬 **Instant Media Preview**: O frontend agora gere buffers de vídeo de forma profissional, permitindo previews rápidos de ficheiros grandes.
-- 🐧 **Linux Excellence**: Scripts de instalação (`install.sh`) e atualização (`update.sh`) otimizados para Ubuntu com tratamento automático de permissões e Git security.
+### Versão Anterior: v2.2.0-ALPHA.29-PRO (28/02/2026)
 
-### Versão Anterior: 2.1.0-PRO (2026-01-25)
-
-- 📅 **EPG Intelligence**: Geração automática de guias de programação (XMLTV) baseados no calendário e agendamentos recorrentes.
-- 📉 **Precisão de Sessões**: Novo motor de contagem de sessões que distingue leitores HLS (estáticos) de RTMP/UDP (ativos).
-- 🔄 **Stabilidade de Protocolos**: Refinamento dos processos FFmpeg para evitar flickering e garantir persistência do stream UDP.
-- 🎨 **EPG Timeline**: Nova vista gráfica de linha de tempo para visualização fácil de toda a programação diária.
-- 🔒 **Protocol Security**: Implementação de `read` permissions e tokens para acesso seguro a streams SRT/RTMP.
-
-### Versão Anterior: 1.9.5-PRO (2026-01-19)
-
-### Versão Anterior: 1.9.4-PRO (2026-01-18)
+**Principais Novidades (Gold Standard V2 & Protocol Stability):**
+- 📡 **"Gold Standard V2" Multiplexer**: Implementação definitiva do algoritmo perfeito para muxing via FFmpeg.
+- 🕒 **Extrema Presição em SRT/UDP**: Adição forçada da meta-regra `Annex B` para H264 e reinjeção massiva de PID tables com flags `+latm` corrigindo buffers no VLC.
+- 🎯 **Novo Tracker HLS**: Motor de auditoria atualizado para registar verdadeiras sessões proxy com Nginx.
 
 - 📡 **Distribuição Multi-Protocolo**: Suporte para DASH, MSS, RIST, RTSP e WebRTC (WHIP/WHEP).
 - 🧠 **Transcoding Inteligente**: Deteção automática de filtros para garantir estabilidade do stream em modo "Copy".

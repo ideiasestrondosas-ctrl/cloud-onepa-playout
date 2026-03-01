@@ -945,7 +945,8 @@ function Settings() {
   const fetchReleaseHistory = () => {
     // Curated local history — no external API dependency, works offline
     setReleaseHistory([
-      { version: 'v2.2.0-ALPHA.29-PRO', date: '2026-02-27', changes: ['Dual-Stream Engine: Clean feed sem logo para background de gráficos', 'Audit Ports 2.0: Detecção ativa de tráfego TCP/UDP em portas mapeadas', 'HLS Proxy Refactor: Resolução definitiva de buffering e URLs de host via Nginx', 'Docs Sync: Atualização de especificações de VM e roadmap'] },
+      { version: 'v2.2.0-ALPHA.30-PRO', date: '2026-03-01', changes: ['UDP Push Stability: Refactor agressivo do stream UDP interno migranto para "Push-to-Localhost" (udp://@:1234), erradicando buffering no VLC', 'Precisão Audit Ports 2.0: Ligações HLS ao MediaMTX agora medidas via API master, ignorando raw sockets mortos', 'UI Connection Links: Reescrita de URLs de destino na dashboard (SRT/UDP) sem "localhost" fixo para evitar confusão de interfaces'] },
+      { version: 'v2.2.0-ALPHA.29-PRO', date: '2026-02-28', changes: ['Multiplexer "Gold Standard V2": Injecção hardcore de pcr tables (40ms), +latm e force copy timestamps (-mpegts_copyts 1)', 'H.264 Annex B Force: Regra global bsf:v h264_mp4toannexb e bsf:a aac_adtstoasc forçada em UDP', 'SRT Stability: Refactoring absoluto da URI em Listeners'] },
       { version: 'v2.2.0-ALPHA.28-PRO', date: '2026-02-24', changes: ['High-Density Help System: Redesign total do menu de ajuda para máxima compactação', 'Protocol Stability: Correção no fallback de RTMP para evitar falhas em conexões externas', 'Backend Stabilization: Resolução do erro VersionMismatch e limpeza de logs', 'Script Fix: Correção na lógica de sufixos redundantes (-PRO-PRO) nos scripts de release'] },
       { version: 'v2.2.0-ALPHA.27-PRO', date: '2026-02-23', changes: ['Surgical Compact Redesign: Aperfeiçoamento massivo de paddings e margens em todas as vistas principais', 'EPG & Calendar optimization: Maior densidade vertical na cronologia e barras laterais', 'Dashboard Protocol Focus: Barra de protocolos compactada para melhor visibilidade de telemetria', 'Bug Fix: Resolvido ReferenceError de EditIcon que afectava a gestão de perfis'] },
       { version: 'v2.2.0-ALPHA.26-PRO', date: '2026-02-23', changes: ['Branding & UI Consistency: Consolidação total da identidade visual em todas as definições', 'Compact Redesign: Caminhos, Media e Playout Engine optimizados para menor ocupação vertical', 'Fix Estrutural: Resolução definitiva de erros de JSX em Settings e Layout', 'Versioning Global: Sincronização automática de versões entre DB, Backend e Frontend'] },
@@ -2442,8 +2443,8 @@ function Settings() {
               </Box>
               <Grid container spacing={1.5}>
                 {[
-                  { label: 'VERSÃO DO SISTEMA', value: settings.system_version || settings.version || 'v2.2.0-ALPHA.29-PRO', icon: <WizardIcon fontSize="small" /> },
-                  { label: 'ÚLTIMA ATUALIZAÇÃO', value: settings.release_date || settings.releaseDate || '2026-02-27', icon: <CheckIcon fontSize="small" /> },
+                  { label: 'VERSÃO DO SISTEMA', value: settings.system_version || settings.version || 'v2.2.0-ALPHA.30-PRO', icon: <WizardIcon fontSize="small" /> },
+                  { label: 'ÚLTIMA ATUALIZAÇÃO', value: settings.release_date || settings.releaseDate || '2026-03-01', icon: <CheckIcon fontSize="small" /> },
                   { label: 'DEPLOYMENT', value: 'Docker Container (Linux)', icon: <FolderIcon fontSize="small" /> }
                 ].map((item, id) => (
                   <Grid item xs={12} sm={6} md={4} key={id}>
@@ -2719,7 +2720,7 @@ function Settings() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <WizardIcon /> NOTAS DE LANÇAMENTO
           </Box>
-          <Typography variant="caption" sx={{ opacity: 0.5 }}>{settings.system_version || 'v2.2.0-ALPHA.19-PRO'}</Typography>
+          <Typography variant="caption" sx={{ opacity: 0.5 }}>{settings.system_version || 'v2.2.0-ALPHA.30-PRO'}</Typography>
         </DialogTitle>
         <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.05)' }}>
           <List sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
