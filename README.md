@@ -185,7 +185,7 @@ _Focus: Innovation and High Availability_
 
 Ver [RELEASE_NOTES.md](RELEASE_NOTES.md) para detalhes completos.
 
-### Versão Atual: v2.2.0-ALPHA.31-PRO (2026-03-01)
+### Versão Atual: v2.2.0-ALPHA.31-PRO ()
 
 **Principais Novidades (VLC Push + Audit Visibility Fixes):**
 - 📡 **UDP Push Stability**: O stream UDP interno migrou para um modelo de "Push-to-Localhost" (`udp://@:1234`), erradicando os falsos-positivos "cannot peek" inerentes a conexões VLC baseadas em listeners, garantindo visualização sem perdas.
