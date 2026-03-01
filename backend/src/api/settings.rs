@@ -97,11 +97,11 @@ async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
                 srt_enabled: false,
                 udp_enabled: false,
                 rtmp_output_url: Some(format!(
-                    "rtmp://{}:1935/live/stream",
+                    "rtmp://{}:1935/stream",
                     std::env::var("MEDIAMTX_HOST").unwrap_or_else(|_| "localhost".to_string())
                 )),
                 srt_output_url: Some(format!(
-                    "srt://{}:8890?mode=caller&streamid=publish:live/stream_srt",
+                    "srt://{}:8890?mode=caller&streamid=publish:stream_srt",
                     std::env::var("MEDIAMTX_HOST").unwrap_or_else(|_| "localhost".to_string())
                 )),
                 udp_output_url: Some("udp://@239.0.0.1:1234".to_string()),
@@ -118,8 +118,8 @@ async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
                 dash_output_url: Some("/var/lib/onepa-playout/hls/dash.mpd".to_string()),
                 mss_output_url: Some("/var/lib/onepa-playout/hls/stream.ism".to_string()),
                 rist_output_url: Some("rist://127.0.0.1:1234".to_string()),
-                rtsp_output_url: Some("rtsp://localhost:8554/live/stream".to_string()),
-                webrtc_output_url: Some("http://localhost:8889/live/stream".to_string()),
+                rtsp_output_url: Some("rtsp://localhost:8554/stream".to_string()),
+                webrtc_output_url: Some("http://localhost:8889/stream".to_string()),
                 epg_url: Some("".to_string()),
                 epg_days: Some(7),
                 tmdb_api_key: None,
@@ -597,8 +597,8 @@ async fn reset_all(pool: web::Data<PgPool>) -> impl Responder {
         is_running = false,
         overlay_enabled = true,
         clips_played_today = 0,
-        rtmp_output_url = 'rtmp://{}:1935/live/stream',
-        srt_output_url = 'srt://{}:8890?mode=caller&streamid=publish:live/stream_srt',
+        rtmp_output_url = 'rtmp://{}:1935/stream',
+        srt_output_url = 'srt://{}:8890?mode=caller&streamid=publish:stream_srt',
         udp_output_url = 'udp://@239.0.0.1:1234',
         updated_at = CURRENT_TIMESTAMP
         WHERE id = TRUE",

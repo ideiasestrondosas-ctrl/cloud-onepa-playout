@@ -505,7 +505,7 @@ export default function SetupWizard() {
                 onChange={(e) => {
                   const newType = e.target.value;
                   const newUrl = newType === 'rtmp'
-                    ? 'rtmp://localhost:1935/live/stream'
+                    ? 'rtmp://localhost:1935/stream'
                     : '/hls/stream.m3u8';
 
                   setSetupData({

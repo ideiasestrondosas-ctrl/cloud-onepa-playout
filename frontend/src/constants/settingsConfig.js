@@ -7,10 +7,10 @@
  * Used by handleOutputTypeChange to auto-populate settings fields.
  */
 export const OUTPUT_DEFAULTS = {
-    rtmp: { url: 'rtmp://mediamtx:1935/live/stream', resolution: '1280x720', bitrate: '2500k' },
+    rtmp: { url: 'rtmp://mediamtx:1935/stream', resolution: '1280x720', bitrate: '2500k' },
     hls: { url: '/hls/stream.m3u8', resolution: '1280x720', bitrate: '4000k' },
-    srt: { url: 'srt://mediamtx:8890?mode=caller&streamid=publish:live/stream_srt', resolution: '1280x720', bitrate: '5000k' },
-    udp: { url: 'udp://239.0.0.1:1234', resolution: '1280x720', bitrate: '3000k' },
+    srt: { url: 'srt://mediamtx:8890?mode=caller&streamid=publish:stream_srt', resolution: '1280x720', bitrate: '5000k' },
+    udp: { url: 'udp://@:1234', resolution: '1280x720', bitrate: '3000k' },
     desktop: { url: 'local', resolution: '1280x720', bitrate: '0' },
 };
 
@@ -35,11 +35,11 @@ export const OUTPUT_PROTOCOLS = ['rtmp', 'srt', 'udp', 'hls', 'desktop'];
  */
 export const UDP_DEFAULTS = {
     multicast: 'udp://239.0.0.1:1234?ttl=2',
-    unicast: 'udp://127.0.0.1:1234',
+    unicast: 'udp://@:1234',
 };
 
 /**
  * Application version — single source of truth for display use.
  * Authoritative value is always the database setting.
  */
-export const APP_VERSION_FALLBACK = 'v2.2.0-ALPHA.27-PRO';
+export const APP_VERSION_FALLBACK = 'v2.2.0-ALPHA.29-PRO';

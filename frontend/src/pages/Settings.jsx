@@ -157,21 +157,20 @@ function UdpVerificationDialog({ open, onClose, onConfirm }) {
         <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1, borderLeft: '4px solid #ed6c02' }}>
           <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>1. Tipos de Protocolo:</Typography>
           <Typography variant="body2" component="div">
-            • <strong>Unicast (Direto):</strong> Ideal para enviar para um IP específico (ex: <code>udp://192.168.1.100:1234</code>).<br />
-            • <strong>Multicast (Rede):</strong> Envia para um grupo (ex: <code>udp://239.0.0.1:1234</code>). Útil para vários receptores na mesma rede local.<br />
+            • <strong>Unicast Push (Padrão):</strong> O formato <code>udp://@:1234</code> envia o stream diretamente para a máquina local (Push-to-Host). Isto garante sincronização instantânea no VLC e sem "erros de buffer".<br />
+            • <strong>Rede Local:</strong> Envia para um IP específico (ex: <code>udp://192.168.1.100:1234</code>).<br />
           </Typography>
 
           <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold', mt: 2 }}>2. Como Aceder (VLC / Player Externo):</Typography>
           <Typography variant="body2" component="div">
-            • <strong>Na mesma máquina:</strong> Abra o VLC e use <code>udp://@:1234</code>.<br />
-            • <strong>Outro computador (Rede Local):</strong> Use <code>udp://@[IP_DO_SERVIDOR]:1234</code>.<br />
-            • <strong>Acesso Externo:</strong> Requer <i>Port Forwarding</i> no router (Porta UDP 1234). Use o seu IP Público.<br />
+            • <strong>Na mesma máquina (Mac/Win/Linux):</strong> Abra o VLC e use o atalho fornecido: <code>udp://@:1234</code>.<br />
+            • <strong>Outro computador (Rede Local):</strong> Configure a URL base para o IP de destino desejado. O VLC noutra máquina deverá ouvir essa porta.<br />
+            • <strong>Acesso Externo:</strong> Não recomendado para UDP (use SRT). Se necessário, requer <i>Port Forwarding</i> no router (Porta 1234 UDP).<br />
           </Typography>
 
-          <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold', mt: 2 }}>3. Requisitos de Rede:</Typography>
+          <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold', mt: 2 }}>3. Sincronização & Buffer:</Typography>
           <Typography variant="body2" component="div">
-            • <strong>Multicast:</strong> Pode bloquear redes Wi-Fi se não houver "IGMP Snooping". Prefira rede gigabit cabeada.<br />
-            • <strong>Latência:</strong> O UDP é ultra-rápido mas não tem correção de erro. Picos de rede causam "frizz" na imagem.
+            • O nosso sistema gerível <strong>PUSH</strong> inicia e alimenta continuamente a firewall nativamente, eliminando latências de handshake e erros iniciais comuns de broadcast.
           </Typography>
         </Box>
 
@@ -1426,6 +1425,12 @@ function Settings() {
                     value={settings.outputUrl}
                     onChange={(e) => setSettings({ ...settings, outputUrl: e.target.value })}
                     InputProps={{ sx: { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3, fontWeight: 700, fontFamily: 'monospace' } }}
+                    helperText={
+                      settings.outputType === 'udp'
+                        ? "DICA: O formato udp://@:1234 faz Push forçado para a máquina local (MUITO ESTÁVEL). No VLC abra: udp://@:1234"
+                        : ""
+                    }
+                    FormHelperTextProps={{ sx: { color: 'warning.main', fontWeight: 'bold' } }}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -1531,12 +1536,12 @@ function Settings() {
                         size="small"
                         fullWidth
                         label="RTMP (Mestre de Distribuição Local)"
-                        value={`rtmp://${window.location.hostname}:1935/live/stream`}
+                        value={`rtmp://${window.location.hostname}:1935/stream`}
                         InputProps={{
                           readOnly: true,
                           sx: { fontFamily: 'monospace', fontSize: '0.85rem', bgcolor: 'rgba(0,0,0,0.2)' },
                           endAdornment: (
-                            <IconButton onClick={() => handleCopyToClipboard(`rtmp://${window.location.hostname}:1935/live/stream`, 'Link RTMP copiado!')}>
+                            <IconButton onClick={() => handleCopyToClipboard(`rtmp://${window.location.hostname}:1935/stream`, 'Link RTMP copiado!')}>
                               <ContentCopyIcon fontSize="small" />
                             </IconButton>
                           )
@@ -1550,13 +1555,33 @@ function Settings() {
                         size="small"
                         fullWidth
                         label="SRT - Secure Reliable Transport (UDP)"
-                        value={`srt://${window.location.hostname}:8890?streamid=read:live/stream_srt`}
+                        value={`srt://${window.location.hostname}:8890?streamid=read:stream_srt`}
                         helperText="Atenção: A porta deve estar aberta em UDP. Clients devem solicitar explicitamente 'read:'"
                         InputProps={{
                           readOnly: true,
                           sx: { fontFamily: 'monospace', fontSize: '0.85rem', bgcolor: 'rgba(0,0,0,0.2)' },
                           endAdornment: (
-                            <IconButton onClick={() => handleCopyToClipboard(`srt://${window.location.hostname}:8890?streamid=read:live/stream_srt`, 'Link SRT copiado!')}>
+                            <IconButton onClick={() => handleCopyToClipboard(`srt://${window.location.hostname}:8890?streamid=read:stream_srt`, 'Link SRT copiado!')}>
+                              <ContentCopyIcon fontSize="small" />
+                            </IconButton>
+                          )
+                        }}
+                      />
+                    </Grid>
+                  )}
+                  {settings.udpEnabled && (
+                    <Grid item xs={12}>
+                      <TextField
+                        size="small"
+                        fullWidth
+                        label="UDP Stream (VLC Direct)"
+                        value="udp://@:1234"
+                        helperText="Para visualizar no VLC: Mídia > Abrir Fluxo de Rede > digite o endereço acima."
+                        InputProps={{
+                          readOnly: true,
+                          sx: { fontFamily: 'monospace', fontSize: '0.85rem', bgcolor: 'rgba(0,0,0,0.2)' },
+                          endAdornment: (
+                            <IconButton onClick={() => handleCopyToClipboard("udp://@:1234", 'Link UDP copiado!')}>
                               <ContentCopyIcon fontSize="small" />
                             </IconButton>
                           )

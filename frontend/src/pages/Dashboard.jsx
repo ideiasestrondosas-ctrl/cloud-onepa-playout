@@ -1135,21 +1135,11 @@ export default function Dashboard() {
                   <TextField
                     fullWidth
                     size="small"
-                    value={() => {
+                    value={(() => {
                       const type = settings?.output_type?.toUpperCase();
                       const displayUrl = settings?.display_urls?.[type];
-                      if (displayUrl) return displayUrl;
-
-                      // Fallback logic
-                      const originalUrl = settings?.output_url || '';
-                      if (settings?.output_type === 'udp') {
-                        const portMatch = originalUrl.match(/:(\d+)$/);
-                        const port = portMatch ? portMatch[1] : '1234';
-                        const isMulticast = originalUrl.match(/@(2(?:2[4-9]|3\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d?|0)){3})/);
-                        return isMulticast ? originalUrl : `udp://@:${port}`;
-                      }
-                      return originalUrl;
-                    }}
+                      return displayUrl || settings?.output_url || '';
+                    })()}
                     placeholder="URL de saída não definido"
                     disabled
                   />
@@ -1162,13 +1152,6 @@ export default function Dashboard() {
 
                       if (!url) {
                         url = settings?.output_url;
-                        // Fallback Smart UDP handling for VLC
-                        if (settings?.output_type === 'udp') {
-                          const portMatch = url.match(/:(\d+)$/);
-                          const port = portMatch ? portMatch[1] : '1234';
-                          const isMulticast = url.match(/@(2(?:2[4-9]|3\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d?|0)){3})/);
-                          url = isMulticast ? url : `udp://@:${port}`;
-                        }
                       }
 
                       if (!url) {

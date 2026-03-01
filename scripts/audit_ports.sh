@@ -33,28 +33,50 @@ check_traffic() {
     
     # 1. MediaMTX specific traffic check (via Internal API through Backend Container)
     if [[ "$label" == *"RTMP"* || "$label" == *"SRT"* || "$label" == *"HLS"* ]]; then
-        # Use alpha-backend to reach mediamtx:9997 since mediamtx container lack curl
-        local readers=$(docker exec alpha-backend curl -s http://mediamtx:9997/v3/paths/list 2>/dev/null | grep -o '"readersCount":[0-9]*' | cut -d: -f2 | awk '{s+=$1} END {print s}' || echo "0")
+        # Identify Backend IP to filter internal relays
+        local backend_ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' alpha-backend 2>/dev/null || echo "172.18.0.3")
+
+        # Total connections from MediaMTX API
+        local endpoint=""
+        if [[ "$label" == *"RTMP"* ]]; then endpoint="rtmpconns"; elif [[ "$label" == *"SRT"* ]]; then endpoint="srtconns"; fi
         
-        # Also check for direct SRT or RTMP connections
-        local conns=0
-        if [[ "$label" == *"SRT"* ]]; then
-            conns=$(docker exec alpha-backend curl -s http://mediamtx:9997/v3/srtconns/list 2>/dev/null | grep -o '"id"' | wc -l || echo "0")
-        elif [[ "$label" == *"RTMP"* ]]; then
-            conns=$(docker exec alpha-backend curl -s http://mediamtx:9997/v3/rtmpconns/list 2>/dev/null | grep -o '"id"' | wc -l || echo "0")
+        if [ -n "$endpoint" ]; then
+             local all_conns=$(docker exec alpha-backend curl -s http://mediamtx:9997/v3/$endpoint/list 2>/dev/null || echo "{\"items\":[]}")
+             # Count connections NOT matching the backend IP
+             local ext_conns=$(echo "$all_conns" | grep -o '"remoteAddr":"[^"]*"' | grep -v "$backend_ip" | wc -l || echo "0")
+             # Count connections matches the backend IP (System Relays)
+             local sys_conns=$(echo "$all_conns" | grep -o '"remoteAddr":"[^"]*"' | grep "$backend_ip" | wc -l || echo "0")
+             
+             if [[ "$ext_conns" -gt 0 || "$sys_conns" -gt 0 ]]; then
+                 local info=""
+                 if [[ "$ext_conns" -gt 0 ]]; then info="${GREEN}${ext_conns} EXTERNAL${NC}"; fi
+                 if [[ "$sys_conns" -gt 0 ]]; then 
+                     if [[ -n "$info" ]]; then info="${info} + "; fi
+                     info="${info}${CYAN}${sys_conns} SYSTEM RELAY(S)${NC}"
+                 fi
+                 echo -e " | 🌊 TRAFFIC: $info"
+                 return
+             fi
         fi
 
-        if [[ "$readers" -gt 0 || "$conns" -gt 0 ]]; then
-            # Display real counts for transparency
-            local info=""
-            if [[ "$readers" -gt 0 ]]; then info="${readers} rdr(s)"; fi
-            if [[ "$conns" -gt 0 ]]; then 
-                if [[ -n "$info" ]]; then info="${info} + "; fi
-                info="${info}${conns} conn(s)"
-            fi
-            
-            echo -e " | ${GREEN}🌊 TRAFFIC: $info${NC}"
+        # Fallback to path readers (HLS/WebRTC etc)
+        local paths_json=$(docker exec alpha-backend curl -s http://mediamtx:9997/v3/paths/list 2>/dev/null || echo "{\"items\":[]}")
+        # HLS in newer MediaMTX (v1.0+) tracks readers as sessions or through internal muxers
+        # We count any reader that isn't the internal hlsMuxer
+        local total_readers=$(echo "$paths_json" | grep -o '{"type":"[^"]*"' | grep -v "hlsMuxer" | wc -l || echo "0")
+        
+        if [[ "$total_readers" -gt 0 ]]; then
+            echo -e " | ${GREEN}🌊 TRAFFIC: ${total_readers} active web reader(s) detected via API${NC}"
             return
+        fi
+    fi
+
+    # 2. UDP specific flow check for Backend (raw UDP output)
+    if [[ "$label" == *"UDP"* && "$container" == "alpha-backend" ]]; then
+        local udp_conns=$(docker exec alpha-backend ss -un "( sport = :$port )" 2>/dev/null | grep -v "State" | wc -l || echo "0")
+        if [ "$udp_conns" -gt 0 ]; then
+             echo -e " | ${GREEN}🌊 TRAFFIC: ${udp_conns} active UDP flow(s)${NC}"
+             return
         fi
     fi
 
@@ -63,16 +85,16 @@ check_traffic() {
         # Include transitions like TIME-WAIT/CLOSE-WAIT to catch bursty HTTP traffic
         local conns=$(ss -tn state established state fin-wait-1 state fin-wait-2 state time-wait state close-wait "( sport = :$port or dport = :$port )" 2>/dev/null | wc -l)
         if [ "$conns" -gt 1 ]; then
-            echo -e " | ${GREEN}🌊 TRAFFIC: Active ($(($conns - 1)) items)${NC}"
+            echo -e " | ${GREEN}🌊 TRAFFIC: Active Web Context ($(($conns - 1)) items)${NC}"
         else
-            echo -e " | ${YELLOW}💤 TRAFFIC: Idle${NC}"
+            echo -e " | ${GREEN}🟢 LISTENING (Idle)${NC}"
         fi
     else
-        local conns=$(ss -un "( sport = :$port or dport = :$port )" 2>/dev/null | wc -l)
-        if [ "$conns" -gt 1 ]; then
-            echo -e " | ${GREEN}🌊 TRAFFIC: Active UDP flow${NC}"
+        local conns=$(ss -un "( sport = :$port or dport = :$port )" 2>/dev/null | grep -v "State" | wc -l)
+        if [ "$conns" -gt 0 ]; then
+             echo -e " | ${GREEN}🌊 TRAFFIC: Active UDP flow${NC}"
         else
-            echo -e " | ${YELLOW}💤 TRAFFIC: Idle${NC}"
+             echo -e " | ${GREEN}🟢 LISTENING (Idle)${NC}"
         fi
     fi
 }
@@ -123,6 +145,7 @@ audit_service alpha-backend 8181 tcp "Backend API"
 audit_service alpha-mediamtx 1935 tcp "RTMP Server"
 audit_service alpha-mediamtx 8888 tcp "HLS Server"
 audit_service alpha-mediamtx 8890 udp "SRT Server"
+audit_service alpha-backend 1234 udp "UDP Playout"
 audit_service alpha-mediamtx 9997 tcp "MediaMTX API"
 audit_service alpha-postgres 5432 tcp "PostgreSQL"
 
@@ -144,7 +167,7 @@ fi
 
 # HLS Path via MediaMTX Internal
 echo -n "Checking HLS Service Path... "
-if docker exec alpha-frontend curl -s -o /dev/null -w "%{http_code}" http_proxy= http://mediamtx:8888/live/stream/index.m3u8 | grep -q "200"; then
+if docker exec alpha-frontend curl -s -o /dev/null -w "%{http_code}" http_proxy= http://mediamtx:8888/master/index.m3u8 | grep -q "200"; then
     echo -e "${GREEN}✅ READY${NC}"
 else
     echo -e "${NC}○ STANDBY${NC} (Stream not yet published to MediaMTX)"
@@ -152,7 +175,7 @@ fi
 
 # HLS via Nginx Proxy
 echo -n "Checking Nginx HLS Proxy... "
-if docker exec alpha-frontend curl -s -k -o /dev/null -w "%{http_code}" http://localhost/hls/stream.m3u8 | grep -q "200"; then
+if docker exec alpha-frontend curl -s -k -o /dev/null -w "%{http_code}" http://localhost/hls-live/master/index.m3u8 | grep -q "200"; then
     echo -e "${GREEN}✅ READY${NC}"
 else
     echo -e "${NC}○ STANDBY${NC} (Waiting for segments/Nginx cache)"

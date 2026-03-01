@@ -54,6 +54,7 @@ services:
     ports:
       - "8182:8181"
       - "10901:10900/udp" # SRT Listener port
+      - "1234:1234/udp" # Default UDP port
       - "1235-1250:1235-1250/udp" # UDP Listener range
     networks:
       - alpha-network

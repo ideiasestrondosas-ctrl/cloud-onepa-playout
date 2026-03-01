@@ -41,6 +41,6 @@ paths:
   master:
     # RTMP pushes to this path will be accepted anonymously
   # Final distribution point (relayed from master)
-  live/stream:
+  stream:
     # This matches the internal relay path in engine.rs
   all:

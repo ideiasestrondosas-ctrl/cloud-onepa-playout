@@ -85,7 +85,7 @@ impl Settings {
         let rtmp = self
             .rtmp_output_url
             .as_deref()
-            .unwrap_or("rtmp://mediamtx:1935/live/stream");
+            .unwrap_or("rtmp://mediamtx:1935/stream");
         urls.insert(
             "RTMP".to_string(),
             rtmp.replace("mediamtx", host)
@@ -94,35 +94,45 @@ impl Settings {
         );
 
         // 2. SRT
+        // 2. SRT (Fixed for VLC Reader)
         let srt = self
             .srt_output_url
             .as_deref()
-            .unwrap_or("srt://mediamtx:8890?mode=caller&streamid=publish:live/stream_srt");
+            .unwrap_or("srt://mediamtx:8890?mode=caller&streamid=publish:stream_srt");
         let mut srt_final = srt
             .replace("mediamtx", host)
             .replace("localhost", host)
             .replace("127.0.0.1", host);
 
-        // Ensure read mode for display (VLC is a consumer/reader)
+        // Readers (VLC) MUST be CALLER and use read: streamid
         if srt_final.contains("streamid=publish") {
             srt_final = srt_final.replace("streamid=publish", "streamid=read");
         } else if !srt_final.contains("streamid=") {
-            srt_final = format!("{}&streamid=read:live/stream_srt", srt_final);
+            let separator = if srt_final.contains('?') { "&" } else { "?" };
+            srt_final = format!("{}{}streamid=read:stream_srt", srt_final, separator);
         }
-        // Change mode to listener for readers
-        srt_final = srt_final.replace("mode=caller", "mode=listener");
+        
+        if srt_final.contains("mode=listener") {
+            srt_final = srt_final.replace("mode=listener", "mode=caller");
+        } else if !srt_final.contains("mode=") {
+            let separator = if srt_final.contains('?') { "&" } else { "?" };
+            srt_final = format!("{}{}mode=caller", srt_final, separator);
+        }
+        
         urls.insert("SRT".to_string(), srt_final);
 
         // 3. UDP (Smart formatting)
         let udp = self.udp_output_url.as_deref().unwrap_or("udp://@:1234");
-        let udp_final = if udp.contains("@") {
-            // For Unicast Listener, show @host:port
-            udp.replace("@:", &format!("@{}:", host))
-                .replace("@localhost:", &format!("@{}:", host))
-                .replace("@127.0.0.1:", &format!("@{}:", host))
+        let udp_final = if udp.contains("@:") || udp.contains("@localhost") || udp.contains("@127.0.0.1") {
+            // Unicast mode: FFmpeg now PUSHES to host.docker.internal
+            // Client (VLC) must LISTEN on the port
+            let port = udp.split(':').last().unwrap_or("1234").trim_matches(|c: char| !c.is_numeric());
+            format!("udp://@:{}", port)
         } else {
-            // For Push/Multicast
-            udp.replace("localhost", host).replace("127.0.0.1", host)
+            // Multicast or explicit destination: keep as is but replace host tokens
+            udp.replace("mediamtx", host)
+               .replace("localhost", host)
+               .replace("127.0.0.1", host)
         };
         urls.insert("UDP".to_string(), udp_final);
 
