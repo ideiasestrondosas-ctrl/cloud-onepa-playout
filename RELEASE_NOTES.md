@@ -1,6 +1,14 @@
 # Release Notes - Cloud Onepa Playout
 
-## v2.2.0-ALPHA.30-PRO ()
+## v2.2.0-ALPHA.31-PRO (2026-03-01)
+
+### 🚀 Release Highlights
+- **Dynamic EPG Hydration**: Resolved major issue where TV Guide metadata became stale. Metadata is now fetched in real-time from the Media Library.
+- **Improved Duplication Support**: Clips duplicated in playlists (with ID suffixes) are now correctly hydrated with their latest metadata.
+- **EPG XML Enhancements**: Exported XML now includes rich descriptions and categories for better IPTV compatibility.
+- **Automation**: Synchronized application versioning across Frontend, Backend, and Database.
+
+## v2.2.0-ALPHA.30-PRO (2026-03-01)
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.

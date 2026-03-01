@@ -160,7 +160,16 @@ async fn list_playlists(
     };
 
     match result {
-        Ok(playlists) => HttpResponse::Ok().json(json!({ "playlists": playlists })),
+        Ok(playlists) => {
+            // Apply hydration to ALL branches that didn't already do it
+            // (The date branch already did it, but doing it again on a Vec is safe/idempotent)
+            let mut hydrated = Vec::new();
+            for mut pl in playlists {
+                pl.content = hydrate_playlist_content(&pl.content, pool.get_ref()).await;
+                hydrated.push(pl);
+            }
+            HttpResponse::Ok().json(json!({ "playlists": hydrated }))
+        }
         Err(e) => {
             log::error!("Failed to fetch playlists: {}", e);
             HttpResponse::InternalServerError().json(json!({"error": "Failed to fetch playlists"}))
@@ -320,14 +329,36 @@ fn calculate_duration_from_json(content: &serde_json::Value) -> f64 {
 async fn hydrate_playlist_content(content: &serde_json::Value, pool: &PgPool) -> serde_json::Value {
     let mut program = match serde_json::from_value::<PlaylistContent>(content.clone()) {
         Ok(pc) => pc,
-        Err(_) => return content.clone(),
+        Err(e) => {
+            // Try fallback: maybe it's a raw array of items
+            if let Ok(items) = serde_json::from_value::<Vec<PlaylistItem>>(content.clone()) {
+                PlaylistContent { program: items }
+            } else {
+                log::error!("[EPG Hydration] Failed to deserialize playlist content: {}", e);
+                return content.clone();
+            }
+        }
+    };
+
+    // Helper to extract clean media ID (handle UUID_suffix)
+    let get_clean_id = |id_str: &str| -> Option<String> {
+        let clean = id_str.split('_').next().unwrap_or(id_str);
+        if clean.len() == 36 && clean.contains('-') {
+            Some(clean.to_string())
+        } else {
+            None
+        }
     };
 
     // Collect all unique media_ids present in the playlist
     let media_ids: Vec<String> = program
         .program
         .iter()
-        .filter_map(|item| item.media_id.clone())
+        .filter_map(|item| {
+            item.media_id.clone().or_else(|| {
+                item.id.as_ref().and_then(|id_str| get_clean_id(id_str))
+            })
+        })
         .collect::<std::collections::HashSet<_>>()
         .into_iter()
         .collect();
@@ -335,6 +366,8 @@ async fn hydrate_playlist_content(content: &serde_json::Value, pool: &PgPool) ->
     if media_ids.is_empty() {
         return content.clone();
     }
+
+    log::debug!("[EPG Hydration] Hydrating {} unique media IDs", media_ids.len());
 
     // Batch-fetch fresh metadata for every media_id
     let rows: Vec<(String, Option<serde_json::Value>)> = match sqlx::query_as(
@@ -357,10 +390,16 @@ async fn hydrate_playlist_content(content: &serde_json::Value, pool: &PgPool) ->
         .filter_map(|(id, meta)| meta.map(|m| (id, m)))
         .collect();
 
+    log::debug!("[EPG Hydration] Found metadata for {}/{} media IDs", meta_map.len(), media_ids.len());
+
     // Replace stale metadata in each PlaylistItem
     for item in &mut program.program {
-        if let Some(media_id) = &item.media_id {
-            if let Some(fresh_meta) = meta_map.get(media_id) {
+        let lookup_id = item.media_id.clone().or_else(|| {
+            item.id.as_ref().and_then(|id_str| get_clean_id(id_str))
+        });
+
+        if let Some(media_id) = lookup_id {
+            if let Some(fresh_meta) = meta_map.get(&media_id) {
                 item.metadata = Some(fresh_meta.clone());
             }
         }
