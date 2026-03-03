@@ -5,8 +5,13 @@ REM ============================================================================
 REM ONEPA Playout PRO - Windows Setup (v2.3.2-FINAL)
 REM ==============================================================================
 
+REM --- Get Version ---
+FOR /F "tokens=2 delims==" %%I IN ('findstr /C:"version =" backend\Cargo.toml') DO SET VERSION=%%I
+SET VERSION=%VERSION:"=%
+SET VERSION=%VERSION: =%
+
 echo [INFO] ##################################################
-echo [INFO] #   ONEPA Playout PRO - Windows Setup v2.3.2     #
+echo [INFO] #   ONEPA Playout PRO - Windows Setup v%VERSION%    #
 echo [INFO] ##################################################
 
 REM --- 0. Parameters ---

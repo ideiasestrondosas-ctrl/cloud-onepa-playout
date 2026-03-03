@@ -417,13 +417,28 @@ impl FFmpegService {
                     .replace("localhost", "mediamtx")
                     .replace("127.0.0.1", "mediamtx");
             }
-        }
- else if output_url.starts_with("udp://") {
-            if output_url.contains("@") {
-                log::info!("📡 UDP LISTENER: Mapping to all interfaces (empty host)");
+        } else if output_url.starts_with("udp://") {
+            if output_url.contains("@") && (output_url.contains("localhost") || output_url.contains("127.0.0.1") || output_url.contains("://@:")) {
+                log::info!("📡 UDP UNICAST HOST PUSH: Mapping to host.docker.internal (Pusher mode)");
+                // To push to a listener on the host (like VLC), we MUST NOT use '@'
+                // and we must use the Docker host gateway.
                 final_url = final_url
-                    .replace("localhost", "")
-                    .replace("127.0.0.1", "");
+                    .replace("://@", "://")
+                    .replace("localhost", "host.docker.internal")
+                    .replace("127.0.0.1", "host.docker.internal");
+                
+                if final_url.contains("://:") {
+                    final_url = final_url.replace("://:", "://host.docker.internal:");
+                }
+            } else if output_url.contains("@") {
+                log::info!("📡 UDP MULTICAST/STATIC LISTENER: Binding to all interfaces");
+                final_url = final_url
+                    .replace("localhost", "0.0.0.0")
+                    .replace("127.0.0.1", "0.0.0.0");
+                
+                if !final_url.contains("://0.0.0.0") && final_url.contains("://@") {
+                    final_url = final_url.replace("://@", "://@0.0.0.0");
+                }
             } else {
                 log::info!("📡 UDP PUSH: Mapping localhost to host.docker.internal");
                 final_url = final_url
@@ -538,9 +553,15 @@ impl FFmpegService {
                 _ => format!("W-w-{}:{}", overlay_x, overlay_y), // top-right default
             };
 
+            // Scale logo as percentage of OUTPUT VIDEO WIDTH, not its own pixels (iw).
+            // Calculate absolute pixel width ahead of time to avoid FFmpeg expression format errors.
+            let res_w_str = resolution.split('x').next().unwrap_or("1920");
+            let res_w = res_w_str.parse::<f32>().unwrap_or(1920.0);
+            let logo_pixel_width = (res_w * scale).round() as i32;
+
             filter_complex.push_str(&format!(
-                "[1:v]scale=iw*{}:ih*{},format=rgba,colorchannelmixer=aa={}[logo];[v_to_logo][logo]overlay={}[v_out];",
-                scale, scale, opacity, pos_coords
+                "[1:v]scale={}:-1,format=rgba,colorchannelmixer=aa={}[logo];[v_to_logo][logo]overlay={}[v_out];",
+                logo_pixel_width, opacity, pos_coords
             ));
         } else {
             filter_complex.push_str("[v_to_logo]copy[v_out];");
@@ -813,18 +834,29 @@ impl FFmpegService {
                 final_output_url = format!("{}{}listen=1", final_output_url, separator4);
             }
         } else if final_output_url.starts_with("udp://") {
-            // Support for UDP Listener mode (udp://@:port)
-            if final_output_url.contains("@") && !final_output_url.contains("listen=1") {
-                let separator = if final_output_url.contains('?') {
-                    "&"
+            // NOTE: listen=1 (FFmpeg binds and waits for receiver) is ONLY meaningful
+            // when UDP is the PRIMARY output (output_type == udp). When the master
+            // stream goes to MediaMTX via RTMP and the UDP relay is a separate process,
+            // adding listen=1 here would cause the master FFmpeg process to bind the
+            // UDP port unnecessarily, causing EADDRINUSE when the relay also starts.
+            
+            let is_relay_enabled = settings.udp_enabled;
+            let is_primary_udp = settings.output_type == "udp";
+
+            if final_output_url.contains("@") {
+                 // Add reuse_port=1 for all listeners to facilitate rapid restart
+                let separator = if final_output_url.contains('?') { "&" } else { "?" };
+                if !final_output_url.contains("reuse_port=") {
+                    final_output_url = format!("{}{}reuse_port=1", final_output_url, separator);
+                }
+
+                if !final_output_url.contains("listen=1") && is_primary_udp && !is_relay_enabled {
+                    let sep = if final_output_url.contains('?') { "&" } else { "?" };
+                    final_output_url = format!("{}{}listen=1", final_output_url, sep);
+                    log::info!("📡 Primary UDP output detected. Adding listen=1 to master process.");
                 } else {
-                    "?"
-                };
-                final_output_url = format!("{}{}listen=1", final_output_url, separator);
-                log::info!(
-                    "📡 UDP LISTENER: Enabled listen=1 for URL: {}",
-                    final_output_url
-                );
+                    log::debug!("📡 UDP listener detected but relay is active or not primary. Skipping master bind.");
+                }
             }
         }
 
@@ -976,14 +1008,29 @@ impl FFmpegService {
                 final_output_url.to_string(),
             ]);
         } else if final_output_url.starts_with("udp://") {
-            let is_multicast = final_output_url.contains("://22")
-                || final_output_url.contains("://23")
-                || final_output_url.contains("@22")
-                || final_output_url.contains("@23");
+            // Robust multicast detection: check both with and without '@' prefix
+            // Multicast range: 224.0.0.0 – 239.255.255.255
+            let url_for_check = final_output_url.replace('@', "");
+            let is_multicast = url_for_check.contains("://224.")
+                || url_for_check.contains("://225.")
+                || url_for_check.contains("://226.")
+                || url_for_check.contains("://227.")
+                || url_for_check.contains("://228.")
+                || url_for_check.contains("://229.")
+                || url_for_check.contains("://230.")
+                || url_for_check.contains("://231.")
+                || url_for_check.contains("://232.")
+                || url_for_check.contains("://233.")
+                || url_for_check.contains("://234.")
+                || url_for_check.contains("://235.")
+                || url_for_check.contains("://236.")
+                || url_for_check.contains("://237.")
+                || url_for_check.contains("://238.")
+                || url_for_check.contains("://239.");
 
             if is_multicast {
-                // FFmpeg requires multicast destination without '@'.
-                // If it contains '@', it binds locally instead of pushing.
+                // Multicast PUSH: remove '@' (FFmpeg sender must use the group address directly)
+                // Do NOT add listen=1 — that would make FFmpeg receive instead of send.
                 final_output_url = final_output_url.replace('@', "");
 
                 let separator = if final_output_url.contains('?') {
@@ -1003,24 +1050,41 @@ impl FFmpegService {
                     final_output_url =
                         format!("{}{}buffer_size=10000000", final_output_url, separator2);
                 }
+                // reuse_port=1 allows the kernel to rebind quickly after restart (avoids EADDRINUSE)
+                let separator3 = if final_output_url.contains('?') {
+                    "&"
+                } else {
+                    "?"
+                };
+                if !final_output_url.contains("reuse_port=") {
+                    final_output_url = format!("{}{}reuse_port=1", final_output_url, separator3);
+                }
+                log::info!("📡 UDP MULTICAST PUSH: {}", final_output_url);
             }
 
-            // Support for UDP Unicast PUSH to Host (Improved stability for VLC)
-            // If the URL is udp://@:port or udp://@localhost:port, push to the host machine gateway
-            if (final_output_url.contains("@:") || final_output_url.contains("@localhost") || final_output_url.contains("@127.0.0.1")) 
-                && !is_multicast 
+            // Unicast PUSH to Host: udp://@:port or udp://@localhost:port
+            // VLC on host listens on udp://@:1234 — we push to host.docker.internal:1234
+            if !is_multicast
+                && (final_output_url.contains("@:") || final_output_url.contains("@localhost") || final_output_url.contains("@127.0.0.1"))
             {
                 let port = final_output_url.split(':').last().unwrap_or("1234").trim_matches(|c: char| !c.is_numeric());
                 final_output_url = format!("udp://host.docker.internal:{}", port);
-                
                 log::info!(
-                    "📡 UDP RELAY PUSH: Re-directed local listener to Host Push: {}",
+                    "📡 UDP UNICAST PUSH to host (VLC mode): {}",
                     final_output_url
                 );
-            } else if final_output_url.contains("listen=1") && !is_multicast {
-                // Keep explicit listen=1 if requested, but normalize binding
+            } else if !is_multicast && final_output_url.contains("listen=1") {
+                // Explicit listener mode: normalize binding address and add reuse_port
                 if final_output_url.contains("@:") {
                     final_output_url = final_output_url.replace("@:", "0.0.0.0:");
+                }
+                let separator = if final_output_url.contains('?') {
+                    "&"
+                } else {
+                    "?"
+                };
+                if !final_output_url.contains("reuse_port=") {
+                    final_output_url = format!("{}{}reuse_port=1", final_output_url, separator);
                 }
             }
 

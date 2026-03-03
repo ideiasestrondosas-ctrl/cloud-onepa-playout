@@ -1,5 +1,7 @@
-#!/bin/bash
-echo "🔥 AGGRESSIVE CLEAN REBUILD 🔥"
+# Get Version
+VERSION=$(grep -m1 "^version =" backend/Cargo.toml | cut -d'"' -f2 2>/dev/null || echo "Unknown")
+
+echo "🔥 AGGRESSIVE CLEAN REBUILD 🔥 (Version: $VERSION)"
 echo "🛑 Stopping all containers and clearing volumes..."
 docker-compose down -v --remove-orphans
 

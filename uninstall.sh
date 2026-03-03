@@ -11,8 +11,12 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# Get Version
+VERSION=$(grep -m1 "^version =" backend/Cargo.toml | cut -d'"' -f2 2>/dev/null || echo "Unknown")
+
 echo -e "${RED}====================================================${NC}"
 echo -e "${RED}       AVISO DE REMOÇÃO TOTAL (NUCLEAR WIPE)        ${NC}"
+echo -e "${RED}       Versão do Sistema: $VERSION"
 echo -e "${RED}====================================================${NC}"
 echo -e "${YELLOW}Isso irá apagar permanentemente:${NC}"
 echo -e "1. Todos os containers Docker (Backend, Frontend, DB, MediaMTX)"

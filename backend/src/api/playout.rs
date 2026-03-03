@@ -73,11 +73,76 @@ async fn resume_playout(engine: web::Data<Arc<PlayoutEngine>>) -> impl Responder
 }
 
 async fn get_logs(engine: web::Data<Arc<PlayoutEngine>>) -> impl Responder {
-    let logs = engine.logs.lock().await;
-    let logs_vec: Vec<String> = logs.iter().cloned().collect();
+    // 1. In-memory engine logs (recent events, relay status, etc.)
+    let in_memory_logs: Vec<String> = {
+        let logs = engine.logs.lock().await;
+        logs.iter().cloned().collect()
+    };
+
+    // 2. Disk logs from /var/log/onepa/ (tail of current log file)
+    // This is the data that was previously inaccessible in the container UI viewer.
+    let log_path = std::env::var("LOG_PATH").unwrap_or_else(|_| "/var/log/onepa".to_string());
+    let disk_logs: Vec<String> = read_disk_logs(&log_path, 200);
+
+    // 3. Merge: disk logs first (older), then in-memory (newest)
+    let mut combined = disk_logs;
+    combined.extend(in_memory_logs);
+
     HttpResponse::Ok().json(serde_json::json!({
-        "logs": logs_vec
+        "logs": combined
     }))
+}
+
+/// Read the last `max_lines` from the most recent log file in log_dir.
+/// Tries playout_rCURRENT.log first, then falls back to newest rotated file.
+fn read_disk_logs(log_dir: &str, max_lines: usize) -> Vec<String> {
+    // Try the symlink/current file first
+    let current = std::path::Path::new(log_dir).join("playout_rCURRENT.log");
+    let target = if current.exists() {
+        current
+    } else {
+        // Fall back to the newest file by modification time
+        let dir = std::fs::read_dir(log_dir).ok();
+        let newest = dir.and_then(|entries| {
+            entries
+                .flatten()
+                .filter(|e| {
+                    e.file_name()
+                        .to_string_lossy()
+                        .starts_with("playout_r")
+                })
+                .max_by_key(|e| {
+                    e.metadata()
+                        .and_then(|m| m.modified())
+                        .unwrap_or(std::time::SystemTime::UNIX_EPOCH)
+                })
+                .map(|e| e.path())
+        });
+        match newest {
+            Some(p) => p,
+            None => return vec!["[No log files found in /var/log/onepa/]".to_string()],
+        }
+    };
+
+    match std::fs::read_to_string(&target) {
+        Ok(contents) => {
+            let lines: Vec<String> = contents
+                .lines()
+                .rev()
+                .take(max_lines)
+                .map(|l| l.to_string())
+                .collect::<Vec<_>>()
+                .into_iter()
+                .rev()
+                .collect();
+            lines
+        }
+        Err(e) => vec![format!(
+            "[Could not read log file {}: {}]",
+            target.display(),
+            e
+        )],
+    }
 }
 
 async fn diagnose_playout(pool: web::Data<PgPool>) -> impl Responder {

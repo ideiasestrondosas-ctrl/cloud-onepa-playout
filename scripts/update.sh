@@ -44,8 +44,11 @@ for arg in "$@"; do
     if [[ "$arg" == "--clean" ]]; then CLEAN_UPDATE=true; fi
 done
 
+# Get Version
+VERSION=$(grep -m1 "^version =" "$(dirname "$0")/../backend/Cargo.toml" | cut -d'"' -f2 2>/dev/null || echo "Unknown")
+
 echo -e "${CYAN}╔══════════════════════════════════════════╗${NC}"
-echo -e "${CYAN}║  ONEPA Playout PRO — Update System       ║${NC}"
+echo -e "${CYAN}║  ONEPA Playout PRO — Update (v$VERSION)   ║${NC}"
 echo -e "${CYAN}╚══════════════════════════════════════════╝${NC}"
 echo ""
 

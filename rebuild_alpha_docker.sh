@@ -9,8 +9,11 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+# Get Version
+VERSION=$(grep -m1 "^version =" backend/Cargo.toml | cut -d'"' -f2 2>/dev/null || echo "Unknown")
+
 echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${CYAN}║   ONEPA PLAYOUT - ALPHA DOCKER REBUILD SCRIPT             ║${NC}"
+echo -e "${CYAN}║   ONEPA PLAYOUT - ALPHA DOCKER REBUILD (Version: $VERSION) ║${NC}"
 echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 

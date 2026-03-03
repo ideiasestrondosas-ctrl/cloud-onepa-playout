@@ -5,8 +5,11 @@
 
 set -e
 
-echo "🧹 Starting Clean Rebuild Process..."
-echo "=================================="
+# Get Version
+VERSION=$(grep -m1 "^version =" backend/Cargo.toml | cut -d'"' -f2 2>/dev/null || echo "Unknown")
+
+echo "🧹 Starting Clean Rebuild Process... (Version: $VERSION)"
+echo "======================================================="
 
 # Stop all running containers
 echo "📦 Stopping Docker containers..."

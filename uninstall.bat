@@ -6,9 +6,15 @@ setlocal
 :: WARNING: THIS WILL DELETE ALL DATA, CONTAINERS AND SOURCE CODE!
 :: ==============================================================================
 
+REM --- Get Version ---
+FOR /F "tokens=2 delims==" %%I IN ('findstr /C:"version =" backend\Cargo.toml') DO SET VERSION=%%I
+SET VERSION=%VERSION:"=%
+SET VERSION=%VERSION: =%
+
 cls
 echo ====================================================
 echo       AVISO DE REMOCAO TOTAL (NUCLEAR WIPE)        
+echo       Versao do Sistema: %VERSION%
 echo ====================================================
 echo Isso ira apagar permanentemente:
 echo 1. Todos os containers Docker (Backend, Frontend, DB, MediaMTX)

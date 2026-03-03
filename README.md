@@ -5,7 +5,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB.svg)](https://reactjs.org/)
-[![Version](https://img.shields.io/badge/Version-2.2.0-ALPHA.31-PRO-blue.svg)](https://github.com/onepa/cloud-onepa-playout)
+[![Version](https://img.shields.io/badge/Version-2.2.0-ALPHA.32-PRO-blue.svg)](https://github.com/onepa/cloud-onepa-playout)
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)](https://github.com/onepa/cloud-onepa-playout)
 
 ## 📖 Sobre
@@ -105,7 +105,7 @@ Ver [docs/INSTALL.md](docs/INSTALL.md) para instruções detalhadas.
 - **Container**: Docker + Docker Compose
 - **Auth**: JWT
 
-## 📊 Estatísticas de Desenvolvimento (v2.2.0-ALPHA.31-PRO)
+## 📊 Estatísticas de Desenvolvimento (v2.2.0-ALPHA.32-PRO)
 
 Este projeto representa um esforço significativo de engenharia para criar uma solução de playout robusta e moderna.
 
@@ -136,9 +136,9 @@ Este sistema foi desenvolvido e validado em ambientes de alta performance e virt
   - **Especificações**: 4GB RAM, 80GB SSD
   - **OS**: Ubuntu 24.04 64bit (Linux 6.8.0-100-generic)
 
-> _Dados aproximados baseados na versão v2.2.0-ALPHA.31-PRO
+> _Dados aproximados baseados na versão v2.2.0-ALPHA.32-PRO
 
-## 🎯 Roadmap & Future (v2.2.0-ALPHA.31-PRO — 2026-03-01)
+## 🎯 Roadmap & Future (v2.2.0-ALPHA.32-PRO — 2026-03-03)
 
 ### 📡 Phase 22: Connectivity & Live Inputs
 
@@ -185,14 +185,21 @@ _Focus: Innovation and High Availability_
 
 Ver [RELEASE_NOTES.md](RELEASE_NOTES.md) para detalhes completos.
 
-### Versão Atual: v2.2.0-ALPHA.31-PRO ()
+### Versão Atual: v2.2.0-ALPHA.32-PRO ()
+
+**Principais Novidades (UDP Static & Script Transparency):**
+- 📡 **Estabilidade UDP PUSH**: Melhoria no motor FFmpeg para Unicast PUSH, resolvendo o erro de "Address already in use" na rede do Host e garantindo recepção directa no VLC.
+- 📊 **Audit Ports 3.0 (Final)**: Motor de diagnóstico robusto com detecção de receptores e verificação de conectividade Host-to-Container em tempo real.
+- 🛡️ **Log Rotation & Persistence**: Implementação de política de rotação de logs (10MB/3-files) em todos os serviços Docker para máxima segurança de disco.
+- 📜 **Transparência de Scripts**: Padronização do output de versão em todos os scripts de instalação e manutenção (.sh e .bat).
+- ⚙️ **Process Guard**: Sistema de proteção contra colisões de portas internas no Playout Engine.
+
+### Versão Anterior: v2.2.0-ALPHA.31-PRO (2026-03-01)
 
 **Principais Novidades (VLC Push + Audit Visibility Fixes):**
-- 📡 **UDP Push Stability**: O stream UDP interno migrou para um modelo de "Push-to-Localhost" (`udp://@:1234`), erradicando os falsos-positivos "cannot peek" inerentes a conexões VLC baseadas em listeners, garantindo visualização sem perdas.
-- 📊 **Precisão do Dashboard de Auditoria (`audit_ports.sh`)**: Integradas consultas reais na API Master do MediaMTX, resolvendo o bug visual de contabilizar a zero leitores `HLS`. Agora a monitorização de utilizadores em Dashboard distingue conexões reais em HTTP/WebSockets.
-- 🐛 **UI Bugfixes de Links de Conexão**: Limpeza drástica em lógicas client-side dos placeholders de SRT e UDP, acabando com confusão de `locahost/127.0.0.1`.
-
-### Versão Anterior: v2.2.0-ALPHA.29-PRO (2026-02-27)
+- 📡 **UDP Push Stability**: O stream UDP interno migrou para um modelo de "Push-to-Localhost" (`udp://@:1234`), erradicando os falsos-positivos "cannot peek" inerentes a conexões VLC baseadas em listeners.
+- 📊 **Precisão do Dashboard de Auditoria (`audit_ports.sh`)**: Integradas consultas reais na API Master do MediaMTX, resolvendo o bug visual de contabilizar a zero leitores `HLS`.
+- 🐛 **UI Bugfixes de Links de Conexão**: Limpeza drástica em lógicas client-side dos placeholders de SRT e UDP.
 
 **Principais Novidades (Gold Standard V2 & Protocol Stability):**
 - 📡 **"Gold Standard V2" Multiplexer**: Implementação definitiva do algoritmo perfeito para muxing via FFmpeg.

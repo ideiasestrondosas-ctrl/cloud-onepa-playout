@@ -3,7 +3,12 @@ setlocal
 REM ONEPA Playout PRO - Windows Auto-Update Script
 REM Usage: Add to Task Scheduler for nightly updates
 
-echo [ %date% %time% ] 🔄 Checking for updates...
+REM --- Get Version ---
+FOR /F "tokens=2 delims==" %%I IN ('findstr /C:"version =" backend\Cargo.toml') DO SET VERSION=%%I
+SET VERSION=%VERSION:"=%
+SET VERSION=%VERSION: =%
+
+echo [ %date% %time% ] 🔄 ONEPA Auto-Update (v%VERSION%) — Checking for updates...
 
 cd /d "%~dp0.."
 

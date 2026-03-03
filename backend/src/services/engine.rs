@@ -1506,7 +1506,10 @@ impl PlayoutEngine {
         procs: &mut HashMap<String, Child>,
         ffmpeg: &FFmpegService,
     ) {
-        const COOLDOWN_SECS: u64 = 15;
+        // UDP sockets can take time to be fully released by the kernel after process exit.
+        // 30s cooldown ensures a previous FFmpeg process has fully released any bound ports
+        // before we try to rebind (avoids EADDRINUSE on restart).
+        const COOLDOWN_SECS: u64 = 30;
 
         let mut needs_remove = false;
         let is_running = if let Some(child) = procs.get_mut(key) {
@@ -1624,8 +1627,12 @@ impl PlayoutEngine {
                             for line in reader.lines() {
                                 if let Ok(line) = line {
                                     // Log and also filter for errors
-                                    if line.contains("Error") || line.contains("failed") {
-                                        log::error!("[Relay {}] {}", key_clone, line);
+                                    if line.contains("Error") || line.contains("failed") || line.contains("Address already in use") {
+                                        if line.contains("Address already in use") {
+                                            log::error!("[Relay {}] ⚠️ PORT CONFLICT: {} (Check if another process is using this port)", key_clone, line);
+                                        } else {
+                                            log::error!("[Relay {}] {}", key_clone, line);
+                                        }
                                     } else {
                                         log::debug!("[Relay {}] {}", key_clone, line);
                                     }
@@ -1666,9 +1673,13 @@ impl PlayoutEngine {
         } else if !enabled && is_running {
             log::info!("Stopping relay for {}", key);
             if let Some(mut child) = procs.remove(key) {
-                // Force kill the child process immediately
+                // Force kill the child process
                 let _ = child.kill();
-                let _ = child.wait(); // Ensure it's reaped
+                // Give the OS 1000ms to fully release any bound UDP sockets.
+                // Without this, rapid restart can get EADDRINUSE before the kernel
+                // reclaims the port from the killed process.
+                std::thread::sleep(std::time::Duration::from_millis(1000));
+                let _ = child.wait(); // Reap the zombie
 
                 // Log to system logs
                 self.add_log(format!("Protocol {} relay stopped", key.to_uppercase()))

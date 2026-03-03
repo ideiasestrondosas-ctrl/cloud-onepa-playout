@@ -2,7 +2,10 @@
 
 # Cloud Onepa Playout - Docker Setup Helper
 
-echo ">>> Checking Docker environment..."
+# Get Version
+VERSION=$(grep -m1 "^version =" "$(dirname "$0")/../backend/Cargo.toml" | cut -d'"' -f2 2>/dev/null || echo "Unknown")
+
+echo ">>> Checking Docker environment (v$VERSION)..."
 
 if ! command -v docker &> /dev/null; then
     echo "Error: Docker not found. Please install Docker Desktop first."

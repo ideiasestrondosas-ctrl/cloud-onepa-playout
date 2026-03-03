@@ -19,7 +19,10 @@ log_info() { echo -e "${GREEN}[INFO] $1${NC}"; }
 log_warn() { echo -e "${YELLOW}[WARN] $1${NC}"; }
 log_err() { echo -e "${RED}[ERROR] $1${NC}"; }
 
-echo -e "${GREEN}🚀 ONEPA Playout PRO - Universal Installer${NC}"
+# Get Version
+VERSION=$(grep -m1 "^version =" backend/Cargo.toml | cut -d'"' -f2 2>/dev/null || echo "Unknown")
+
+echo -e "${GREEN}🚀 ONEPA Playout PRO - Universal Installer (Version: $VERSION)${NC}"
 echo "--------------------------------------------------"
 echo "Log: $LOG_FILE | Date: $(date)"
 

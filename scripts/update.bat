@@ -3,8 +3,13 @@ setlocal enabledelayedexpansion
 REM ONEPA Playout PRO - Update Script for Windows
 REM Version: 2.2.0-ALPHA.5-PRO
 
+REM --- Get Version ---
+FOR /F "tokens=2 delims==" %%I IN ('findstr /C:"version =" ..\backend\Cargo.toml') DO SET VERSION=%%I
+SET VERSION=%VERSION:"=%
+SET VERSION=%VERSION: =%
+
 echo --------------------------------------------------
-echo 🔄 Iniciando Atualizacao do Sistema...
+echo 🔄 ONEPA Playout PRO - Update (v%VERSION%)
 echo --------------------------------------------------
 
 REM --- 0. Parameters ---

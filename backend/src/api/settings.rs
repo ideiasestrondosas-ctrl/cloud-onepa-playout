@@ -761,22 +761,116 @@ async fn get_system_logs(pool: web::Data<PgPool>) -> impl Responder {
         Path::new(&log_path_raw).join("playout.log")
     };
 
-    if !log_file.exists() {
-        return HttpResponse::NotFound().json(serde_json::json!({"error": format!("Log file not found at {:?}", log_file)}));
+    // Scan all .log files in the directory for richer log context
+    let log_dir = if log_path_raw.to_lowercase().ends_with(".log") {
+        std::path::PathBuf::from(&log_path_raw).parent().map(|p| p.to_path_buf()).unwrap_or_else(|| std::path::PathBuf::from("/var/log/onepa"))
+    } else {
+        std::path::PathBuf::from(&log_path_raw)
+    };
+
+    let mut all_lines: Vec<String> = Vec::new();
+
+    // Try all .log files in the directory ordered by modification time
+    if log_dir.is_dir() {
+        if let Ok(entries) = std::fs::read_dir(&log_dir) {
+            let mut log_files: Vec<std::path::PathBuf> = entries
+                .filter_map(|e| e.ok())
+                .filter(|e| e.path().extension().and_then(|s| s.to_str()) == Some("log"))
+                .map(|e| e.path())
+                .collect();
+            log_files.sort();
+
+            for f in &log_files {
+                if let Ok(content) = std::fs::read_to_string(f) {
+                    let filename = f.file_name().and_then(|n| n.to_str()).unwrap_or("?");
+                    all_lines.push(format!("=== {} ===", filename));
+                    for line in content.lines().rev().take(500) {
+                        all_lines.push(line.to_string());
+                    }
+                    all_lines.push(String::new());
+                }
+            }
+        }
     }
 
-    match std::fs::read_to_string(&log_file) {
-        Ok(content) => {
-            let lines: Vec<String> = content.lines().rev().take(1000).map(|s| s.to_string()).collect();
-            let mut result = lines;
-            result.reverse();
-            HttpResponse::Ok().json(serde_json::json!({ "logs": result }))
+    // Fallback: just read the single file
+    if all_lines.is_empty() {
+        if !log_file.exists() {
+            return HttpResponse::NotFound().json(serde_json::json!({"error": format!("Log file not found at {:?}", log_file)}));
         }
-        Err(e) => {
-            log::error!("Failed to read log file: {:?}", e);
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": format!("Failed to read logs: {}", e)}))
+        match std::fs::read_to_string(&log_file) {
+            Ok(content) => {
+                let lines: Vec<String> = content.lines().rev().take(1000).map(|s| s.to_string()).collect();
+                let mut result = lines;
+                result.reverse();
+                return HttpResponse::Ok().json(serde_json::json!({ "logs": result }));
+            }
+            Err(e) => {
+                log::error!("Failed to read log file: {:?}", e);
+                return HttpResponse::InternalServerError()
+                    .json(serde_json::json!({"error": format!("Failed to read logs: {}", e)}));
+            }
         }
     }
+
+    all_lines.reverse();
+    HttpResponse::Ok().json(serde_json::json!({ "logs": all_lines }))
+}
+
+/// GET /api/settings/vm-logs
+/// Returns system-level logs from the Docker container environment:
+/// - Reads /proc/kmsg snippet (dmesg), /var/log/syslog, /var/log/kern.log if available
+/// - Also returns any extra *.log files found in the mounted log volume that aren't playout.log
+async fn get_vm_logs() -> impl Responder {
+    let mut sections: Vec<serde_json::Value> = Vec::new();
+
+    // Helper: try reading last N lines of a file
+    let read_last = |path: &str, limit: usize| -> Option<Vec<String>> {
+        std::fs::read_to_string(path).ok().map(|content| {
+            content.lines().rev().take(limit).map(String::from).collect::<Vec<_>>()
+                .into_iter().rev().collect()
+        })
+    };
+
+    // Try syslog / messages
+    for syslog_path in &["/var/log/syslog", "/var/log/messages", "/var/log/daemon.log"] {
+        if let Some(lines) = read_last(syslog_path, 200) {
+            sections.push(serde_json::json!({ "source": syslog_path, "lines": lines }));
+            break; // Stop at the first one found
+        }
+    }
+
+    // Try kernel log
+    if let Some(lines) = read_last("/var/log/kern.log", 100) {
+        sections.push(serde_json::json!({ "source": "/var/log/kern.log", "lines": lines }));
+    }
+
+    // Try docker / container-specific logs in the shared volume
+    let extra_paths = vec![
+        "/var/log/onepa/backend.log",
+        "/var/log/onepa/mediamtx.log",
+        "/var/log/onepa/nginx.log",
+    ];
+    for path in extra_paths {
+        if let Some(lines) = read_last(path, 300) {
+            sections.push(serde_json::json!({ "source": path, "lines": lines }));
+        }
+    }
+
+    // Attempt a live dmesg snapshot via /proc/kmsg (non-blocking)
+    // This only works if the container has read access to /proc/kmsg
+    if let Some(lines) = read_last("/var/log/dmesg", 100) {
+        sections.push(serde_json::json!({ "source": "dmesg", "lines": lines }));
+    }
+
+    if sections.is_empty() {
+        return HttpResponse::Ok().json(serde_json::json!({
+            "message": "No system log files accessible from within the container. Logs are only available from the host via: docker logs alpha-backend",
+            "sections": []
+        }));
+    }
+
+    HttpResponse::Ok().json(serde_json::json!({ "sections": sections }))
 }
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
@@ -791,5 +885,6 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         .route("/upload-overlay-pair", web::post().to(upload_overlay_pair))
         .route("/reset-all", web::post().to(reset_all))
         .route("/release-history", web::get().to(get_release_history))
-        .route("/system-logs", web::get().to(get_system_logs));
+        .route("/system-logs", web::get().to(get_system_logs))
+        .route("/vm-logs", web::get().to(get_vm_logs));
 }

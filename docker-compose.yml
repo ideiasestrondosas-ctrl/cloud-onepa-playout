@@ -20,6 +20,11 @@ services:
       timeout: 5s
       retries: 5
     restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # Rust Backend
   backend:
@@ -54,8 +59,6 @@ services:
     ports:
       - "8182:8181"
       - "10901:10900/udp" # SRT Listener port
-      - "1234:1234/udp" # Default UDP port
-      - "1235-1250:1235-1250/udp" # UDP Listener range
     networks:
       - alpha-network
     depends_on:
@@ -70,12 +73,22 @@ services:
       retries: 5
       start_period: 180s
     restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   mediamtx:
     image: bluenviron/mediamtx:latest
     container_name: alpha-mediamtx
     hostname: mediamtx
     restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     ports:
       - "1935:1935" # RTMP
       - "8888:8888" # HLS
@@ -111,6 +124,11 @@ services:
       backend:
         condition: service_healthy
     restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 networks:
   alpha-network:

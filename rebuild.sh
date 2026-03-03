@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Get Version
+VERSION=$(grep -m1 "^version =" backend/Cargo.toml | cut -d'"' -f2 2>/dev/null || echo "Unknown")
+
+echo "🏗️  ONEPA Playout ALPHA - Rebuild (Version: $VERSION)"
 echo "🔄 Parando containers..."
 docker-compose down
 

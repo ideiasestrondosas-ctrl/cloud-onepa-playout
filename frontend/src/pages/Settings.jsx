@@ -396,7 +396,10 @@ function Settings() {
     logPath: '/var/log/onepa',
   });
   const [logs, setLogs] = useState([]);
+  const [vmLogSections, setVmLogSections] = useState([]);
+  const [vmLogMessage, setVmLogMessage] = useState('');
   const [showLogsDialog, setShowLogsDialog] = useState(false);
+  const [logTab, setLogTab] = useState(0); // 0: Playout, 1: VM/System
   const [isRefreshingLogs, setIsRefreshingLogs] = useState(false);
   const [logFilter, setLogFilter] = useState('ALL');
   const [logSearch, setLogSearch] = useState('');
@@ -495,8 +498,15 @@ function Settings() {
   const fetchLogs = async () => {
     try {
       setIsRefreshingLogs(true);
-      const response = await settingsAPI.getSystemLogs();
-      setLogs(response.data.logs || []);
+      // Fetch both Playout and VM logs
+      const [playoutRes, vmRes] = await Promise.all([
+        settingsAPI.getSystemLogs(),
+        settingsAPI.getVMLogs()
+      ]);
+
+      setLogs(playoutRes.data.logs || []);
+      setVmLogSections(vmRes.data.sections || []);
+      setVmLogMessage(vmRes.data.message || '');
     } catch (error) {
       console.error('Failed to fetch logs:', error);
     } finally {
@@ -945,6 +955,7 @@ function Settings() {
   const fetchReleaseHistory = () => {
     // Curated local history — no external API dependency, works offline
     setReleaseHistory([
+      { version: 'v2.2.0-ALPHA.32-PRO', date: '2026-03-03', changes: ['UDP PUSH Stability: Resolvido conflito de "Address already in use" entre Docker e Host, optimizando o FFmpeg para modo Pusher nativo', 'Audit Ports 3.0: Novo módulo de diagnóstico com detecção inteligente de receptores (VLC) e auditoria de conectividade host-to-container', 'Log Management: Implementação de rotação de logs em todos os serviços Docker (10MB/3-files) para prevenir exaustão de disco', 'Process Guard: Proteção interna contra colisões de portas entre processos master e relay no Playout Engine', 'Script Versioning: Padronização do output de versão em todos os scripts operacionais (.sh e .bat) para maior transparência'] },
       { version: 'v2.2.0-ALPHA.31-PRO', date: '2026-03-01', changes: ['Dynamic EPG Hydration: Sincronização em tempo real de metadados entre a Media Library e o TV Guide/EPG XML', 'Suporte a Duplicados: Hidratação total de clips duplicados em playlists (IDs com sufixos)', 'Standards XML: EPG XML agora inclui descrições detalhadas e categorias/géneros reais'] },
       { version: 'v2.2.0-ALPHA.30-PRO', date: '2026-03-01', changes: ['UDP Push Stability: Refactor agressivo do stream UDP interno migranto para "Push-to-Localhost" (udp://@:1234), erradicando buffering no VLC', 'Precisão Audit Ports 2.0: Ligações HLS ao MediaMTX agora medidas via API master, ignorando raw sockets mortos', 'UI Connection Links: Reescrita de URLs de destino na dashboard (SRT/UDP) sem "localhost" fixo para evitar confusão de interfaces'] },
       { version: 'v2.2.0-ALPHA.29-PRO', date: '2026-02-28', changes: ['Multiplexer "Gold Standard V2": Injecção hardcore de pcr tables (40ms), +latm e force copy timestamps (-mpegts_copyts 1)', 'H.264 Annex B Force: Regra global bsf:v h264_mp4toannexb e bsf:a aac_adtstoasc forçada em UDP', 'SRT Stability: Refactoring absoluto da URI em Listeners'] },
@@ -2444,8 +2455,8 @@ function Settings() {
               </Box>
               <Grid container spacing={1.5}>
                 {[
-                  { label: 'VERSÃO DO SISTEMA', value: settings.system_version || settings.version || 'v2.2.0-ALPHA.30-PRO', icon: <WizardIcon fontSize="small" /> },
-                  { label: 'ÚLTIMA ATUALIZAÇÃO', value: settings.release_date || settings.releaseDate || '2026-03-01', icon: <CheckIcon fontSize="small" /> },
+                  { label: 'VERSÃO DO SISTEMA', value: settings.system_version || settings.version || APP_VERSION_FALLBACK, icon: <WizardIcon fontSize="small" /> },
+                  { label: 'ÚLTIMA ATUALIZAÇÃO', value: settings.release_date || settings.releaseDate || '2026-03-03', icon: <CheckIcon fontSize="small" /> },
                   { label: 'DEPLOYMENT', value: 'Docker Container (Linux)', icon: <FolderIcon fontSize="small" /> }
                 ].map((item, id) => (
                   <Grid item xs={12} sm={6} md={4} key={id}>
@@ -2993,10 +3004,10 @@ function Settings() {
         fullWidth
         PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)', height: '90vh' } }}
       >
-        <DialogTitle sx={{ fontWeight: 800, color: 'primary.main', pb: 1 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <DialogTitle sx={{ fontWeight: 800, color: 'primary.main', pb: 1, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <HistoryIcon /> REGISTOS DO PLAYOUT
+              <HistoryIcon /> VISUALIZADOR DE REGISTOS (LOGS)
               {isRefreshingLogs && <CircularProgress size={14} sx={{ ml: 1 }} />}
             </Box>
             <Box sx={{ display: 'flex', gap: 1 }}>
@@ -3014,7 +3025,12 @@ function Settings() {
               <IconButton onClick={() => setShowLogsDialog(false)} size="small" sx={{ color: 'text.disabled' }}><AddIcon sx={{ transform: 'rotate(45deg)' }} /></IconButton>
             </Box>
           </Box>
-          {/* Rotation Config Panel */}
+
+          <Tabs value={logTab} onChange={(e, v) => setLogTab(v)} sx={{ minHeight: 32, '& .MuiTab-root': { py: 0, minHeight: 32, fontSize: '0.7rem', fontWeight: 800 } }}>
+            <Tab label="REGISTOS DO PLAYOUT" />
+            <Tab label={`REGISTOS VM / DOCKER (${vmLogSections.length})`} />
+          </Tabs>
+
           {showLogRotationConfig && (
             <Box sx={{ mt: 2, p: 2, bgcolor: 'rgba(255,152,0,0.06)', borderRadius: 3, border: '1px solid rgba(255,152,0,0.15)' }}>
               <Typography variant="overline" sx={{ color: 'warning.main', fontWeight: 800, display: 'block', mb: 2 }}>CONFIGURAÇÃO DE ROTAÇÃO DE LOGS</Typography>
@@ -3049,7 +3065,7 @@ function Settings() {
               </Box>
             </Box>
           )}
-          {/* Filter Toolbar */}
+
           <Box sx={{ mt: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
             <ToggleButtonGroup value={logFilter} exclusive onChange={(e, v) => v && setLogFilter(v)} size="small">
               {['ALL', 'INFO', 'WARN', 'ERROR'].map(f => (
@@ -3065,23 +3081,66 @@ function Settings() {
           </Box>
         </DialogTitle>
         <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.05)', p: 0, flexGrow: 1, overflow: 'hidden' }}>
-          <Box sx={{ p: 2, bgcolor: '#000', height: '100%', overflowY: 'auto', fontFamily: '"JetBrains Mono","Roboto Mono",monospace', fontSize: '0.75rem' }}>
-            {(() => {
-              const filtered = logs.filter(l => logFilter === 'ALL' || l.includes(logFilter)).filter(l => !logSearch || l.toLowerCase().includes(logSearch.toLowerCase()));
-              return filtered.length > 0 ? filtered.map((log, idx) => (
-                <Typography key={idx} component="div" sx={{
-                  color: log.includes('ERROR') ? '#ff5252' : log.includes('WARN') ? '#ffd740' : log.includes('INFO') ? '#4caf50' : 'rgba(255,255,255,0.8)',
-                  whiteSpace: 'pre-wrap', mb: 0.3, lineHeight: 1.5, fontFamily: 'inherit', fontSize: 'inherit',
-                  '&:hover': { bgcolor: 'rgba(255,255,255,0.04)', borderRadius: 1 }
-                }}>
-                  {log}
-                </Typography>
-              )) : (
-                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 200, opacity: 0.4 }}>
-                  {logFilter !== 'ALL' || logSearch ? 'NENHUM RESULTADO PARA OS FILTROS APLICADOS' : 'A AGUARDAR REGISTOS...'}
-                </Box>
-              );
-            })()}
+          <Box sx={{ p: 0, bgcolor: '#000', height: '100%', overflowY: 'auto', fontFamily: '"JetBrains Mono","Roboto Mono",monospace', fontSize: '0.75rem' }}>
+            {logTab === 0 ? (
+              <Box sx={{ p: 2 }}>
+                {(() => {
+                  const filtered = logs.filter(l => logFilter === 'ALL' || l.includes(logFilter)).filter(l => !logSearch || l.toLowerCase().includes(logSearch.toLowerCase()));
+                  return filtered.length > 0 ? filtered.map((log, idx) => (
+                    <Typography key={idx} component="div" sx={{
+                      color: log.includes('ERROR') ? '#ff5252' : log.includes('WARN') ? '#ffd740' : log.includes('INFO') ? '#4caf50' : 'rgba(255,255,255,0.8)',
+                      whiteSpace: 'pre-wrap', mb: 0.3, lineHeight: 1.5, fontFamily: 'inherit', fontSize: 'inherit',
+                      '&:hover': { bgcolor: 'rgba(255,255,255,0.04)', borderRadius: 1 }
+                    }}>
+                      {log}
+                    </Typography>
+                  )) : (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 200, opacity: 0.4 }}>
+                      {logFilter !== 'ALL' || logSearch ? 'NENHUM RESULTADO PARA OS FILTROS APLICADOS' : 'A AGUARDAR REGISTOS...'}
+                    </Box>
+                  );
+                })()}
+              </Box>
+            ) : (
+              <Box sx={{ p: 0 }}>
+                {vmLogMessage && (
+                  <Alert severity="info" variant="filled" sx={{ m: 2, borderRadius: 2, bgcolor: 'rgba(0,188,212,0.2)', border: '1px solid rgba(0,188,212,0.3)' }}>
+                    <Typography variant="caption" sx={{ color: '#fff', fontWeight: 700 }}>{vmLogMessage}</Typography>
+                  </Alert>
+                )}
+
+                {vmLogSections.map((section, sidx) => (
+                  <Box key={sidx} sx={{ mb: 4 }}>
+                    <Box sx={{ p: 1, px: 2, bgcolor: 'rgba(25, 118, 210, 0.2)', borderBottom: '1px solid rgba(25, 118, 210, 0.3)', display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <BugIcon sx={{ fontSize: 16, color: 'primary.light' }} />
+                      <Typography variant="overline" sx={{ fontWeight: 900, color: 'primary.light', letterSpacing: 1 }}>
+                        FONTE: {section.source}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ p: 2 }}>
+                      {section.lines.length > 0 ? section.lines.map((line, lidx) => (
+                        <Typography key={lidx} component="div" sx={{
+                          color: (line.toLowerCase().includes('err') || line.toLowerCase().includes('fail') || line.toLowerCase().includes('crit')) ? '#ff5252' :
+                            (line.toLowerCase().includes('warn')) ? '#ffd740' : 'rgba(255,255,255,0.7)',
+                          whiteSpace: 'pre-wrap', mb: 0.3, lineHeight: 1.4, fontSize: '0.7rem',
+                          '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' }
+                        }}>
+                          {line}
+                        </Typography>
+                      )) : (
+                        <Typography variant="caption" sx={{ opacity: 0.3, fontStyle: 'italic', pl: 2 }}>Sem registos recentes nesta fonte.</Typography>
+                      )}
+                    </Box>
+                  </Box>
+                ))}
+
+                {vmLogSections.length === 0 && !vmLogMessage && (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 200, opacity: 0.3 }}>
+                    NENHUM REGISTO DE SISTEMA DETECTADO DENTRO DO CONTENTOR.
+                  </Box>
+                )}
+              </Box>
+            )}
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2, justifyContent: 'space-between' }}>

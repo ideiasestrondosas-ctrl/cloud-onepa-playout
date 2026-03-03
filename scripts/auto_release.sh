@@ -4,13 +4,14 @@
 PROJECT_NAME="cloud-onepa-playout"
 BACKUP_DIR="./backups"
 DATE=$(date +%Y%m%d)
-VERSION=$(grep '"version":' frontend/package.json | awk -F '"' '{print $4}')
+# Get Version
+VERSION=$(grep -m1 "^version =" "$(dirname "$0")/../backend/Cargo.toml" | cut -d'"' -f2 2>/dev/null || echo "Unknown")
 ZIP_NAME="${PROJECT_NAME}-v${VERSION}-PRO.zip"
 
 # Create backups directory if it doesn't exist
 mkdir -p $BACKUP_DIR
 
-echo "📦 Creating backup for version $VERSION..."
+echo "📦 ONEPA Auto-Release (v$VERSION) — Creating backup..."
 echo "📂 Destination: $BACKUP_DIR/$ZIP_NAME"
 
 # Create Zip

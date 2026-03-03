@@ -12,7 +12,10 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}🔍 Auditing Cloud Onepa Playout Infrastructure...${NC}"
+# Get Version
+VERSION=$(grep -m1 "^version =" "$(dirname "$0")/../backend/Cargo.toml" | cut -d'"' -f2 2>/dev/null || echo "Unknown")
+
+echo -e "${BLUE}🔍 Auditing Cloud Onepa Playout Infrastructure (v$VERSION)...${NC}"
 echo "----------------------------------------------------"
 
 # Helper to check if a container is running
@@ -99,6 +102,34 @@ check_traffic() {
     fi
 }
 
+# Helper to check for host-level UDP conflicts (Mac/Linux)
+check_host_conflict() {
+    local port=$1
+    local label=$2
+    
+    # Check if anything on the host is bound to this port
+    # Using lsof (standard on Mac) or netstat/ss
+    local host_proc=""
+    if command -v lsof >/dev/null 2>&1; then
+        # Refinement: Ignore outbound flows (contain "->") to focus on actual LISTENERS
+        host_proc=$(lsof -nP -iUDP:"$port" | grep "UDP" | grep -v "\->" | head -1 | awk '{print $1" (PID "$2")"}')
+    fi
+    
+    if [ -n "$host_proc" ]; then
+        if [[ "$host_proc" == *"com.docke"* || "$host_proc" == *"docker"* ]]; then
+             echo -e "${YELLOW}⚠️  PORT BOUND BY DOCKER ON HOST${NC}: $host_proc."
+             return 1
+        elif [[ "$host_proc" == *"VLC"* || "$host_proc" == *"vlc"* ]]; then
+             echo -e "${GREEN}✅ ACTIVE RECEIVER (Normal)${NC}: $host_proc is listening for data."
+             return 0
+        else
+             echo -e "${RED}🚨 PORT CONFLICT ON HOST${NC}: $host_proc is using UDP port $port."
+             return 1
+        fi
+    fi
+    return 0
+}
+
 # Helper to check port mapping and reachability
 audit_service() {
     local container=$1
@@ -119,6 +150,8 @@ audit_service() {
     if [ -z "$host_port" ]; then
         if [ "$container" == "alpha-mediamtx" ] && [ "$internal_port" == "9997" ]; then
              echo -e "${CYAN}● INTERNAL ONLY${NC} (API Access)"
+        elif [ "$container" == "alpha-backend" ] && [ "$internal_port" == "1234" ]; then
+             echo -e "${GREEN}✅ STANDBY (Host Push Mode)${NC}"
         else
              echo -e "${YELLOW}⚠️  NO EXTERNAL MAPPING${NC}"
         fi
@@ -148,6 +181,16 @@ audit_service alpha-mediamtx 8890 udp "SRT Server"
 audit_service alpha-backend 1234 udp "UDP Playout"
 audit_service alpha-mediamtx 9997 tcp "MediaMTX API"
 audit_service alpha-postgres 5432 tcp "PostgreSQL"
+
+echo ""
+echo -e "${BLUE}--- Host Connectivity Audit (VLC Context) ---${NC}"
+echo -n "Checking UDP Port 1234 on Host... "
+if ! check_host_conflict 1234 "UDP Playout"; then
+    echo -e "${CYAN}💡 Hint: If Docker is bound but no mapping exists, run 'docker compose down' to clear ghost bindings.${NC}"
+fi
+for p in {1235..1238}; do
+    check_host_conflict "$p" "UDP Relay" >/dev/null || echo -e "${YELLOW}⚠️  Port $p is busy on host${NC}"
+done
 
 echo ""
 echo -e "${BLUE}--- Protocol & Data Flow Verification ---${NC}"

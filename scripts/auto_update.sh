@@ -8,7 +8,10 @@ set -e
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$DIR"
 
-echo "[$(date)] 🔄 Checking for updates..."
+# Get Version
+VERSION=$(grep -m1 "^version =" "$(dirname "$0")/../backend/Cargo.toml" | cut -d'"' -f2 2>/dev/null || echo "Unknown")
+
+echo "[$(date)] 🔄 ONEPA Auto-Update (v$VERSION) — Checking for updates..."
 
 # 1. Update Code
 BRANCH=$(git rev-parse --abbrev-ref HEAD)

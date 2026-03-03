@@ -47,9 +47,12 @@ PROJECT_NAME="onepa-playout"
 GITHUB_REPO="ideiasestrondosas-ctrl/cloud-onepa-playout"
 EXCLUDE_FILE="big_buck_bunny_1080p_h264.mov"
 
+# Get Version
+VERSION=$(grep -m1 "^version =" "$(dirname "$0")/../backend/Cargo.toml" | cut -d'"' -f2 2>/dev/null || echo "Unknown")
+
 echo -e "${GREEN}"
 echo "==================================================="
-echo "🚀 CLOUD ONEPA PLAYOUT - MASTER RELEASE AUTOMATION"
+echo "🚀 CLOUD ONEPA PLAYOUT - MASTER RELEASE (v$VERSION)"
 echo "==================================================="
 echo -e "${NC}"
 

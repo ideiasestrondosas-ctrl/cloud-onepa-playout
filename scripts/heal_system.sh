@@ -1,7 +1,10 @@
 #!/bin/bash
 # heal_system.sh - Ensures all default values and paths are correct for the App to run perfectly.
 
-echo "🚀 Starting System Healer..."
+# Get Version
+VERSION=$(grep -m1 "^version =" "$(dirname "$0")/../backend/Cargo.toml" | cut -d'"' -f2 2>/dev/null || echo "Unknown")
+
+echo "🚀 Starting System Healer (Version: $VERSION)..."
 
 # 1. Correct Logo and Asset Paths in Database
 echo "📁 Fixing asset paths in database..."

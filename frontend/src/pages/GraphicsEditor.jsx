@@ -221,9 +221,15 @@ export default function GraphicsEditor() {
   }, [isDragging]);
 
   const getLogoStyle = () => {
+    // Match FFmpeg: scale logo as a PERCENTAGE of the output frame width (W*scale).
+    // containerRef tracks the actual rendered width of the 16:9 preview canvas.
+    const containerWidth = containerRef.current?.offsetWidth || 1920;
+    // logoScale of 0.15 → 15% of output width, just as FFmpeg does with W*0.15
+    const logoWidth = Math.round(containerWidth * logoScale);
+
     const base = {
       position: 'absolute',
-      width: 120 * logoScale,
+      width: logoWidth,
       height: 'auto',
       opacity: logoOpacity,
       cursor: isDragging ? 'grabbing' : 'grab',

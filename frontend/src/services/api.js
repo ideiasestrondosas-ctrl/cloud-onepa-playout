@@ -144,6 +144,7 @@ export const settingsAPI = {
   applyDefaults: () => api.post('/settings/apply-defaults'),
   resetAll: () => api.post('/settings/reset-all'),
   getSystemLogs: () => api.get('/settings/system-logs'),
+  getVMLogs: () => api.get('/settings/vm-logs'),
 };
 
 // Template endpoints

@@ -10,7 +10,10 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-echo -e "${GREEN}🐧 ONEPA Playout PRO - Linux Total Automation Setup${NC}"
+# Get Version
+VERSION=$(grep -m1 "^version =" "$(dirname "$0")/../backend/Cargo.toml" | cut -d'"' -f2 2>/dev/null || echo "Unknown")
+
+echo -e "${GREEN}🐧 ONEPA Playout PRO - Linux Setup (v$VERSION)${NC}"
 
 # 1. Dependency Check
 check_and_install() {
