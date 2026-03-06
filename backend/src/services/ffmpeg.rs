@@ -417,6 +417,14 @@ impl FFmpegService {
                     .replace("localhost", "mediamtx")
                     .replace("127.0.0.1", "mediamtx");
             }
+            // Ensure pkt_size=1316 for SRT to avoid MTU issues and reduce latency
+            if !final_url.contains("pkt_size=") {
+                if final_url.contains("?") {
+                    final_url.push_str("&pkt_size=1316");
+                } else {
+                    final_url.push_str("?pkt_size=1316");
+                }
+            }
         } else if output_url.starts_with("udp://") {
             if output_url.contains("@") && (output_url.contains("localhost") || output_url.contains("127.0.0.1") || output_url.contains("://@:")) {
                 log::info!("📡 UDP UNICAST HOST PUSH: Mapping to host.docker.internal (Pusher mode)");
@@ -444,6 +452,14 @@ impl FFmpegService {
                 final_url = final_url
                     .replace("localhost", "host.docker.internal")
                     .replace("127.0.0.1", "host.docker.internal");
+            }
+            // Ensure pkt_size=1316 for UDP to avoid fragment issues and reduce latency
+            if !final_url.contains("pkt_size=") {
+                if final_url.contains("?") {
+                    final_url.push_str("&pkt_size=1316");
+                } else {
+                    final_url.push_str("?pkt_size=1316");
+                }
             }
         }
 

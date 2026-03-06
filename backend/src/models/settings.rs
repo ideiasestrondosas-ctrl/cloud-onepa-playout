@@ -74,7 +74,16 @@ pub struct Settings {
     #[sqlx(default)]
     pub log_path: Option<String>,
     #[sqlx(default)]
+    pub log_max_size_mb: i32,
+    #[sqlx(default)]
+    pub log_max_files: i32,
+    #[sqlx(default)]
+    pub log_compress_old: bool,
+    #[sqlx(default)]
+    pub log_retention_days: i32,
+    #[sqlx(default)]
     pub graphics_updated_at: Option<DateTime<Utc>>,
+    pub system_language: String,
 }
 
 impl Settings {
@@ -207,4 +216,9 @@ pub struct UpdateSettingsRequest {
     pub tvmaze_api_key: Option<String>,
     pub branding_type: Option<String>,
     pub log_path: Option<Option<String>>,
+    pub log_max_size_mb: Option<i32>,
+    pub log_max_files: Option<i32>,
+    pub log_compress_old: Option<bool>,
+    pub log_retention_days: Option<i32>,
+    pub system_language: Option<String>,
 }

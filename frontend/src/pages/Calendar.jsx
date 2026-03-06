@@ -35,9 +35,12 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { scheduleAPI, playlistAPI, playoutAPI, settingsAPI } from '../services/api';
 import { useNotification } from '../contexts/NotificationContext';
+import { useTranslation } from 'react-i18next';
+import ALL_LOCALES from '@fullcalendar/core/locales-all';
 
 export default function Calendar() {
-  const { showSuccess, showError, showInfo } = useNotification();
+  const { t, i18n } = useTranslation();
+  const { showSuccess, showError } = useNotification();
   const [events, setEvents] = useState([]);
   const [playoutStatus, setPlayoutStatus] = useState(null);
   const [playlists, setPlaylists] = useState([]);
@@ -97,7 +100,7 @@ export default function Calendar() {
         // Add the original event
         calendarEvents.push({
           id: schedule.id,
-          title: schedule.playlist_name || 'Playlist',
+          title: schedule.playlist_name || t('calendar.default_playlist_name'),
           start: schedule.date + (schedule.start_time ? `T${schedule.start_time}` : ''),
           backgroundColor: schedule.repeat_pattern ? '#1976d2' : '#dc004e',
           extendedProps: {
@@ -132,7 +135,7 @@ export default function Calendar() {
 
             calendarEvents.push({
               id: `${schedule.id}-${dateStr}`,
-              title: schedule.playlist_name || 'Playlist',
+              title: schedule.playlist_name || t('calendar.default_playlist_name'),
               start: `${dateStr}T${timeStr}`,
               backgroundColor: '#1976d2', // Same color as original
               opacity: 0.6, // Will be used in renderEventContent
@@ -153,7 +156,7 @@ export default function Calendar() {
       console.log('Schedule fetched and expanded:', calendarEvents.length, 'items');
     } catch (error) {
       console.error('Failed to fetch schedule:', error);
-      showError('Erro ao carregar agenda');
+      showError(t('calendar.notifications.fetch_error'));
     }
   };
 
@@ -176,7 +179,7 @@ export default function Calendar() {
 
   const handleSaveSchedule = async () => {
     if (!selectedPlaylist) {
-      showError('Selecione uma playlist');
+      showError(t('calendar.notifications.playlist_required'));
       return;
     }
 
@@ -190,16 +193,16 @@ export default function Calendar() {
     try {
       if (isEditing && editId) {
         await scheduleAPI.update(editId, payload);
-        showSuccess('Agendamento atualizado');
+        showSuccess(t('calendar.notifications.update_success'));
       } else {
         await scheduleAPI.create(payload);
-        showSuccess('Agendamento criado');
+        showSuccess(t('calendar.notifications.create_success'));
       }
       setDialogOpen(false);
       resetForm();
       await fetchSchedule();
     } catch (error) {
-      showError('Erro ao guardar agendamento');
+      showError(t('calendar.notifications.save_error'));
     }
   };
 
@@ -210,15 +213,15 @@ export default function Calendar() {
     const id = idStr.length > 36 ? idStr.substring(0, 36) : idStr;
 
     if (!id) {
-      showError('Erro: ID do agendamento não encontrado');
+      showError(t('calendar.notifications.id_not_found'));
       return;
     }
     try {
       await scheduleAPI.delete(id);
-      showSuccess('Agendamento removido');
+      showSuccess(t('calendar.notifications.delete_success'));
       await fetchSchedule();
     } catch (error) {
-      showError('Erro ao eliminar agendamento');
+      showError(t('calendar.notifications.delete_error'));
     }
   };
 
@@ -226,16 +229,16 @@ export default function Calendar() {
     const idStr = idOrOccurrence.toString();
     const id = idStr.length > 36 ? idStr.substring(0, 36) : idStr;
     if (!id || !date) {
-      showError('Erro: Dados insuficientes para remover ocorrência');
+      showError(t('calendar.notifications.missing_data_occurrence'));
       return;
     }
 
     try {
       await scheduleAPI.addException(id, date);
-      showSuccess('Ocorrência de hoje removida');
+      showSuccess(t('calendar.notifications.occurrence_removed'));
       await fetchSchedule();
     } catch (error) {
-      showError('Erro ao remover ocorrência');
+      showError(t('calendar.notifications.occurrence_error'));
     }
   };
 
@@ -246,7 +249,7 @@ export default function Calendar() {
       await fetchSchedule();
       setBulkDialogOpen(false);
     } catch (error) {
-      showError('Erro na limpeza em massa');
+      showError(t('calendar.notifications.bulk_error'));
     }
   };
 
@@ -298,7 +301,14 @@ export default function Calendar() {
       end = formatDate(new Date(d.getFullYear(), 11, 31));
     }
 
-    if (window.confirm(`Tem a certeza que deseja eliminar toda a programação para o período: ${type}?`)) {
+    const periodLabel = {
+      'today': t('calendar.clear_today'),
+      'week': t('calendar.clear_week'),
+      'month': t('calendar.clear_month'),
+      'year': t('calendar.clear_year')
+    }[type] || type;
+
+    if (window.confirm(t('playlist.notifications.bulk_delete_confirm', { count: periodLabel }))) {
       handleBulkDelete(start, end);
     }
   };
@@ -311,16 +321,16 @@ export default function Calendar() {
       <Tooltip title={
         <Box sx={{ p: 0.5, textAlign: 'center' }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{eventInfo.event.title.toUpperCase()}</Typography>
-          <Typography variant="caption" display="block" sx={{ fontWeight: 600 }}>HORA: {eventInfo.timeText}</Typography>
+          <Typography variant="caption" display="block" sx={{ fontWeight: 600 }}>{t('calendar.tooltips.time').toUpperCase()}: {eventInfo.timeText}</Typography>
           {isPlayingCurrent && (
             <Typography variant="caption" sx={{ color: 'success.main', fontWeight: 800, mt: 0.5 }} display="block">
-              ● EM REPRODUÇÃO
+              ● {t('calendar.tooltips.playing')}
             </Typography>
           )}
           {eventInfo.event.extendedProps.repeatPattern && (
             <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 700 }} display="block">
-              RECORRENTE ({eventInfo.event.extendedProps.repeatPattern.toUpperCase()})
-              {!isOriginal && ' (OCORRÊNCIA)'}
+              {t('calendar.tooltips.recurrent')} ({eventInfo.event.extendedProps.repeatPattern.toUpperCase()})
+              {!isOriginal && ` (${t('calendar.tooltips.occurrence')})`}
             </Typography>
           )}
         </Box>
@@ -356,8 +366,8 @@ export default function Calendar() {
     <Box sx={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ mb: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>
-          <Typography variant="h5" className="neon-text" sx={{ fontWeight: 800 }}>CENTRAL DE AGENDAMENTO</Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: 1.2, fontSize: '0.65rem' }}>GESTOR DE PROGRAMAÇÃO & RECORRÊNCIA</Typography>
+          <Typography variant="h5" className="neon-text" sx={{ fontWeight: 800 }}>{t('calendar.title')}</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: 1.2, fontSize: '0.65rem' }}>{t('calendar.subtitle')}</Typography>
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
@@ -374,8 +384,8 @@ export default function Calendar() {
             }}>
               <PlayIcon sx={{ mr: 1, fontSize: 16, color: 'success.main' }} />
               <Box>
-                <Typography variant="caption" sx={{ opacity: 0.6, display: 'block', fontWeight: 800, fontSize: '0.5rem' }}>ON-AIR NOW</Typography>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'success.main', fontSize: '0.75rem' }}>{playoutStatus.current_playlist_name?.toUpperCase() || 'PLAYLIST ATIVA'}</Typography>
+                <Typography variant="caption" sx={{ opacity: 0.6, display: 'block', fontWeight: 800, fontSize: '0.5rem' }}>{t('calendar.on_air_now')}</Typography>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'success.main', fontSize: '0.75rem' }}>{playoutStatus.current_playlist_name?.toUpperCase() || t('calendar.active_playlist')}</Typography>
               </Box>
             </Box>
           )}
@@ -387,7 +397,7 @@ export default function Calendar() {
             onClick={() => setBulkDialogOpen(true)}
             sx={{ borderRadius: 2, fontWeight: 800 }}
           >
-            LIMPEZA EM MASSA
+            {t('calendar.bulk_delete')}
           </Button>
         </Box>
       </Box>
@@ -409,10 +419,10 @@ export default function Calendar() {
             {/* EPG Export Bar */}
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5, mb: 0.5 }}>
               <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: 1, mr: 'auto', fontSize: '0.65rem' }}>
-                📺 TV GUIDE · {new Date().toLocaleDateString('pt-PT', { weekday: 'short', day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase()}
+                📺 {t('calendar.tv_guide')} · {new Date().toLocaleDateString(i18n.language, { weekday: 'short', day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase()}
               </Typography>
               {settings?.epgUrl && (
-                <Tooltip title="Abrir EPG no browser" arrow>
+                <Tooltip title={t('calendar.tooltips.open_browser')} arrow>
                   <IconButton
                     size="small"
                     sx={{ color: 'primary.main', ml: 1 }}
@@ -422,7 +432,7 @@ export default function Calendar() {
                   </IconButton>
                 </Tooltip>
               )}
-              <Tooltip title={settings?.epgUrl ? 'Exportar e guardar EPG em disco (.xml)' : 'URL do EPG não configurado'} arrow>
+              <Tooltip title={settings?.epgUrl ? t('calendar.tooltips.export_xml') : t('calendar.tooltips.url_not_configured')} arrow>
                 <span>
                   <IconButton
                     size="small"
@@ -431,7 +441,7 @@ export default function Calendar() {
                     onClick={async () => {
                       try {
                         const response = await fetch('/api/epg/export');
-                        if (!response.ok) throw new Error('Falha na exportação');
+                        if (!response.ok) throw new Error(t('calendar.notifications.export_failed'));
                         const blob = await response.blob();
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
@@ -448,7 +458,7 @@ export default function Calendar() {
                   </IconButton>
                 </span>
               </Tooltip>
-              <Tooltip title="Abrir EPG XML no browser" arrow placement="top">
+              <Tooltip title={t('calendar.tooltips.open_xml')} arrow placement="top">
                 <IconButton
                   size="small"
                   onClick={() => window.open('/api/playlists/epg.xml', '_blank')}
@@ -457,7 +467,7 @@ export default function Calendar() {
                   <OpenInNewIcon sx={{ fontSize: 16 }} />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="Descarregar EPG XML para disco" arrow placement="top">
+              <Tooltip title={t('calendar.tooltips.download_xml')} arrow placement="top">
                 <IconButton
                   size="small"
                   onClick={() => {
@@ -483,7 +493,8 @@ export default function Calendar() {
               eventClick={handleEventClick}
               eventContent={renderEventContent}
               height="100%"
-              locale="pt"
+              locales={ALL_LOCALES}
+              locale={i18n.language.split('-')[0]}
               headerToolbar={{
                 left: 'prev,next today',
                 center: 'title',
@@ -496,13 +507,13 @@ export default function Calendar() {
         <Grid item xs={12} md={3} sx={{ height: '100%' }}>
           <Stack spacing={1.5} sx={{ height: '100%' }}>
             <Paper className="glass-panel" sx={{ p: 1.5, flexGrow: 1 }}>
-              <Typography variant="overline" sx={{ fontWeight: 800, color: 'primary.main', display: 'block', mb: 1.5 }}>ATALHOS DE LIMPEZA</Typography>
+              <Typography variant="overline" sx={{ fontWeight: 800, color: 'primary.main', display: 'block', mb: 1.5 }}>{t('calendar.shortcuts')}</Typography>
               <Stack spacing={1}>
                 {[
-                  { label: 'LIMPAR HOJE', type: 'today' },
-                  { label: 'ESTA SEMANA', type: 'week' },
-                  { label: 'ESTE MÊS', type: 'month' },
-                  { label: 'ESTE ANO', type: 'year' }
+                  { label: t('calendar.clear_today'), type: 'today' },
+                  { label: t('calendar.clear_week'), type: 'week' },
+                  { label: t('calendar.clear_month'), type: 'month' },
+                  { label: t('calendar.clear_year'), type: 'year' }
                 ].map((btn) => (
                   <Button
                     key={btn.type}
@@ -519,19 +530,19 @@ export default function Calendar() {
               </Stack>
 
               <Box sx={{ mt: 2 }}>
-                <Typography variant="overline" sx={{ fontWeight: 800, color: 'primary.main', display: 'block', mb: 1.5 }}>LEGENDA</Typography>
+                <Typography variant="overline" sx={{ fontWeight: 800, color: 'primary.main', display: 'block', mb: 1.5 }}>{t('calendar.legend')}</Typography>
                 <Stack spacing={1}>
                   <Box sx={{ display: 'flex', alignItems: 'center', p: 1, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.02)' }}>
                     <Box sx={{ width: 8, height: 8, bgcolor: '#ff4081', mr: 2, borderRadius: '50%', boxShadow: '0 0 10px #ff4081' }} />
-                    <Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.8 }}>AGENDAMENTO ÚNICO</Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.8 }}>{t('calendar.single_event')}</Typography>
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', p: 0.5, borderRadius: 1.5, bgcolor: 'rgba(255,255,255,0.02)' }}>
                     <Box sx={{ width: 8, height: 8, bgcolor: '#00e5ff', mr: 2, borderRadius: '50%', boxShadow: '0 0 10px #00e5ff' }} />
-                    <Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.8, fontSize: '0.65rem' }}>SÉRIE DE REPETIÇÃO</Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.8, fontSize: '0.65rem' }}>{t('calendar.recurring_series')}</Typography>
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', p: 0.5, borderRadius: 1.5, bgcolor: 'rgba(255,255,255,0.02)' }}>
                     <Box sx={{ width: 8, height: 8, bgcolor: '#fff', mr: 2, borderRadius: '50%', boxShadow: '0 0 10px #fff' }} />
-                    <Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.8, fontSize: '0.65rem' }}>EM REPRODUÇÃO AGORA</Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.8, fontSize: '0.65rem' }}>{t('calendar.playing_now')}</Typography>
                   </Box>
                 </Stack>
               </Box>
@@ -549,14 +560,14 @@ export default function Calendar() {
         PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
       >
         <DialogTitle sx={{ borderBottom: '1px solid rgba(255,255,255,0.05)', fontWeight: 800, color: 'primary.main', py: 1 }}>
-          GERIR AGENDAMENTO
+          {t('calendar.dialogs.manage.title')}
         </DialogTitle>
         <DialogContent sx={{ mt: 1, p: 2 }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'primary.main', lineHeight: 1.2 }}>{selectedEvent?.title?.toUpperCase()}</Typography>
-          <Typography variant="caption" sx={{ fontWeight: 600, opacity: 0.6 }}>DATA: {selectedEvent?.startStr.split('T')[0]}</Typography>
+          <Typography variant="caption" sx={{ fontWeight: 600, opacity: 0.6 }}>{t('calendar.dialogs.manage.date')}: {selectedEvent?.startStr.split('T')[0]}</Typography>
           {selectedEvent?.extendedProps.repeatPattern && (
             <Alert severity="info" sx={{ mt: 1, p: 0.5, px: 2, borderRadius: 1.5, bgcolor: 'rgba(0,229,255,0.05)', color: 'primary.main', border: '1px solid rgba(0,229,255,0.1)', '& .MuiAlert-message': { p: 0.5 } }}>
-              <Typography variant="caption" sx={{ fontWeight: 800 }}>RECORRE ({selectedEvent.extendedProps.repeatPattern.toUpperCase()})</Typography>
+              <Typography variant="caption" sx={{ fontWeight: 800 }}>{t('calendar.dialogs.manage.recurs')} ({selectedEvent.extendedProps.repeatPattern.toUpperCase()})</Typography>
             </Alert>
           )}
         </DialogContent>
@@ -570,7 +581,7 @@ export default function Calendar() {
             onClick={() => { handleEditSchedule(selectedEvent); setActionDialogOpen(false); }}
             sx={{ borderRadius: 1.5, fontWeight: 800, py: 0.8 }}
           >
-            EDITAR SÉRIE / EVENTO
+            {t('calendar.dialogs.manage.edit_btn')}
           </Button>
 
           {selectedEvent?.extendedProps.repeatPattern && (
@@ -581,14 +592,14 @@ export default function Calendar() {
               fullWidth
               startIcon={<DeleteIcon />}
               onClick={() => {
-                if (window.confirm(`Remover apenas a ocorrência de ${selectedEvent.startStr.split('T')[0]}?`)) {
+                if (window.confirm(t('calendar.dialogs.manage.confirm_ignore', { date: selectedEvent.startStr.split('T')[0] }))) {
                   handleDeleteOnlyToday(selectedEvent.id, selectedEvent.startStr.split('T')[0]);
                 }
                 setActionDialogOpen(false);
               }}
               sx={{ borderRadius: 1.5, fontWeight: 800, py: 0.6 }}
             >
-              IGNORAR APENAS HOJE
+              {t('calendar.dialogs.manage.ignore_today')}
             </Button>
           )}
 
@@ -600,17 +611,17 @@ export default function Calendar() {
             startIcon={<DeleteIcon />}
             onClick={() => {
               const msg = selectedEvent?.extendedProps.repeatPattern
-                ? `Deseja parar toda a série de "${selectedEvent?.title}" definitivamente?`
-                : `Remover definitivamente "${selectedEvent?.title}"?`;
+                ? t('calendar.dialogs.manage.confirm_stop_series', { title: selectedEvent?.title })
+                : t('calendar.dialogs.manage.confirm_delete_event', { title: selectedEvent?.title });
               if (window.confirm(msg)) { handleDeleteSchedule(selectedEvent.id); }
               setActionDialogOpen(false);
             }}
             sx={{ borderRadius: 2, fontWeight: 800, py: 1 }}
           >
-            {selectedEvent?.extendedProps.repeatPattern ? 'PARAR SÉRIE DE REPETIÇÃO' : 'ELIMINAR AGENDAMENTO'}
+            {selectedEvent?.extendedProps.repeatPattern ? t('calendar.dialogs.manage.stop_series') : t('calendar.dialogs.manage.delete_event')}
           </Button>
 
-          <Button onClick={() => setActionDialogOpen(false)} sx={{ fontWeight: 800, opacity: 0.5, py: 0.5 }}>FECHAR</Button>
+          <Button onClick={() => setActionDialogOpen(false)} sx={{ fontWeight: 800, opacity: 0.5, py: 0.5 }}>{t('common.close')}</Button>
         </DialogActions>
       </Dialog>
 
@@ -623,11 +634,11 @@ export default function Calendar() {
         PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
       >
         <DialogTitle sx={{ fontWeight: 800, color: 'primary.main', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          {isEditing ? 'EDITAR AGENDAMENTO' : `AGENDAR PARA ${selectedDate}`}
+          {isEditing ? t('calendar.dialogs.create.title_edit') : t('calendar.dialogs.create.title_new', { date: selectedDate })}
         </DialogTitle>
         <DialogContent sx={{ mt: 2 }}>
           <FormControl fullWidth variant="standard" sx={{ mt: 1 }}>
-            <InputLabel shrink sx={{ fontWeight: 800 }}>PLAYLIST</InputLabel>
+            <InputLabel shrink sx={{ fontWeight: 800 }}>{t('calendar.dialogs.create.playlist_label')}</InputLabel>
             <Select
               value={selectedPlaylist}
               onChange={(e) => setSelectedPlaylist(e.target.value)}
@@ -639,7 +650,7 @@ export default function Calendar() {
 
           <TextField
             fullWidth
-            label="HORÁRIO"
+            label={t('calendar.dialogs.create.time_label')}
             type="time"
             value={startTime}
             onChange={(e) => setStartTime(e.target.value)}
@@ -650,27 +661,27 @@ export default function Calendar() {
           />
 
           <FormControl fullWidth variant="standard" sx={{ mt: 3 }}>
-            <InputLabel shrink sx={{ fontWeight: 800 }}>PADRÃO DE REPETIÇÃO</InputLabel>
+            <InputLabel shrink sx={{ fontWeight: 800 }}>{t('calendar.dialogs.create.repeat_label')}</InputLabel>
             <Select
               value={repeatPattern}
               onChange={(e) => setRepeatPattern(e.target.value)}
               sx={{ fontWeight: 800 }}
             >
-              <MenuItem value="" sx={{ fontWeight: 700, opacity: 0.5 }}>SEM REPETIÇÃO</MenuItem>
-              <MenuItem value="daily" sx={{ fontWeight: 700 }}>DIÁRIA</MenuItem>
-              <MenuItem value="weekly" sx={{ fontWeight: 700 }}>SEMANAL</MenuItem>
-              <MenuItem value="monthly" sx={{ fontWeight: 700 }}>MENSAL</MenuItem>
+              <MenuItem value="" sx={{ fontWeight: 700, opacity: 0.5 }}>{t('calendar.dialogs.create.no_repeat')}</MenuItem>
+              <MenuItem value="daily" sx={{ fontWeight: 700 }}>{t('calendar.dialogs.create.daily')}</MenuItem>
+              <MenuItem value="weekly" sx={{ fontWeight: 700 }}>{t('calendar.dialogs.create.weekly')}</MenuItem>
+              <MenuItem value="monthly" sx={{ fontWeight: 700 }}>{t('calendar.dialogs.create.monthly')}</MenuItem>
             </Select>
           </FormControl>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => { setDialogOpen(false); resetForm(); }} sx={{ fontWeight: 800 }}>CANCELAR</Button>
+          <Button onClick={() => { setDialogOpen(false); resetForm(); }} sx={{ fontWeight: 800 }}>{t('common.cancel')}</Button>
           <Button
             variant="contained"
             onClick={handleSaveSchedule}
             sx={{ borderRadius: 2, fontWeight: 800, px: 4 }}
           >
-            GUARDAR
+            {t('common.save')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -683,14 +694,14 @@ export default function Calendar() {
         fullWidth
         PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
       >
-        <DialogTitle sx={{ fontWeight: 800, color: 'error.main' }}>LIMPEZA PERSONALIZADA</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 800, color: 'error.main' }}>{t('calendar.dialogs.bulk.title')}</DialogTitle>
         <DialogContent sx={{ mt: 2 }}>
-          <Typography variant="body2" sx={{ mb: 3, fontWeight: 600, opacity: 0.6 }}>ESCOLHA UM PERÍODO PARA REMOVER TODA A PROGRAMAÇÃO.</Typography>
-          <TextField fullWidth label="INÍCIO" type="date" InputLabelProps={{ shrink: true, sx: { fontWeight: 800 } }} variant="standard" sx={{ mb: 3 }} id="bulk-start" inputProps={{ sx: { fontWeight: 800 } }} />
-          <TextField fullWidth label="FIM" type="date" InputLabelProps={{ shrink: true, sx: { fontWeight: 800 } }} variant="standard" id="bulk-end" inputProps={{ sx: { fontWeight: 800 } }} />
+          <Typography variant="body2" sx={{ mb: 3, fontWeight: 600, opacity: 0.6 }}>{t('calendar.dialogs.bulk.msg')}</Typography>
+          <TextField fullWidth label={t('calendar.dialogs.bulk.start_label')} type="date" InputLabelProps={{ shrink: true, sx: { fontWeight: 800 } }} variant="standard" sx={{ mb: 3 }} id="bulk-start" inputProps={{ sx: { fontWeight: 800 } }} />
+          <TextField fullWidth label={t('calendar.dialogs.bulk.end_label')} type="date" InputLabelProps={{ shrink: true, sx: { fontWeight: 800 } }} variant="standard" id="bulk-end" inputProps={{ sx: { fontWeight: 800 } }} />
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setBulkDialogOpen(false)} sx={{ fontWeight: 800 }}>CANCELAR</Button>
+          <Button onClick={() => setBulkDialogOpen(false)} sx={{ fontWeight: 800 }}>{t('common.cancel')}</Button>
           <Button
             color="error"
             variant="contained"
@@ -698,11 +709,11 @@ export default function Calendar() {
               const s = document.getElementById('bulk-start').value;
               const e = document.getElementById('bulk-end').value;
               if (s && e) handleBulkDelete(s, e);
-              else showError('Selecione as datas');
+              else showError(t('calendar.notifications.select_dates'));
             }}
             sx={{ borderRadius: 2, fontWeight: 800, px: 3 }}
           >
-            ELIMINAR PERÍODO
+            {t('calendar.dialogs.bulk.btn_delete')}
           </Button>
         </DialogActions>
       </Dialog>

@@ -27,6 +27,16 @@ export default defineConfig({
     outDir: "dist",
     assetsDir: "static",
     sourcemap: false,
-    chunkSizeWarningLimit: 700,
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ["react", "react-dom", "react-router-dom"],
+          ui: ["@mui/material", "@mui/icons-material", "@emotion/react", "@emotion/styled"],
+          calendar: ["@fullcalendar/core", "@fullcalendar/daygrid", "@fullcalendar/interaction", "@fullcalendar/react"],
+          video: ["video.js", "react-player"]
+        },
+      },
+    },
   },
 });

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useNotification } from '../contexts/NotificationContext';
 import { playlistAPI, templateAPI } from '../services/api';
 import {
@@ -28,11 +29,11 @@ import {
   History as HistoryIcon,
 } from '@mui/icons-material';
 
-const PRESET_TEMPLATES = [
+const getPresetTemplates = (t) => [
   {
     id: 'morning-show',
-    name: 'Morning Show',
-    description: 'Template para programa matinal (06:00 - 12:00)',
+    name: t('templates.presets.morning_show.name'),
+    description: t('templates.presets.morning_show.description'),
     duration: 21600, // 6 hours
     structure: [
       { type: 'intro', duration: 30 },
@@ -44,8 +45,8 @@ const PRESET_TEMPLATES = [
   },
   {
     id: 'full-day',
-    name: 'Full Day 24h',
-    description: 'Playlist completa de 24 horas',
+    name: t('templates.presets.full_day.name'),
+    description: t('templates.presets.full_day.description'),
     duration: 86400,
     structure: [
       { type: 'content', duration: 82800 },
@@ -54,8 +55,8 @@ const PRESET_TEMPLATES = [
   },
   {
     id: 'loop-content',
-    name: 'Loop Content',
-    description: 'Loop de conteúdo com intervalos comerciais',
+    name: t('templates.presets.loop_content.name'),
+    description: t('templates.presets.loop_content.description'),
     duration: 86400,
     structure: [
       { type: 'content', duration: 3600 },
@@ -67,6 +68,7 @@ const PRESET_TEMPLATES = [
 export default function Templates() {
   const navigate = useNavigate();
   const { showSuccess, showError } = useNotification();
+  const { t } = useTranslation();
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -79,14 +81,13 @@ export default function Templates() {
   }, []);
 
   const fetchTemplates = async () => {
+    const presets = getPresetTemplates(t);
     try {
       const response = await templateAPI.list();
-      // Combine preset templates with user templates if desired, or just show database templates
-      // For now, let's include both
-      setTemplates([...PRESET_TEMPLATES, ...response.data]);
+      setTemplates([...presets, ...response.data]);
     } catch (error) {
       console.error('Failed to fetch templates:', error);
-      setTemplates(PRESET_TEMPLATES); // Fallback to presets
+      setTemplates(presets); // Fallback to presets
     } finally {
       setLoading(false);
     }
@@ -94,7 +95,7 @@ export default function Templates() {
 
   const handleSaveNewTemplate = async () => {
     if (!newTemplate.name) {
-      showError('Nome é obrigatório');
+      showError(t('templates.notifications.error_name_required'));
       return;
     }
 
@@ -110,10 +111,10 @@ export default function Templates() {
 
       if (newTemplate.id) {
         await templateAPI.update(newTemplate.id, templateToAdd);
-        showSuccess('Template atualizado com sucesso!');
+        showSuccess(t('templates.notifications.update_success'));
       } else {
         await templateAPI.create(templateToAdd);
-        showSuccess('Template criado com sucesso!');
+        showSuccess(t('templates.notifications.create_success'));
       }
 
       setCreateDialogOpen(false);
@@ -121,7 +122,7 @@ export default function Templates() {
       fetchTemplates();
     } catch (error) {
       console.error('Failed to save template:', error);
-      showError('Erro ao guardar template');
+      showError(t('templates.notifications.error_save'));
     }
   };
 
@@ -137,15 +138,15 @@ export default function Templates() {
   };
 
   const handleDeleteTemplate = async (id) => {
-    if (!window.confirm('Tem a certeza que deseja eliminar este template?')) return;
+    if (!window.confirm(t('templates.confirm_delete'))) return;
 
     try {
       await templateAPI.delete(id);
-      showSuccess('Template eliminado!');
+      showSuccess(t('templates.notifications.delete_success'));
       fetchTemplates();
     } catch (error) {
       console.error('Failed to delete template:', error);
-      showError('Erro ao eliminar template');
+      showError(t('templates.notifications.error_delete'));
     }
   };
 
@@ -175,12 +176,12 @@ export default function Templates() {
         content
       });
 
-      showSuccess(`Playlist criada a partir do template "${selectedTemplate.name}"!`);
+      showSuccess(t('templates.notifications.playlist_success', { name: selectedTemplate.name }));
       setDialogOpen(false);
       navigate('/playlists');
     } catch (error) {
       console.error('Failed to create playlist:', error);
-      showError('Erro ao criar playlist a partir do template');
+      showError(t('templates.notifications.error_playlist'));
     }
   };
 
@@ -188,8 +189,8 @@ export default function Templates() {
     <Box sx={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
         <Box>
-          <Typography variant="h5" className="neon-text" sx={{ fontWeight: 800 }}>GERADOR DE TEMPLATES</Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: 1.5, fontSize: '0.65rem' }}>CRIE & GIRA ESTRUTURAS DE CONTEÚDO REUTILIZÁVEIS</Typography>
+          <Typography variant="h5" className="neon-text" sx={{ fontWeight: 800 }}>{t('templates.header.title')}</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: 1.5, fontSize: '0.65rem' }}>{t('templates.header.subtitle')}</Typography>
         </Box>
         <Button
           variant="contained"
@@ -197,7 +198,7 @@ export default function Templates() {
           onClick={() => setCreateDialogOpen(true)}
           sx={{ borderRadius: 2, fontWeight: 800, px: 3 }}
         >
-          CRIAR TEMPLATE
+          {t('templates.controls.create_btn')}
         </Button>
       </Box>
 
@@ -216,7 +217,7 @@ export default function Templates() {
               }}>
                 <Box sx={{ mb: 1.5 }}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 800, letterSpacing: 0.5, color: 'primary.main', fontSize: '0.95rem' }}>
-                    {(template.name || 'Sem Nome').toUpperCase()}
+                    {(template.name || t('templates.grid.no_name')).toUpperCase()}
                   </Typography>
                   <Typography variant="caption" sx={{ fontWeight: 600, opacity: 0.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', height: 32, fontSize: '0.7rem' }}>
                     {template.description}
@@ -231,7 +232,7 @@ export default function Templates() {
                     sx={{ fontWeight: 800, borderRadius: 1.5, bgcolor: 'rgba(0,229,255,0.1)', color: 'primary.main', border: '1px solid rgba(0,229,255,0.2)' }}
                   />
                   <Chip
-                    label={`${template.structure.length} BLOCOS`}
+                    label={`${template.structure.length} ${t('templates.grid.blocks')}`}
                     size="small"
                     sx={{ fontWeight: 800, borderRadius: 1.5, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}
                   />
@@ -240,7 +241,7 @@ export default function Templates() {
                 <Divider sx={{ mb: 1.5, opacity: 0.1 }} />
 
                 <Box sx={{ flexGrow: 1, mb: 2 }}>
-                  <Typography variant="caption" sx={{ fontWeight: 800, opacity: 0.4, mb: 1, display: 'block', fontSize: '0.65rem' }}>ESTRUTURA DA SEQUÊNCIA</Typography>
+                  <Typography variant="caption" sx={{ fontWeight: 800, opacity: 0.4, mb: 1, display: 'block', fontSize: '0.65rem' }}>{t('templates.grid.structure_title')}</Typography>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                     {template.structure.slice(0, 6).map((item, index) => (
                       <Tooltip key={index} title={`${item.type.toUpperCase()} (${Math.floor(item.duration / 60)} min)`}>
@@ -271,9 +272,9 @@ export default function Templates() {
                     onClick={() => handleUseTemplate(template)}
                     sx={{ borderRadius: 2, fontWeight: 800 }}
                   >
-                    USAR
+                    {t('templates.grid.use_btn')}
                   </Button>
-                  {!PRESET_TEMPLATES.find(p => p.id === template.id) && (
+                  {!getPresetTemplates(t).find(p => p.id === template.id) && (
                     <Box sx={{ display: 'flex', gap: 0.5 }}>
                       <IconButton onClick={() => handleEditTemplate(template)} sx={{ bgcolor: 'rgba(0,229,255,0.05)', borderRadius: 2, color: 'primary.main', '&:hover': { bgcolor: 'rgba(0,229,255,0.1)' } }}>
                         <EditIcon sx={{ fontSize: 18 }} />
@@ -299,12 +300,12 @@ export default function Templates() {
         PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
       >
         <DialogTitle sx={{ fontWeight: 800, color: 'primary.main', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          {newTemplate.id ? 'EDITAR TEMPLATE' : 'CRIAR NOVO TEMPLATE'}
+          {newTemplate.id ? t('templates.dialog_edit.title_edit') : t('templates.dialog_edit.title_create')}
         </DialogTitle>
         <DialogContent sx={{ mt: 2 }}>
           <TextField
             fullWidth
-            label="NOME DO TEMPLATE"
+            label={t('templates.dialog_edit.label_name')}
             variant="standard"
             sx={{ mt: 2 }}
             value={newTemplate.name}
@@ -314,7 +315,7 @@ export default function Templates() {
           />
           <TextField
             fullWidth
-            label="DESCRIÇÃO"
+            label={t('templates.dialog_edit.label_description')}
             variant="standard"
             sx={{ mt: 3 }}
             multiline
@@ -326,7 +327,7 @@ export default function Templates() {
           />
           <TextField
             fullWidth
-            label="DURAÇÃO TOTAL (SEGUNDOS)"
+            label={t('templates.dialog_edit.label_duration')}
             variant="standard"
             type="number"
             sx={{ mt: 3 }}
@@ -337,13 +338,13 @@ export default function Templates() {
           />
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setCreateDialogOpen(false)} sx={{ fontWeight: 800 }}>CANCELAR</Button>
+          <Button onClick={() => setCreateDialogOpen(false)} sx={{ fontWeight: 800 }}>{t('common.cancel')}</Button>
           <Button
             variant="contained"
             onClick={handleSaveNewTemplate}
             sx={{ borderRadius: 2, fontWeight: 800, px: 4 }}
           >
-            GUARDAR TEMPLATE
+            {t('templates.dialog_edit.save_btn')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -357,19 +358,19 @@ export default function Templates() {
         PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
       >
         <DialogTitle sx={{ fontWeight: 800, color: 'primary.main', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          GERAR PLAYLIST A PARTIR DE TEMPLATE
+          {t('templates.dialog_use.title')}
         </DialogTitle>
         <DialogContent sx={{ mt: 2 }}>
           {selectedTemplate && (
             <Box>
               <Box sx={{ mb: 3 }}>
-                <Typography variant="caption" sx={{ fontWeight: 800, opacity: 0.4 }}>TEMPLATE SELECIONADO</Typography>
+                <Typography variant="caption" sx={{ fontWeight: 800, opacity: 0.4 }}>{t('templates.dialog_use.selected_template')}</Typography>
                 <Typography variant="h6" sx={{ fontWeight: 800, color: 'primary.main' }}>{selectedTemplate.name.toUpperCase()}</Typography>
               </Box>
 
               <TextField
                 fullWidth
-                label="NOME DA PLAYLIST"
+                label={t('templates.dialog_use.label_playlist_name')}
                 variant="standard"
                 sx={{ mt: 2 }}
                 placeholder={`Playlist ${selectedTemplate.name}`}
@@ -378,7 +379,7 @@ export default function Templates() {
               />
               <TextField
                 fullWidth
-                label="DATA DE EMISSÃO"
+                label={t('templates.dialog_use.label_emission_date')}
                 type="date"
                 variant="standard"
                 sx={{ mt: 3 }}
@@ -390,13 +391,13 @@ export default function Templates() {
           )}
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setDialogOpen(false)} sx={{ fontWeight: 800 }}>CANCELAR</Button>
+          <Button onClick={() => setDialogOpen(false)} sx={{ fontWeight: 800 }}>{t('common.cancel')}</Button>
           <Button
             variant="contained"
             onClick={handleCreatePlaylist}
             sx={{ borderRadius: 2, fontWeight: 800, px: 4 }}
           >
-            GERAR AGORA
+            {t('templates.dialog_use.generate_now_btn')}
           </Button>
         </DialogActions>
       </Dialog>

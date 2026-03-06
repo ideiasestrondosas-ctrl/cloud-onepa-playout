@@ -28,12 +28,14 @@ import {
 import { settingsAPI, playoutAPI } from '../services/api';
 import graphicsService from '../services/graphicsLayersAPI';
 import { useNotification } from '../contexts/NotificationContext';
+import { useTranslation } from 'react-i18next';
 import LayerManager from '../components/GraphicsLayers/LayerManager';
 import LayerPreview from '../components/GraphicsLayers/LayerPreview';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 
 export default function GraphicsEditor() {
+  const { t } = useTranslation();
   const { showSuccess, showError } = useNotification();
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -70,7 +72,7 @@ export default function GraphicsEditor() {
       setLogoOpacity(data.overlay_opacity || 1.0);
       setAnchor(data.overlay_anchor || 'top-right');
     } catch (error) {
-      showError('Falha ao carregar as configurações de gráficos');
+      showError(t('graphics.messages.load_settings_error'));
     } finally {
       setLoading(false);
     }
@@ -82,7 +84,7 @@ export default function GraphicsEditor() {
       setGraphicsLayers(response.data);
     } catch (error) {
       console.error('Failed to load graphics layers:', error);
-      showError('Falha ao carregar camadas de gráficos');
+      showError(t('graphics.messages.load_layers_error'));
     }
   };
 
@@ -155,9 +157,9 @@ export default function GraphicsEditor() {
       await fetchSettings();
       // Force logo image to reload by busting the cache
       setLogoCacheBust(Date.now());
-      showSuccess('Gráficos atualizados com sucesso!');
+      showSuccess(t('graphics.messages.save_success'));
     } catch (error) {
-      showError('Erro ao guardar configurações de gráficos');
+      showError(t('graphics.messages.save_error'));
     } finally {
       setSaving(false);
     }
@@ -254,11 +256,11 @@ export default function GraphicsEditor() {
     <Box sx={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
         <Box>
-          <Typography variant="h5" className="neon-text" sx={{ fontWeight: 800 }}>GRAPHICS ENGINE</Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: 1.2, fontSize: '0.65rem' }}>WYSIWYG ON-AIR BRANDING EDITOR</Typography>
+          <Typography variant="h5" className="neon-text" sx={{ fontWeight: 800 }}>{t('graphics.header.title')}</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: 1.2, fontSize: '0.65rem' }}>{t('graphics.header.subtitle')}</Typography>
         </Box>
         <Stack direction="row" spacing={2}>
-          <Tooltip title="Restaurar definições guardadas" arrow>
+          <Tooltip title={t('graphics.tooltips.reset')} arrow>
             <Button
               variant="outlined"
               startIcon={<ResetIcon />}
@@ -266,10 +268,10 @@ export default function GraphicsEditor() {
               disabled={saving}
               sx={{ borderRadius: 2, fontWeight: 800 }}
             >
-              REPOR
+              {t('graphics.buttons.reset')}
             </Button>
           </Tooltip>
-          <Tooltip title="Salvar definições de posicionamento e estilo" arrow>
+          <Tooltip title={t('graphics.tooltips.save')} arrow>
             <Button
               variant="contained"
               startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
@@ -277,7 +279,7 @@ export default function GraphicsEditor() {
               disabled={saving}
               sx={{ borderRadius: 2, fontWeight: 800, px: 4, minWidth: '220px' }}
             >
-              {saving ? 'A GUARDAR...' : 'GUARDAR ALTERAÇÕES'}
+              {saving ? t('common.saving') : t('graphics.buttons.save')}
             </Button>
           </Tooltip>
         </Stack>
@@ -296,10 +298,10 @@ export default function GraphicsEditor() {
           }}>
             <Box sx={{ mb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Typography variant="caption" sx={{ fontWeight: 800, opacity: 0.6, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <VisibilityIcon sx={{ fontSize: 16 }} /> PRÉ-VISUALIZAÇÃO EM TEMPO REAL (16:9)
+                <VisibilityIcon sx={{ fontSize: 16 }} /> {t('graphics.preview.title')}
               </Typography>
               <Chip
-                label={isDragging ? "A POSICIONAR..." : "READY"}
+                label={isDragging ? t('graphics.preview.positioning') : t('graphics.preview.ready')}
                 size="small"
                 color={isDragging ? "primary" : "default"}
                 sx={{ fontWeight: 800, height: 20, fontSize: '0.6rem' }}
@@ -432,9 +434,9 @@ export default function GraphicsEditor() {
         <Grid item xs={12} lg={4} sx={{ height: '100%' }}>
           <Paper className="glass-panel" sx={{ p: 1.5, height: '100%', overflowY: 'auto' }}>
             <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)} sx={{ mb: 1.5, minHeight: 36 }}>
-              <Tab label="POSIÇÃO" sx={{ fontWeight: 800, minHeight: 36, fontSize: '0.75rem' }} />
-              <Tab label="ESTILO" sx={{ fontWeight: 800, minHeight: 36, fontSize: '0.75rem' }} />
-              <Tab label="LAYER" sx={{ fontWeight: 800, minHeight: 36, fontSize: '0.75rem' }} />
+              <Tab label={t('graphics.tabs.position')} sx={{ fontWeight: 800, minHeight: 36, fontSize: '0.75rem' }} />
+              <Tab label={t('graphics.tabs.style')} sx={{ fontWeight: 800, minHeight: 36, fontSize: '0.75rem' }} />
+              <Tab label={t('graphics.tabs.layer')} sx={{ fontWeight: 800, minHeight: 36, fontSize: '0.75rem' }} />
             </Tabs>
 
             {activeTab === 0 && (
@@ -442,10 +444,10 @@ export default function GraphicsEditor() {
                 <Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                      PONTO DE ANCORAGEM
+                      {t('graphics.position.anchor_title')}
                     </Typography>
                     <Chip
-                      label={selectedLayer ? `CAMADA: ${selectedLayer.name.toUpperCase()}` : "LOGO PRINCIPAL"}
+                      label={selectedLayer ? `${t('graphics.position.layer_prefix')}${selectedLayer.name.toUpperCase()}` : t('graphics.position.main_logo')}
                       size="small"
                       color="primary"
                       variant="outlined"
@@ -459,7 +461,7 @@ export default function GraphicsEditor() {
                       const isCurrent = (selectedLayer ? selectedLayer.anchor : anchor) === pos;
                       return (
                         <Grid item xs={6} key={pos}>
-                          <Tooltip title={`Ancorar ao canto ${pos.replace('-', ' ')}`} arrow>
+                          <Tooltip title={t('graphics.tooltips.anchor', { pos: pos.replace('-', ' ') })} arrow>
                             <Button
                               fullWidth
                               variant={isCurrent ? "contained" : "outlined"}
@@ -492,7 +494,7 @@ export default function GraphicsEditor() {
                   {!selectedLayer && graphicsLayers.length > 0 && (
                     <Box sx={{ mt: 3 }}>
                       <Typography variant="caption" sx={{ fontWeight: 800, opacity: 0.6, mb: 1, display: 'block' }}>
-                        OU SELECIONE UMA CAMADA ATIVA:
+                        {t('graphics.position.select_active_layer')}:
                       </Typography>
                       <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
                         {graphicsLayers.filter(l => l.enabled).map(layer => (
@@ -512,10 +514,10 @@ export default function GraphicsEditor() {
                 <Divider sx={{ opacity: 0.1 }} />
 
                 <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5, fontSize: '0.8rem' }}>AJUSTE FINO (OFFSET)</Typography>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5, fontSize: '0.8rem' }}>{t('graphics.position.offset_title')}</Typography>
                   <Box sx={{ mb: 1.5 }}>
                     <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', mb: 1, display: 'block' }}>
-                      EIXO X ({selectedLayer ? selectedLayer.position_x : logoPos.x}px)
+                      {t('graphics.position.axis_x')} ({selectedLayer ? selectedLayer.position_x : logoPos.x}px)
                     </Typography>
                     <Slider
                       value={selectedLayer ? selectedLayer.position_x : logoPos.x}
@@ -547,7 +549,7 @@ export default function GraphicsEditor() {
                   </Box>
                   <Box>
                     <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', mb: 1, display: 'block' }}>
-                      EIXO Y ({selectedLayer ? selectedLayer.position_y : logoPos.y}px)
+                      {t('graphics.position.axis_y')} ({selectedLayer ? selectedLayer.position_y : logoPos.y}px)
                     </Typography>
                     <Slider
                       value={selectedLayer ? selectedLayer.position_y : logoPos.y}
@@ -563,7 +565,7 @@ export default function GraphicsEditor() {
                       onChangeCommitted={async (e, v) => {
                         if (selectedLayer) {
                           try {
-                            const response = await graphicsLayersAPI.updatePosition(selectedLayerId, {
+                            const response = await graphicsService.updatePosition(selectedLayerId, {
                               position_x: selectedLayer.position_x,
                               position_y: v
                             });
@@ -585,9 +587,9 @@ export default function GraphicsEditor() {
               <Stack spacing={4}>
                 <Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>ESCALA & DIMENSÃO</Typography>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{t('graphics.style.scale_title')}</Typography>
                     <Chip
-                      label={selectedLayer ? `CAMADA: ${selectedLayer.name.toUpperCase()}` : "LOGO PRINCIPAL"}
+                      label={selectedLayer ? `${t('graphics.position.layer_prefix')}${selectedLayer.name.toUpperCase()}` : t('graphics.position.main_logo')}
                       size="small"
                       color="primary"
                       variant="outlined"
@@ -595,7 +597,7 @@ export default function GraphicsEditor() {
                     />
                   </Box>
                   <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', mb: 1, display: 'block' }}>
-                    MAGNITUDE ({selectedLayer ? 'FIXED' : Math.round(logoScale * 100) + '%'})
+                    {t('graphics.style.magnitude')} ({selectedLayer ? 'FIXED' : Math.round(logoScale * 100) + '%'})
                   </Typography>
                   <Tooltip title={selectedLayer ? "Tamanho gerido nas definições da camada" : "Aumentar ou diminuir o tamanho do logo"} arrow placement="left">
                     <span>
@@ -614,9 +616,9 @@ export default function GraphicsEditor() {
                 <Divider sx={{ opacity: 0.1 }} />
 
                 <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 3 }}>OPACIDADE DA CAMADA</Typography>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 3 }}>{t('graphics.style.opacity_title')}</Typography>
                   <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', mb: 1, display: 'block' }}>
-                    ALFA ({Math.round((selectedLayer ? selectedLayer.opacity : logoOpacity) * 100)}%)
+                    {t('graphics.style.alpha')} ({Math.round((selectedLayer ? selectedLayer.opacity : logoOpacity) * 100)}%)
                   </Typography>
                   <Tooltip title="Ajustar a transparência" arrow placement="left">
                     <Slider
@@ -659,12 +661,12 @@ export default function GraphicsEditor() {
             <Box sx={{ mt: 'auto', pt: 4 }}>
               <Paper sx={{ p: 2, bgcolor: 'rgba(0, 229, 255, 0.05)', borderRadius: 2, border: '1px solid rgba(0, 229, 255, 0.2)' }}>
                 <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <HelpIcon sx={{ fontSize: 16 }} /> DICA ALPHA
+                  <HelpIcon sx={{ fontSize: 16 }} /> {t('graphics.hint.title')}
                 </Typography>
                 <Typography variant="caption" sx={{ display: 'block', mt: 1, opacity: 0.7 }}>
                   {selectedLayer
-                    ? `A editar camada "${selectedLayer.name}". Clique no fundo do preview para voltar ao Logo.`
-                    : "Arraste o logo diretamente no preview para um posicionamento intuitivo. Utilize os sliders para precisão milimétrica."}
+                    ? t('graphics.hint.layer_desc', { name: selectedLayer.name })
+                    : t('graphics.hint.logo_desc')}
                 </Typography>
               </Paper>
             </Box>

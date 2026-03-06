@@ -12,6 +12,8 @@ import {
 } from '@mui/material';
 import { authAPI, settingsAPI } from '../services/api';
 import useAuthStore from '../stores/authStore';
+import { useTranslation } from 'react-i18next';
+import LanguageSelector from '../components/LanguageSelector';
 import { useEffect } from 'react';
 
 export default function Login() {
@@ -21,6 +23,7 @@ export default function Login() {
   const [version, setVersion] = useState('');
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
+  const { t } = useTranslation();
 
   const [settings, setSettings] = useState(null);
 
@@ -53,8 +56,8 @@ export default function Login() {
       login(user, token);
       navigate('/');
     } catch (err) {
-      const statusCode = err.response?.status || 'Network Error';
-      const errorMessage = err.response?.data?.error || 'Login failed. Please try again.';
+      const statusCode = err.response?.status || t('common.error');
+      const errorMessage = err.response?.data?.error || t('login.messages.login_failed');
       setError(`[${statusCode}] ${errorMessage}`);
     } finally {
       setLoading(false);
@@ -108,6 +111,9 @@ export default function Login() {
             alignItems: 'center',
           }}
         >
+          <Box sx={{ alignSelf: 'flex-end', mb: 2 }}>
+            <LanguageSelector />
+          </Box>
           <Box sx={{ mb: 4, textAlign: 'center', position: 'relative' }}>
             {/* Environment Badge removed from top, consolidated at bottom */}
 
@@ -151,7 +157,7 @@ export default function Login() {
 
           <Paper className="glass-panel" sx={{ p: 4, width: '100%', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: 4 }}>
             <Typography variant="h6" sx={{ fontWeight: 800, mb: 3, textAlign: 'center', letterSpacing: 1 }}>
-              ÁREA RESTRITA
+              {t('login.restricted_area')}
             </Typography>
 
             {error && (
@@ -176,7 +182,7 @@ export default function Login() {
             <form onSubmit={handleSubmit}>
               <TextField
                 fullWidth
-                label="UTILIZADOR"
+                label={t('login.username')}
                 variant="outlined"
                 margin="normal"
                 sx={{
@@ -190,7 +196,7 @@ export default function Login() {
               />
               <TextField
                 fullWidth
-                label="PASSWORD"
+                label={t('login.password')}
                 type="password"
                 variant="outlined"
                 margin="normal"
@@ -220,7 +226,7 @@ export default function Login() {
                 }}
                 disabled={loading}
               >
-                {loading ? <CircularProgress size={24} color="inherit" /> : 'ENTRAR'}
+                {loading ? <CircularProgress size={24} color="inherit" /> : t('login.submit')}
               </Button>
             </form>
 
@@ -235,7 +241,7 @@ export default function Login() {
                 border: '1px solid rgba(255, 255, 255, 0.2)'
               }}>
                 <Typography variant="caption" sx={{ color: 'white', fontWeight: 900, letterSpacing: 1.5, textTransform: 'uppercase', fontSize: '0.6rem' }}>
-                  ALPHA TEST MODE - {version || 'v2.2.0-ALPHA.29-PRO'}
+                  {t('login.test_mode')} - {version || 'v2.2.0-ALPHA.29-PRO'}
                 </Typography>
               </Box>
             </Box>
@@ -243,7 +249,7 @@ export default function Login() {
 
           <Box sx={{ mt: 4, p: 1, px: 2, borderRadius: 10, bgcolor: 'rgba(50, 50, 60, 0.5)' }}>
             <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.4)', fontWeight: 600, fontSize: '0.65rem' }}>
-              REDE PROTEGIDA • ACESSO MONITORIZADO
+              {t('login.monitoring')}
             </Typography>
           </Box>
         </Box>

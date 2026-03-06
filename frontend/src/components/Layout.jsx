@@ -32,11 +32,14 @@ import {
   Brush as GraphicsIcon,
 } from '@mui/icons-material';
 import { useHelp } from '../context/HelpContext';
+import { useTranslation } from 'react-i18next';
 import ConnectivityStatus from './ConnectivityStatus';
+import LanguageSelector from './LanguageSelector';
 
 // === PERFORMANCE: Isolated clock component — only this re-renders every second ===
 const AppClock = memo(() => {
   const [now, setNow] = useState(new Date());
+  const { i18n } = useTranslation();
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
@@ -44,7 +47,7 @@ const AppClock = memo(() => {
   }, []);
 
   const formatDate = (date) =>
-    date.toLocaleDateString('pt-PT', {
+    date.toLocaleDateString(i18n.language === 'pt' ? 'pt-PT' : i18n.language, {
       weekday: 'short',
       day: '2-digit',
       month: 'short',
@@ -63,7 +66,7 @@ const AppClock = memo(() => {
           fontSize: { xs: '1.5rem', md: '2rem' },
         }}
       >
-        {now.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+        {now.toLocaleTimeString(i18n.language === 'pt' ? 'pt-PT' : i18n.language, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
       </Typography>
       <Typography
         variant="subtitle2"
@@ -139,14 +142,14 @@ const AppLogo = ({ version, settings, loading }) => {
 const drawerWidth = 240;
 
 const menuItems = [
-  { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-  { text: 'Media Library', icon: <VideoLibraryIcon />, path: '/media' },
-  { text: 'Playlists', icon: <PlaylistPlayIcon />, path: '/playlists' },
-  { text: 'Calendário', icon: <CalendarIcon />, path: '/calendar' },
-  { text: 'EPG', icon: <LiveTvIcon />, path: '/epg' },
-  { text: 'Graphics', icon: <GraphicsIcon />, path: '/graphics' },
-  { text: 'Templates', icon: <TemplatesIcon />, path: '/templates' },
-  { text: 'Configurações', icon: <SettingsIcon />, path: '/settings' },
+  { key: 'navigation.dashboard', icon: <DashboardIcon />, path: '/' },
+  { key: 'navigation.media', icon: <VideoLibraryIcon />, path: '/media' },
+  { key: 'navigation.playlists', icon: <PlaylistPlayIcon />, path: '/playlists' },
+  { key: 'navigation.calendar', icon: <CalendarIcon />, path: '/calendar' },
+  { key: 'epg.title', icon: <LiveTvIcon />, path: '/epg' },
+  { key: 'navigation.graphics', icon: <GraphicsIcon />, path: '/graphics' },
+  { key: 'navigation.templates', icon: <TemplatesIcon />, path: '/templates' },
+  { key: 'navigation.settings', icon: <SettingsIcon />, path: '/settings' },
 ];
 
 export default function Layout({ children }) {
@@ -158,6 +161,7 @@ export default function Layout({ children }) {
   const location = useLocation();
   const logout = useAuthStore((state) => state.logout);
   const { showHelp } = useHelp();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -195,14 +199,14 @@ export default function Layout({ children }) {
       <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.1)', mb: 1 }} />
       <List sx={{ pt: 1 }}>
         {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding>
-            <Tooltip title={item.text} placement="right" arrow>
+          <ListItem key={item.key} disablePadding>
+            <Tooltip title={t(item.key)} placement="right" arrow>
               <ListItemButton
                 selected={location.pathname === item.path}
                 onClick={() => navigate(item.path)}
               >
                 <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.text} />
+                <ListItemText primary={t(item.key)} />
               </ListItemButton>
             </Tooltip>
           </ListItem>
@@ -211,12 +215,12 @@ export default function Layout({ children }) {
       <Divider />
       <List>
         <ListItem disablePadding>
-          <Tooltip title="Sair do sistema" placement="right" arrow>
+          <Tooltip title={t('navigation.logout')} placement="right" arrow>
             <ListItemButton onClick={handleLogout}>
               <ListItemIcon>
                 <LogoutIcon />
               </ListItemIcon>
-              <ListItemText primary="Logout" />
+              <ListItemText primary={t('navigation.logout')} />
             </ListItemButton>
           </Tooltip>
         </ListItem>
@@ -278,7 +282,11 @@ export default function Layout({ children }) {
             </Box>
           </Box>
 
-          <Tooltip title="Ajuda & Documentação" arrow>
+          <Box sx={{ mr: 2 }}>
+            <LanguageSelector />
+          </Box>
+
+          <Tooltip title={t('navigation.help')} arrow>
             <IconButton
               color="inherit"
               onClick={() => showHelp()}

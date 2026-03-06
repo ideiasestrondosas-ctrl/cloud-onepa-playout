@@ -127,7 +127,12 @@ async fn get_settings(pool: web::Data<PgPool>) -> impl Responder {
                 tvmaze_api_key: None,
                 branding_type: Some("video".to_string()),
                 log_path: Some("/var/log/onepa".to_string()),
+                log_max_size_mb: 50,
+                log_max_files: 5,
+                log_compress_old: true,
+                log_retention_days: 14,
                 graphics_updated_at: None,
+                system_language: "pt".to_string(),
             })
         }
         Err(_) => HttpResponse::InternalServerError()
@@ -221,6 +226,11 @@ async fn update_settings(
     add_field!(req.tvmaze_api_key, "tvmaze_api_key");
     add_field!(req.branding_type, "branding_type");
     add_field!(req.log_path, "log_path");
+    add_field!(req.log_max_size_mb, "log_max_size_mb");
+    add_field!(req.log_max_files, "log_max_files");
+    add_field!(req.log_compress_old, "log_compress_old");
+    add_field!(req.log_retention_days, "log_retention_days");
+    add_field!(req.system_language, "system_language");
     let _ = counter;
 
     sql.push_str(" WHERE id = TRUE");
@@ -303,6 +313,11 @@ async fn update_settings(
     bind_field!(req.tvmaze_api_key);
     bind_field!(req.branding_type);
     bind_field!(req.log_path);
+    bind_field!(num, req.log_max_size_mb);
+    bind_field!(num, req.log_max_files);
+    bind_field!(bool, req.log_compress_old);
+    bind_field!(num, req.log_retention_days);
+    bind_field!(req.system_language);
 
     let result = query.execute(pool.get_ref()).await;
 

@@ -33,7 +33,8 @@ import {
   ListItemIcon,
   ListItemButton,
   Checkbox,
-  CircularProgress
+  CircularProgress,
+  InputAdornment
 } from '@mui/material';
 import {
   CloudUpload as UploadIcon,
@@ -61,7 +62,10 @@ import {
 import { useDropzone } from 'react-dropzone';
 import { mediaAPI } from '../services/api';
 
+import { useTranslation } from 'react-i18next';
+
 export default function MediaLibrary() {
+  const { t } = useTranslation();
   const { showSuccess, showError, showWarning, showInfo } = useNotification();
   const [media, setMedia] = useState([]);
   const [folders, setFolders] = useState([]);
@@ -132,7 +136,7 @@ export default function MediaLibrary() {
       setMedia(res.data.media);
       setPagination({ total: res.data.total, pages: res.data.pages });
     } catch (error) {
-      showError('Erro ao carregar ficheiros');
+      showError(t('media.error_loading') || 'Erro ao carregar ficheiros');
       console.error(error);
     } finally {
       setLoading(false);
@@ -144,13 +148,13 @@ export default function MediaLibrary() {
       setSyncing(true);
       const res = await mediaAPI.sync();
       if (res.data.status === 'ok') {
-        showSuccess(`Sincronização concluída: ${res.data.added} novos ficheiros identificados.`);
+        showSuccess(t('media.sync_success', { added: res.data.added }));
       } else {
-        showSuccess(`Sincronização parcial: ${res.data.added} adicionados, ${res.data.errors} erros.`);
+        showSuccess(t('media.sync_partial', { added: res.data.added, errors: res.data.errors }));
       }
       fetchMedia();
     } catch (err) {
-      showError('Erro ao sincronizar ficheiros do disco');
+      showError(t('media.error_sync') || 'Erro ao sincronizar ficheiros do disco');
       console.error(err);
     } finally {
       setSyncing(false);
@@ -188,17 +192,17 @@ export default function MediaLibrary() {
           const tasks = response.data;
 
           // Filter active and recently failed tasks (keep failed for 2 min for UI feedback)
-          const activeOrFailed = tasks.filter(t =>
-            t.status === 'pending' ||
-            t.status === 'processing' ||
-            (t.status === 'failed' && (new Date() - new Date(t.created_at)) < 120000)
+          const activeOrFailed = tasks.filter(task =>
+            task.status === 'pending' ||
+            task.status === 'processing' ||
+            (task.status === 'failed' && (new Date() - new Date(task.created_at)) < 120000)
           );
 
           // Notify user about newly-failed tasks
-          const failedTasks = activeOrFailed.filter(t => t.status === 'failed');
-          const existingFailed = (activeTasks[item.id] || []).filter(t => t.status === 'failed');
+          const failedTasks = activeOrFailed.filter(task => task.status === 'failed');
+          const existingFailed = (activeTasks[item.id] || []).filter(task => task.status === 'failed');
           for (const ft of failedTasks) {
-            if (!existingFailed.some(e => e.id === ft.id)) {
+            if (!existingFailed.some(task => task.id === ft.id)) {
               showError(`Erro ao processar "${item.filename}": ${ft.error_message || ft.task_type}`);
             }
           }
@@ -255,17 +259,17 @@ export default function MediaLibrary() {
     if (!newFolderName) return;
     try {
       await mediaAPI.createFolder({ name: newFolderName, parent_id: currentFolder?.id });
-      showSuccess('Pasta criada');
+      showSuccess(t('media.folder_created'));
       setNewFolderName('');
       setNewFolderOpen(false);
       fetchFolders();
     } catch (error) {
-      showError('Erro ao criar pasta');
+      showError(t('common.error'));
     }
   };
 
   const handleDeleteFolder = async (id, name) => {
-    if (window.confirm(`Tem a certeza que deseja eliminar a pasta "${name}" e todos os ficheiros dentro dela?`)) {
+    if (window.confirm(t('media.delete_folder_confirm', { name }))) {
       try {
         showInfo(`Eliminando pasta "${name}"...`);
         const response = await mediaAPI.deleteFolder(id);
@@ -288,22 +292,22 @@ export default function MediaLibrary() {
   const handleMoveMedia = async (targetFolderId) => {
     try {
       await mediaAPI.moveMedia(mediaToMove.id, targetFolderId);
-      showSuccess('Ficheiro movido');
+      showSuccess(t('media.bulk_success'));
       setMoveOpen(false);
       fetchMedia();
     } catch (error) {
-      showError('Erro ao mover ficheiro');
+      showError(t('common.error'));
     }
   };
 
   const handleCopyMedia = async (targetFolderId) => {
     try {
       await mediaAPI.copyMedia(mediaToMove.id, targetFolderId);
-      showSuccess('Ficheiro copiado');
+      showSuccess(t('media.bulk_success'));
       setMoveOpen(false);
       fetchMedia();
     } catch (error) {
-      showError('Erro ao copiar ficheiro');
+      showError(t('common.error'));
     }
   };
 
@@ -341,12 +345,12 @@ export default function MediaLibrary() {
           source_url: metadataSource?.url || editingMedia.metadata?.source_url
         }
       });
-      showSuccess('Metadados atualizados');
+      showSuccess(t('common.success'));
       setMetadataOpen(false);
       setIsReviewMode(false);
       fetchMedia();
     } catch (error) {
-      showError('Erro ao atualizar metadados');
+      showError(t('common.error'));
     }
   };
 
@@ -383,9 +387,9 @@ export default function MediaLibrary() {
 
       setIsReviewMode(true);
       setMetadataOpen(true);
-      showSuccess(`Metadados encontrados. Por favor, revise e salve.`);
+      showSuccess(t('media.bulk_success'));
     } catch (error) {
-      showError('Falha ao buscar metadados: ' + (error.response?.data?.error || error.message));
+      showError(t('common.error') + ': ' + (error.response?.data?.error || error.message));
       // Even if it fails, open the manual editor so user can fill it
       handleEditMetadata(item);
     }
@@ -508,11 +512,11 @@ export default function MediaLibrary() {
   const handleForceDelete = async () => {
     try {
       await mediaAPI.delete(deleteDialog.media.id);
-      showSuccess('Ficheiro eliminado');
+      showSuccess(t('media.bulk_success'));
       setDeleteDialog({ open: false, media: null, usage: null, simpleDelete: false });
       fetchMedia();
     } catch (error) {
-      showError('Erro ao eliminar: ' + (error.response?.data?.error || error.message));
+      showError(t('common.error'));
     }
   };
 
@@ -524,11 +528,11 @@ export default function MediaLibrary() {
 
       // Then delete
       await mediaAPI.delete(deleteDialog.media.id);
-      showSuccess('Ficheiro substituído e eliminado');
+      showSuccess(t('media.bulk_success'));
       setDeleteDialog({ open: false, media: null, usage: null });
       fetchMedia();
     } catch (error) {
-      showError('Erro: ' + (error.response?.data?.error || error.message));
+      showError(t('common.error'));
     }
   };
 
@@ -541,7 +545,7 @@ export default function MediaLibrary() {
       file,
       progress: 0,
       status: 'pending',
-      destination: currentFolder?.name || 'Raiz'
+      destination: currentFolder?.name || t('media.root')
     }));
 
     setUploadFiles(newFiles);
@@ -586,10 +590,10 @@ export default function MediaLibrary() {
     Object.values(uploadControllers).forEach(c => c.abort());
     setUploadFiles(prev => prev.map(f =>
       (f.status === 'uploading' || f.status === 'pending')
-        ? { ...f, status: 'error', error: 'Cancelado' }
+        ? { ...f, status: 'error', error: t('common.cancel') }
         : f
     ));
-    showInfo('Todos os carregamentos cancelados');
+    showInfo(t('media.upload_cancelled'));
   };
 
   const toggleItemSelection = (id) => {
@@ -619,20 +623,19 @@ export default function MediaLibrary() {
     setAuditDialog(prev => ({ ...prev, open: false }));
     setPerformingBulkAction(true);
     try {
-      showInfo(`Adicionando ${auditDialog.data.missing_ids.length} ficheiros à fila de proxies...`);
+      showInfo(t('media.syncing'));
       await mediaAPI.batchProxy(auditDialog.data.missing_ids);
-      showSuccess('Ficheiros adicionados à fila de proxies com sucesso!');
+      showSuccess(t('media.batch_proxy_success'));
       setTimeout(() => fetchMedia(), 1000);
     } catch (e) {
-      showError('Erro ao iniciar proxies em massa.');
+      showError(t('common.error'));
     } finally {
       setPerformingBulkAction(false);
     }
   };
 
   const handleSearchChange = (e) => {
-    setSearch(e.target.value);
-    setPage(1);
+    setSearchTerm(e.target.value);
   };
 
   // Preload video headers on hover to speed up playback start
@@ -673,15 +676,15 @@ export default function MediaLibrary() {
     if (selectedItemIds.length === 0) return;
     setPerformingBulkAction(true);
     try {
-      showInfo(`Adicionando ${selectedItemIds.length} ficheiros à fila de proxies...`);
+      showInfo(t('media.syncing'));
       await mediaAPI.batchProxy(selectedItemIds);
-      showSuccess('Ficheiros adicionados à fila com sucesso!');
+      showSuccess(t('media.batch_proxy_success'));
       setSelectedItemIds([]);
       setSelectionMode(false);
       // Wait a moment before fetching to let tasks register
       setTimeout(() => fetchMedia(), 1000);
     } catch (error) {
-      showError('Erro ao iniciar batch proxy: ' + (error.response?.data?.error || error.message));
+      showError(t('common.error'));
     } finally {
       setPerformingBulkAction(false);
     }
@@ -705,6 +708,66 @@ export default function MediaLibrary() {
     }
   };
 
+  const handleFolderSelect = (folder) => {
+    setCurrentFolder(folder);
+    setFilters(prev => ({ ...prev, page: 1 })); // Reset page when changing folder
+  };
+
+  const handleOptimize = async (itemId) => {
+    try {
+      // Optimistic state: show spinner immediately without waiting for poll
+      setActiveTasks(prev => ({
+        ...prev,
+        [itemId]: [...(prev[itemId] || []), { id: `opt-local-${itemId}`, task_type: 'optimize', status: 'pending', created_at: new Date().toISOString() }]
+      }));
+      const response = await mediaAPI.optimizeForStreaming(itemId);
+      if (response?.data?.status === 'instant' || response?.status === 200) {
+        // Fast-track: completed instantly, refresh immediately
+        await fetchMedia();
+        setActiveTasks(prev => { const n = { ...prev }; delete n[itemId]; return n; });
+      } else {
+        showInfo(t('media.messages.optimize_started', { filename: media.find(m => m.id === itemId)?.filename }));
+      }
+    } catch (err) {
+      setActiveTasks(prev => {
+        const n = { ...prev };
+        if (n[itemId]) {
+          n[itemId] = n[itemId].filter(task => task.id !== `opt-local-${itemId}`);
+        }
+        return n;
+      });
+      showError(`${t('media.errors.optimize_failed')}: ${err.response?.data?.error || err.message}`);
+    }
+  };
+
+  const handleGenerateProxy = async (itemId) => {
+    try {
+      // Optimistic state: show spinner before next poll cycle
+      setActiveTasks(prev => ({
+        ...prev,
+        [itemId]: [...(prev[itemId] || []), { id: `proxy-local-${itemId}`, task_type: 'proxy', status: 'pending', created_at: new Date().toISOString() }]
+      }));
+      const response = await mediaAPI.generateProxy(itemId);
+      if (response?.data?.instant || response?.data?.status === 'instant') {
+        // Hard-link / zero-byte — completed instantly, no background task
+        await fetchMedia();
+        setActiveTasks(prev => { const n = { ...prev }; delete n[itemId]; return n; });
+      } else {
+        showInfo(t('media.messages.proxy_started', { filename: media.find(m => m.id === itemId)?.filename }));
+      }
+    } catch (err) {
+      setActiveTasks(prev => {
+        const n = { ...prev };
+        if (n[itemId]) {
+          n[itemId] = n[itemId].filter(task => task.id !== `proxy-local-${itemId}`);
+        }
+        return n;
+      });
+      showError(`${t('media.errors.proxy_failed')}: ${err.response?.data?.error || err.message}`);
+    }
+  };
+
+
   return (
     <Box sx={{ position: 'relative' }}>
       {/* Background Glow */}
@@ -723,14 +786,14 @@ export default function MediaLibrary() {
 
       <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 1 }}>
         <Box>
-          <Typography variant="h4" className="neon-text" sx={{ fontWeight: 800, letterSpacing: '-0.02em', fontSize: '1.8rem' }}>Media Library</Typography>
+          <Typography variant="h4" className="neon-text" sx={{ fontWeight: 800, letterSpacing: '-0.02em', fontSize: '1.8rem' }}>{t('media.title')}</Typography>
           <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', fontSize: '0.65rem' }}>
-            Gestão Inteligente de Conteúdo
+            {t('media.subtitle')}
           </Typography>
         </Box>
         <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
           <Chip
-            label={`${pagination.total} Ficheiros`}
+            label={`${pagination.total} ${t('media.files') || 'Ficheiros'}`}
             sx={{
               bgcolor: 'rgba(255, 255, 255, 0.05)',
               color: 'primary.main',
@@ -746,7 +809,7 @@ export default function MediaLibrary() {
             disabled={syncing}
             sx={{ fontWeight: 800, border: '1px solid rgba(0, 229, 255, 0.3)' }}
           >
-            {syncing ? 'SINCRONIZANDO...' : 'SINCRONIZAR'}
+            {syncing ? t('media.syncing') : t('media.sync')}
           </Button>
           <Button
             variant="outlined"
@@ -755,14 +818,14 @@ export default function MediaLibrary() {
             onClick={handleOpenAudit}
             sx={{ fontWeight: 800, border: '1px solid rgba(156, 39, 176, 0.3)' }}
           >
-            AUDITORIA
+            {t('media.audit')}
           </Button>
           <Button
             variant="outlined"
             onClick={() => { setSelectionMode(!selectionMode); setSelectedItemIds([]); }}
             sx={{ fontWeight: 800, border: '1px solid rgba(255,255,255,0.1)', color: selectionMode ? 'primary.main' : 'text.secondary' }}
           >
-            {selectionMode ? 'Cancelar Seleção' : 'Seleção Múltipla'}
+            {selectionMode ? t('media.cancel_selection') : t('media.bulk_select')}
           </Button>
           <Button
             variant="contained"
@@ -774,7 +837,7 @@ export default function MediaLibrary() {
               color: '#0a0b10'
             }}
           >
-            Nova Pasta
+            {t('media.new_folder')}
           </Button>
         </Stack>
       </Box>
@@ -783,8 +846,8 @@ export default function MediaLibrary() {
         selectionMode && (
           <Paper className="glass-panel" sx={{ mb: 3, p: 2, bgcolor: 'rgba(0, 229, 255, 0.1)', border: '1px solid rgba(0, 229, 255, 0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Stack direction="row" spacing={2} alignItems="center">
-              <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{selectedItemIds.length} selecionados</Typography>
-              <Button size="small" onClick={handleSelectAllInView}>Selecionar Todos</Button>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{t('media.items_selected', { count: selectedItemIds.length })}</Typography>
+              <Button size="small" onClick={handleSelectAllInView}>{t('media.select_all')}</Button>
             </Stack>
             <Stack direction="row" spacing={1}>
               <Button
@@ -794,7 +857,7 @@ export default function MediaLibrary() {
                 disabled={performingBulkAction || selectedItemIds.length === 0}
                 onClick={() => handleBulkSetFiller(true)}
               >
-                Marcar como Filler
+                {t('media.mark_filler')}
               </Button>
               <Button
                 variant="outlined"
@@ -803,7 +866,7 @@ export default function MediaLibrary() {
                 disabled={performingBulkAction || selectedItemIds.length === 0}
                 onClick={() => handleBulkSetFiller(false)}
               >
-                Marcar como Prog
+                {t('media.mark_prog')}
               </Button>
             </Stack>
           </Paper>
@@ -814,21 +877,22 @@ export default function MediaLibrary() {
         {/* Sidebar Folders */}
         <Grid item xs={12} md={3} sx={{ position: 'relative', zIndex: 1 }}>
           <Paper className="glass-panel" sx={{ p: 1.5, height: '100%', minHeight: '60vh', display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 800, mb: 1, display: 'flex', alignItems: 'center', gap: 1, letterSpacing: 1, fontSize: '0.65rem' }}>
-              <FolderIcon sx={{ fontSize: 18 }} /> ESTRUTURA
+            <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 900, mb: 1, display: 'block', letterSpacing: 2 }}>
+              {t('media.structure')}
             </Typography>
-            <List size="small" sx={{ flexGrow: 1 }}>
+            <List sx={{ p: 0 }}>
               <ListItemButton
-                selected={currentFolder === null}
-                onClick={() => setCurrentFolder(null)}
+                selected={!currentFolder}
+                onClick={() => handleFolderSelect(null)}
                 sx={{
                   borderRadius: 2,
                   mb: 0.5,
+                  py: 1,
                   '&.Mui-selected': { bgcolor: 'rgba(0, 229, 255, 0.1)', color: 'primary.main' }
                 }}
               >
-                <ListItemIcon><FolderIcon sx={{ color: currentFolder === null ? "primary.main" : "text.disabled" }} /></ListItemIcon>
-                <ListItemText primary="Raiz (Root)" primaryTypographyProps={{ fontWeight: 700, fontSize: '0.85rem' }} />
+                <ListItemIcon sx={{ minWidth: 36, color: 'inherit' }}><FolderIcon sx={{ fontSize: 20 }} /></ListItemIcon>
+                <ListItemText primary={t('media.root')} primaryTypographyProps={{ fontWeight: 700, fontSize: '0.85rem' }} />
               </ListItemButton>
               {folders.map(f => (
                 <ListItem
@@ -856,10 +920,12 @@ export default function MediaLibrary() {
               ))}
             </List>
 
-            <Box sx={{ mt: 'auto', p: 2, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)' }}>
-              <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600, display: 'block', mb: 1 }}>DICA</Typography>
-              <Typography variant="caption" sx={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)' }}>
-                Arraste ficheiros diretamente para as pastas para organizar a sua biblioteca.
+            <Box sx={{ mt: 'auto', p: 2, borderRadius: 3, bgcolor: 'rgba(255, 255, 255, 0.03)', border: '1px dashed rgba(255,255,255,0.1)' }}>
+              <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                <InfoIcon sx={{ fontSize: 14 }} /> {t('media.hint_title')}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem', lineHeight: 1.4, display: 'block' }}>
+                {t('media.hint_msg')}
               </Typography>
             </Box>
           </Paper>
@@ -898,14 +964,28 @@ export default function MediaLibrary() {
               '&:hover': { borderColor: 'primary.main', bgcolor: 'rgba(0, 229, 255, 0.03)' }
             }}
           >
-            <Box {...getRootProps()} sx={{ textAlign: 'center', cursor: 'pointer' }}>
+            <Box sx={{
+              height: 120,
+              border: '2px dashed',
+              borderColor: isDragActive ? 'primary.main' : 'rgba(255,255,255,0.1)',
+              borderRadius: 4,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: isDragActive ? 'rgba(0, 229, 255, 0.05)' : 'rgba(255,255,255,0.02)',
+              transition: 'all 0.2s ease',
+              cursor: 'pointer',
+              mb: 3,
+              '&:hover': { borderColor: 'primary.main', bgcolor: 'rgba(0, 229, 255, 0.02)' }
+            }}>
               <input {...getInputProps()} />
-              <UploadIcon className={isDragActive ? "neon-text" : ""} sx={{ fontSize: 48, color: isDragActive ? 'primary.main' : 'rgba(255, 255, 255, 0.2)', mb: 2 }} />
-              <Typography variant="body1" sx={{ fontWeight: 700, mb: 0.5 }}>
-                {isDragActive ? 'SOLTE PARA ENVIAR' : 'UPLOAD DE MEDIA'}
+              <UploadIcon sx={{ fontSize: 32, color: isDragActive ? 'primary.main' : 'text.disabled', mb: 1 }} />
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: isDragActive ? 'primary.main' : 'text.primary' }}>
+                {isDragActive ? t('media.drop_to_upload') : t('media.upload_media')}
               </Typography>
-              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
-                {`Arraste ficheiros ou clique para explorar (Destino: ${currentFolder?.name || 'Raiz'})`}
+              <Typography variant="caption" color="text.secondary">
+                {t('media.upload_hint', { folder: currentFolder?.name || t('media.root') })}
               </Typography>
             </Box>
           </Paper>
@@ -917,43 +997,60 @@ export default function MediaLibrary() {
                 <TextField
                   fullWidth
                   size="small"
-                  placeholder="Pesquisar na biblioteca..."
+                  variant="outlined"
+                  placeholder={t('media.search_placeholder')}
                   value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
+                  onChange={handleSearchChange}
                   InputProps={{
-                    startAdornment: <SearchIcon sx={{ mr: 1, color: 'primary.main' }} />,
-                    sx: { bgcolor: 'rgba(0, 0, 0, 0.2)', borderRadius: 2 }
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon sx={{ color: 'text.disabled' }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: 'rgba(255, 255, 255, 0.03)',
+                      borderRadius: 3,
+                    }
                   }}
                 />
               </Grid>
-              <Grid item xs={12} sm={3}>
+              <Grid item xs={12} md={3}>
                 <FormControl fullWidth size="small">
-                  <InputLabel>Tipo</InputLabel>
+                  <InputLabel>{t('media.type')}</InputLabel>
                   <Select
-                    value={filters.media_type}
-                    label="Tipo"
-                    onChange={e => setFilters({ ...filters, media_type: e.target.value, page: 1 })}
-                    sx={{ bgcolor: 'rgba(0, 0, 0, 0.2)', borderRadius: 2 }}
+                    value={filters.media_type || 'all'}
+                    label={t('media.type')}
+                    onChange={(e) => setFilters(prev => ({ ...prev, media_type: e.target.value === 'all' ? '' : e.target.value, page: 1 }))}
+                    sx={{ borderRadius: 3, bgcolor: 'rgba(255, 255, 255, 0.03)' }}
                   >
-                    <MenuItem value="">Todos</MenuItem>
-                    <MenuItem value="video">Vídeo</MenuItem>
-                    <MenuItem value="image">Imagem</MenuItem>
-                    <MenuItem value="audio">Áudio</MenuItem>
+                    <MenuItem value="all">{t('media.all')}</MenuItem>
+                    <MenuItem value="video">{t('media.video')}</MenuItem>
+                    <MenuItem value="image">{t('media.image')}</MenuItem>
+                    <MenuItem value="audio">{t('media.audio')}</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={12} sm={3}>
+              <Grid item xs={12} md={3}>
                 <FormControl fullWidth size="small">
-                  <InputLabel>Categoria</InputLabel>
+                  <InputLabel>{t('media.category')}</InputLabel>
                   <Select
-                    value={filters.is_filler === undefined ? "" : filters.is_filler}
-                    label="Categoria"
-                    onChange={e => setFilters({ ...filters, is_filler: e.target.value === "" ? undefined : e.target.value, page: 1 })}
-                    sx={{ bgcolor: 'rgba(0, 0, 0, 0.2)', borderRadius: 2 }}
+                    value={filters.is_filler === undefined ? 'all' : (filters.is_filler ? 'filler' : 'prog')}
+                    label={t('media.category')}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFilters(prev => ({
+                        ...prev,
+                        is_filler: val === 'all' ? undefined : (val === 'filler'),
+                        page: 1
+                      }));
+                    }}
+                    sx={{ borderRadius: 3, bgcolor: 'rgba(255, 255, 255, 0.03)' }}
                   >
-                    <MenuItem value="">Ambos</MenuItem>
-                    <MenuItem value="true">Fillers (Geral)</MenuItem>
-                    <MenuItem value="false">Programação</MenuItem>
+                    <MenuItem value="all">{t('media.both')}</MenuItem>
+                    <MenuItem value="filler">{t('media.fillers_general')}</MenuItem>
+                    <MenuItem value="prog">{t('media.programming')}</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
@@ -984,10 +1081,10 @@ export default function MediaLibrary() {
                     <CardMedia
                       component="img"
                       height="140"
-                      image={item.media_type === 'video' ? `/api/media/${item.id}/thumbnail` : (item.media_type === 'image' ? `/api/media/${item.id}/stream` : 'https://via.placeholder.com/300x140?text=ÁUDIO')}
+                      image={item.media_type === 'video' ? `/api/media/${item.id}/thumbnail` : (item.media_type === 'image' ? `/api/media/${item.id}/stream` : `https://via.placeholder.com/300x140?text=${t('media.placeholders.audio')}`)}
                       onError={(e) => {
                         e.target.onerror = null;
-                        e.target.src = 'https://via.placeholder.com/300x140?text=Sem+Preview';
+                        e.target.src = `https://via.placeholder.com/300x140?text=${t('media.placeholders.no_preview')}`;
                       }}
                       sx={{ filter: 'brightness(0.8)' }}
                     />
@@ -1063,7 +1160,7 @@ export default function MediaLibrary() {
 
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Stack direction="row" spacing={0.5}>
-                        <Tooltip title="Preview">
+                        <Tooltip title={t('media.preview')}>
                           <IconButton
                             size="small"
                             sx={{ color: 'primary.main', bgcolor: 'rgba(0, 229, 255, 0.1)' }}
@@ -1074,7 +1171,7 @@ export default function MediaLibrary() {
                           </IconButton>
                         </Tooltip>
                         {item.media_type === 'video' && (
-                          <Tooltip title={item.is_optimized ? "Vídeo Otimizado para Streaming" : "Otimizar para Streaming"}>
+                          <Tooltip title={item.is_optimized ? t('media.optimized_streaming') : t('media.optimize_streaming')}>
                             <IconButton
                               size="small"
                               sx={{
@@ -1082,33 +1179,14 @@ export default function MediaLibrary() {
                                 bgcolor: item.is_optimized ? 'rgba(76, 175, 80, 0.2)' : 'rgba(76, 175, 80, 0.1)',
                                 border: item.is_optimized ? '1px solid rgba(76, 175, 80, 0.4)' : 'none'
                               }}
-                              onClick={async () => {
-                                try {
-                                  // Optimistic state: show spinner immediately without waiting for poll
-                                  setActiveTasks(prev => ({
-                                    ...prev,
-                                    [item.id]: [...(prev[item.id] || []), { id: `opt-local-${item.id}`, task_type: 'optimize', status: 'pending', created_at: new Date().toISOString() }]
-                                  }));
-                                  const response = await mediaAPI.optimizeForStreaming(item.id);
-                                  if (response?.data?.status === 'instant' || response?.status === 200) {
-                                    // Fast-track: completed instantly, refresh immediately
-                                    await fetchMedia();
-                                    setActiveTasks(prev => { const n = { ...prev }; delete n[item.id]; return n; });
-                                  } else {
-                                    showInfo(`Otimização de "${item.filename}" iniciada em background.`);
-                                  }
-                                } catch (err) {
-                                  setActiveTasks(prev => { const n = { ...prev }; delete n[item.id]?.filter(t => t.id !== `opt-local-${item.id}`); return n; });
-                                  showError(`Erro ao optimizar: ${err.response?.data?.error || err.message}`);
-                                }
-                              }}
-                              disabled={item.is_optimized || activeTasks[item.id]?.some(t => t.task_type === 'optimize' && (t.status === 'pending' || t.status === 'processing'))}
+                              onClick={() => handleOptimize(item.id)}
+                              disabled={item.is_optimized || activeTasks[item.id]?.some(task => task.task_type === 'optimize' && (task.status === 'pending' || task.status === 'processing'))}
                             >
-                              {activeTasks[item.id]?.find(t => t.task_type === 'optimize' && t.status === 'failed') ? (
-                                <Tooltip title={`Erro: ${activeTasks[item.id]?.find(t => t.task_type === 'optimize' && t.status === 'failed')?.error_message || 'Desconhecido'}`}>
+                              {activeTasks[item.id]?.find(task => task.task_type === 'optimize' && task.status === 'failed') ? (
+                                <Tooltip title={t('common.error_details', { error: activeTasks[item.id]?.find(task => task.task_type === 'optimize' && task.status === 'failed')?.error_message || t('common.unknown') })}>
                                   <ErrorIcon fontSize="small" color="error" />
                                 </Tooltip>
-                              ) : activeTasks[item.id]?.some(t => t.task_type === 'optimize') ? (
+                              ) : activeTasks[item.id]?.some(task => task.task_type === 'optimize') ? (
                                 <CircularProgress key={`opt-${item.id}`} size={16} color="success" />
                               ) : item.is_optimized ? (
                                 <CheckCircleIcon fontSize="small" />
@@ -1119,7 +1197,7 @@ export default function MediaLibrary() {
                           </Tooltip>
                         )}
                         {item.media_type === 'video' && (
-                          <Tooltip title={item.has_proxy ? "Proxy Web Disponível" : "Gerar Proxy Web (Latência Zero)"}>
+                          <Tooltip title={item.has_proxy ? t('media.proxy_available') : t('media.generate_proxy')}>
                             <IconButton
                               size="small"
                               sx={{
@@ -1127,33 +1205,14 @@ export default function MediaLibrary() {
                                 bgcolor: item.has_proxy ? 'rgba(156, 39, 176, 0.2)' : 'rgba(255, 152, 0, 0.1)',
                                 border: item.has_proxy ? '1px solid rgba(156, 39, 176, 0.4)' : 'none'
                               }}
-                              onClick={async () => {
-                                try {
-                                  // Optimistic state: show spinner before next poll cycle
-                                  setActiveTasks(prev => ({
-                                    ...prev,
-                                    [item.id]: [...(prev[item.id] || []), { id: `proxy-local-${item.id}`, task_type: 'proxy', status: 'pending', created_at: new Date().toISOString() }]
-                                  }));
-                                  const response = await mediaAPI.generateProxy(item.id);
-                                  if (response?.data?.instant || response?.data?.status === 'instant') {
-                                    // Hard-link / zero-byte — completed instantly, no background task
-                                    await fetchMedia();
-                                    setActiveTasks(prev => { const n = { ...prev }; delete n[item.id]; return n; });
-                                  } else {
-                                    showInfo(`Geração de proxy para "${item.filename}" iniciada em background.`);
-                                  }
-                                } catch (err) {
-                                  setActiveTasks(prev => { const n = { ...prev }; delete n[item.id]; return n; });
-                                  showError(`Erro ao iniciar geração de proxy: ${err.response?.data?.error || err.message}`);
-                                }
-                              }}
-                              disabled={item.has_proxy || activeTasks[item.id]?.some(t => t.task_type === 'proxy' && (t.status === 'pending' || t.status === 'processing'))}
+                              onClick={() => handleGenerateProxy(item.id)}
+                              disabled={item.has_proxy || activeTasks[item.id]?.some(task => task.task_type === 'proxy' && (task.status === 'pending' || task.status === 'processing'))}
                             >
-                              {activeTasks[item.id]?.find(t => t.task_type === 'proxy' && t.status === 'failed') ? (
-                                <Tooltip title={`Erro: ${activeTasks[item.id]?.find(t => t.task_type === 'proxy' && t.status === 'failed')?.error_message || 'Desconhecido'}`}>
+                              {activeTasks[item.id]?.find(task => task.task_type === 'proxy' && task.status === 'failed') ? (
+                                <Tooltip title={t('common.error_details', { error: activeTasks[item.id]?.find(task => task.task_type === 'proxy' && task.status === 'failed')?.error_message || t('common.unknown') })}>
                                   <ErrorIcon fontSize="small" color="error" />
                                 </Tooltip>
-                              ) : activeTasks[item.id]?.some(t => t.task_type === 'proxy') ? (
+                              ) : activeTasks[item.id]?.some(task => task.task_type === 'proxy') ? (
                                 <CircularProgress key={`proxy-${item.id}`} size={16} color="warning" />
                               ) : item.has_proxy ? (
                                 <CheckCircleIcon fontSize="small" />
@@ -1163,13 +1222,13 @@ export default function MediaLibrary() {
                             </IconButton>
                           </Tooltip>
                         )}
-                        <Tooltip title="Assistente de Metadados">
+                        <Tooltip title={t('media.metadata_wizard')}>
                           <IconButton size="small" sx={{ color: 'secondary.main', bgcolor: 'rgba(156, 39, 176, 0.1)' }} onClick={() => handleFetchMetadata(item)}><WizardIcon fontSize="small" /></IconButton>
                         </Tooltip>
-                        <Tooltip title="Editar">
+                        <Tooltip title={t('media.edit')}>
                           <IconButton size="small" sx={{ color: 'text.secondary', bgcolor: 'rgba(255, 255, 255, 0.05)' }} onClick={() => handleEditMetadata(item)}><EditIcon fontSize="small" /></IconButton>
                         </Tooltip>
-                        <Tooltip title="Ficheiro">
+                        <Tooltip title={t('media.file')}>
                           <IconButton
                             size="small"
                             color="error"
@@ -1206,9 +1265,9 @@ export default function MediaLibrary() {
           {/* Pagination */}
           {pagination.pages > 1 && (
             <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center', gap: 2 }}>
-              <Button disabled={filters.page === 1} onClick={() => setFilters({ ...filters, page: filters.page - 1 })}>Anterior</Button>
+              <Button disabled={filters.page === 1} onClick={() => setFilters({ ...filters, page: filters.page - 1 })}>{t('common.previous')}</Button>
               <Typography sx={{ alignSelf: 'center' }}>{filters.page} / {pagination.pages}</Typography>
-              <Button disabled={filters.page === pagination.pages} onClick={() => setFilters({ ...filters, page: filters.page + 1 })}>Próxima</Button>
+              <Button disabled={filters.page === pagination.pages} onClick={() => setFilters({ ...filters, page: filters.page + 1 })}>{t('common.next')}</Button>
             </Box>
           )}
         </Grid>
@@ -1228,114 +1287,116 @@ export default function MediaLibrary() {
       </Dialog >
 
       {/* Smart Delete Dialog */}
-      < Dialog open={deleteDialog.open} onClose={() => setDeleteDialog({ open: false, media: null, usage: null, simpleDelete: false })} maxWidth="sm" fullWidth >
-        <DialogTitle sx={{ color: deleteDialog.simpleDelete ? 'error.main' : 'warning.main', display: 'flex', alignItems: 'center', gap: 1 }}>
-          {deleteDialog.simpleDelete ? '🗑️ Confirmar Eliminação' : '⚠️ Ficheiro em Uso no Calendário'}
+      <Dialog open={deleteDialog.open} onClose={() => setDeleteDialog({ open: false, media: null, usage: null, simpleDelete: false })}>
+        <DialogTitle sx={{ color: 'error.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <DeleteIcon /> {t('media.delete_confirm_title')}
         </DialogTitle>
-        <DialogContent>
-          {deleteDialog.simpleDelete ? (
-            <>
-              <Typography variant="body1" gutterBottom>
-                Tem a certeza que deseja eliminar "{deleteDialog.media?.filename}"?
+        <DialogContent dividers>
+          <Typography variant="body1" sx={{ fontWeight: 700, mb: 1 }}>
+            {t('media.delete_confirm_msg', { filename: deleteDialog.media?.filename })}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            {t('media.delete_permanent_alert')}
+          </Typography>
+
+          {deleteDialog.usage && deleteDialog.usage.length > 0 && (
+            <Alert severity="error" variant="filled" sx={{ borderRadius: 3, mb: 2, '& .MuiAlert-icon': { fontSize: 32 } }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 900 }}>{t('media.delete_in_use_title')}</Typography>
+              <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                {t('media.delete_in_use_alert', { count: deleteDialog.usage.length, filename: deleteDialog.media?.filename })}
               </Typography>
-              <Alert severity="info" sx={{ mt: 2 }}>
-                Esta ação não pode ser desfeita.
-              </Alert>
-            </>
-          ) : (
-            <>
-              <Alert severity="warning" sx={{ mb: 2 }}>
-                "{deleteDialog.media?.filename}" está agendado em {deleteDialog.usage?.scheduled_count} evento(s).
-              </Alert>
+            </Alert>
+          )}
 
-              <Typography variant="body2" gutterBottom sx={{ mb: 2 }}>
-                Escolha uma opção:
+          {deleteDialog.usage && deleteDialog.usage.length > 0 && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="overline" sx={{ fontWeight: 800, color: 'text.disabled' }}>
+                {t('media.delete_choose_option')}
               </Typography>
 
-              <Stack spacing={2}>
-                <Paper
-                  sx={{
-                    p: 2,
-                    border: '1px solid',
-                    borderColor: 'error.main',
-                    cursor: 'pointer',
-                    '&:hover': { bgcolor: 'error.light', color: 'error.contrastText' }
-                  }}
-                  onClick={handleForceDelete}
-                >
-                  <Typography variant="subtitle1" fontWeight="bold">Eliminar Mesmo Assim</Typography>
-                  <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
-                    ⚠️ Os agendamentos ficarão inválidos e podem causar erros no playout
-                  </Typography>
-                </Paper>
+              <Paper
+                variant="outlined"
+                sx={{
+                  mt: 1, p: 1.5, cursor: 'pointer', borderRadius: 2,
+                  '&:hover': { bgcolor: 'rgba(211, 47, 47, 0.05)', borderColor: 'error.main' }
+                }}
+                onClick={handleForceDelete}
+              >
+                <Typography variant="subtitle2" color="error" sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <WarningIcon fontSize="small" /> {t('media.delete_anyway')}
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}>
+                  {t('media.delete_anyway_hint')}
+                </Typography>
+              </Paper>
 
-                <Paper
-                  sx={{
-                    p: 2,
-                    border: '1px solid',
-                    borderColor: 'primary.main',
-                    cursor: 'pointer',
-                    '&:hover': { bgcolor: 'primary.light', color: 'primary.contrastText' }
-                  }}
-                  onClick={handleReplaceAndDelete}
-                >
-                  <Typography variant="subtitle1" fontWeight="bold">Substituir por Filler e Eliminar</Typography>
-                  <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
-                    ✓ Seguro - Substitui automaticamente nos agendamentos antes de eliminar
-                  </Typography>
-                </Paper>
-              </Stack>
-            </>
+              <Paper
+                className="pulse-success-border"
+                variant="outlined"
+                sx={{
+                  mt: 2, p: 1.5, cursor: 'pointer', borderRadius: 2,
+                  bgcolor: 'rgba(76, 175, 80, 0.05)', borderColor: 'success.main'
+                }}
+                onClick={handleReplaceAndDelete}
+              >
+                <Typography variant="subtitle2" color="success.main" sx={{ fontWeight: 900, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CheckCircleIcon fontSize="small" /> {t('media.delete_replace_filler')}
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}>
+                  {t('media.delete_replace_filler_hint')}
+                </Typography>
+              </Paper>
+            </Box>
           )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteDialog({ open: false, media: null, usage: null, simpleDelete: false })}>
-            Cancelar
+            {t('common.cancel')}
           </Button>
           {deleteDialog.simpleDelete && (
             <Button variant="contained" color="error" onClick={handleForceDelete}>
-              Eliminar
+              {t('common.delete')}
             </Button>
           )}
         </DialogActions>
       </Dialog >
 
       {/* Move/Copy Media Dialog */}
-      < Dialog open={moveOpen} onClose={() => setMoveOpen(false)} maxWidth="xs" fullWidth >
-        <DialogTitle>Organizar "{mediaToMove?.filename}"</DialogTitle>
+      <Dialog open={moveOpen} onClose={() => setMoveOpen(false)} maxWidth="xs" fullWidth >
+        <DialogTitle>{t('media.move_title', { filename: mediaToMove?.filename })}</DialogTitle>
         <DialogContent dividers>
-          <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>Escolha a pasta de destino:</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>{t('media.move_dest')}</Typography>
           <List>
             <ListItemButton onClick={() => handleMoveMedia(null)}>
               <ListItemIcon><FolderIcon color="primary" /></ListItemIcon>
-              <ListItemText primary="Mover para Raiz" />
+              <ListItemText primary={t('media.move_to_root')} />
             </ListItemButton>
             {folders.map(f => (
               <ListItemButton key={f.id} onClick={() => handleMoveMedia(f.id)}>
                 <ListItemIcon><FolderIcon /></ListItemIcon>
-                <ListItemText primary={`Mover para "${f.name}"`} />
+                <ListItemText primary={t('media.move_to_folder', { name: f.name })} />
               </ListItemButton>
             ))}
             <Divider sx={{ my: 1 }} />
             <ListItemButton onClick={() => handleCopyMedia(null)}>
               <ListItemIcon><FolderIcon color="secondary" /></ListItemIcon>
-              <ListItemText primary="Copiar para Raiz" secondary="Cria duplicado" />
+              <ListItemText primary={t('media.copy_to_root')} secondary={t('media.copy_hint')} />
             </ListItemButton>
             {folders.map(f => (
               <ListItemButton key={`copy-${f.id}`} onClick={() => handleCopyMedia(f.id)}>
                 <ListItemIcon><FolderIcon color="secondary" /></ListItemIcon>
-                <ListItemText primary={`Copiar para "${f.name}"`} secondary="Cria duplicado" />
+                <ListItemText primary={t('media.copy_to_folder', { name: f.name })} secondary={t('media.copy_hint')} />
               </ListItemButton>
             ))}
           </List>
         </DialogContent>
-        <DialogActions><Button onClick={() => setMoveOpen(false)}>Cancelar</Button></DialogActions>
+        <DialogActions><Button onClick={() => setMoveOpen(false)}>{t('common.cancel')}</Button></DialogActions>
       </Dialog >
 
       {/* Metadata Editor Dialog */}
-      < Dialog open={metadataOpen} onClose={() => { setMetadataOpen(false); setIsReviewMode(false); }} maxWidth="md" fullWidth >
+      <Dialog open={metadataOpen} onClose={() => { setMetadataOpen(false); setIsReviewMode(false); }} maxWidth="md" fullWidth >
         <DialogTitle sx={{ bgcolor: isReviewMode ? 'secondary.main' : 'primary.main', color: 'white' }}>
-          {isReviewMode ? '🪄 Revisar Metadados Automáticos' : 'Editar Metadados EPG'}: {editingMedia?.filename}
+          {isReviewMode ? t('media.metadata.review_title') : t('media.metadata.edit_title')}: {editingMedia?.filename}
         </DialogTitle>
         <DialogContent dividers>
           {(isReviewMode || editingMedia?.metadata?.source_service) && (
@@ -1343,33 +1404,33 @@ export default function MediaLibrary() {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                 <WizardIcon fontSize="small" color="secondary" />
                 <Typography variant="body2">
-                  Informação recuperada de: <strong>{isReviewMode ? metadataSource?.service : (editingMedia?.metadata?.source_service || 'API Automática')}</strong>
+                  {t('media.metadata.info_from')} <strong>{isReviewMode ? metadataSource?.service : (editingMedia?.metadata?.source_service || 'API Automática')}</strong>
                 </Typography>
               </Box>
               {(isReviewMode ? metadataSource?.url : editingMedia?.metadata?.source_url) && (
                 <Link href={isReviewMode ? metadataSource?.url : editingMedia?.metadata?.source_url} target="_blank" variant="caption" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  🔗 Ver fonte original no {isReviewMode ? metadataSource?.service : (editingMedia?.metadata?.source_service || 'API')} ↗
+                  {t('media.metadata.view_source', { service: isReviewMode ? metadataSource?.service : (editingMedia?.metadata?.source_service || 'API') })}
                 </Link>
               )}
             </Alert>
           )}
           {isReviewMode && (
             <Alert severity="info" sx={{ mb: 2 }}>
-              Estes dados foram encontrados automaticamente. Pode editá-los abaixo antes de confirmar o salvamento.
+              {t('media.metadata.review_alert')}
             </Alert>
           )}
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
-              label="Título (EPG)"
+              label={t('media.metadata.label_title')}
               fullWidth
               value={metadataForm.title}
               onChange={e => setMetadataForm({ ...metadataForm, title: e.target.value })}
               placeholder={editingMedia?.filename}
-              helperText="Deixe vazio para usar o nome do ficheiro"
+              helperText={t('media.metadata.help_title')}
               sx={{ bgcolor: isReviewMode && metadataForm.title ? 'rgba(76, 175, 80, 0.05)' : 'inherit' }}
             />
             <TextField
-              label="Descrição / Sinopse"
+              label={t('media.metadata.label_description')}
               fullWidth
               multiline
               rows={3}
@@ -1380,31 +1441,31 @@ export default function MediaLibrary() {
             <Stack direction="row" spacing={2}>
               <TextField
                 select
-                label="Género"
+                label={t('media.metadata.label_genre')}
                 fullWidth
                 value={metadataForm.genre}
                 onChange={e => setMetadataForm({ ...metadataForm, genre: e.target.value })}
               >
-                <MenuItem value="">Nenhum</MenuItem>
-                <MenuItem value="Comedy">Comédia</MenuItem>
-                <MenuItem value="Drama">Drama</MenuItem>
-                <MenuItem value="News">Notícias</MenuItem>
-                <MenuItem value="Sports">Desporto</MenuItem>
-                <MenuItem value="Documentary">Documentário</MenuItem>
-                <MenuItem value="Action">Ação</MenuItem>
-                <MenuItem value="Animation">Animação</MenuItem>
-                <MenuItem value="Music">Música</MenuItem>
-                <MenuItem value="Other">Outro</MenuItem>
+                <MenuItem value="">{t('media.metadata.genre_none')}</MenuItem>
+                <MenuItem value="Comedy">{t('media.metadata.genre_comedy')}</MenuItem>
+                <MenuItem value="Drama">{t('media.metadata.genre_drama')}</MenuItem>
+                <MenuItem value="News">{t('media.metadata.genre_news')}</MenuItem>
+                <MenuItem value="Sports">{t('media.metadata.genre_sports')}</MenuItem>
+                <MenuItem value="Documentary">{t('media.metadata.genre_documentary')}</MenuItem>
+                <MenuItem value="Action">{t('media.metadata.genre_action')}</MenuItem>
+                <MenuItem value="Animation">{t('media.metadata.genre_animation')}</MenuItem>
+                <MenuItem value="Music">{t('media.metadata.genre_music')}</MenuItem>
+                <MenuItem value="Other">{t('media.metadata.genre_other')}</MenuItem>
               </TextField>
               <TextField
                 select
-                label="Classificação Etária"
+                label={t('media.metadata.label_rating')}
                 fullWidth
                 value={metadataForm.rating}
                 onChange={e => setMetadataForm({ ...metadataForm, rating: e.target.value })}
               >
-                <MenuItem value="">Nenhuma</MenuItem>
-                <MenuItem value="General">Livre</MenuItem>
+                <MenuItem value="">{t('media.metadata.rating_none')}</MenuItem>
+                <MenuItem value="General">{t('media.metadata.rating_general')}</MenuItem>
                 <MenuItem value="10">10 anos</MenuItem>
                 <MenuItem value="12">12 anos</MenuItem>
                 <MenuItem value="14">14 anos</MenuItem>
@@ -1413,59 +1474,59 @@ export default function MediaLibrary() {
               </TextField>
             </Stack>
             <TextField
-              label="Palavras-chave / Tags"
+              label={t('media.metadata.label_keywords')}
               fullWidth
               value={metadataForm.keywords}
               onChange={e => setMetadataForm({ ...metadataForm, keywords: e.target.value })}
-              placeholder="ficção científica, comédia romântica"
-              helperText="Separadas por vírgula"
+              placeholder={t('media.metadata.keywords_placeholder')}
+              helperText={t('media.metadata.help_keywords')}
             />
             <Stack direction="row" spacing={2}>
               <TextField
-                label="Temporada"
+                label={t('media.metadata.label_season')}
                 fullWidth
                 value={metadataForm.season}
                 onChange={e => setMetadataForm({ ...metadataForm, season: e.target.value })}
               />
               <TextField
-                label="Episódio"
+                label={t('media.metadata.label_episode')}
                 fullWidth
                 value={metadataForm.episode}
                 onChange={e => setMetadataForm({ ...metadataForm, episode: e.target.value })}
               />
             </Stack>
             <TextField
-              label="Elenco / Atores Principais"
+              label={t('media.metadata.label_cast')}
               fullWidth
               value={metadataForm.cast}
               onChange={e => setMetadataForm({ ...metadataForm, cast: e.target.value })}
               placeholder="Nome1, Nome2, Nome3"
-              helperText="Separados por vírgula"
+              helperText={t('common.separate_by_comma') || 'Separados por vírgula'}
             />
             <TextField
-              label="Realizador / Diretor"
+              label={t('media.metadata.label_director')}
               fullWidth
               value={metadataForm.director}
               onChange={e => setMetadataForm({ ...metadataForm, director: e.target.value })}
             />
             <TextField
-              label="Escritor / Roteirista (Writer)"
+              label={t('media.metadata.label_writer')}
               fullWidth
               value={metadataForm.writer}
               onChange={e => setMetadataForm({ ...metadataForm, writer: e.target.value })}
             />
-            <Divider><Chip label="Dados Técnicos" size="small" /></Divider>
+            <Divider><Chip label={t('media.metadata.technical_data')} size="small" /></Divider>
             <Stack direction="row" spacing={2}>
               <TextField
-                label="Resolução"
+                label={t('media.metadata.label_resolution')}
                 fullWidth
                 value={metadataForm.resolution}
                 onChange={e => setMetadataForm({ ...metadataForm, resolution: e.target.value })}
                 placeholder="1920x1080"
-                helperText="Detetado automaticamente"
+                helperText={t('media.metadata.help_resolution')}
               />
               <TextField
-                label="FPS"
+                label={t('media.metadata.label_fps')}
                 fullWidth
                 value={metadataForm.fps}
                 onChange={e => setMetadataForm({ ...metadataForm, fps: e.target.value })}
@@ -1474,14 +1535,14 @@ export default function MediaLibrary() {
             </Stack>
             <Stack direction="row" spacing={2}>
               <TextField
-                label="Codec Vídeo"
+                label={t('media.metadata.label_vcodec')}
                 fullWidth
                 value={metadataForm.videoCodec}
                 onChange={e => setMetadataForm({ ...metadataForm, videoCodec: e.target.value })}
                 placeholder="h264, h265, vp9"
               />
               <TextField
-                label="Codec Áudio"
+                label={t('media.metadata.label_acodec')}
                 fullWidth
                 value={metadataForm.audioCodec}
                 onChange={e => setMetadataForm({ ...metadataForm, audioCodec: e.target.value })}
@@ -1489,27 +1550,27 @@ export default function MediaLibrary() {
               />
             </Stack>
             <TextField
-              label="Póster URL"
+              label={t('media.metadata.label_poster')}
               fullWidth
               value={metadataForm.poster_url || ''}
               onChange={e => setMetadataForm({ ...metadataForm, poster_url: e.target.value })}
               placeholder="https://image.tmdb.org/..."
-              helperText="Caminho para a imagem de capa (carregada do Wizard)"
+              helperText={t('media.metadata.help_poster')}
               sx={{ bgcolor: isReviewMode && metadataForm.poster_url ? 'rgba(76, 175, 80, 0.05)' : 'inherit' }}
             />
             <TextField
-              label="Legendas / Idiomas"
+              label={t('media.metadata.label_subtitles')}
               fullWidth
               value={metadataForm.subtitles}
               onChange={e => setMetadataForm({ ...metadataForm, subtitles: e.target.value })}
               placeholder="PT, EN, ES"
-              helperText="Idiomas disponíveis separados por vírgula"
+              helperText={t('media.metadata.help_subtitles')}
             />
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setMetadataOpen(false)}>Cancelar</Button>
-          <Button variant="contained" onClick={handleSaveMetadata}>Guardar</Button>
+          <Button onClick={() => setMetadataOpen(false)}>{t('common.cancel')}</Button>
+          <Button variant="contained" onClick={handleSaveMetadata}>{t('common.save')}</Button>
         </DialogActions>
       </Dialog>
 
@@ -1551,7 +1612,7 @@ export default function MediaLibrary() {
           {selectedMedia?.media_type === 'image' && <img alt="preview" style={{ maxWidth: '100%', maxHeight: '70vh' }} src={`/api/media/${selectedMedia.id}/stream`} />}
           {selectedMedia?.media_type === 'audio' && <Box sx={{ p: 4 }}><audio controls preload="metadata" src={`/api/media/${selectedMedia.id}/stream`} /></Box>}
         </DialogContent>
-        <DialogActions><Button onClick={() => setPreviewOpen(false)}>Fechar</Button></DialogActions>
+        <DialogActions><Button onClick={() => setPreviewOpen(false)}>{t('common.close')}</Button></DialogActions>
       </Dialog>
       {/* Multi-file Upload Progress Dialog */}
       <Dialog open={uploadProgressOpen} onClose={() => {
@@ -1588,7 +1649,7 @@ export default function MediaLibrary() {
                     {uf.status === 'success' && <CheckCircleIcon fontSize="small" color="success" />}
                     {uf.status === 'error' && <ErrorIcon fontSize="small" color="error" />}
                     <Typography variant="caption" color={uf.status === 'error' ? 'error' : 'text.secondary'} sx={{ fontWeight: 800 }}>
-                      {uf.status === 'pending' ? 'PENDENTE' : uf.status === 'uploading' ? 'ENVIANDO' : uf.status === 'success' ? 'CONCLUÍDO' : (uf.error || 'ERRO')}
+                      {uf.status === 'pending' ? t('media.uploads_manager.status_pending') : uf.status === 'uploading' ? t('media.uploads_manager.status_uploading') : uf.status === 'success' ? t('media.uploads_manager.status_completed') : (uf.error || t('common.error'))}
                     </Typography>
                   </Box>
                 </Box>
@@ -1619,7 +1680,7 @@ export default function MediaLibrary() {
           </List>
           {uploadFiles.every(f => f.status === 'success' || f.status === 'error') && (
             <Alert severity="success" sx={{ mt: 2 }} icon={<CheckCircleIcon />}>
-              Todos os carregamentos foram processados. Esta janela fechará em breve.
+              {t('media.uploads_manager.all_processed')}
             </Alert>
           )}
         </DialogContent>
@@ -1631,7 +1692,7 @@ export default function MediaLibrary() {
             onClick={handleCancelAllUploads}
             disabled={!uploadFiles.some(f => f.status === 'uploading' || f.status === 'pending')}
           >
-            CANCELAR TODOS
+            {t('media.uploads_manager.cancel_all')}
           </Button>
           <Button
             variant="contained"
@@ -1639,14 +1700,14 @@ export default function MediaLibrary() {
             onClick={() => setUploadProgressOpen(false)}
             sx={{ fontWeight: 800 }}
           >
-            Fechar Janela
+            {t('media.uploads_manager.close_window')}
           </Button>
         </DialogActions>
       </Dialog>
       {/* Audit Proxies Dialog */}
       <Dialog open={auditDialog.open} onClose={() => setAuditDialog({ open: false, data: null, loading: false })} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'secondary.main' }}>
-          <AnalyticsIcon /> Auditoria de Web Proxies
+          <AnalyticsIcon /> {t('media.audit_dialog.title')}
         </DialogTitle>
         <DialogContent dividers>
           {auditDialog.loading ? (
@@ -1655,24 +1716,23 @@ export default function MediaLibrary() {
             <Box>
               {auditDialog.data.missing_count === 0 ? (
                 <Alert severity="success" variant="outlined" sx={{ borderRadius: 3 }}>
-                  Todos os vídeos da biblioteca contêm Web Proxies gerados! O sistema está otimizado.
+                  {t('media.audit_dialog.optimized')}
                 </Alert>
               ) : (
                 <Box>
                   <Alert severity="warning" variant="outlined" sx={{ mb: 3, borderRadius: 3 }}>
-                    Foram detectados <b>{auditDialog.data.missing_count} vídeos</b> sem versão Proxy Web.
-                    Isto requer processamento extra do servidor durante o streaming e navegação.
+                    <span dangerouslySetInnerHTML={{ __html: t('media.audit_dialog.missing_alert', { count: auditDialog.data.missing_count }) }} />
                   </Alert>
                   <Grid container spacing={2}>
                     <Grid item xs={6}>
                       <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', borderColor: 'rgba(255,255,255,0.1)' }}>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>VÍDEOS SEM PROXY</Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>{t('media.audit_dialog.videos_no_proxy')}</Typography>
                         <Typography variant="h4" color="warning.main" sx={{ fontWeight: 900 }}>{auditDialog.data.missing_count}</Typography>
                       </Paper>
                     </Grid>
                     <Grid item xs={6}>
                       <Paper variant="outlined" sx={{ p: 2, textAlign: 'center', borderColor: 'rgba(255,255,255,0.1)' }}>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>ESPAÇO ESTIMADO</Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>{t('media.audit_dialog.estimated_space')}</Typography>
                         <Typography variant="h4" color="secondary.main" sx={{ fontWeight: 900 }}>~{auditDialog.data.estimated_space_mb.toFixed(0)} MB</Typography>
                       </Paper>
                     </Grid>
@@ -1683,7 +1743,7 @@ export default function MediaLibrary() {
           ) : <Typography>Erro ao carregar auditoria.</Typography>}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2, pt: 2, justifyContent: 'space-between' }}>
-          <Button onClick={() => setAuditDialog({ open: false, data: null, loading: false })}>Concluir</Button>
+          <Button onClick={() => setAuditDialog({ open: false, data: null, loading: false })}>{t('common.close')}</Button>
           <Button
             variant="contained"
             color="secondary"
@@ -1691,7 +1751,7 @@ export default function MediaLibrary() {
             disabled={auditDialog.loading || !auditDialog.data || auditDialog.data.missing_count === 0 || performingBulkAction}
             onClick={handleAuditActionAll}
           >
-            Gerar em Lote ({auditDialog.data?.missing_count || 0})
+            {t('media.audit_dialog.batch_generate', { count: auditDialog.data?.missing_count || 0 })}
           </Button>
         </DialogActions>
       </Dialog>

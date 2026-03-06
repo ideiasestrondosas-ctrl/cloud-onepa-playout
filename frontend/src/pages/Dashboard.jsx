@@ -68,6 +68,7 @@ import {
 import { playoutAPI, settingsAPI } from '../services/api';
 import { useNotification } from '../contexts/NotificationContext';
 import LufsMeter from '../components/LufsMeter';
+import { useTranslation } from 'react-i18next';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -75,6 +76,7 @@ export default function Dashboard() {
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
   const { showSuccess, showError, showInfo } = useNotification();
+  const { t } = useTranslation();
   const [status, setStatus] = useState({
     status: 'stopped',
     current_clip: null,
@@ -303,10 +305,10 @@ export default function Dashboard() {
       // Update settings to keep sync
       await settingsAPI.update({ ...settings, rtmp_enabled: enabled, srt_enabled: enabled, udp_enabled: enabled });
       setSettings(prev => ({ ...prev, rtmp_enabled: enabled, srt_enabled: enabled, udp_enabled: enabled }));
-      showSuccess(`Distribuição ${enabled ? 'iniciada' : 'desactivada'}!`);
+      showSuccess(t('common.success'));
       setTimeout(fetchStatus, 1500);
     } catch (e) {
-      showError('Erro ao alternar distribuição');
+      showError(t('dashboard.toggle_dist_error'));
     }
   };
 
@@ -326,19 +328,19 @@ export default function Dashboard() {
       setStartSteps([]);
       const addStep = (msg, type = 'info') => setStartSteps(prev => [...prev, { msg, type, time: new Date() }]);
 
-      addStep('A verificar base de dados...', 'info');
+      addStep(t('dashboard.ops.checking_db'), 'info');
       const response = await playoutAPI.start();
-      addStep('Configurações FFmpeg carregadas', 'success');
-      addStep('Iniciando Encoder HW...', 'info');
+      addStep(t('dashboard.ops.ffmpeg_loaded'), 'success');
+      addStep(t('dashboard.ops.starting_encoder'), 'info');
 
       setTimeout(() => {
-        addStep('Playout em execução via RTMP/HLS', 'success');
+        addStep(t('dashboard.ops.playing_rtmp'), 'success');
         fetchStatus();
       }, 1500);
 
-      showSuccess('Playout iniciado');
+      showSuccess(t('common.success'));
     } catch (error) {
-      showError('Erro ao iniciar');
+      showError(t('common.error'));
     }
   };
 
@@ -349,7 +351,7 @@ export default function Dashboard() {
       const [diagRes] = await Promise.all([playoutAPI.diagnose()]);
       setDebugReport({ ...diagRes.data, _live: status, _settings: settings, _ts: new Date() });
     } catch (e) {
-      showError('Erro no diagnóstico');
+      showError(t('dashboard.diag.diag_failed'));
     } finally {
       setDiagnosing(false);
     }
@@ -381,10 +383,10 @@ export default function Dashboard() {
   const handleSkip = async () => {
     try {
       await playoutAPI.skipClip();
-      showSuccess('Clip pulado com sucesso!');
+      showSuccess(t('dashboard.skip_success'));
       setTimeout(fetchStatus, 1000);
     } catch (error) {
-      showError('Erro ao pular clip');
+      showError(t('dashboard.skip_error'));
     }
   };
 
@@ -409,9 +411,9 @@ export default function Dashboard() {
         setToggleLoading(prev => ({ ...prev, [protocol]: false }));
       }, 2500);
 
-      showSuccess(`Protocolo ${protocol} ${enabled ? 'ativado' : 'desativado'}!`);
+      showSuccess(enabled ? t('dashboard.protocol_enabled', { protocol }) : t('dashboard.protocol_disabled', { protocol }));
     } catch (error) {
-      showError('Erro ao alternar protocolo');
+      showError(t('dashboard.protocol_error'));
       setToggleLoading(prev => ({ ...prev, [protocol]: false }));
       fetchStatus(); // Refresh on error
     }
@@ -434,21 +436,21 @@ export default function Dashboard() {
     const hlsUrl = `${window.location.origin}/hls-live/master/index.m3u8`;
     const vlcProtocolUrl = `vlc://${hlsUrl}`;
 
-    addVlcLog('Iniciando Smart Launcher VLC...', 'info');
+    addVlcLog(t('dashboard.vlc.configuring'), 'info');
     const isMac = navigator.userAgent.toLowerCase().includes('mac');
     const cmd = isMac ? `open -a VLC "${hlsUrl}"` : `vlc "${hlsUrl}"`;
     setVlcCommand(cmd);
 
-    addVlcLog('Tentativa via protocolo vlc://...', 'info');
+    addVlcLog(t('dashboard.vlc.trying_protocol'), 'info');
     addVlcLog('Stream: ' + hlsUrl, 'success');
 
     try {
       window.location.href = vlcProtocolUrl;
       setTimeout(() => {
-        addVlcLog('Dica: Se o VLC não abrir, utilize o Comando Manual abaixo.', 'warning');
+        addVlcLog(t('dashboard.vlc_hint'), 'warning');
       }, 3000);
     } catch (err) {
-      addVlcLog('Erro: ' + err.message, 'error');
+      addVlcLog(t('common.error') + ': ' + err.message, 'error');
     }
   };
 
@@ -515,6 +517,29 @@ export default function Dashboard() {
     const secs = totalSec % 60;
     const msec = Math.floor(ms % 1000);
     return `${String(days).padStart(2, '0')}d ${String(hours).padStart(2, '0')}h ${String(mins).padStart(2, '0')}m ${String(secs).padStart(2, '0')}s ${msec}ms`;
+  };
+
+  const parseScheduleSource = (source) => {
+    if (!source) return '';
+
+    const directMatch = source.match(/^Direct \((.*?)\)$/);
+    if (directMatch) return t('dashboard.source.direct', { date: directMatch[1] }, `Direct (${directMatch[1]})`);
+
+    const dailyMatch = source.match(/^Daily \(from (.*?)\)$/);
+    if (dailyMatch) return t('dashboard.source.daily', { date: dailyMatch[1] }, `Daily (from ${dailyMatch[1]})`);
+
+    const weeklyMatch = source.match(/^Weekly \(DOW (\d+), from (.*?)\)$/);
+    if (weeklyMatch) {
+      const days = [
+        t('common.days.sun', 'Sun'), t('common.days.mon', 'Mon'), t('common.days.tue', 'Tue'),
+        t('common.days.wed', 'Wed'), t('common.days.thu', 'Thu'), t('common.days.fri', 'Fri'), t('common.days.sat', 'Sat')
+      ];
+      const dowIdx = parseInt(weeklyMatch[1], 10);
+      const dowStr = (dowIdx >= 0 && dowIdx < 7) ? days[dowIdx] : weeklyMatch[1];
+      return t('dashboard.source.weekly', { dow: dowStr, date: weeklyMatch[2] }, `Weekly (DOW ${dowStr}, from ${weeklyMatch[2]})`);
+    }
+
+    return source;
   };
 
   return (
@@ -589,14 +614,14 @@ export default function Dashboard() {
               textTransform: 'uppercase',
               userSelect: 'none',
             }}>
-              {isPlaying ? 'ON AIR' : 'OFF AIR'}
+              {isPlaying ? t('dashboard.on_air') : t('dashboard.off_air')}
             </Typography>
           </Box>
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Typography variant="subtitle1" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 2 }}>
-            Monitorização e Controlo
+            {t('dashboard.monitoring')}
           </Typography>
         </Box>
       </Box>
@@ -619,7 +644,7 @@ export default function Dashboard() {
               }}>
                 {isPlaying ? <PlayIcon sx={{ fontSize: 20 }} /> : <StopIcon sx={{ fontSize: 20 }} />}
                 <Typography variant="subtitle2" sx={{ fontWeight: '900', letterSpacing: 1 }}>
-                  {isPlaying ? 'EXECUTANDO' : 'OFFLINE'}
+                  {isPlaying ? t('dashboard.playing') : t('dashboard.offline')}
                 </Typography>
               </Box>
             </Box>
@@ -628,7 +653,7 @@ export default function Dashboard() {
 
             {/* 2. UPTIME UNIT */}
             <Box sx={{ flexGrow: 1, px: 1 }}>
-              <Typography color="text.secondary" variant="caption" sx={{ fontWeight: 800, textTransform: 'uppercase', display: 'block', mb: 0.5, fontSize: '0.65rem' }}>Tempo de Emissão</Typography>
+              <Typography color="text.secondary" variant="caption" sx={{ fontWeight: 800, textTransform: 'uppercase', display: 'block', mb: 0.5, fontSize: '0.65rem' }}>{t('dashboard.uptime')}</Typography>
               <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800, fontFamily: '"Orbitron", sans-serif', fontSize: '0.95rem', letterSpacing: 1.5 }}>
                 {formatUptimeFull(uptimeMs)}
               </Typography>
@@ -638,7 +663,7 @@ export default function Dashboard() {
 
             {/* 3. CLIPS TODAY UNIT */}
             <Box sx={{ textAlign: 'right', pr: 1, minWidth: 100 }}>
-              <Typography color="text.secondary" variant="caption" sx={{ fontWeight: 800, textTransform: 'uppercase', display: 'block', mb: 0.5, fontSize: '0.65rem' }}>Clips Hoje</Typography>
+              <Typography color="text.secondary" variant="caption" sx={{ fontWeight: 800, textTransform: 'uppercase', display: 'block', mb: 0.5, fontSize: '0.65rem' }}>{t('dashboard.clips_today')}</Typography>
               <Typography variant="h5" sx={{ fontWeight: 900, color: 'primary.main' }}>{status.clips_played_today}</Typography>
             </Box>
 
@@ -646,10 +671,10 @@ export default function Dashboard() {
 
             {/* 4. FAST LINKS */}
             <Box sx={{ display: 'flex', gap: 0.5 }}>
-              <Tooltip title="Calendário / EPG">
+              <Tooltip title={t('epg.title')}>
                 <IconButton size="small" onClick={() => navigate('/epg')} sx={{ color: 'text.secondary' }}><TvIcon sx={{ fontSize: 18 }} /></IconButton>
               </Tooltip>
-              <Tooltip title="Gerir Media">
+              <Tooltip title={t('media.title')}>
                 <IconButton size="small" onClick={() => navigate('/media')} sx={{ color: 'text.secondary' }}><PodcastsIcon sx={{ fontSize: 18 }} /></IconButton>
               </Tooltip>
             </Box>
@@ -665,7 +690,7 @@ export default function Dashboard() {
           }}>
             {/* Main Action Group */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Tooltip title={isPlaying ? 'Parar Emissão' : 'Iniciar Emissão'} arrow>
+              <Tooltip title={isPlaying ? t('dashboard.stop_engine') : t('dashboard.start_engine')} arrow>
                 <IconButton
                   disabled={isValidating}
                   onClick={async () => {
@@ -688,7 +713,7 @@ export default function Dashboard() {
                         }
                         setRestartDialogOpen(true);
                       } catch (e) {
-                        showError('Erro ao validar agendamento');
+                        showError(t('dashboard.validate_error'));
                       } finally {
                         setIsValidating(false);
                       }
@@ -710,7 +735,7 @@ export default function Dashboard() {
               </Tooltip>
 
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                <Tooltip title="Saltar Clip" arrow>
+                <Tooltip title={t('dashboard.skip_clip')} arrow>
                   <span>
                     <IconButton
                       size="small"
@@ -725,7 +750,7 @@ export default function Dashboard() {
                     </IconButton>
                   </span>
                 </Tooltip>
-                <Tooltip title="Distribuição Global" arrow>
+                <Tooltip title={t('dashboard.distribution')} arrow>
                   <span>
                     <IconButton
                       size="small"
@@ -747,7 +772,7 @@ export default function Dashboard() {
             </Box>
 
             <Typography variant="caption" sx={{ fontWeight: 900, letterSpacing: 2, fontSize: '0.6rem', color: isPlaying ? '#f44336' : 'text.disabled', textTransform: 'uppercase' }}>
-              {isPlaying ? '● ON AIR' : '○ STANDBY'}
+              {isPlaying ? `● ${t('dashboard.on_air')}` : `○ ${t('dashboard.standby')}`}
             </Typography>
           </Paper>
         </Grid>
@@ -769,7 +794,7 @@ export default function Dashboard() {
         return (
           <Box sx={{ mt: 1.5, position: 'relative', zIndex: 1 }}>
             <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, mb: 1, display: 'flex', alignItems: 'center', gap: 1, textTransform: 'uppercase', letterSpacing: 1.2 }}>
-              <LaunchIcon sx={{ fontSize: 14 }} /> Protocolos de Transmissão
+              <LaunchIcon sx={{ fontSize: 14 }} /> {t('dashboard.protocols')}
             </Typography>
             <Paper className="glass-panel" sx={{ p: 1.5, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
               {visibleStreams.map((stream, idx) => {
@@ -786,10 +811,10 @@ export default function Dashboard() {
                       <Box sx={{ textAlign: 'center', p: 0.5 }}>
                         <Typography variant="caption" sx={{ fontWeight: 800, display: 'block' }}>{stream.protocol}</Typography>
                         <Typography variant="caption" sx={{ color: isActive ? '#4caf50' : isStarting ? '#ff9800' : isError ? '#f44336' : '#aaa', display: 'block' }}>
-                          {isActive ? '● ACTIVO' : isStarting ? '◐ A INICIAR' : isError ? '⚠ ERRO' : '○ OFFLINE'}
+                          {isActive ? `● ${t('dashboard.active')}` : isStarting ? `◐ ${t('dashboard.starting')}` : isError ? `⚠ ${t('dashboard.error_status')}` : `○ ${t('dashboard.offline')}`}
                         </Typography>
-                        {!isReadOnly && <Typography variant="caption" sx={{ opacity: 0.7, display: 'block', mt: 0.5 }}>{isActive ? 'Clique para desligar' : 'Clique para ligar'}</Typography>}
-                        {isReadOnly && <Typography variant="caption" sx={{ opacity: 0.5, display: 'block', mt: 0.5 }}>Protocolo principal (apenas leitura)</Typography>}
+                        {!isReadOnly && <Typography variant="caption" sx={{ opacity: 0.7, display: 'block', mt: 0.5 }}>{isActive ? t('dashboard.click_to_disable') : t('dashboard.click_to_enable')}</Typography>}
+                        {isReadOnly && <Typography variant="caption" sx={{ opacity: 0.5, display: 'block', mt: 0.5 }}>{t('dashboard.readonly_protocol')}</Typography>}
                         {stream.url && <Typography variant="caption" sx={{ opacity: 0.6, display: 'block', mt: 0.5, fontFamily: 'monospace', fontSize: '0.65rem' }}>{stream.url}</Typography>}
                       </Box>
                     }
@@ -854,9 +879,9 @@ export default function Dashboard() {
         <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, p: 2, display: 'flex', justifyContent: 'space-between', background: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%)' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <TvIcon className={isPlaying ? "neon-text" : ""} sx={{ fontSize: 20 }} />
-            <Typography variant="caption" sx={{ color: '#fff', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 2 }}>LIVE MONITOR</Typography>
+            <Typography variant="caption" sx={{ color: '#fff', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 2 }}>{t('dashboard.live_preview')}</Typography>
             {isPlaying && (
-              <Tooltip title={hlsReady ? 'Stream HLS activo' : 'A aguardar stream HLS...'} arrow>
+              <Tooltip title={hlsReady ? t('dashboard.active') : t('dashboard.starting')} arrow>
                 <Box sx={{
                   width: 8, height: 8, borderRadius: '50%',
                   bgcolor: hlsReady ? '#4caf50' : '#ff9800',
@@ -910,7 +935,7 @@ export default function Dashboard() {
             <Box sx={{ position: 'absolute', left: 15, bottom: 15, zIndex: 50 }}>
               <Chip
                 icon={<PlayIcon />}
-                label="URL HLS (Clique para copiar)"
+                label={t('dashboard.live_preview')}
                 onClick={() => {
                   // Usa o host atual e proxy do nginx
                   let hlsOrigin = window.location.origin;
@@ -920,7 +945,7 @@ export default function Dashboard() {
                   const copyFunc = (text) => {
                     if (navigator.clipboard && navigator.clipboard.writeText) {
                       navigator.clipboard.writeText(text)
-                        .then(() => showSuccess('Link HLS copiado!'))
+                        .then(() => showSuccess(t('dashboard.hls_copied')))
                         .catch(() => fallbackCopy(text));
                     } else {
                       fallbackCopy(text);
@@ -934,7 +959,7 @@ export default function Dashboard() {
                     textArea.select();
                     try {
                       document.execCommand('copy');
-                      showSuccess('Link HLS copiado!');
+                      showSuccess(t('dashboard.hls_copied'));
                     } catch (err) {
                       console.error('Bypass copy failed', err);
                     }
@@ -983,7 +1008,7 @@ export default function Dashboard() {
                   }} />
                 </Box>
                 <Typography variant="body2" sx={{ color: '#fff', fontWeight: 'bold' }}>
-                  Audio Analysis Paused (Safari)
+                  {t('dashboard.safari.audio_paused')}
                 </Typography>
                 <Button
                   variant="contained"
@@ -995,7 +1020,7 @@ export default function Dashboard() {
                     setupAudioAnalysis();
                   }}
                 >
-                  Enable Audio Meter
+                  {t('dashboard.safari.enable_meter')}
                 </Button>
               </Box>
             )}
@@ -1012,10 +1037,10 @@ export default function Dashboard() {
           <Paper className="glass-panel" sx={{ p: 2, height: '100%', minHeight: 350 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
               <InfoIcon className="neon-text" sx={{ fontSize: 18 }} />
-              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.5 }}>Informação da Emissão</Typography>
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.5 }}>{t('dashboard.logs')}</Typography>
             </Box>
 
-            <Typography variant="h6" gutterBottom className="neon-text" sx={{ fontWeight: 800, fontSize: '0.8rem', mb: 1.5 }}>LOGS DE SISTEMA</Typography>
+            <Typography variant="h6" gutterBottom className="neon-text" sx={{ fontWeight: 800, fontSize: '0.8rem', mb: 1.5 }}>{t('dashboard.current_clip_title')}</Typography>
             <Box sx={{
               bgcolor: 'rgba(0,0,0,0.4)',
               p: 1.5,
@@ -1039,17 +1064,17 @@ export default function Dashboard() {
                 </Box>
               ))}
               {(!status.logs || status.logs.length === 0) && startSteps.length === 0 && (
-                <Typography variant="caption" sx={{ color: 'text.disabled', fontStyle: 'italic', fontSize: '0.68rem' }}>Aguardando monitorização...</Typography>
+                <Typography variant="caption" sx={{ color: 'text.disabled', fontStyle: 'italic', fontSize: '0.68rem' }}>{t('dashboard.diagnosing')}</Typography>
               )}
             </Box>
 
-            <Typography variant="h6" gutterBottom className="neon-text" sx={{ fontWeight: 800, fontSize: '0.8rem', mb: 1.5 }}>CLIP EM REPRODUÇÃO</Typography>
+            <Typography variant="h6" gutterBottom className="neon-text" sx={{ fontWeight: 800, fontSize: '0.8rem', mb: 1.5 }}>{t('dashboard.current_clip_title')}</Typography>
             {status.current_clip ? (
               <Box sx={{ bgcolor: 'rgba(0, 229, 255, 0.04)', p: 1.5, borderRadius: 2, border: '1px solid rgba(0, 229, 255, 0.1)' }}>
                 <Typography variant="body2" sx={{ fontWeight: 800, color: 'primary.main', mb: 1, fontSize: '0.8rem' }}>{status.current_clip.filename}</Typography>
                 {status.schedule_source && (
                   <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', mb: 1.5, fontStyle: 'italic', fontSize: '0.65rem' }}>
-                    Origem: {status.schedule_source}
+                    {t('dashboard.source_label')} {parseScheduleSource(status.schedule_source)}
                   </Typography>
                 )}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -1074,7 +1099,7 @@ export default function Dashboard() {
               </Box>
             ) : (
               <Box sx={{ p: 2, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.01)', borderRadius: 2, border: '1px dashed rgba(255,255,255,0.08)' }}>
-                <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.7rem' }}>Nenhum clip ativo</Typography>
+                <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.7rem' }}>{t('dashboard.no_active_clip')}</Typography>
               </Box>
             )}
           </Paper>
@@ -1083,7 +1108,7 @@ export default function Dashboard() {
           <Paper className="glass-panel" sx={{ p: 2, height: '100%' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
               <SensorsIcon className="neon-text" sx={{ fontSize: 18 }} />
-              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.5 }}>Próximos na Lista</Typography>
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.5 }}>{t('navigation.playlists')}</Typography>
             </Box>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
               {status.next_clips?.length > 0 ? status.next_clips.map((c, i) => (
@@ -1103,11 +1128,11 @@ export default function Dashboard() {
                     <Typography variant="body2" noWrap sx={{ fontWeight: i === 0 ? 800 : 500, fontSize: '0.75rem' }}>{c.filename}</Typography>
                     <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem' }}>{formatTime(c.duration)}</Typography>
                   </Box>
-                  {i === 0 && <Chip label="SEGUE" size="small" sx={{ height: 14, fontSize: '0.55rem', bgcolor: 'primary.main', color: '#000', fontWeight: 900 }} />}
+                  {i === 0 && <Chip label={t('dashboard.follow')} size="small" sx={{ height: 14, fontSize: '0.55rem', bgcolor: 'primary.main', color: '#000', fontWeight: 900 }} />}
                 </Box>
               )) : (
                 <Box sx={{ p: 3, textAlign: 'center', opacity: 0.4 }}>
-                  <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>Lista vazia</Typography>
+                  <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>{t('dashboard.empty_list')}</Typography>
                 </Box>
               )}
             </Box>
@@ -1117,20 +1142,20 @@ export default function Dashboard() {
 
       <Dialog open={vlcDialogOpen} onClose={() => setVlcDialogOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle sx={{ bgcolor: 'primary.main', color: '#fff', display: 'flex', alignItems: 'center', gap: 1 }}>
-          <PlayIcon /> VLC Smart Launcher & Diagnóstico de Rede
+          <PlayIcon /> {t('dashboard.vlc.title')}
         </DialogTitle>
         <DialogContent sx={{ mt: 2 }}>
           <Grid container spacing={3}>
             <Grid item xs={12} md={7}>
               <Typography variant="subtitle1" fontWeight="bold" color="primary" gutterBottom>
-                Como visualizar o seu canal externamente:
+                {t('dashboard.vlc.how_to')}
               </Typography>
               <Alert severity="info" sx={{ mb: 2 }}>
-                O playout está a emitir em tempo real. Use as opções abaixo para monitorizar com detalhe total.
+                {t('dashboard.vlc.real_time')}
               </Alert>
 
               <Box sx={{ bgcolor: 'action.hover', p: 2, borderRadius: 1, mb: 3 }}>
-                <Typography variant="body2" fontWeight="bold">Link de Reprodução (VLC):</Typography>
+                <Typography variant="body2" fontWeight="bold">{t('dashboard.vlc.playback_link')}</Typography>
                 <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
                   <TextField
                     fullWidth
@@ -1140,7 +1165,7 @@ export default function Dashboard() {
                       const displayUrl = settings?.display_urls?.[type];
                       return displayUrl || settings?.output_url || '';
                     })()}
-                    placeholder="URL de saída não definido"
+                    placeholder={t('dashboard.vlc.no_url')}
                     disabled
                   />
                   <Button
@@ -1155,7 +1180,7 @@ export default function Dashboard() {
                       }
 
                       if (!url) {
-                        showError('URL de saída não definido nas configurações.');
+                        showError(t('dashboard.vlc.no_url'));
                         return;
                       }
                       console.log('[VLC Launcher] Attempting to open:', url);
@@ -1170,11 +1195,11 @@ export default function Dashboard() {
                       }
                     }}
                   >
-                    Abrir no VLC
+                    {t('dashboard.vlc.open_vlc')}
                   </Button>
                 </Box>
                 <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                  Nota: O browser não consegue confirmar se o VLC abriu com sucesso. Se nada acontecer, instale o VLC ou copie o link acima manualmente.
+                  {t('dashboard.vlc.browser_note')}
                 </Typography>
                 <Button
                   size="small"
@@ -1182,7 +1207,7 @@ export default function Dashboard() {
                   sx={{ mt: 1 }}
                   onClick={() => window.location.href = '/settings?tab=0'}
                 >
-                  Configurar Output URL →
+                  {t('dashboard.vlc.configure_output')}
                 </Button>
               </Box>
 
@@ -1374,26 +1399,26 @@ export default function Dashboard() {
                   </Grid>
                 </Grid>
               ) : (
-                <Alert severity="error">Não foi possível obter o relatório.</Alert>
+                <Alert severity="error">{t('dashboard.diag.diag_failed')}</Alert>
               )}
             </Box>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleDiagnose} variant="outlined" size="small">Actualizar agora</Button>
+          <Button onClick={handleDiagnose} variant="outlined" size="small">{t('dashboard.diag.refresh_now')}</Button>
           <Button onClick={() => setDebugDialogOpen(false)}>Fechar</Button>
         </DialogActions>
       </Dialog>
 
       <Dialog open={restartDialogOpen} onClose={() => setRestartDialogOpen(false)}>
-        <DialogTitle>Opções de Inicialização</DialogTitle>
+        <DialogTitle>{t('dashboard.restart.title')}</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ mb: 2 }}>
-            Selecione os protocolos que devem ser iniciados automaticamente ao ligar o Backend.
+            {t('dashboard.restart.msg')}
           </DialogContentText>
           <FormControlLabel
             control={<Switch checked={restartOptions.auto_start} onChange={(e) => setRestartOptions({ ...restartOptions, auto_start: e.target.checked })} />}
-            label="Auto-start Protocols (Master Switch)"
+            label={t('dashboard.restart.master_switch')}
           />
           <Box sx={{ ml: 3, display: 'flex', flexDirection: 'column' }}>
             <FormControlLabel
@@ -1411,7 +1436,7 @@ export default function Dashboard() {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setRestartDialogOpen(false)}>Cancelar</Button>
+          <Button onClick={() => setRestartDialogOpen(false)}>{t('common.cancel')}</Button>
           <Button variant="contained" color="success" onClick={async () => {
             try {
               // Update settings first
@@ -1425,10 +1450,10 @@ export default function Dashboard() {
               handleStart();
               setRestartDialogOpen(false);
             } catch (e) {
-              showError('Erro ao atualizar configurações');
+              showError(t('common.error'));
             }
           }}>
-            Iniciar Engine
+            {t('dashboard.start_engine')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1444,18 +1469,18 @@ export default function Dashboard() {
         }}
       >
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'error.main', fontWeight: 800 }}>
-          <WarningIcon /> ATENÇÃO: ERRO DE AGENDAMENTO
+          <WarningIcon /> {t('dashboard.schedule_error.title')}
         </DialogTitle>
         <DialogContent>
           <Typography variant="body1" sx={{ fontWeight: 600, mb: 2 }}>
-            Não existe nenhuma playlist ativa ou agendada para hoje.
+            {t('dashboard.schedule_error.msg')}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            O motor de playout não pode iniciar sem conteúdos. Por favor, utilize o Assistente de Configuração ou aceda ao Calendário para agendar uma playlist.
+            {t('dashboard.schedule_error.hint')}
           </Typography>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setScheduleAlertOpen(false)} sx={{ fontWeight: 800 }}>FECHAR</Button>
+          <Button onClick={() => setScheduleAlertOpen(false)} sx={{ fontWeight: 800 }}>{t('common.close')}</Button>
           <Button
             variant="contained"
             color="primary"
@@ -1466,7 +1491,7 @@ export default function Dashboard() {
             startIcon={<WizardIcon />}
             sx={{ fontWeight: 800 }}
           >
-            ABRIR ASSISTENTE
+            {t('dashboard.schedule_error.open_wizard')}
           </Button>
         </DialogActions>
       </Dialog>

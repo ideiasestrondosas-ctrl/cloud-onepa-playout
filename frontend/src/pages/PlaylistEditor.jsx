@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../contexts/NotificationContext';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Grid,
@@ -73,6 +75,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { playlistAPI, mediaAPI } from '../services/api';
 
 function SortableClip({ clip, onRemove, isSelected, onToggleSelection }) {
+  const { t } = useTranslation();
   const {
     attributes,
     listeners,
@@ -149,10 +152,10 @@ function SortableClip({ clip, onRemove, isSelected, onToggleSelection }) {
               }}
             />
             <Typography variant="caption" sx={{ opacity: 0.5, fontWeight: 600 }}>
-              DURAÇÃO: {formatShortDuration(clip.duration)}
+              {t('playlist.sidebar.duration', { duration: formatShortDuration(clip.duration) })}
             </Typography>
             {clip.is_filler && (
-              <Chip label="FILLER" size="small" variant="outlined" color="warning" sx={{ height: 16, fontSize: '0.55rem', fontWeight: 800 }} />
+              <Chip label={t('media.filler').toUpperCase()} size="small" variant="outlined" color="warning" sx={{ height: 16, fontSize: '0.55rem', fontWeight: 800 }} />
             )}
           </Stack>
         </Box>
@@ -193,6 +196,7 @@ function formatShortDuration(seconds) {
 }
 
 export default function PlaylistEditor() {
+  const { t } = useTranslation();
   const { showSuccess, showError, showWarning } = useNotification();
   const [playlists, setPlaylists] = useState([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
@@ -225,7 +229,7 @@ export default function PlaylistEditor() {
       const prevClips = history[historyIndex - 1];
       setClipsState(prevClips);
       setHistoryIndex(historyIndex - 1);
-      showSuccess('Desfazer (Undo)');
+      showSuccess(t('playlist.editor.undo'));
     }
   };
 
@@ -234,7 +238,7 @@ export default function PlaylistEditor() {
       const nextClips = history[historyIndex + 1];
       setClipsState(nextClips);
       setHistoryIndex(historyIndex + 1);
-      showSuccess('Refazer (Redo)');
+      showSuccess(t('playlist.editor.redo'));
     }
   };
 
@@ -421,10 +425,10 @@ export default function PlaylistEditor() {
 
   const handleBulkDelete = () => {
     if (selectedClipIds.length === 0) return;
-    if (window.confirm(`Tem a certeza que deseja eliminar os ${selectedClipIds.length} clips selecionados?`)) {
+    if (window.confirm(t('playlist.notifications.bulk_delete_confirm', { count: selectedClipIds.length }))) {
       setClips(clips.filter(c => !selectedClipIds.includes(c.id)));
       setSelectedClipIds([]);
-      showSuccess(`${selectedClipIds.length} clips removidos`);
+      showSuccess(t('playlist.notifications.removed_count', { count: selectedClipIds.length }));
     }
   };
 
@@ -440,7 +444,7 @@ export default function PlaylistEditor() {
     });
 
     if (filteredSource.length === 0) {
-      showWarning('Nenhum ficheiro encontrado nesta pasta com os filtros atuais');
+      showWarning(t('playlist.notifications.no_files_found'));
       return;
     }
 
@@ -451,12 +455,12 @@ export default function PlaylistEditor() {
     }));
 
     setClips([...clips, ...newClips]);
-    showSuccess(`${newClips.length} clips adicionados`);
+    showSuccess(t('playlist.notifications.added_count', { count: newClips.length }));
   };
 
   const handleSave = async () => {
     if (!playlistName.trim()) {
-      showWarning('Por favor, insira um nome para a playlist');
+      showWarning(t('playlist.notifications.enter_name'));
       return;
     }
 
@@ -486,7 +490,7 @@ export default function PlaylistEditor() {
           date: playlistDate,
           content,
         });
-        showSuccess('Playlist atualizada com sucesso!');
+        showSuccess(t('playlist.notifications.update_success'));
       } else {
         const response = await playlistAPI.create({
           name: playlistName,
@@ -494,14 +498,14 @@ export default function PlaylistEditor() {
           content,
         });
         setSelectedPlaylist(response.data);
-        showSuccess('Playlist criada com sucesso!');
+        showSuccess(t('playlist.notifications.create_success'));
       }
       await fetchPlaylists();
       // Skip history during save to avoid duplicate state
       setClips(clips, true);
     } catch (error) {
       console.error('Failed to save playlist:', error);
-      showError('Erro ao salvar playlist');
+      showError(t('playlist.notifications.save_error'));
     } finally {
       setSaving(false);
     }
@@ -554,7 +558,7 @@ export default function PlaylistEditor() {
     const gap = targetDuration - totalSecs;
 
     if (gap <= 0) {
-      showWarning('A playlist já atingiu ou excedeu as 24 horas.');
+      showWarning(t('playlist.notifications.automation_fail_time'));
       setAutomationDialogOpen(false);
       return;
     }
@@ -565,7 +569,7 @@ export default function PlaylistEditor() {
 
       if (automationType === 'loop') {
         if (clips.length === 0) {
-          showError('Adicione pelo menos um clip como base para o loop.');
+          showError(t('playlist.notifications.automation_no_clips_loop'));
           setSaving(false);
           return;
         }
@@ -581,7 +585,7 @@ export default function PlaylistEditor() {
         candidates = response.data.media || [];
 
         if (candidates.length === 0) {
-          showError(`Nenhum ficheiro encontrado na pasta selecionada${useFillersOnly ? ' com flag de filler' : ''}.`);
+          showError(t('playlist.notifications.automation_no_files_folder', { filler: useFillersOnly ? t('playlist.notifications.filler_flag') : '' }));
           setSaving(false);
           return;
         }
@@ -613,13 +617,18 @@ export default function PlaylistEditor() {
 
       if (addedClips.length > 0) {
         setClips([...clips, ...addedClips]);
-        showSuccess(`${addedClips.length} clips adicionados via automação (${automationType === 'random' ? 'Aleatório' : automationType === 'sequential' ? 'Sequencial' : 'Loop Content'}).`);
+        const typeMap = {
+          random: t('playlist.dialogs.automation.mode_random'),
+          sequential: t('playlist.dialogs.automation.mode_sequential'),
+          loop: t('playlist.dialogs.automation.mode_loop')
+        };
+        showSuccess(t('playlist.notifications.automation_success', { count: addedClips.length, type: typeMap[automationType] }));
       } else {
-        showWarning('Não foi possível encontrar ficheiros adequados para preencher o tempo.');
+        showWarning(t('playlist.notifications.automation_no_suitable'));
       }
     } catch (error) {
       console.error('Automation failed:', error);
-      showError('Erro ao executar automação');
+      showError(t('playlist.notifications.automation_error'));
     } finally {
       setSaving(false);
       setAutomationDialogOpen(false);
@@ -628,7 +637,7 @@ export default function PlaylistEditor() {
 
   const handleCreateNewPlaylist = async () => {
     if (!newPlaylistName.trim()) {
-      showWarning('Por favor, insira um nome para a nova playlist');
+      showWarning(t('playlist.notifications.enter_name'));
       return;
     }
 
@@ -652,20 +661,20 @@ export default function PlaylistEditor() {
 
       setCreateDialogOpen(false);
       setNewPlaylistName('');
-      showSuccess('Playlist criada com sucesso! Adicione clips e salve as alterações.');
+      showSuccess(t('playlist.notifications.create_success'));
     } catch (error) {
       console.error('Failed to create playlist:', error);
-      showError('Erro ao criar playlist');
+      showError(t('playlist.notifications.save_error'));
     } finally {
       setSaving(false);
     }
   };
 
   const handleDeletePlaylist = async (playlist) => {
-    if (window.confirm(`Tem a certeza que deseja eliminar a playlist "${playlist.name}"?`)) {
+    if (window.confirm(t('playlist.notifications.delete_confirm', { name: playlist.name }))) {
       try {
         await playlistAPI.delete(playlist.id);
-        showSuccess('Playlist eliminada com sucesso');
+        showSuccess(t('playlist.notifications.delete_success'));
         await fetchPlaylists();
         // If we deleted the currently selected playlist, reset
         if (selectedPlaylist?.id === playlist.id) {
@@ -676,9 +685,9 @@ export default function PlaylistEditor() {
         }
       } catch (error) {
         if (error.response?.status === 409) {
-          showError('Esta playlist está a ser usada no calendário e não pode ser eliminada.');
+          showError(t('playlist.notifications.delete_conflict'));
         } else {
-          showError('Erro ao eliminar playlist');
+          showError(t('playlist.notifications.delete_error'));
         }
       }
     }
@@ -702,12 +711,12 @@ export default function PlaylistEditor() {
       {/* 1. PREMIUM HEADER */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
-          <Typography variant="h4" className="neon-text" sx={{ fontWeight: 800 }}>PLAYLIST EDITOR</Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: 2 }}>GERADOR DE EMISSÃO AUTOMATICA & PROGRAMADA</Typography>
+          <Typography variant="h4" className="neon-text" sx={{ fontWeight: 800 }}>{t('playlist.title')}</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: 2 }}>{t('playlist.subtitle')}</Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 2 }}>
           {selectedClipIds.length > 0 && (
-            <Tooltip title="Eliminar clips selecionados" arrow>
+            <Tooltip title={t('playlist.notifications.bulk_delete_confirm', { count: selectedClipIds.length })} arrow>
               <Button
                 variant="contained"
                 color="error"
@@ -715,11 +724,11 @@ export default function PlaylistEditor() {
                 onClick={handleBulkDelete}
                 sx={{ borderRadius: 2, fontWeight: 800, px: 3 }}
               >
-                ELIMINAR ({selectedClipIds.length})
+                {t('playlist.delete_selected', { count: selectedClipIds.length })}
               </Button>
             </Tooltip>
           )}
-          <Tooltip title="Gerar playlist automaticamente" arrow>
+          <Tooltip title={t('playlist.automation')} arrow>
             <Button
               variant="outlined"
               color="warning"
@@ -727,19 +736,19 @@ export default function PlaylistEditor() {
               onClick={() => setAutomationDialogOpen(true)}
               sx={{ borderRadius: 2, fontWeight: 800, px: 3 }}
             >
-              AUTOMAÇÃO
+              {t('playlist.automation')}
             </Button>
           </Tooltip>
-          <Tooltip title="Criar uma nova playlist vazia" arrow>
+          <Tooltip title={t('playlist.new_playlist')} arrow>
             <Button
               variant="outlined"
               onClick={handleNewPlaylist}
               sx={{ borderRadius: 2, fontWeight: 800, px: 3 }}
             >
-              NOVA PLAYLIST
+              {t('playlist.new_playlist')}
             </Button>
           </Tooltip>
-          <Tooltip title="Guardar todas as alterações" arrow>
+          <Tooltip title={t('playlist.save')} arrow>
             <Button
               variant="contained"
               color="primary"
@@ -759,7 +768,7 @@ export default function PlaylistEditor() {
                 }
               }}
             >
-              {saving ? 'A GUARDAR...' : 'SALVAR'}
+              {saving ? t('playlist.saving') : t('playlist.save')}
             </Button>
           </Tooltip>
         </Box>
@@ -779,8 +788,8 @@ export default function PlaylistEditor() {
                   '& .Mui-selected': { color: 'primary.main' }
                 }}
               >
-                <Tab value="media" label="MEDIA" />
-                <Tab value="playlists" label="PLAYLISTS" />
+                <Tab value="media" label={t('playlist.tabs.media')} />
+                <Tab value="playlists" label={t('playlist.tabs.playlists')} />
               </Tabs>
             </Box>
 
@@ -808,16 +817,18 @@ export default function PlaylistEditor() {
                       primaryTypographyProps={{ sx: { fontWeight: 800, fontSize: '0.75rem', letterSpacing: 0.5 } }}
                       secondaryTypographyProps={{ sx: { fontSize: '0.65rem', opacity: 0.6 } }}
                     />
-                    <IconButton
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeletePlaylist(playlist);
-                      }}
-                      sx={{ color: 'error.main', opacity: 0, '.MuiListItemButton-root:hover &': { opacity: 1 } }}
-                    >
-                      <DeleteIcon sx={{ fontSize: 16 }} />
-                    </IconButton>
+                    <Tooltip title={t('common.delete')} arrow>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeletePlaylist(playlist);
+                        }}
+                        sx={{ color: 'error.main', opacity: 0, '.MuiListItemButton-root:hover &': { opacity: 1 } }}
+                      >
+                        <DeleteIcon sx={{ fontSize: 16 }} />
+                      </IconButton>
+                    </Tooltip>
                   </ListItemButton>
                 ))}
               </List>
@@ -829,10 +840,10 @@ export default function PlaylistEditor() {
                     <Select
                       value={currentFolderInPicker}
                       onChange={(e) => setCurrentFolderInPicker(e.target.value)}
-                      sx={{ fontWeight: 800, fontSize: '0.75rem' }}
+                      sx={{ fontWeight: 800, fontSize: '0.7rem' }}
                       size="small"
                     >
-                      <MenuItem value="root">RAIZ (TODAS)</MenuItem>
+                      <MenuItem value="root">{t('playlist.sidebar.root_all')}</MenuItem>
                       {folders.map(f => (
                         <MenuItem key={f.id} value={f.id}>{f.name.toUpperCase()}</MenuItem>
                       ))}
@@ -840,25 +851,25 @@ export default function PlaylistEditor() {
                   </FormControl>
                   <Stack direction="row" spacing={0.5} sx={{ mt: 1.5 }}>
                     <Chip
-                      label="T" size="small"
+                      label={t('playlist.sidebar.filter_all')} size="small"
                       onClick={() => setFillerFilter('all')}
                       variant={fillerFilter === 'all' ? 'filled' : 'outlined'}
                       sx={{ height: 20, fontSize: '0.6rem', fontWeight: 800 }}
                     />
                     <Chip
-                      label="F" size="small" color="warning"
+                      label={t('playlist.sidebar.filter_filler')} size="small" color="warning"
                       onClick={() => setFillerFilter('only')}
                       variant={fillerFilter === 'only' ? 'filled' : 'outlined'}
                       sx={{ height: 20, fontSize: '0.6rem', fontWeight: 800 }}
                     />
                     <Chip
-                      label="-F" size="small"
+                      label={t('playlist.sidebar.filter_no_filler')} size="small"
                       onClick={() => setFillerFilter('exclude')}
                       variant={fillerFilter === 'exclude' ? 'filled' : 'outlined'}
                       sx={{ height: 20, fontSize: '0.6rem', fontWeight: 800 }}
                     />
                     <Box sx={{ flexGrow: 1 }} />
-                    <Tooltip title="Adicionar todos desta pasta">
+                    <Tooltip title={t('playlist.sidebar.add_all_folder')}>
                       <IconButton size="small" color="primary" onClick={handleAddAllFromFolder}>
                         <DoneAllIcon sx={{ fontSize: 18 }} />
                       </IconButton>
@@ -918,7 +929,7 @@ export default function PlaylistEditor() {
               <Grid item xs={12} md={6}>
                 <Stack direction="row" spacing={2}>
                   <TextField
-                    fullWidth label="NOME DA PLAYLIST"
+                    fullWidth label={t('playlist.editor.name_label')}
                     value={playlistName}
                     onChange={(e) => setPlaylistName(e.target.value)}
                     variant="standard"
@@ -926,7 +937,7 @@ export default function PlaylistEditor() {
                     inputProps={{ sx: { fontWeight: 800, fontSize: '0.9rem' } }}
                   />
                   <TextField
-                    fullWidth label="DATA DE EMISSÃO" type="date"
+                    fullWidth label={t('playlist.editor.date_label')} type="date"
                     value={playlistDate}
                     onChange={(e) => setPlaylistDate(e.target.value)}
                     variant="standard"
@@ -940,9 +951,9 @@ export default function PlaylistEditor() {
                 <Box sx={{ p: 2, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3, border: '1px solid rgba(255,255,255,0.05)' }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                     <Typography variant="caption" sx={{ fontWeight: 800, color: totalDuration >= 86000 ? 'success.main' : 'warning.main', display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <TimerIcon sx={{ fontSize: 16 }} /> DURAÇÃO TOTAL: {formatDuration(totalDuration)}
+                      <TimerIcon sx={{ fontSize: 16 }} /> {t('playlist.editor.total_duration', { duration: formatDuration(totalDuration) })}
                     </Typography>
-                    <Typography variant="caption" sx={{ fontWeight: 800, opacity: 0.5 }}>META: 24:00:00</Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 800, opacity: 0.5 }}>{t('playlist.editor.target_meta')}</Typography>
                   </Box>
                   <LinearProgress
                     variant="determinate"
@@ -959,12 +970,12 @@ export default function PlaylistEditor() {
                   />
                   {totalDuration < 86300 && totalDuration > 0 && (
                     <Typography variant="caption" sx={{ color: 'warning.main', fontSize: '0.65rem', mt: 1, display: 'block', fontWeight: 600 }}>
-                      ⚠️ FALTAM {formatDuration(86400 - totalDuration)} PARA COMPLETAR AS 24H
+                      {t('playlist.editor.missing_time', { duration: formatDuration(86400 - totalDuration) })}
                     </Typography>
                   )}
                   {totalDuration >= 86400 && (
                     <Typography variant="caption" sx={{ color: 'success.main', fontSize: '0.65rem', mt: 1, display: 'block', fontWeight: 600 }}>
-                      ✅ PLAYLIST PRONTA PARA EMISSÃO (24H COMPLETAS)
+                      {t('playlist.editor.ready_msg')}
                     </Typography>
                   )}
                 </Box>
@@ -976,7 +987,7 @@ export default function PlaylistEditor() {
           <Paper className="glass-panel" sx={{ flexGrow: 1, p: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'rgba(255,255,255,0.01)' }}>
               <Box>
-                <Typography variant="overline" sx={{ fontWeight: 800, color: 'primary.main' }}>GRID DE SEQUÊNCIA ({clips.length} CLIPS)</Typography>
+                <Typography variant="overline" sx={{ fontWeight: 800, color: 'primary.main' }}>{t('playlist.editor.sequence_grid', { count: clips.length })}</Typography>
               </Box>
               <Button
                 variant="outlined"
@@ -984,7 +995,7 @@ export default function PlaylistEditor() {
                 onClick={() => setMediaDialogOpen(true)}
                 sx={{ borderRadius: 2, fontWeight: 800, fontSize: '0.7rem' }}
               >
-                ADICIONAR CLIP
+                {t('playlist.editor.add_clip')}
               </Button>
             </Box>
 
@@ -992,8 +1003,8 @@ export default function PlaylistEditor() {
               {clips.length === 0 ? (
                 <Box sx={{ height: '100%', display: 'flex', flexFlow: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.3 }}>
                   <MovieIcon sx={{ fontSize: 60, mb: 2 }} />
-                  <Typography variant="h6" sx={{ fontWeight: 800 }}>PLAYLIST VAZIA</Typography>
-                  <Typography variant="body2">ADICIONE MEDIA DA BIBLIOTECA PARA COMEÇAR</Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 800 }}>{t('playlist.editor.empty_title')}</Typography>
+                  <Typography variant="body2">{t('playlist.editor.empty_msg')}</Typography>
                 </Box>
               ) : (
                 <DndContext
@@ -1034,22 +1045,22 @@ export default function PlaylistEditor() {
       >
         <DialogTitle sx={{ fontWeight: 800, color: 'primary.main', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            BIBLIOTECA DE MEDIA
+            {t('playlist.dialogs.media_selector.title')}
             <Stack direction="row" spacing={1}>
               <Chip
-                label="TODOS" size="small"
+                label={t('playlist.dialogs.media_selector.filter_all')} size="small"
                 onClick={() => setFillerFilter('all')}
                 variant={fillerFilter === 'all' ? 'filled' : 'outlined'}
                 sx={{ height: 24, fontSize: '0.65rem', fontWeight: 800 }}
               />
               <Chip
-                label="APENAS FILLER" size="small" color="warning"
+                label={t('playlist.dialogs.media_selector.filter_filler')} size="small" color="warning"
                 onClick={() => setFillerFilter('only')}
                 variant={fillerFilter === 'only' ? 'filled' : 'outlined'}
                 sx={{ height: 24, fontSize: '0.65rem', fontWeight: 800 }}
               />
               <Chip
-                label="EXCLUIR FILLER" size="small"
+                label={t('playlist.dialogs.media_selector.filter_no_filler')} size="small"
                 onClick={() => setFillerFilter('exclude')}
                 variant={fillerFilter === 'exclude' ? 'filled' : 'outlined'}
                 sx={{ height: 24, fontSize: '0.65rem', fontWeight: 800 }}
@@ -1063,7 +1074,7 @@ export default function PlaylistEditor() {
               onClick={handleAddAllFromFolder}
               sx={{ height: 32, borderRadius: 2, fontWeight: 800, fontSize: '0.7rem' }}
             >
-              ADICIONAR TODOS DESTA PASTA
+              {t('playlist.dialogs.media_selector.add_all')}
             </Button>
             <Divider orientation="vertical" flexItem sx={{ mx: 1, height: 20 }} />
             <FormControlLabel
@@ -1073,7 +1084,7 @@ export default function PlaylistEditor() {
                   onChange={(e) => handleSelectAllMedia(e.target.checked)}
                 />
               }
-              label={<Typography variant="caption" sx={{ fontWeight: 800 }}>SELECIONAR TUDO</Typography>}
+              label={<Typography variant="caption" sx={{ fontWeight: 800 }}>{t('playlist.dialogs.media_selector.select_all')}</Typography>}
             />
           </Box>
         </DialogTitle>
@@ -1088,7 +1099,7 @@ export default function PlaylistEditor() {
                   sx={{ borderRadius: 0, '&.Mui-selected': { bgcolor: 'rgba(0,229,255,0.1)' } }}
                 >
                   <ListItemIcon sx={{ minWidth: 32 }}><FolderIcon sx={{ fontSize: 18 }} /></ListItemIcon>
-                  <ListItemText primary="TODAS AS PASTAS" primaryTypographyProps={{ sx: { fontWeight: 800, fontSize: '0.7rem' } }} />
+                  <ListItemText primary={t('playlist.dialogs.media_selector.all_folders')} primaryTypographyProps={{ sx: { fontWeight: 800, fontSize: '0.7rem' } }} />
                 </ListItemButton>
                 <Divider sx={{ my: 1, borderColor: 'rgba(255,255,255,0.05)' }} />
                 {folders.map(f => (
@@ -1109,7 +1120,7 @@ export default function PlaylistEditor() {
             <Grid item xs={12} md={9}>
               {selectedMediaIds.length > 0 && (
                 <Alert severity="info" sx={{ m: 2, borderRadius: 2, bgcolor: 'rgba(0,229,255,0.05)', color: 'primary.main', border: '1px solid rgba(0,229,255,0.1)' }}>
-                  {selectedMediaIds.length} FICHEIRO(S) SELECIONADO(S)
+                  {t('playlist.dialogs.media_selector.selected_count', { count: selectedMediaIds.length })}
                 </Alert>
               )}
               <List sx={{ px: 2, maxHeight: '60vh', overflowY: 'auto' }}>
@@ -1152,14 +1163,14 @@ export default function PlaylistEditor() {
           </Grid>
         </DialogContent>
         <DialogActions sx={{ p: 3, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-          <Button onClick={() => { setMediaDialogOpen(false); setSelectedMediaIds([]); }} sx={{ fontWeight: 800 }}>CANCELAR</Button>
+          <Button onClick={() => { setMediaDialogOpen(false); setSelectedMediaIds([]); }} sx={{ fontWeight: 800 }}>{t('common.cancel')}</Button>
           <Button
             onClick={handleAddSelectedClips}
             variant="contained"
             disabled={selectedMediaIds.length === 0}
             sx={{ borderRadius: 2, fontWeight: 800, px: 4 }}
           >
-            ADICIONAR SELECIONADOS ({selectedMediaIds.length})
+            {t('playlist.dialogs.media_selector.add_selected', { count: selectedMediaIds.length })}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1172,24 +1183,24 @@ export default function PlaylistEditor() {
         fullWidth
         PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
       >
-        <DialogTitle sx={{ fontWeight: 800, color: 'primary.main' }}>NOVA PLAYLIST</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 800, color: 'primary.main' }}>{t('playlist.dialogs.create.title')}</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
             margin="dense"
-            label="NOME DA PLAYLIST"
+            label={t('playlist.dialogs.create.name_label')}
             fullWidth
             value={newPlaylistName}
             onChange={(e) => setNewPlaylistName(e.target.value)}
             sx={{ mt: 2 }}
             InputLabelProps={{ shrink: true, sx: { fontWeight: 800 } }}
             InputProps={{ sx: { borderRadius: 3, fontWeight: 800 } }}
-            placeholder="ex: PLAYLIST SEGUNDA-FEIRA"
+            placeholder={t('playlist.dialogs.create.placeholder')}
           />
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setCreateDialogOpen(false)} sx={{ fontWeight: 800 }}>CANCELAR</Button>
-          <Button variant="contained" onClick={handleCreateNewPlaylist} sx={{ borderRadius: 2, fontWeight: 800, px: 4 }}>CRIAR</Button>
+          <Button onClick={() => setCreateDialogOpen(false)} sx={{ fontWeight: 800 }}>{t('common.cancel')}</Button>
+          <Button variant="contained" onClick={handleCreateNewPlaylist} sx={{ borderRadius: 2, fontWeight: 800, px: 4 }}>{t('playlist.dialogs.create.btn_create')}</Button>
         </DialogActions>
       </Dialog>
       {/* Automation / Fill Dialog */}
@@ -1201,19 +1212,19 @@ export default function PlaylistEditor() {
         PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
       >
         <DialogTitle sx={{ fontWeight: 800, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
-          <AutoFixIcon /> AUTOMAÇÃO DE PREENCHIMENTO
+          <AutoFixIcon /> {t('playlist.dialogs.automation.title')}
         </DialogTitle>
         <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.05)' }}>
           <Typography variant="caption" sx={{ opacity: 0.6, fontWeight: 600, mb: 3, display: 'block' }}>
-            ESCOLHA O MÉTODO DE PREENCHIMENTO PARA ATINGIR A META DE 24H.
+            {t('playlist.dialogs.automation.msg')}
           </Typography>
 
           <FormControl component="fieldset" sx={{ width: '100%' }}>
             <RadioGroup value={automationType} onChange={(e) => setAutomationType(e.target.value)}>
               {[
-                { value: 'random', label: 'ALEATÓRIO DA PASTA', desc: 'Escolhe média aleatória da origem selecionada.', icon: <ShuffleIcon /> },
-                { value: 'sequential', label: 'SEQUENCIAL DA PASTA', desc: 'Segue a ordem alfabética dos ficheiros.', icon: <SequentialIcon /> },
-                { value: 'loop', label: 'LOOP DA SELEÇÃO ATUAL', desc: 'Repete os clips já presentes no grid.', icon: <LoopIcon /> }
+                { value: 'random', label: t('playlist.dialogs.automation.mode_random'), desc: t('playlist.dialogs.automation.mode_random_desc'), icon: <ShuffleIcon /> },
+                { value: 'sequential', label: t('playlist.dialogs.automation.mode_sequential'), desc: t('playlist.dialogs.automation.mode_sequential_desc'), icon: <SequentialIcon /> },
+                { value: 'loop', label: t('playlist.dialogs.automation.mode_loop'), desc: t('playlist.dialogs.automation.mode_loop_desc'), icon: <LoopIcon /> }
               ].map((mode) => (
                 <Paper
                   key={mode.value}
@@ -1249,13 +1260,13 @@ export default function PlaylistEditor() {
           {automationType !== 'loop' && (
             <Box sx={{ mt: 2, p: 2, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3, border: '1px solid rgba(255,255,255,0.05)' }}>
               <FormControl fullWidth variant="standard" sx={{ mb: 2 }}>
-                <InputLabel shrink sx={{ fontWeight: 800, fontSize: '0.7rem' }}>PASTA DE ORIGEM</InputLabel>
+                <InputLabel shrink sx={{ fontWeight: 800, fontSize: '0.7rem' }}>{t('playlist.dialogs.automation.source_folder')}</InputLabel>
                 <Select
                   value={selectedFolder}
                   onChange={(e) => setSelectedFolder(e.target.value)}
                   sx={{ fontWeight: 800, fontSize: '0.8rem' }}
                 >
-                  <MenuItem value="root">RAIZ (TODAS AS PASTAS)</MenuItem>
+                  <MenuItem value="root">{t('playlist.sidebar.root_all')}</MenuItem>
                   {folders.map(f => (
                     <MenuItem key={f.id} value={f.id}>{f.name.toUpperCase()}</MenuItem>
                   ))}
@@ -1263,13 +1274,13 @@ export default function PlaylistEditor() {
               </FormControl>
               <FormControlLabel
                 control={<Checkbox checked={useFillersOnly} onChange={(e) => setUseFillersOnly(e.target.checked)} size="small" />}
-                label={<Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.8 }}>USAR APENAS FICHEIROS MARCADOS COMO FILLER</Typography>}
+                label={<Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.8 }}>{t('playlist.dialogs.automation.fillers_only')}</Typography>}
               />
             </Box>
           )}
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setAutomationDialogOpen(false)} sx={{ fontWeight: 800 }}>CANCELAR</Button>
+          <Button onClick={() => setAutomationDialogOpen(false)} sx={{ fontWeight: 800 }}>{t('common.cancel')}</Button>
           <Button
             variant="contained"
             color="warning"
@@ -1277,7 +1288,7 @@ export default function PlaylistEditor() {
             disabled={saving}
             sx={{ borderRadius: 2, fontWeight: 800, px: 4, bgcolor: 'warning.main', color: 'black' }}
           >
-            EXECUTAR AGORA
+            {t('playlist.dialogs.automation.run_now')}
           </Button>
         </DialogActions>
       </Dialog>

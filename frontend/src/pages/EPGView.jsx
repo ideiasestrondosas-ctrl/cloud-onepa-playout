@@ -33,10 +33,20 @@ import {
 } from '@mui/icons-material';
 import { playlistAPI, mediaAPI } from '../services/api';
 import { format, parseISO, addDays, isSameDay, differenceInSeconds } from 'date-fns';
-import ptBR from 'date-fns/locale/pt-BR';
+import { enUS, ptBR, es, fr } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
+
+const localeMap = {
+    'pt': ptBR,
+    'en': enUS,
+    'es': es,
+    'fr': fr
+};
 
 export default function EPGView() {
+    const { t, i18n } = useTranslation();
     const theme = useTheme();
+    const currentLocale = localeMap[i18n.language.split('-')[0]] || enUS;
     const [playlists, setPlaylists] = useState([]);
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [loading, setLoading] = useState(false);
@@ -256,19 +266,19 @@ export default function EPGView() {
                                         )}
                                         {item.metadata?.director && (
                                             <Typography variant="caption" sx={{ fontWeight: 'bold', opacity: 0.8, display: 'block' }}>
-                                                🎬 Dir: {item.metadata?.director}
+                                                🎬 {t('epg.dialog.director')}: {item.metadata?.director}
                                             </Typography>
                                         )}
                                         {(item.metadata?.source_service) && (
                                             <Typography variant="caption" sx={{ mt: 0.5, display: 'block', opacity: 0.5, fontSize: '0.6rem' }}>
-                                                Fonte: {item.metadata?.source_service}
+                                                {t('epg.dialog.source_data')}: {item.metadata?.source_service}
                                             </Typography>
                                         )}
                                     </Box>
                                 )}
 
                                 <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'primary.main', fontWeight: 'bold', textAlign: 'center' }}>
-                                    🖱️ Clique para ver tudo
+                                    🖱️ {t('epg.tooltip.click_view')}
                                 </Typography>
                             </Box>
                         }>
@@ -302,7 +312,7 @@ export default function EPGView() {
                                 }}
                             >
                                 <Typography variant="caption" sx={{ fontWeight: 800, display: 'block', lineHeight: 1.1, mb: 0.2, fontSize: '0.7rem' }}>
-                                    {(item.metadata?.title || item.filename || 'Sem Nome').toUpperCase()}
+                                    {(item.metadata?.title || item.filename || t('epg.no_name')).toUpperCase()}
                                 </Typography>
                                 <Typography variant="caption" sx={{ fontSize: '0.65rem', fontWeight: 700, opacity: 0.6, letterSpacing: 1 }}>
                                     {item.start_time && item.start_time.substring(0, 5)} - {item.end_time && item.end_time.substring(0, 5)}
@@ -336,15 +346,15 @@ export default function EPGView() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <Box>
                         <Typography variant="h5" className="neon-text" sx={{ fontWeight: 800, letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: 1 }}>
-                            TV GUIDE
+                            {t('epg.title')}
                         </Typography>
                         <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: 2, textTransform: 'uppercase', fontSize: '0.6rem' }}>
-                            ONEPA PLAYOUT • ALPHA INTELLIGENCE
+                            {t('epg.subtitle')}
                         </Typography>
                     </Box>
                     <Chip
                         icon={<Today sx={{ color: 'primary.main !important' }} />}
-                        label={format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR }).toUpperCase()}
+                        label={format(selectedDate, i18n.language === 'pt' ? "EEEE, d 'de' MMMM" : "EEEE, MMMM do", { locale: currentLocale }).toUpperCase()}
                         className="glass-panel"
                         sx={{
                             bgcolor: 'rgba(255, 255, 255, 0.05)',
@@ -359,9 +369,9 @@ export default function EPGView() {
                     />
                 </Box>
                 <Stack direction="row" spacing={1}>
-                    <Button size="small" variant="text" sx={{ fontWeight: 800, color: 'text.secondary' }} startIcon={<NavigateBefore />} onClick={() => setSelectedDate(d => addDays(d, -1))}>ANTERIOR</Button>
-                    <Button size="small" sx={{ fontWeight: 800, bgcolor: 'rgba(255, 255, 255, 0.05)' }} onClick={() => setSelectedDate(new Date())}>HOJE</Button>
-                    <Button size="small" variant="text" sx={{ fontWeight: 800, color: 'text.secondary' }} endIcon={<NavigateNext />} onClick={() => setSelectedDate(d => addDays(d, 1))}>PRÓXIMO</Button>
+                    <Button size="small" variant="text" sx={{ fontWeight: 800, color: 'text.secondary' }} startIcon={<NavigateBefore />} onClick={() => setSelectedDate(d => addDays(d, -1))}>{t('epg.prev')}</Button>
+                    <Button size="small" sx={{ fontWeight: 800, bgcolor: 'rgba(255, 255, 255, 0.05)' }} onClick={() => setSelectedDate(new Date())}>{t('epg.today')}</Button>
+                    <Button size="small" variant="text" sx={{ fontWeight: 800, color: 'text.secondary' }} endIcon={<NavigateNext />} onClick={() => setSelectedDate(d => addDays(d, 1))}>{t('epg.next')}</Button>
                 </Stack>
             </Paper>
 
@@ -431,7 +441,7 @@ export default function EPGView() {
                                 }}>
                                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.main', mb: 0.5 }} noWrap>{playlist.name}</Typography>
                                     <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.65rem' }}>
-                                        {playlist.total_duration ? `DURAÇÃO: ${(playlist.total_duration / 3600).toFixed(1)}H` : 'PLAYLIST VAZIA'}
+                                        {playlist.total_duration ? `${t('epg.duration_label')}: ${(playlist.total_duration / 3600).toFixed(1)}H` : t('epg.empty_playlist')}
                                     </Typography>
                                 </Box>
 
@@ -443,7 +453,7 @@ export default function EPGView() {
                         ))
                     ) : (
                         <Box sx={{ p: 4, textAlign: 'center', width: '100vw', position: 'sticky', left: 0 }}>
-                            <Typography color="text.secondary">Nenhuma programação encontrada para este dia.</Typography>
+                            <Typography color="text.secondary">{t('epg.no_schedule')}</Typography>
                         </Box>
                     )}
                 </Box>
@@ -456,10 +466,9 @@ export default function EPGView() {
                         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 3, pb: 2 }}>
                             <Box>
                                 <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>
-                                    PROGRAMAÇÃO DETALHADA
+                                    {t('epg.dialog.title')}
                                 </Typography>
                                 <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: 2, textTransform: 'uppercase', fontSize: '0.6rem' }}>
-                                    ONEPA PLAYOUT • ALPHA INTELLIGENCE
                                 </Typography>
                             </Box>
                             <IconButton onClick={() => setDialogOpen(false)} size="small" sx={{ color: 'rgba(255, 255, 255, 0.3)', '&:hover': { color: 'primary.main' } }}>
@@ -491,13 +500,13 @@ export default function EPGView() {
                                         {(liveMetadata?.rating || selectedItem.metadata?.rating) && (
                                             <Chip label={liveMetadata?.rating || selectedItem.metadata.rating} size="small" sx={{ fontWeight: 800, bgcolor: 'primary.main', color: '#000', height: 20, fontSize: '0.65rem' }} />
                                         )}
-                                        <Chip label={liveMetadata?.media_type?.toUpperCase() || selectedItem.media_type?.toUpperCase() || 'VÍDEO'} size="small" sx={{ fontWeight: 800, bgcolor: 'rgba(255, 255, 255, 0.05)', height: 20, fontSize: '0.65rem' }} />
+                                        <Chip label={liveMetadata?.media_type?.toUpperCase() || selectedItem.media_type?.toUpperCase() || t('media.video').toUpperCase()} size="small" sx={{ fontWeight: 800, bgcolor: 'rgba(255, 255, 255, 0.05)', height: 20, fontSize: '0.65rem' }} />
                                         {(liveMetadata?.year || selectedItem.metadata?.year) && (
                                             <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>{liveMetadata?.year || selectedItem.metadata.year}</Typography>
                                         )}
                                     </Stack>
                                     <Box sx={{ p: 1.5, bgcolor: 'rgba(0, 229, 255, 0.05)', borderRadius: 2, border: '1px solid rgba(0, 229, 255, 0.1)' }}>
-                                        <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 800, display: 'block', mb: 0.5, letterSpacing: 1 }}>HORÁRIO DE EMISSÃO</Typography>
+                                        <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 800, display: 'block', mb: 0.5, letterSpacing: 1 }}>{t('epg.dialog.emission_time')}</Typography>
                                         <Typography variant="body1" sx={{ fontWeight: 700, fontFamily: 'monospace' }}>
                                             {selectedItem.start_time} — {selectedItem.end_time}
                                         </Typography>
@@ -508,22 +517,22 @@ export default function EPGView() {
                             <Stack spacing={4}>
                                 <Box>
                                     <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, letterSpacing: 2, display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                                        <Description fontSize="inherit" /> SINOPSE / DESCRIÇÃO
+                                        <Description fontSize="inherit" /> {t('epg.dialog.description')}
                                     </Typography>
                                     <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', lineHeight: 1.6 }}>
-                                        {liveMetadata?.description || selectedItem.metadata?.description || 'Este conteúdo não possui uma sinopse detalhada registada no sistema.'}
+                                        {liveMetadata?.description || selectedItem.metadata?.description || t('epg.dialog.no_description')}
                                     </Typography>
                                 </Box>
 
                                 <Grid container spacing={2}>
                                     <Grid item xs={6}>
-                                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, mb: 0.5, display: 'block' }}>REALIZAÇÃO</Typography>
-                                        <Typography variant="body2" sx={{ fontWeight: 700 }}>{liveMetadata?.director || selectedItem.metadata?.director || 'Desconhecido'}</Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, mb: 0.5, display: 'block' }}>{t('epg.dialog.director')}</Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 700 }}>{liveMetadata?.director || selectedItem.metadata?.director || t('epg.dialog.unknown')}</Typography>
                                     </Grid>
                                     <Grid item xs={6}>
-                                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, mb: 0.5, display: 'block' }}>CATEGORIA / GÉNERO</Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, mb: 0.5, display: 'block' }}>{t('epg.dialog.category')}</Typography>
                                         <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                                            {Array.isArray(liveMetadata?.genre || liveMetadata?.tags || selectedItem.metadata?.genre || selectedItem.metadata?.tags) ? (liveMetadata?.genre || liveMetadata?.tags || selectedItem.metadata?.genre || selectedItem.metadata?.tags).join(', ') : (liveMetadata?.genre || liveMetadata?.tags || selectedItem.metadata?.genre || selectedItem.metadata?.tags) || 'Geral'}
+                                            {Array.isArray(liveMetadata?.genre || liveMetadata?.tags || selectedItem.metadata?.genre || selectedItem.metadata?.tags) ? (liveMetadata?.genre || liveMetadata?.tags || selectedItem.metadata?.genre || selectedItem.metadata?.tags).join(', ') : (liveMetadata?.genre || liveMetadata?.tags || selectedItem.metadata?.genre || selectedItem.metadata?.tags) || t('epg.dialog.general')}
                                         </Typography>
                                     </Grid>
                                 </Grid>
@@ -531,18 +540,18 @@ export default function EPGView() {
                                 {(liveMetadata?.source_service || selectedItem.metadata?.source_service) && (
                                     <Box sx={{ p: 2, bgcolor: 'rgba(0,255,255,0.02)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <Box>
-                                            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600, display: 'block' }}>FONTE DE DADOS</Typography>
+                                            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600, display: 'block' }}>{t('epg.dialog.source_data')}</Typography>
                                             <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main' }}>{liveMetadata?.source_service || selectedItem.metadata.source_service}</Typography>
                                         </Box>
                                         {(liveMetadata?.source_url || selectedItem.metadata?.source_url) && (
-                                            <Button size="small" href={liveMetadata?.source_url || selectedItem.metadata.source_url} target="_blank" endIcon={<NavigateNext />} sx={{ fontWeight: 800, fontSize: '0.65rem' }}>VISITAR FONTE</Button>
+                                            <Button size="small" href={liveMetadata?.source_url || selectedItem.metadata.source_url} target="_blank" endIcon={<NavigateNext />} sx={{ fontWeight: 800, fontSize: '0.65rem' }}>{t('epg.dialog.visit_source')}</Button>
                                         )}
                                     </Box>
                                 )}
                             </Stack>
                         </DialogContent>
                         <DialogActions sx={{ p: 3, pt: 0 }}>
-                            <Button fullWidth onClick={() => setDialogOpen(false)} variant="contained" sx={{ fontWeight: 800, py: 1.5 }}>FECHAR DETALHES</Button>
+                            <Button fullWidth onClick={() => setDialogOpen(false)} variant="contained" sx={{ fontWeight: 800, py: 1.5 }}>{t('epg.dialog.close')}</Button>
                         </DialogActions>
                     </>
                 )}

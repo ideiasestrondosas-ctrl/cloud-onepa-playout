@@ -40,19 +40,28 @@ import {
   Movie as MovieIcon,
   Image as ImageIcon,
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { settingsAPI, mediaAPI, playlistAPI, scheduleAPI, playoutAPI } from '../../services/api';
 import { useNotification } from '../../contexts/NotificationContext';
 
-const steps = ['Boas-vindas', 'Identidade', 'Média', 'Transmissão', 'Resumo', 'Finalizar'];
-
 export default function SetupWizard() {
+  const { t } = useTranslation();
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const { showSuccess, showError } = useNotification();
   const navigate = useNavigate();
 
+  const steps = [
+    t('wizard.steps.welcome'),
+    t('wizard.steps.identity'),
+    t('wizard.steps.media'),
+    t('wizard.steps.transmission'),
+    t('wizard.steps.summary'),
+    t('wizard.steps.finish')
+  ];
+
   const [setupData, setSetupData] = useState({
-    channelName: 'Meu Canal Onepa',
+    channelName: t('wizard.identity.channel_name_default', 'Meu Canal Onepa'),
     logoFile: null,
     outputType: 'hls',
     outputUrl: '/hls/stream.m3u8',
@@ -102,7 +111,7 @@ export default function SetupWizard() {
       setLibraryItems(res.data.media || []);
       setLibraryOpen(true);
     } catch (error) {
-      showError('Erro ao carregar Media Library');
+      showError(t('wizard.media.error_library'));
     }
   };
 
@@ -143,7 +152,7 @@ export default function SetupWizard() {
         type: 'stream',
         source: externalUrl,
         duration: parseFloat(externalDuration),
-        title: 'Stream Externo'
+        title: t('wizard.media.type_stream')
       }]
     }));
     setExternalOpen(false);
@@ -179,9 +188,9 @@ export default function SetupWizard() {
           channel_name: setupData.channelName,
           logo_enabled: true,
         });
-        showSuccess('Identidade configurada!');
+        showSuccess(t('wizard.identity.success_msg'));
       } catch (e) {
-        showError('Erro ao salvar identidade');
+        showError(t('wizard.identity.error_save'));
         setLoading(false);
         return;
       } finally {
@@ -192,7 +201,7 @@ export default function SetupWizard() {
     if (activeStep === 2) {
       // Just validate playlist presence, don't create yet
       if (setupData.playlistItems.length === 0) {
-        showError('Adicione pelo menos um item à playlist');
+        showError(t('wizard.media.error_playlist_empty'));
         return;
       }
     }
@@ -204,9 +213,9 @@ export default function SetupWizard() {
           output_type: setupData.outputType,
           output_url: setupData.outputUrl,
         });
-        showSuccess('Output configurado!');
+        showSuccess(t('wizard.transmission.success_msg'));
       } catch (e) {
-        showError('Erro ao salvar output');
+        showError(t('wizard.transmission.error_save'));
         setLoading(false);
         return;
       } finally {
@@ -274,19 +283,19 @@ export default function SetupWizard() {
         // START PLAYOUT ENGINE
         try {
           await playoutAPI.start();
-          showSuccess('Emissão iniciada com sucesso!');
+          showSuccess(t('wizard.final.success_start'));
         } catch (startErr) {
           console.error('Failed to start engine:', startErr);
-          showError('O canal foi configurado mas a transmissão não pôde ser iniciada automaticamente. Verifique os ficheiros no Dashboard.');
+          showError(t('wizard.final.error_start'));
         }
 
-        showSuccess('Setup concluído! Redirecionando...');
+        showSuccess(t('wizard.final.success_setup'));
         setTimeout(() => {
           navigate('/');
         }, 1500);
       } catch (e) {
         console.error(e);
-        showError('Erro na finalização: ' + (e.response?.data?.error || e.message));
+        showError(`${t('wizard.final.error_finish', 'Erro na finalização')}: ` + (e.response?.data?.error || e.message));
       } finally {
         setLoading(false);
       }
@@ -307,24 +316,24 @@ export default function SetupWizard() {
         return (
           <Box sx={{ mt: 2, textAlign: 'center' }}>
             <TvIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
-            <Typography variant="h5" gutterBottom>Bem-vindo ao Cloud Onepa Playout</Typography>
+            <Typography variant="h5" gutterBottom>{t('wizard.welcome.title')}</Typography>
             <Typography variant="body1" color="text.secondary">
-              Vamos configurar o seu canal de TV profissional em apenas alguns passos.
+              {t('wizard.welcome.description')}
             </Typography>
           </Box>
         );
       case 1:
         return (
           <Box sx={{ mt: 2 }}>
-            <Typography variant="h6" gutterBottom>Identidade do Canal</Typography>
+            <Typography variant="h6" gutterBottom>{t('wizard.identity.title')}</Typography>
             <TextField
               fullWidth
-              label="Nome do Canal"
+              label={t('wizard.identity.label_name')}
               value={setupData.channelName}
               onChange={(e) => setSetupData({ ...setupData, channelName: e.target.value })}
               sx={{ mb: 3 }}
             />
-            <Typography variant="subtitle2" gutterBottom>Logo da Estação</Typography>
+            <Typography variant="subtitle2" gutterBottom>{t('wizard.identity.label_logo')}</Typography>
             <Box sx={{ border: '1px dashed #ccc', p: 3, textAlign: 'center', borderRadius: 1 }}>
               <input
                 type="file"
@@ -334,12 +343,12 @@ export default function SetupWizard() {
               />
               <label htmlFor="wizard-logo">
                 <Button variant="outlined" component="span" startIcon={<UploadIcon />}>
-                  Selecionar Logo
+                  {t('wizard.identity.select_logo_btn')}
                 </Button>
               </label>
               {setupData.logoFile && (
                 <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                  Arquivo: {setupData.logoFile.name}
+                  {t('wizard.identity.file_label', { name: setupData.logoFile.name })}
                 </Typography>
               )}
             </Box>
@@ -348,24 +357,24 @@ export default function SetupWizard() {
       case 2:
         return (
           <Box sx={{ mt: 2 }}>
-            <Typography variant="h6" gutterBottom>Conteúdo Inicial</Typography>
+            <Typography variant="h6" gutterBottom>{t('wizard.media.title')}</Typography>
             <Alert severity="info" sx={{ mb: 2 }}>
-              Adicione vídeos da sua biblioteca ou streams externos (RTMP/HLS) para a sua playlist inicial.
+              {t('wizard.media.alert_info')}
             </Alert>
 
             <Box sx={{ mb: 2, display: 'flex', gap: 2 }}>
               <Button variant="outlined" startIcon={<MovieIcon />} onClick={fetchLibrary}>
-                Adicionar da Biblioteca
+                {t('wizard.media.add_library_btn')}
               </Button>
               <Button variant="outlined" startIcon={<LinkIcon />} onClick={() => setExternalOpen(true)}>
-                Adicionar Stream/URL
+                {t('wizard.media.add_external_btn')}
               </Button>
             </Box>
 
             {setupData.playlistItems.length === 0 ? (
               <Box sx={{ p: 4, bgcolor: '#f9f9f9', border: '1px dashed #ddd', textAlign: 'center' }}>
                 <UploadIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
-                <Typography variant="body2">A playlist está vazia. Adicione conteúdo acima.</Typography>
+                <Typography variant="body2">{t('wizard.media.empty_msg')}</Typography>
               </Box>
             ) : (
               <List dense sx={{ bgcolor: 'background.paper', border: '1px solid #eee', borderRadius: 1, maxHeight: 300, overflow: 'auto' }}>
@@ -382,7 +391,7 @@ export default function SetupWizard() {
                     <ListItem key={index} divider>
                       <ListItemText
                         primary={item.filename || item.title || item.source}
-                        secondary={`Duração: ${durationFormatted} | Tipo: ${item.type === 'stream' ? 'Stream' : 'Arquivo'}`}
+                        secondary={t('wizard.media.duration_label', { duration: durationFormatted, type: item.type === 'stream' ? t('wizard.media.type_stream') : t('wizard.media.type_file') })}
                       />
                       <ListItemSecondaryAction>
                         <IconButton edge="end" onClick={() => removePlaylistItem(index)}>
@@ -397,11 +406,11 @@ export default function SetupWizard() {
 
             {/* Library Dialog */}
             <Dialog open={libraryOpen} onClose={() => { setLibraryOpen(false); setSelectedLibraryItems([]); }} maxWidth="md" fullWidth>
-              <DialogTitle>Selecionar Mídia (Multi-seleção)</DialogTitle>
+              <DialogTitle>{t('wizard.media.dialog_library.title')}</DialogTitle>
               <DialogContent dividers>
                 {selectedLibraryItems.length > 0 && (
                   <Alert severity="info" sx={{ mb: 2 }}>
-                    {selectedLibraryItems.length} ficheiro(s) selecionado(s)
+                    {t('wizard.media.dialog_library.files_selected', { count: selectedLibraryItems.length })}
                   </Alert>
                 )}
                 <List>
@@ -448,47 +457,47 @@ export default function SetupWizard() {
                       );
                     })
                   ) : (
-                    <Typography sx={{ p: 2, textAlign: 'center' }}>Nenhuma mídia encontrada na biblioteca.</Typography>
+                    <Typography sx={{ p: 2, textAlign: 'center' }}>{t('wizard.media.dialog_library.no_media')}</Typography>
                   )}
                 </List>
               </DialogContent>
               <DialogActions>
-                <Button onClick={() => { setLibraryOpen(false); setSelectedLibraryItems([]); }}>Cancelar</Button>
+                <Button onClick={() => { setLibraryOpen(false); setSelectedLibraryItems([]); }}>{t('common.cancel')}</Button>
                 <Button
                   onClick={addSelectedLibraryItems}
                   variant="contained"
                   disabled={selectedLibraryItems.length === 0}
                 >
-                  Adicionar ({selectedLibraryItems.length})
+                  {t('wizard.media.dialog_library.add_btn', { count: selectedLibraryItems.length })}
                 </Button>
               </DialogActions>
             </Dialog>
 
             {/* External Stream Dialog */}
             <Dialog open={externalOpen} onClose={() => setExternalOpen(false)}>
-              <DialogTitle>Adicionar Stream Externo</DialogTitle>
+              <DialogTitle>{t('wizard.media.dialog_external.title')}</DialogTitle>
               <DialogContent>
                 <TextField
                   autoFocus
                   margin="dense"
-                  label="URL do Stream (RTMP/HLS/HTTP)"
+                  label={t('wizard.media.dialog_external.label_url')}
                   fullWidth
                   value={externalUrl}
                   onChange={(e) => setExternalUrl(e.target.value)}
                 />
                 <TextField
                   margin="dense"
-                  label="Duração Estimada (segundos)"
+                  label={t('wizard.media.dialog_external.label_duration')}
                   type="number"
                   fullWidth
                   value={externalDuration}
                   onChange={(e) => setExternalDuration(e.target.value)}
-                  helperText="Para streams 24/7, coloque um valor alto (ex: 86400)"
+                  helperText={t('wizard.media.dialog_external.helper_duration')}
                 />
               </DialogContent>
               <DialogActions>
-                <Button onClick={() => setExternalOpen(false)}>Cancelar</Button>
-                <Button onClick={addExternalItem} variant="contained">Adicionar</Button>
+                <Button onClick={() => setExternalOpen(false)}>{t('common.cancel')}</Button>
+                <Button onClick={addExternalItem} variant="contained">{t('common.confirm')}</Button>
               </DialogActions>
             </Dialog>
           </Box>
@@ -496,12 +505,12 @@ export default function SetupWizard() {
       case 3:
         return (
           <Box sx={{ mt: 2 }}>
-            <Typography variant="h6" gutterBottom>Configuração de Transmissão</Typography>
+            <Typography variant="h6" gutterBottom>{t('wizard.transmission.title')}</Typography>
             <FormControl fullWidth sx={{ mb: 3 }}>
-              <InputLabel>Tipo de Saída</InputLabel>
+              <InputLabel>{t('wizard.transmission.label_output_type')}</InputLabel>
               <Select
                 value={setupData.outputType}
-                label="Tipo de Saída"
+                label={t('wizard.transmission.label_output_type')}
                 onChange={(e) => {
                   const newType = e.target.value;
                   const newUrl = newType === 'rtmp'
@@ -515,13 +524,13 @@ export default function SetupWizard() {
                   });
                 }}
               >
-                <MenuItem value="hls">HLS (Web/Mobile)</MenuItem>
-                <MenuItem value="rtmp">RTMP (Social Media/Youtube)</MenuItem>
+                <MenuItem value="hls">{t('wizard.transmission.item_hls')}</MenuItem>
+                <MenuItem value="rtmp">{t('wizard.transmission.item_rtmp')}</MenuItem>
               </Select>
             </FormControl>
             <TextField
               fullWidth
-              label="URL / Stream Key"
+              label={t('wizard.transmission.label_url')}
               value={setupData.outputUrl}
               onChange={(e) => setSetupData({ ...setupData, outputUrl: e.target.value })}
             />
@@ -531,20 +540,20 @@ export default function SetupWizard() {
       case 4: // SUMMARY STEP
         return (
           <Box sx={{ mt: 2 }}>
-            <Typography variant="h6" gutterBottom>Resumo das Configurações</Typography>
+            <Typography variant="h6" gutterBottom>{t('wizard.summary.title')}</Typography>
             <Alert severity="info" sx={{ mb: 3 }}>
-              Confirme os dados abaixo antes de finalizar a criação do seu canal.
+              {t('wizard.summary.alert_info')}
             </Alert>
 
             <List disablePadding>
               <ListItem divider>
-                <ListItemText primary="Nome do Canal" secondary={setupData.channelName} />
+                <ListItemText primary={t('wizard.summary.field_name')} secondary={setupData.channelName} />
               </ListItem>
               <ListItem divider>
-                <ListItemText primary="Saída de Vídeo" secondary={`${setupData.outputType.toUpperCase()} - ${setupData.outputUrl}`} />
+                <ListItemText primary={t('wizard.summary.field_output')} secondary={`${setupData.outputType.toUpperCase()} - ${setupData.outputUrl}`} />
               </ListItem>
               <ListItem divider>
-                <ListItemText primary="Playlist Inicial" secondary={`${setupData.playlistItems.length} itens agendados para 24/7`} />
+                <ListItemText primary={t('wizard.summary.field_playlist')} secondary={t('wizard.summary.playlist_desc', { count: setupData.playlistItems.length })} />
               </ListItem>
             </List>
           </Box>
@@ -553,16 +562,17 @@ export default function SetupWizard() {
         return (
           <Box sx={{ textAlign: 'center', py: 4 }}>
             <CheckCircleIcon color="success" sx={{ fontSize: 80, mb: 2 }} />
-            <Typography variant="h5" gutterBottom>Tudo Pronto!</Typography>
+            <Typography variant="h5" gutterBottom>{t('wizard.final.title')}</Typography>
             <Typography variant="body1">
-              O seu canal está configurado e pronto para emitir.
+              {t('wizard.final.description')}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              Clique em FINALIZAR para aplicar todas as mudanças.
+              {t('wizard.final.hint')}
             </Typography>
           </Box>
         );
-        return 'Passo desconhecido';
+      default:
+        return t('wizard.error_unknown_step', 'Passo desconhecido');
     }
   };
 
@@ -590,7 +600,7 @@ export default function SetupWizard() {
               onClick={handleCancel}
               sx={{ mr: 1 }}
             >
-              Cancelar
+              {t('wizard.controls.cancel')}
             </Button>
             <Box>
               <Button
@@ -598,7 +608,7 @@ export default function SetupWizard() {
                 onClick={handleBack}
                 sx={{ mr: 1 }}
               >
-                Anterior
+                {t('wizard.controls.back')}
               </Button>
               <Button
                 variant="contained"
@@ -606,7 +616,7 @@ export default function SetupWizard() {
                 disabled={loading}
                 endIcon={activeStep === steps.length - 1 ? <CheckCircleIcon /> : null}
               >
-                {activeStep === steps.length - 1 ? 'Confirmar e Finalizar' : 'Próximo'}
+                {activeStep === steps.length - 1 ? t('wizard.controls.confirm_finish') : t('wizard.controls.next')}
               </Button>
             </Box>
           </Box>
@@ -620,16 +630,16 @@ export default function SetupWizard() {
         PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' } }}
       >
         <DialogTitle sx={{ color: 'warning.main', display: 'flex', alignItems: 'center', gap: 1 }}>
-          <SettingsIcon /> Cancelar Configuração?
+          <SettingsIcon /> {t('wizard.dialog_cancel.title')}
         </DialogTitle>
         <DialogContent>
           <Typography>
-            Tem a certeza que deseja cancelar? Todo o progresso não salvo será perdido.
+            {t('wizard.dialog_cancel.message')}
           </Typography>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setCancelConfirmOpen(false)} sx={{ fontWeight: 800 }}>NÃO, CONTINUAR</Button>
-          <Button variant="contained" color="error" onClick={confirmCancel} sx={{ fontWeight: 800 }}>SIM, SAIR</Button>
+          <Button onClick={() => setCancelConfirmOpen(false)} sx={{ fontWeight: 800 }}>{t('wizard.dialog_cancel.btn_no')}</Button>
+          <Button variant="contained" color="error" onClick={confirmCancel} sx={{ fontWeight: 800 }}>{t('wizard.dialog_cancel.btn_yes')}</Button>
         </DialogActions>
       </Dialog>
     </Box>
