@@ -1,114 +1,192 @@
 # Release Notes - Cloud Onepa Playout
 
-## v2.2.0-ALPHA.29-PRO ()
+## v2.2.0-ALPHA.34-PRO ()
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.
 - **Documentation**: Synced README.md and version history.
 
-## v2.2.0-ALPHA.28-PRO ()
+## v2.2.0-ALPHA.32-PRO ()
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.
 - **Documentation**: Synced README.md and version history.
 
-## v2.2.0-ALPHA.28-PRO ()
+## v2.2.0-ALPHA.32-PRO (2026-03-03)
+
+### 🚀 Release Highlights
+- **UDP Stability**: Corrected Unicast PUSH mode to resolve "Address already in use" errors on Host, allowing VLC to act as the sole listener.
+- **Audit Ports 3.0**: New diagnostic engine with intelligent receiver detection (VLC) and refined socket filtering.
+- **Log Management**: Implemented log rotation (10MB/3-files) and enhanced container persistence to prevent disk space issues.
+- **Script Versioning**: Standardized application version output across all operational scripts (.sh and .bat) for cross-platform transparency.
+- **Process Guard**: Internal protection against port collisions between master and relay processes in the Playout Engine.
+- **System Sync**: Full synchronization of version v2.2.0-ALPHA.32-PRO across Database, Backend, and Frontend.
+
+## v2.2.0-ALPHA.31-PRO ()
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.
 - **Documentation**: Synced README.md and version history.
 
-## v2.2.0-ALPHA.28-PRO ()
+## v2.2.0-ALPHA.31-PRO (2026-03-01)
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.
 - **Documentation**: Synced README.md and version history.
 
-## v2.2.0-ALPHA.28-PRO ()
+## v2.2.0-ALPHA.31-PRO (2026-03-01)
+
+### 🚀 Release Highlights
+- **Dynamic EPG Hydration**: Resolved major issue where TV Guide metadata became stale. Metadata is now fetched in real-time from the Media Library.
+- **Improved Duplication Support**: Clips duplicated in playlists (with ID suffixes) are now correctly hydrated with their latest metadata.
+- **EPG XML Enhancements**: Exported XML now includes rich descriptions and categories for better IPTV compatibility.
+- **Automation**: Synchronized application versioning across Frontend, Backend, and Database.
+
+## v2.2.0-ALPHA.30-PRO (2026-02-28)
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.
 - **Documentation**: Synced README.md and version history.
 
-## v2.2.0-ALPHA.28-PRO ()
+## v2.2.0-ALPHA.30-PRO (2026-02-28)
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.
 - **Documentation**: Synced README.md and version history.
 
-## v2.2.0-ALPHA.28-PRO ()
+## v2.2.0-ALPHA.30-PRO (2026-02-28)
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.
 - **Documentation**: Synced README.md and version history.
 
-## v2.2.0-ALPHA.28-PRO ()
+## v2.2.0-ALPHA.30-PRO (2026-02-28)
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.
 - **Documentation**: Synced README.md and version history.
 
-## v2.2.0-ALPHA.28-PRO ()
+## v2.2.0-ALPHA.29-PRO (2026-02-27)
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.
 - **Documentation**: Synced README.md and version history.
 
-## v2.2.0-ALPHA.28-PRO ()
+## v2.2.0-ALPHA.29-PRO (2026-02-27)
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.
 - **Documentation**: Synced README.md and version history.
 
-## v2.2.0-ALPHA.28-PRO ()
+## v2.2.0-ALPHA.29-PRO (2026-02-27)
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.
 - **Documentation**: Synced README.md and version history.
 
-## v2.2.0-ALPHA.28-PRO ()
+## v2.2.0-ALPHA.28-PRO (2026-02-27)
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.
 - **Documentation**: Synced README.md and version history.
 
-## v2.2.0-ALPHA.28-PRO ()
+## v2.2.0-ALPHA.28-PRO (2026-02-27)
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.
 - **Documentation**: Synced README.md and version history.
 
-## v2.2.0-ALPHA.28-PRO ()
+## v2.2.0-ALPHA.28-PRO (2026-02-27)
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.
 - **Documentation**: Synced README.md and version history.
 
-## v2.2.0-ALPHA.28-PRO ()
+## v2.2.0-ALPHA.28-PRO (2026-02-27)
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.
 - **Documentation**: Synced README.md and version history.
 
-## v2.2.0-ALPHA.28-PRO ()
+## v2.2.0-ALPHA.28-PRO (2026-02-27)
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.
 - **Documentation**: Synced README.md and version history.
 
-## v2.2.0-ALPHA.28-PRO ()
+## v2.2.0-ALPHA.28-PRO (2026-02-27)
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.
 - **Documentation**: Synced README.md and version history.
 
-## v2.2.0-ALPHA.28-PRO ()
+## v2.2.0-ALPHA.28-PRO (2026-02-27)
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.
 - **Documentation**: Synced README.md and version history.
 
-## v2.2.0-ALPHA.28-PRO ()
+## v2.2.0-ALPHA.28-PRO (2026-02-27)
+
+### 🚀 Release Highlights
+- **Automated Release**: Version bump and statistics update.
+- **Documentation**: Synced README.md and version history.
+
+## v2.2.0-ALPHA.28-PRO (2026-02-27)
+
+### 🚀 Release Highlights
+- **Automated Release**: Version bump and statistics update.
+- **Documentation**: Synced README.md and version history.
+
+## v2.2.0-ALPHA.28-PRO (2026-02-27)
+
+### 🚀 Release Highlights
+- **Automated Release**: Version bump and statistics update.
+- **Documentation**: Synced README.md and version history.
+
+## v2.2.0-ALPHA.28-PRO (2026-02-27)
+
+### 🚀 Release Highlights
+- **Automated Release**: Version bump and statistics update.
+- **Documentation**: Synced README.md and version history.
+
+## v2.2.0-ALPHA.28-PRO (2026-02-27)
+
+### 🚀 Release Highlights
+- **Automated Release**: Version bump and statistics update.
+- **Documentation**: Synced README.md and version history.
+
+## v2.2.0-ALPHA.28-PRO (2026-02-27)
+
+### 🚀 Release Highlights
+- **Automated Release**: Version bump and statistics update.
+- **Documentation**: Synced README.md and version history.
+
+## v2.2.0-ALPHA.28-PRO (2026-02-27)
+
+### 🚀 Release Highlights
+- **Automated Release**: Version bump and statistics update.
+- **Documentation**: Synced README.md and version history.
+
+## v2.2.0-ALPHA.28-PRO (2026-02-27)
+
+### 🚀 Release Highlights
+- **Automated Release**: Version bump and statistics update.
+- **Documentation**: Synced README.md and version history.
+
+## v2.2.0-ALPHA.28-PRO (2026-02-27)
+
+### 🚀 Release Highlights
+- **Automated Release**: Version bump and statistics update.
+- **Documentation**: Synced README.md and version history.
+
+## v2.2.0-ALPHA.28-PRO (2026-02-27)
+
+### 🚀 Release Highlights
+- **Automated Release**: Version bump and statistics update.
+- **Documentation**: Synced README.md and version history.
+
+## v2.2.0-ALPHA.28-PRO (2026-02-27)
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.

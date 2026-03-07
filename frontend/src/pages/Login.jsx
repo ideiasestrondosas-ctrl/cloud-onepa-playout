@@ -241,15 +241,16 @@ export default function Login() {
                 border: '1px solid rgba(255, 255, 255, 0.2)'
               }}>
                 <Typography variant="caption" sx={{ color: 'white', fontWeight: 900, letterSpacing: 1.5, textTransform: 'uppercase', fontSize: '0.6rem' }}>
-                  {t('login.test_mode')} - {version || 'v2.2.0-ALPHA.29-PRO'}
+                  {t('login.test_mode')} - {version || 'v2.2.0-ALPHA.34-PRO'}
                 </Typography>
               </Box>
             </Box>
+            {/* Removed the environment badge from here */}
           </Paper>
 
           <Box sx={{ mt: 4, p: 1, px: 2, borderRadius: 10, bgcolor: 'rgba(50, 50, 60, 0.5)' }}>
-            <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.4)', fontWeight: 600, fontSize: '0.65rem' }}>
-              {t('login.monitoring')}
+            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)', fontWeight: 700, fontSize: '0.6rem' }}>
+              VERSION: v2.2.0-ALPHA.34-PRO
             </Typography>
           </Box>
         </Box>
@@ -257,4 +258,3 @@ export default function Login() {
     </Box>
   );
 }
-

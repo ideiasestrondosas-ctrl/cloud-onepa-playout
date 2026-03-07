@@ -158,6 +158,28 @@
             "no_logs": "No logs available",
             "diag_failed": "Could not retrieve report.",
             "refresh_now": "Refresh now"
+        },
+        "health": {
+            "title": "Playout Health",
+            "updated_at": "Updated: {{time}}",
+            "score_good": "Healthy",
+            "score_warn": "Warning",
+            "score_poor": "Critical",
+            "check_engine": "Engine",
+            "check_schedule": "Schedule",
+            "check_playlist": "Playlist",
+            "check_media": "Media",
+            "check_protocols": "Protocols",
+            "running": "Running",
+            "stopped": "Stopped",
+            "active": "Active",
+            "loaded": "Loaded",
+            "no_schedule": "None detected",
+            "no_playlist": "Not associated",
+            "clips_count": "{{count}} clips",
+            "loading": "Loading…",
+            "active_streams": "active",
+            "engine_offline": "Engine offline"
         }
     },
     "media": {
@@ -624,10 +646,11 @@
                         "version": "v2.2.0-ALPHA.33-PRO",
                         "date": "2026-03-05",
                         "changes": [
-                            "Metadata Intelligence: Full overhaul of the metadata assistant with automatic sourcing from TMDB, OMDB and TVMaze in a single unified flow",
-                            "Wizard Multi-Step: New step-by-step metadata wizard with auto-fill, poster preview and direct save to the media library",
-                            "EPG Enrichment: Metadata now propagates automatically to EPG/TV Guide, including synopsis, genres, poster and director",
-                            "Backend Resilience: Timeout and retry logic for external metadata APIs to avoid UI blocking on slow connections"
+                            "Uploads Manager: New real-time progress panel for bulk file uploads with simultaneous multi-file support",
+                            "Web Proxy Audit: New audit dialog detecting videos without Web Proxy and enabling batch generation",
+                            "Metadata Assistant: TMDB/OMDB/TVMaze integration directly in the Library for automatic EPG enrichment",
+                            "EPG Metadata Editor: Complete per-video metadata editing form (title, description, genre, cast, director, poster)",
+                            "Backend Stability: Fixed API route paths and robust error handling in metadata endpoints"
                         ]
                     },
                     {

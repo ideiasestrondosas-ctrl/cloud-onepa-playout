@@ -133,6 +133,9 @@ async fn main() -> std::io::Result<()> {
         let assets_serve_path =
             env::var("ASSETS_PATH").unwrap_or_else(|_| "/var/lib/onepa-playout/assets".to_string());
 
+        let frontend_serve_path =
+            env::var("FRONTEND_PATH").unwrap_or_else(|_| "../frontend/dist".to_string());
+
         App::new()
             .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(engine.clone()))
@@ -244,6 +247,22 @@ async fn main() -> std::io::Result<()> {
             .configure(api::routes::configure)
             .service(actix_files::Files::new("/hls", &hls_serve_path).show_files_listing())
             .service(actix_files::Files::new("/assets", &assets_serve_path).show_files_listing())
+            .service(
+                actix_files::Files::new("/", &frontend_serve_path)
+                    .index_file("index.html")
+                    .default_handler(actix_web::dev::fn_service({
+                        let index_path = format!("{}/index.html", frontend_serve_path);
+                        move |req: actix_web::dev::ServiceRequest| {
+                            let path = index_path.clone();
+                            async move {
+                                let (req, _) = req.into_parts();
+                                let file = actix_files::NamedFile::open_async(path).await?;
+                                let res = file.into_response(&req);
+                                Ok(actix_web::dev::ServiceResponse::new(req, res))
+                            }
+                        }
+                    }))
+            )
     })
     .bind(&bind_address)?
     .run()

@@ -5,7 +5,14 @@ import ReactPlayer from 'react-player';
 import axios from 'axios';
 import { useNotification } from '../contexts/NotificationContext';
 import { authAPI, settingsAPI, protectedAPI, playoutAPI, mediaAPI } from '../services/api';
-import { OUTPUT_DEFAULTS, PRESETS, UDP_DEFAULTS, APP_VERSION_FALLBACK } from '../constants/settingsConfig';
+import {
+  OUTPUT_PROTOCOLS,
+  OUTPUT_DEFAULTS,
+  PRESETS,
+  UDP_DEFAULTS,
+  APP_VERSION_FALLBACK,
+  APP_RELEASE_DATE_FALLBACK
+} from '../constants/settingsConfig';
 import {
   Box,
   Typography,
@@ -1326,7 +1333,7 @@ function Settings() {
                 { icon: <FolderIcon />, label: t('settings.navigation.paths') },
                 { icon: <PlatformIcon />, label: t('settings.navigation.playout') },
                 { icon: <UserIcon />, label: t('settings.navigation.users') },
-                { icon: <ViewIcon />, label: t('settings.navigation.system') }
+                { icon: <ViewIcon />, label: t('settings.navigation.about') }
               ].map((item, idx) => (
                 <Tooltip key={idx} title={item.label} placement="right" arrow>
                   <ListItemButton
@@ -2433,7 +2440,7 @@ function Settings() {
               <Grid container spacing={1.5}>
                 {[
                   { label: t('settings.about.fields.version'), value: settings.system_version || settings.version || APP_VERSION_FALLBACK, icon: <WizardIcon fontSize="small" /> },
-                  { label: t('settings.about.fields.last_update'), value: settings.release_date || settings.releaseDate || '2026-03-03', icon: <CheckIcon fontSize="small" /> },
+                  { label: t('settings.about.fields.last_update'), value: settings.release_date || settings.releaseDate || APP_RELEASE_DATE_FALLBACK, icon: <CheckIcon fontSize="small" /> },
                   { label: t('settings.about.fields.deployment'), value: 'Docker Container (Linux)', icon: <FolderIcon fontSize="small" /> }
                 ].map((item, id) => (
                   <Grid item xs={12} sm={6} md={4} key={id}>

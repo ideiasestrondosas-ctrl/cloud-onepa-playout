@@ -158,6 +158,28 @@
             "no_logs": "No hay logs disponibles",
             "diag_failed": "No se pudo obtener el informe.",
             "refresh_now": "Actualizar ahora"
+        },
+        "health": {
+            "title": "Salud del Playout",
+            "updated_at": "Actualizado: {{time}}",
+            "score_good": "Saludable",
+            "score_warn": "Advertencia",
+            "score_poor": "Crítico",
+            "check_engine": "Motor",
+            "check_schedule": "Programación",
+            "check_playlist": "Lista de reproducción",
+            "check_media": "Media",
+            "check_protocols": "Protocolos",
+            "running": "En ejecución",
+            "stopped": "Detenido",
+            "active": "Activo",
+            "loaded": "Cargada",
+            "no_schedule": "Ninguno detectado",
+            "no_playlist": "Sin asociar",
+            "clips_count": "{{count}} clips",
+            "loading": "Cargando…",
+            "active_streams": "activos",
+            "engine_offline": "Motor apagado"
         }
     },
     "media": {
@@ -627,10 +649,11 @@
                         "version": "v2.2.0-ALPHA.33-PRO",
                         "date": "2026-03-05",
                         "changes": [
-                            "Inteligencia de Metadatos: Revisión completa del asistente de metadatos con búsqueda automática en TMDB, OMDB y TVMaze en un flujo unificado",
-                            "Wizard Multi-Paso: Nuevo asistente paso a paso para metadatos con autocompletado, preview de póster y guardado directo en la biblioteca",
-                            "Enriquecimiento del EPG: Los metadatos se propagan automáticamente al EPG/Guía TV, incluyendo sinopsis, géneros, póster y director",
-                            "Resiliencia del Backend: Lógica de timeout y retry para APIs de metadatos externas para evitar bloqueos de interfaz en conexiones lentas"
+                            "Gestor de Subidas: Nuevo panel de progreso en tiempo real para subidas masivas de archivos con soporte multi-archivo simultáneo",
+                            "Auditoría de Proxies Web: Nuevo diálogo de auditoría que detecta videos sin Proxy Web y permite generación en lote",
+                            "Asistente de Metadatos: Integración con TMDB/OMDB/TVMaze directamente en la Biblioteca para enriquecimiento automático de EPG",
+                            "Editor de Metadatos EPG: Formulario completo de edición de metadatos por video (título, descripción, género, elenco, director, póster)",
+                            "Estabilidad del Backend: Corrección de rutas de API y manejo robusto de errores en endpoints de metadatos"
                         ]
                     },
                     {

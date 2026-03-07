@@ -168,7 +168,7 @@ export default function Layout({ children }) {
       try {
         setLoadingSettings(true);
         const response = await settingsAPI.get();
-        setVersion(response.data.system_version || 'v2.2.0-ALPHA.25-PRO');
+        setVersion(response.data.system_version || 'v2.2.0-ALPHA.34-PRO');
         const data = response.data;
         if (!data.branding_type) {
           data.branding_type = 'video';
@@ -268,9 +268,9 @@ export default function Layout({ children }) {
                   border: '1px solid rgba(255,255,255,0.1)',
                   ml: 1
                 }}>
-                  <Typography variant="caption" sx={{ color: 'white', fontWeight: 900, fontSize: '0.55rem', letterSpacing: 0.5 }}>
-                    ALPHA TEST MODE - {version}
-                  </Typography>
+                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.15)', fontWeight: 900, fontSize: '0.55rem', letterSpacing: 1 }}>
+                VERSION: v2.2.0-ALPHA.34-PRO
+              </Typography>
                 </Box>
               )}
             </Box>

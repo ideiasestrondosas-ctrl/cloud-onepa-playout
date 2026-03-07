@@ -14,14 +14,14 @@ const theme = createTheme({
       dark: '#6a0080',
     },
     background: {
-      default: '#0a0b10',
-      paper: 'rgba(255, 255, 255, 0.05)',
+      default: '#050608',
+      paper: 'rgba(13, 15, 20, 0.7)',
     },
     text: {
       primary: '#ffffff',
-      secondary: 'rgba(255, 255, 255, 0.7)',
+      secondary: 'rgba(255, 255, 255, 0.6)',
     },
-    divider: 'rgba(255, 255, 255, 0.1)',
+    divider: 'rgba(255, 255, 255, 0.05)',
   },
   typography: {
     fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
@@ -69,11 +69,13 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           backgroundImage: 'none',
-          backgroundColor: 'rgba(14, 16, 26, 0.97)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          backgroundColor: 'rgba(13, 15, 20, 0.8)',
+          backdropFilter: 'blur(16px)',
+          border: '1px solid rgba(255, 255, 255, 0.05)',
+          borderRadius: 20,
         },
         outlined: {
-          borderColor: 'rgba(255, 255, 255, 0.1)',
+          borderColor: 'rgba(255, 255, 255, 0.05)',
         }
       },
     },
@@ -133,9 +135,10 @@ const theme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
-          backgroundColor: 'rgba(10, 11, 18, 0.99)',
+          backgroundColor: 'rgba(5, 6, 8, 0.8)',
+          backdropFilter: 'blur(12px)',
           boxShadow: 'none',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.03)',
         },
       },
     },

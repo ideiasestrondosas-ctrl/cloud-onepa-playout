@@ -155,6 +155,28 @@
             "no_logs": "Aucun log disponible",
             "diag_failed": "Impossible d'obtenir le rapport.",
             "refresh_now": "Actualiser maintenant"
+        },
+        "health": {
+            "title": "Santé du Playout",
+            "updated_at": "Mis à jour : {{time}}",
+            "score_good": "Bon état",
+            "score_warn": "Attention",
+            "score_poor": "Critique",
+            "check_engine": "Moteur",
+            "check_schedule": "Programmation",
+            "check_playlist": "Playlist",
+            "check_media": "Médias",
+            "check_protocols": "Protocoles",
+            "running": "En cours",
+            "stopped": "Arrêté",
+            "active": "Actif",
+            "loaded": "Chargée",
+            "no_schedule": "Aucun détecté",
+            "no_playlist": "Non associée",
+            "clips_count": "{{count}} clips",
+            "loading": "Chargement…",
+            "active_streams": "actifs",
+            "engine_offline": "Moteur hors ligne"
         }
     },
     "media": {
@@ -622,10 +644,11 @@
                         "version": "v2.2.0-ALPHA.33-PRO",
                         "date": "2026-03-05",
                         "changes": [
-                            "Intelligence des Métadonnées: Refonte complète de l'assistant de métadonnées avec récupération automatique depuis TMDB, OMDB et TVMaze en un seul flux unifié",
-                            "Wizard Multi-Étapes: Nouvel assistant pas-à-pas pour les métadonnées avec auto-complétion, aperçu de l'affiche et sauvegarde directe dans la bibliothèque",
-                            "Enrichissement EPG: Les métadonnées se propagent automatiquement vers l'EPG/Guide TV, incluant synopsis, genres, affiche et réalisateur",
-                            "Résilience du Backend: Logique de timeout et retry pour les APIs de métadonnées externes afin d'éviter le blocage de l'interface sur les connexions lentes"
+                            "Gestionnaire de Téléversements: Nouveau panneau de progression en temps réel pour les téléversements massifs avec support multi-fichiers simultanés",
+                            "Audit des Proxies Web: Nouveau dialogue d'audit détectant les vidéos sans Proxy Web et permettant la génération en lot",
+                            "Assistant Métadonnées: Intégration TMDB/OMDB/TVMaze directement dans la Bibliothèque pour l'enrichissement automatique de l'EPG",
+                            "Éditeur de Métadonnées EPG: Formulaire complet d'édition des métadonnées par vidéo (titre, description, genre, distribution, réalisateur, affiche)",
+                            "Stabilité du Backend: Correction des routes API et gestion robuste des erreurs dans les endpoints de métadonnées"
                         ]
                     },
                     {

@@ -244,7 +244,7 @@ export default function Templates() {
                   <Typography variant="caption" sx={{ fontWeight: 800, opacity: 0.4, mb: 1, display: 'block', fontSize: '0.65rem' }}>{t('templates.grid.structure_title')}</Typography>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                     {template.structure.slice(0, 6).map((item, index) => (
-                      <Tooltip key={index} title={`${item.type.toUpperCase()} (${Math.floor(item.duration / 60)} min)`}>
+                      <Tooltip key={index} title={`${t(`templates.block_types.${item.type}`).toUpperCase()} (${Math.floor(item.duration / 60)} min)`}>
                         <Box sx={{
                           px: 1, py: 0.5,
                           borderRadius: 1,
@@ -254,7 +254,7 @@ export default function Templates() {
                           fontWeight: 700,
                           opacity: 0.8
                         }}>
-                          {item.type.toUpperCase()}
+                          {t(`templates.block_types.${item.type}`).toUpperCase()}
                         </Box>
                       </Tooltip>
                     ))}

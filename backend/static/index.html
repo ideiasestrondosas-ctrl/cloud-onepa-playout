@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="pt">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- ANTI-CACHE META TAGS - Force browsers to always reload -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    
+    <title>Cloud Onepa Playout</title>
+    <script type="module" crossorigin src="/static/index-B3a2f2ID.js"></script>
+    <link rel="modulepreload" crossorigin href="/static/vendor-DPMuXsYX.js">
+    <link rel="modulepreload" crossorigin href="/static/ui-9gxvb8Fp.js">
+    <link rel="modulepreload" crossorigin href="/static/video-DK4IlP0T.js">
+    <link rel="stylesheet" crossorigin href="/static/index-okDuX8qV.css">
+  </head>
+  <body>
+    <script>
+      // Force unregister all service workers from previous projects on this port
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for(let registration of registrations) {
+            registration.unregister();
+            console.log('Service Worker unregistered');
+          }
+        });
+      }
+    </script>
+    <div id="root"></div>
+  </body>
+</html>
