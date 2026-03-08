@@ -621,6 +621,14 @@
                 "empty": "NENHUM HISTÓRICO DISPONÍVEL",
                 "releases": [
                     {
+                        "version": "v2.2.0-ALPHA.35-PRO",
+                        "date": "2026-03-08",
+                        "changes": [
+                            "Atualizações de Saúde i18n: Correção de strings fixas de métricas e adição de chaves de tradução em Português e Inglês para o Dashboard de Saúde do Sistema.",
+                            "Verificação de Consistência da UI: Adicionadas chaves de template de programa aos 4 idiomas e estilização da Badge de Versão no Layout para melhor contraste."
+                        ]
+                    },
+                    {
                         "version": "v2.2.0-ALPHA.34-PRO",
                         "date": "2026-03-06",
                         "changes": [

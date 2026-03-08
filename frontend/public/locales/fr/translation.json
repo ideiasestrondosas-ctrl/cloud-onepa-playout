@@ -611,6 +611,14 @@
                 "empty": "AUCUN HISTORIQUE DISPONIBLE",
                 "releases": [
                     {
+                        "version": "v2.2.0-ALPHA.35-PRO",
+                        "date": "2026-03-08",
+                        "changes": [
+                            "Mises à jour de Santé i18n : Correction des chaînes de mesures fixes et ajout de clés de traduction en portugais et en anglais pour le Tableau de bord de santé du système.",
+                            "Vérification de la Cohérence de l'UI : Ajout de clés de modèle de programme aux 4 langues et modification du style du Badge de Version dans la Mise en page pour un meilleur contraste."
+                        ]
+                    },
+                    {
                         "version": "v2.2.0-ALPHA.34-PRO",
                         "date": "2026-03-06",
                         "changes": [

@@ -588,8 +588,8 @@ function Settings() {
         defaultImagePath: data.default_image_path || '',
 
         defaultVideoPath: data.default_video_path || '',
-        version: data.system_version || 'v2.2.0-ALPHA.23-PRO',
-        releaseDate: data.release_date || '2026-02-18',
+        version: data.system_version || 'v2.2.0-ALPHA.35-PRO',
+        releaseDate: data.release_date || '2026-03-08',
         overlay_enabled: data.overlay_enabled ?? true,
         channelName: data.channel_name || 'Cloud Onepa',
         branding_type: brandingType,
@@ -598,8 +598,8 @@ function Settings() {
         srtMode: data.srt_mode || 'caller',
         protectedPath: data.protected_path || '/var/lib/onepa-playout/assets/protected',
         docsPath: data.docs_path || '/app/docs',
-        system_version: data.system_version || 'v2.2.0-ALPHA.23-PRO',
-        release_date: data.release_date || '2026-02-18',
+        system_version: data.system_version || 'v2.2.0-ALPHA.35-PRO',
+        release_date: data.release_date || '2026-03-08',
         rtmpOutputUrl: data.rtmp_output_url || '',
         srtOutputUrl: data.srt_output_url || '',
         udpOutputUrl: data.udp_output_url || '',
@@ -2716,7 +2716,7 @@ function Settings() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <WizardIcon /> {t('settings.about.history.dialog_title')}
           </Box>
-          <Typography variant="caption" sx={{ opacity: 0.5 }}>{settings.system_version || 'v2.2.0-ALPHA.30-PRO'}</Typography>
+          <Typography variant="caption" sx={{ opacity: 0.5 }}>{settings.system_version || 'v2.2.0-ALPHA.35-PRO'}</Typography>
         </DialogTitle>
         <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.05)' }}>
           <List sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>

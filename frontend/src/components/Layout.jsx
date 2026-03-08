@@ -262,14 +262,19 @@ export default function Layout({ children }) {
               {version && version.includes('ALPHA') && (
                 <Box sx={{
                   display: 'inline-block',
-                  px: 1,
-                  py: 0.2,
-                  bgcolor: 'rgba(255,255,255,0.05)',
+                  px: 1.5,
+                  py: 0.4,
+                  bgcolor: '#cc0000',
                   borderRadius: 1,
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  ml: 1
+                  border: '1px solid #ff2222',
+                  ml: 1,
+                  animation: 'alphaBlink 1.2s ease-in-out infinite',
+                  '@keyframes alphaBlink': {
+                    '0%, 100%': { bgcolor: '#cc0000', boxShadow: '0 0 6px rgba(255,0,0,0.6)' },
+                    '50%': { bgcolor: '#ff0000', boxShadow: '0 0 14px rgba(255,0,0,0.9)' },
+                  },
                 }}>
-                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)', fontWeight: 700, fontSize: '0.6rem', letterSpacing: 1.5 }}>
+                  <Typography variant="caption" sx={{ color: '#ffffff', fontWeight: 900, fontSize: '0.75rem', letterSpacing: 1.5, textShadow: '0px 1px 2px rgba(0,0,0,0.8)' }}>
                     {version}
                   </Typography>
                 </Box>

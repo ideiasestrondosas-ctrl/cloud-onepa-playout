@@ -613,6 +613,14 @@
                 "empty": "NO HISTORY AVAILABLE",
                 "releases": [
                     {
+                        "version": "v2.2.0-ALPHA.35-PRO",
+                        "date": "2026-03-08",
+                        "changes": [
+                            "i18n Health Updates: Fixed hardcoded metrics strings and added translation keys in Portuguese and English for the System Health Dashboard.",
+                            "UI Consistency Check: Added program template keys to 4 locales and styled the Version Badge in Layout for better contrast."
+                        ]
+                    },
+                    {
                         "version": "v2.2.0-ALPHA.34-PRO",
                         "date": "2026-03-06",
                         "changes": [
