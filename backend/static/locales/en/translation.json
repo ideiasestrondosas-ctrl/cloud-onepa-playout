@@ -35,7 +35,8 @@
         "templates": "Templates",
         "epg": "TV GUIDE",
         "logout": "Log Out",
-        "help": "Help & Documentation"
+        "help": "Help & Documentation",
+        "health": "System Health"
     },
     "login": {
         "user": "USERNAME",

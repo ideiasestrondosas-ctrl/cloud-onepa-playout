@@ -30,6 +30,7 @@ import {
   Help as HelpIcon,
   LiveTv as LiveTvIcon,
   Brush as GraphicsIcon,
+  MonitorHeart as HealthIcon,
 } from '@mui/icons-material';
 import { useHelp } from '../context/HelpContext';
 import { useTranslation } from 'react-i18next';
@@ -149,6 +150,7 @@ const menuItems = [
   { key: 'epg.title', icon: <LiveTvIcon />, path: '/epg' },
   { key: 'navigation.graphics', icon: <GraphicsIcon />, path: '/graphics' },
   { key: 'navigation.templates', icon: <TemplatesIcon />, path: '/templates' },
+  { key: 'navigation.health', icon: <HealthIcon />, path: '/health' },
   { key: 'navigation.settings', icon: <SettingsIcon />, path: '/settings' },
 ];
 
@@ -258,19 +260,18 @@ export default function Layout({ children }) {
               <AppClock />
 
               {version && version.includes('ALPHA') && (
-                // PERFORMANCE: removed `animation: pulse 2s infinite` — was causing non-stop GPU repaint
                 <Box sx={{
                   display: 'inline-block',
-                  px: 1.5,
-                  py: 0.5,
-                  bgcolor: 'error.main',
+                  px: 1,
+                  py: 0.2,
+                  bgcolor: 'rgba(255,255,255,0.05)',
                   borderRadius: 1,
                   border: '1px solid rgba(255,255,255,0.1)',
                   ml: 1
                 }}>
-                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.15)', fontWeight: 900, fontSize: '0.55rem', letterSpacing: 1 }}>
-                VERSION: v2.2.0-ALPHA.34-PRO
-              </Typography>
+                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)', fontWeight: 700, fontSize: '0.6rem', letterSpacing: 1.5 }}>
+                    {version}
+                  </Typography>
                 </Box>
               )}
             </Box>

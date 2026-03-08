@@ -43,7 +43,8 @@
         "templates": "Plantillas",
         "epg": "GUÍA TV",
         "logout": "Cerrar Sesión",
-        "help": "Ayuda & Documentación"
+        "help": "Ayuda & Documentación",
+        "health": "Salud del Sistema"
     },
     "login": {
         "user": "USUARIO",

@@ -1,0 +1,27 @@
+{
+  "name": "cloud-onepa-alpha",
+  "version": "1.0.0",
+  "description": "**Sistema de Automação de Playout 24/7 para Streaming de Vídeo**",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ideiasestrondosas-ctrl/cloud-onepa-playout.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ideiasestrondosas-ctrl/cloud-onepa-playout/issues"
+  },
+  "homepage": "https://github.com/ideiasestrondosas-ctrl/cloud-onepa-playout#readme",
+  "dependencies": {
+    "playwright": "^1.58.2"
+  }
+}

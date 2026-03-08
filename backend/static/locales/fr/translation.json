@@ -35,7 +35,8 @@
         "templates": "Modèles",
         "epg": "GUIDE TV",
         "logout": "Déconnexion",
-        "help": "Aide & Documentation"
+        "help": "Aide & Documentation",
+        "health": "Santé du Système"
     },
     "login": {
         "user": "UTILISATEUR",

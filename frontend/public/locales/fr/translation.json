@@ -35,7 +35,8 @@
         "templates": "Modèles",
         "epg": "GUIDE TV",
         "logout": "Déconnexion",
-        "help": "Aide & Documentation"
+        "help": "Aide & Documentation",
+        "health": "Santé du Système"
     },
     "login": {
         "user": "UTILISATEUR",
@@ -1660,6 +1661,42 @@
             "commercial": "COMMERCIAL",
             "outro": "OUTRO",
             "filler": "REMPLISSAGE"
+        }
+    },
+    "health": {
+        "title": "Santé du Système",
+        "lastUpdate": "Dernière mise à jour",
+        "manualRefresh": "Forcer l'Actualisation",
+        "systemScore": "Score du Système",
+        "integrityIndex": "Indice d'Intégrité de Playout",
+        "scoreDescription": "Basé sur la connexion CasparCG, la santé de la base de données, la disponibilité du stockage et la synchronisation de la chronologie.",
+        "coreComponents": "Composants Core",
+        "initializingDiagnostics": "Initialisation du Moteur de Diagnostic...",
+        "waitingTelemetry": "En attente des données de télémétrie...",
+        "liveDiagnosticsStream": "Flux de Diagnostic en Direct",
+        "kpis": {
+            "deviceName": "Hôte de Playout",
+            "clipsPlayed": "Clips Aujourd'hui",
+            "activeStreams": "Flux Actifs",
+            "lastError": "Dernière Erreur"
+        },
+        "checks": {
+            "casparEngine": "Moteur de Playout CasparCG",
+            "database": "Base de Données Système",
+            "mediaStorage": "Stockage des Assets Médias",
+            "watchfolder": "Service de Watchfolder",
+            "initializingComm": "Initialisation de la communication...",
+            "awaitingMetrics": "En attente des mesures...",
+            "calculatingSpace": "Calcul du stockage libre...",
+            "monitoringWatchfolders": "Surveillance des dossiers de veille...",
+            "contentAvailability": "Disponibilité du Contenu",
+            "timeSync": "Synchronisation du Temps",
+            "allMediaVerified": "Tous les fichiers médias pour les prochaines 24h sont vérifiés et présents.",
+            "ntpSync": "Synchronisation NTP active. Décalage : < 2ms (Parfait)"
+        },
+        "score": {
+            "perfect": "Parfait",
+            "health": "Santé"
         }
     }
 }

@@ -35,7 +35,8 @@
         "templates": "Templates",
         "epg": "TV GUIDE",
         "logout": "Log Out",
-        "help": "Help & Documentation"
+        "help": "Help & Documentation",
+        "health": "System Health"
     },
     "login": {
         "user": "USERNAME",
@@ -1663,6 +1664,42 @@
             "commercial": "COMMERCIAL",
             "outro": "OUTRO",
             "filler": "FILLER"
+        }
+    },
+    "health": {
+        "title": "System Health",
+        "lastUpdate": "Last update",
+        "manualRefresh": "Force Refresh",
+        "systemScore": "System Score",
+        "integrityIndex": "Playout Integrity Index",
+        "scoreDescription": "Based on CasparCG connection, database health, storage availability and timeline sync.",
+        "coreComponents": "Core Components",
+        "initializingDiagnostics": "Initializing Diagnostics Engine...",
+        "waitingTelemetry": "Waiting for telemetry data...",
+        "liveDiagnosticsStream": "Live Diagnostics Stream",
+        "kpis": {
+            "deviceName": "Playout Host",
+            "clipsPlayed": "Clips Today",
+            "activeStreams": "Active Streams",
+            "lastError": "Last Error"
+        },
+        "checks": {
+            "casparEngine": "CasparCG Playout Engine",
+            "database": "System Database",
+            "mediaStorage": "Media Assets Storage",
+            "watchfolder": "Watchfolder Service",
+            "initializingComm": "Initializing communication...",
+            "awaitingMetrics": "Awaiting metrics...",
+            "calculatingSpace": "Calculating free space...",
+            "monitoringWatchfolders": "Monitoring watchfolders...",
+            "contentAvailability": "Content Availability",
+            "timeSync": "Time Synchronization",
+            "allMediaVerified": "All media files for the next 24h are verified and present.",
+            "ntpSync": "NTP sync active. Offset: < 2ms (Perfect)"
+        },
+        "score": {
+            "perfect": "Perfect",
+            "health": "Health"
         }
     }
 }

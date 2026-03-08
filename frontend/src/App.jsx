@@ -27,7 +27,7 @@ const Login = lazy(() => import('./pages/Login'));
 const SetupWizard = lazy(() => import('./pages/Setup/Wizard'));
 const EPGView = lazy(() => import('./pages/EPGView'));
 const GraphicsEditor = lazy(() => import('./pages/GraphicsEditor'));
-
+const PlayoutHealth = lazy(() => import('./pages/PlayoutHealth'));
 // ─── Shared loading fallback ───────────────────────────────────────────────
 const PageLoader = () => (
   <Box
@@ -83,6 +83,7 @@ function App() {
                 <Route path="/setup" element={<ProtectedLayout><SetupWizard /></ProtectedLayout>} />
                 <Route path="/graphics" element={<ProtectedLayout><GraphicsEditor /></ProtectedLayout>} />
                 <Route path="/templates" element={<ProtectedLayout><Templates /></ProtectedLayout>} />
+                <Route path="/health" element={<ProtectedLayout><PlayoutHealth /></ProtectedLayout>} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Suspense>

@@ -35,7 +35,8 @@
         "templates": "Modelos",
         "epg": "GUIA TV",
         "logout": "Sair do Sistema",
-        "help": "Ajuda & Documentação"
+        "help": "Ajuda & Documentação",
+        "health": "Saúde do Sistema"
     },
     "login": {
         "user": "UTILIZADOR",
@@ -1789,6 +1790,42 @@
             "commercial": "COMERCIAL",
             "outro": "OUTRO",
             "filler": "PREENCHIMENTO"
+        }
+    },
+    "health": {
+        "title": "Saúde do Sistema",
+        "lastUpdate": "Última atualização",
+        "manualRefresh": "Forçar Atualização",
+        "systemScore": "Pontuação do Sistema",
+        "integrityIndex": "Índice de Integridade do Playout",
+        "scoreDescription": "Baseado na ligação CasparCG, saúde da base de dados, disponibilidade de armazenamento e sincronização da timeline.",
+        "coreComponents": "Componentes Principais",
+        "initializingDiagnostics": "A inicializar o Motor de Diagnóstico...",
+        "waitingTelemetry": "Aguardando dados de telemetria...",
+        "liveDiagnosticsStream": "Stream de Diagnóstico em Direto",
+        "kpis": {
+            "deviceName": "Host do Playout",
+            "clipsPlayed": "Clips Hoje",
+            "activeStreams": "Streams Ativos",
+            "lastError": "Último Erro"
+        },
+        "checks": {
+            "casparEngine": "Motor CasparCG Playout",
+            "database": "Base de Dados do Sistema",
+            "mediaStorage": "Armazenamento de Media",
+            "watchfolder": "Serviço de Watchfolder",
+            "initializingComm": "A inicializar comunicação...",
+            "awaitingMetrics": "Aguardando métricas...",
+            "calculatingSpace": "A calcular espaço livre...",
+            "monitoringWatchfolders": "A monitorizar watchfolders...",
+            "contentAvailability": "Disponibilidade de Conteúdo",
+            "timeSync": "Sincronização de Hora",
+            "allMediaVerified": "Todos os ficheiros de media das próximas 24h estão verificados e presentes.",
+            "ntpSync": "NTP ativo. Desvio: < 2ms (Perfeito)"
+        },
+        "score": {
+            "perfect": "Perfeito",
+            "health": "Saúde"
         }
     }
 }

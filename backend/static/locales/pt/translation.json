@@ -35,7 +35,8 @@
         "templates": "Modelos",
         "epg": "GUIA TV",
         "logout": "Sair do Sistema",
-        "help": "Ajuda & Documentação"
+        "help": "Ajuda & Documentação",
+        "health": "Saúde do Sistema"
     },
     "login": {
         "user": "UTILIZADOR",

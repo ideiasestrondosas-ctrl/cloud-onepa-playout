@@ -43,7 +43,8 @@
         "templates": "Plantillas",
         "epg": "GUÍA TV",
         "logout": "Cerrar Sesión",
-        "help": "Ayuda & Documentación"
+        "help": "Ayuda & Documentación",
+        "health": "Salud del Sistema"
     },
     "login": {
         "user": "USUARIO",
@@ -1662,6 +1663,42 @@
             "commercial": "COMERCIAL",
             "outro": "OUTRO",
             "filler": "RELLENO"
+        }
+    },
+    "health": {
+        "title": "Salud del Sistema",
+        "lastUpdate": "Última actualización",
+        "manualRefresh": "Forzar Actualización",
+        "systemScore": "Puntuación del Sistema",
+        "integrityIndex": "Índice de Integridad de Playout",
+        "scoreDescription": "Basado en la conexión de CasparCG, salud de la base de datos, disponibilidad de almacenamiento y sincronización de la línea de tiempo.",
+        "coreComponents": "Componentes Core",
+        "initializingDiagnostics": "Iniciando Motor de Diagnóstico...",
+        "waitingTelemetry": "Esperando datos de telemetría...",
+        "liveDiagnosticsStream": "Flujo de Diagnóstico en Vivo",
+        "kpis": {
+            "deviceName": "Host de Playout",
+            "clipsPlayed": "Clips Hoy",
+            "activeStreams": "Streams Activos",
+            "lastError": "Último Error"
+        },
+        "checks": {
+            "casparEngine": "Motor de Playout CasparCG",
+            "database": "Base de Datos del Sistema",
+            "mediaStorage": "Almacenamiento de Assets Multimedia",
+            "watchfolder": "Servicio de Watchfolder",
+            "initializingComm": "Iniciando comunicación...",
+            "awaitingMetrics": "Esperando métricas...",
+            "calculatingSpace": "Calculando espacio libre...",
+            "monitoringWatchfolders": "Monitoreando carpetas de vigilancia...",
+            "contentAvailability": "Disponibilidad de Contenido",
+            "timeSync": "Sincronización de Tiempo",
+            "allMediaVerified": "Todos los archivos multimedia para las próximas 24h están verificados y presentes.",
+            "ntpSync": "Sincronización NTP activa. Offset: < 2ms (Perfecto)"
+        },
+        "score": {
+            "perfect": "Perfecto",
+            "health": "Salud"
         }
     }
 }
