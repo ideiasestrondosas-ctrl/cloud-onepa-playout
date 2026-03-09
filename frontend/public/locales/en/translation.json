@@ -1654,15 +1654,15 @@
         "confirm_delete": "Are you sure you want to delete this template?",
         "presets": {
             "morning_show": {
-                "name": "Morning Show",
-                "description": "Template for morning show (06:00 - 12:00)"
+                "name": "MORNING SHOW",
+                "description": "Morning show template (06:00 - 12:00)"
             },
             "full_day": {
-                "name": "Full Day 24h",
-                "description": "Complete 24-hour playlist"
+                "name": "24H PLAYLIST",
+                "description": "Full 24-hour playlist"
             },
             "loop_content": {
-                "name": "Loop Content",
+                "name": "LOOP CONTENT",
                 "description": "Content loop with commercial breaks"
             }
         },

@@ -1653,16 +1653,16 @@
         "confirm_delete": "¿Seguro que desea eliminar esta plantilla?",
         "presets": {
             "morning_show": {
-                "name": "Programa Matutino",
+                "name": "PROGRAMA DE MAÑANA",
                 "description": "Plantilla para programa matutino (06:00 - 12:00)"
             },
             "full_day": {
-                "name": "Día Completo 24h",
+                "name": "LISTA DE REPRODUCCIÓN 24H",
                 "description": "Lista de reproducción completa de 24 horas"
             },
             "loop_content": {
-                "name": "Contenido en Bucle",
-                "description": "Bucle de contenido con pausas comerciales"
+                "name": "CONTENIDO EN BUCLE",
+                "description": "Bucle de contenido con intervalos comerciales"
             }
         },
         "block_types": {

@@ -1651,15 +1651,15 @@
         "confirm_delete": "Êtes-vous sûr de vouloir supprimer ce modèle ?",
         "presets": {
             "morning_show": {
-                "name": "Émission Matinale",
-                "description": "Modèle pour émission matinale (06:00 - 12:00)"
+                "name": "PROGRAMME DU MATIN",
+                "description": "Modèle pour programme matinal (06:00 - 12:00)"
             },
             "full_day": {
-                "name": "Journée Complète 24h",
+                "name": "LISTE DE LECTURE 24H",
                 "description": "Liste de lecture complète de 24 heures"
             },
             "loop_content": {
-                "name": "Contenu en Boucle",
+                "name": "CONTENU EN BOUCLE",
                 "description": "Boucle de contenu avec pauses publicitaires"
             }
         },
