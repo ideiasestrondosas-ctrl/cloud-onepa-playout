@@ -1,5 +1,14 @@
 [
   {
+    "version": "2.2.0-ALPHA.38-PRO",
+    "date": "2026-03-10",
+    "changes": [
+      "Automated Release: Version bump to ALPHA.38-PRO.",
+      "Documentation: Synced README.md, RELEASE_NOTES.md and frontend constants.",
+      "Improved Transcription: Optimized engine settings for better accuracy."
+    ]
+  },
+  {
     "version": "2.2.0-ALPHA.36-PRO",
     "date": "2026-03-09",
     "changes": [

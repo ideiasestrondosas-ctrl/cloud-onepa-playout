@@ -1,5 +1,7 @@
 # Cloud Onepa Playout - Roadmap
 
+_Status atualizado em 2026-03-10 (v2.2.0-ALPHA.38-PRO)_
+
 ## 🏁 Completed Milestones
 
 - [x] **Phase 1-18**: Core System & Beta Release (v1.0 - v1.8.0-PRO)

@@ -138,7 +138,7 @@ Este sistema foi desenvolvido e validado em ambientes de alta performance e virt
 
 > _Dados aproximados baseados na versão v2.2.0-ALPHA.38-PRO
 
-## 🎯 Roadmap & Future (v2.2.0-ALPHA.32-PRO — 2026-03-03)
+## 🎯 Roadmap & Future (v2.2.0-ALPHA.38-PRO — 2026-03-10)
 
 ### 📡 Phase 22: Connectivity & Live Inputs
 

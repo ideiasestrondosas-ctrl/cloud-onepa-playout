@@ -1,7 +1,11 @@
 use crate::models::settings::Settings;
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::env;
 use std::process::Command;
+use std::sync::Mutex;
+use std::time::{Duration, Instant};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MediaInfo {
@@ -20,6 +24,70 @@ pub struct FFmpegService {
     pub hw_encoder: String,
 }
 
+lazy_static! {
+    static ref HW_ENCODER_CACHE: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
+    static ref FASTSTART_CACHE: Mutex<HashMap<String, (bool, Instant)>> =
+        Mutex::new(HashMap::new());
+}
+
+const FASTSTART_CACHE_TTL: Duration = Duration::from_secs(600);
+const FASTSTART_CACHE_MAX: usize = 5000;
+
+fn detect_hw_encoder_with_path(ffmpeg_path: &str) -> String {
+    let output = Command::new(ffmpeg_path)
+        .args(&["-encoders", "-hide_banner"])
+        .output();
+
+    let encoders_list = match output {
+        Ok(out) => String::from_utf8_lossy(&out.stdout).to_string(),
+        Err(_) => return "libx264".to_string(),
+    };
+
+    // Priority order: Apple Silicon > NVIDIA > VAAPI > QSV > CPU
+    // We also check for the device path to ensure it's not just a software stub
+    let hw_encoders = [
+        ("h264_videotoolbox", "Apple VideoToolbox (macOS)", None),
+        ("h264_nvenc", "NVIDIA NVENC", Some("/dev/nvidia0")),
+        ("h264_vaapi", "VAAPI (Intel/AMD)", Some("/dev/dri")),
+        ("h264_qsv", "Intel QuickSync", Some("/dev/dri")),
+    ];
+
+    for (encoder, label, device) in &hw_encoders {
+        if encoders_list.contains(encoder) {
+            // If a device path is required, check if it exists
+            let device_exists = if let Some(path) = device {
+                std::path::Path::new(path).exists()
+            } else {
+                true // No device required or handled by OS (like VideoToolbox)
+            };
+
+            if device_exists {
+                log::info!(
+                    "[FFmpeg] Hardware encoder available and verified: {} ({})",
+                    encoder,
+                    label
+                );
+                return encoder.to_string();
+            }
+        }
+    }
+
+    log::info!(
+        "[FFmpeg] No usable hardware encoder found (or device nodes missing), using CPU (libx264)"
+    );
+    "libx264".to_string()
+}
+
+fn get_cached_hw_encoder(ffmpeg_path: &str) -> String {
+    let mut cache = HW_ENCODER_CACHE.lock().unwrap();
+    if let Some(enc) = cache.get(ffmpeg_path) {
+        return enc.clone();
+    }
+    let enc = detect_hw_encoder_with_path(ffmpeg_path);
+    cache.insert(ffmpeg_path.to_string(), enc.clone());
+    enc
+}
+
 impl FFmpegService {
     pub fn new() -> Self {
         let mut service = FFmpegService {
@@ -27,8 +95,8 @@ impl FFmpegService {
             ffprobe_path: env::var("FFPROBE_PATH").unwrap_or_else(|_| "ffprobe".to_string()),
             hw_encoder: "libx264".to_string(), // Default placeholder
         };
-        // Detect and store the best encoder
-        service.hw_encoder = service.detect_hw_encoder();
+        // Detect and store the best encoder (cached)
+        service.hw_encoder = get_cached_hw_encoder(&service.ffmpeg_path);
         log::info!("[FFmpeg] Auto-detected H.264 encoder: {}", service.hw_encoder);
         service
     }
@@ -36,42 +104,7 @@ impl FFmpegService {
     /// Probe system for the best available H.264 hardware encoder.
     /// Priority: h264_videotoolbox (macOS) > h264_nvenc (NVIDIA) > h264_vaapi (Intel/AMD) > h264_qsv (Intel) > libx264 (CPU)
     pub fn detect_hw_encoder(&self) -> String {
-        let output = Command::new(&self.ffmpeg_path)
-            .args(&["-encoders", "-hide_banner"])
-            .output();
-
-        let encoders_list = match output {
-            Ok(out) => String::from_utf8_lossy(&out.stdout).to_string(),
-            Err(_) => return "libx264".to_string(),
-        };
-
-        // Priority order: Apple Silicon > NVIDIA > VAAPI > QSV > CPU
-        // We also check for the device path to ensure it's not just a software stub
-        let hw_encoders = [
-            ("h264_videotoolbox", "Apple VideoToolbox (macOS)", None),
-            ("h264_nvenc", "NVIDIA NVENC", Some("/dev/nvidia0")),
-            ("h264_vaapi", "VAAPI (Intel/AMD)", Some("/dev/dri")),
-            ("h264_qsv", "Intel QuickSync", Some("/dev/dri")),
-        ];
-
-        for (encoder, label, device) in &hw_encoders {
-            if encoders_list.contains(encoder) {
-                // If a device path is required, check if it exists
-                let device_exists = if let Some(path) = device {
-                    std::path::Path::new(path).exists()
-                } else {
-                    true // No device required or handled by OS (like VideoToolbox)
-                };
-
-                if device_exists {
-                    log::info!("[FFmpeg] Hardware encoder available and verified: {} ({})", encoder, label);
-                    return encoder.to_string();
-                }
-            }
-        }
-
-        log::info!("[FFmpeg] No usable hardware encoder found (or device nodes missing), using CPU (libx264)");
-        "libx264".to_string()
+        detect_hw_encoder_with_path(&self.ffmpeg_path)
     }
 
     /// Extract media information using ffprobe
@@ -247,6 +280,16 @@ impl FFmpegService {
     }
 
     pub fn is_faststart_optimized(&self, file_path: &str) -> bool {
+        // Cache result to avoid repeated ffprobe calls on list endpoints
+        {
+            let cache = FASTSTART_CACHE.lock().unwrap();
+            if let Some((cached, ts)) = cache.get(file_path) {
+                if ts.elapsed() <= FASTSTART_CACHE_TTL {
+                    return *cached;
+                }
+            }
+        }
+
         // Use ffprobe to check atom positions
         // Optimized files (faststart) have the 'moov' atom before the 'mdat' atom
         let output = Command::new(&self.ffprobe_path)
@@ -258,7 +301,7 @@ impl FFmpegService {
             ])
             .output();
 
-        match output {
+        let result = match output {
             Ok(o) => {
                 if o.status.success() {
                     let stderr = String::from_utf8_lossy(&o.stderr);
@@ -274,7 +317,15 @@ impl FFmpegService {
                 }
             }
             Err(_) => false,
+        };
+
+        let mut cache = FASTSTART_CACHE.lock().unwrap();
+        if cache.len() > FASTSTART_CACHE_MAX {
+            cache.clear();
         }
+        cache.insert(file_path.to_string(), (result, Instant::now()));
+
+        result
     }
 
     /// Validate media file

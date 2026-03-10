@@ -1380,6 +1380,46 @@ async fn get_media_tasks(
     }
 }
 
+#[derive(serde::Deserialize)]
+struct BatchTasksRequest {
+    ids: Vec<Uuid>,
+}
+
+async fn get_media_tasks_batch(
+    req: web::Json<BatchTasksRequest>,
+    pool: web::Data<PgPool>,
+) -> impl Responder {
+    if req.ids.is_empty() {
+        return HttpResponse::Ok().json(serde_json::json!({ "tasks": {} }));
+    }
+
+    let result = sqlx::query_as::<_, MediaTask>(
+        "SELECT * FROM media_tasks WHERE media_id = ANY($1) ORDER BY created_at DESC",
+    )
+    .bind(&req.ids)
+    .fetch_all(pool.get_ref())
+    .await;
+
+    match result {
+        Ok(tasks) => {
+            let mut grouped: std::collections::HashMap<String, Vec<MediaTask>> =
+                std::collections::HashMap::new();
+            for task in tasks {
+                grouped
+                    .entry(task.media_id.to_string())
+                    .or_default()
+                    .push(task);
+            }
+            HttpResponse::Ok().json(serde_json::json!({ "tasks": grouped }))
+        }
+        Err(e) => {
+            log::error!("Database error fetching batch tasks: {}", e);
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": "Database error"}))
+        }
+    }
+}
+
 fn scan_dir_for_proxies(dir: &Path, proxies: &mut Vec<serde_json::Value>) {
     // Robust scan: ignore errors on subfolders to prevent entire scan failure
     let entries = match std::fs::read_dir(dir) {
@@ -2111,6 +2151,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         .route("/proxies/purge", web::delete().to(purge_proxies))
         .route("/health-check", web::get().to(media_health_check))
         .route("/{id}/tasks", web::get().to(get_media_tasks))
+        .route("/tasks/batch", web::post().to(get_media_tasks_batch))
         .route("/{id}/move", web::post().to(move_media))
         .route("/{id}/copy", web::post().to(copy_media))
         .route("/{id}/usage", web::get().to(check_media_usage))

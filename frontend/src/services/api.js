@@ -89,6 +89,7 @@ export const mediaAPI = {
   deleteSpecificProxies: (ids) => api.post(`/media/proxies/delete`, ids),
   purgeProxies: () => api.delete(`/media/proxies/purge`),
   getMediaTasks: (id) => api.get(`/media/${id}/tasks`),
+  getMediaTasksBatch: (ids) => api.post(`/media/tasks/batch`, { ids }),
   mediaHealthCheck: () => api.get(`/media/health-check`),
   sync: () => api.post('/media/sync', {}, { timeout: 120000 }),
 };
@@ -104,7 +105,7 @@ export const playlistAPI = {
 
 // Schedule endpoints
 export const scheduleAPI = {
-  list: () => api.get('/schedule'),
+  list: () => api.get('/schedule/light'),
   create: (data) => api.post('/schedule', data),
   update: (id, data) => api.put(`/schedule/${id}`, data),
   delete: (id) => api.delete(`/schedule/${id}`),

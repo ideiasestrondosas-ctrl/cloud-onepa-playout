@@ -1,6 +1,6 @@
 use actix_web::{web, HttpResponse, Responder};
 use chrono::Datelike;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
@@ -10,6 +10,16 @@ use crate::models::schedule::{CreateSchedule, Schedule};
 pub struct ScheduleQuery {
     pub start_date: Option<String>,
     pub end_date: Option<String>,
+}
+
+#[derive(Debug, Serialize, sqlx::FromRow)]
+struct ScheduleLight {
+    pub id: Uuid,
+    pub playlist_id: Uuid,
+    pub date: chrono::NaiveDate,
+    pub start_time: Option<chrono::NaiveTime>,
+    pub repeat_pattern: Option<String>,
+    pub playlist_name: Option<String>,
 }
 
 async fn list_schedule(
@@ -50,6 +60,50 @@ async fn list_schedule(
         })),
         Err(e) => {
             log::error!("Failed to fetch schedule: {}", e);
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": "Failed to fetch schedule"}))
+        }
+    }
+}
+
+async fn list_schedule_light(
+    query: web::Query<ScheduleQuery>,
+    pool: web::Data<PgPool>,
+) -> impl Responder {
+    let mut query_builder: sqlx::QueryBuilder<sqlx::Postgres> = sqlx::QueryBuilder::new(
+        "SELECT s.id, s.playlist_id, s.date, s.start_time, s.repeat_pattern, p.name as playlist_name 
+         FROM schedule s 
+         JOIN playlists p ON s.playlist_id = p.id 
+         WHERE 1=1",
+    );
+
+    if let Some(ref start_date) = query.start_date {
+        if let Ok(date) = chrono::NaiveDate::parse_from_str(start_date, "%Y-%m-%d") {
+            query_builder.push(" AND s.date >= ");
+            query_builder.push_bind(date);
+        }
+    }
+
+    if let Some(ref end_date) = query.end_date {
+        if let Ok(date) = chrono::NaiveDate::parse_from_str(end_date, "%Y-%m-%d") {
+            query_builder.push(" AND s.date <= ");
+            query_builder.push_bind(date);
+        }
+    }
+
+    query_builder.push(" ORDER BY s.date ASC");
+
+    let result = query_builder
+        .build_query_as::<ScheduleLight>()
+        .fetch_all(pool.get_ref())
+        .await;
+
+    match result {
+        Ok(schedules) => HttpResponse::Ok().json(serde_json::json!({
+            "schedules": schedules
+        })),
+        Err(e) => {
+            log::error!("Failed to fetch schedule (light): {}", e);
             HttpResponse::InternalServerError()
                 .json(serde_json::json!({"error": "Failed to fetch schedule"}))
         }
@@ -364,6 +418,7 @@ async fn add_exception(
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.route("", web::get().to(list_schedule))
+        .route("/light", web::get().to(list_schedule_light))
         .route("", web::post().to(create_schedule))
         .route("/bulk", web::post().to(delete_bulk))
         .route("/exception", web::post().to(add_exception))

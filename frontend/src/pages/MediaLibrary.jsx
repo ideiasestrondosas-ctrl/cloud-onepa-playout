@@ -185,11 +185,14 @@ export default function MediaLibrary() {
       const updatedTasks = {};
       const justFinished = [];
       const prevIds = Object.keys(activeTasks);
+      const ids = mediaWithPossibleTasks.map(item => item.id);
 
-      for (const item of mediaWithPossibleTasks) {
-        try {
-          const response = await mediaAPI.getMediaTasks(item.id);
-          const tasks = response.data;
+      try {
+        const response = await mediaAPI.getMediaTasksBatch(ids);
+        const tasksById = response.data.tasks || {};
+
+        for (const item of mediaWithPossibleTasks) {
+          const tasks = tasksById[item.id] || [];
 
           // Filter active and recently failed tasks (keep failed for 2 min for UI feedback)
           const activeOrFailed = tasks.filter(task =>
@@ -210,9 +213,9 @@ export default function MediaLibrary() {
           if (activeOrFailed.length > 0) {
             updatedTasks[item.id] = activeOrFailed;
           }
-        } catch (error) {
-          console.error(`Failed to fetch tasks for ${item.id}:`, error);
         }
+      } catch (error) {
+        console.error('Failed to fetch tasks batch:', error);
       }
 
       // Detect tasks that just finished: were in prev, not in new
