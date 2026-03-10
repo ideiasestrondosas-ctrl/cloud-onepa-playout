@@ -648,7 +648,7 @@
                         ]
                     },
                     {
-                        "version": "v2.2.0-ALPHA.35-PRO",
+                        "version": "v2.2.0-ALPHA.38-PRO",
                         "date": "2026-03-08",
                         "changes": [
                             "Atualizações de Saúde i18n: Correção de strings fixas de métricas e adição de chaves de tradução em Português e Inglês para o Dashboard de Saúde do Sistema.",
