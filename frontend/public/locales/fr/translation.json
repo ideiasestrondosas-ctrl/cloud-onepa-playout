@@ -611,6 +611,33 @@
                 "empty": "AUCUN HISTORIQUE DISPONIBLE",
                 "releases": [
                     {
+                        "version": "v2.2.0-ALPHA.38-PRO",
+                        "date": "2026-03-10",
+                        "changes": [
+                            "Lancement Automatique : Version mise à jour vers ALPHA.38-PRO avec synchronisation complète de l'écosystème.",
+                            "Documentation : README.md, RELEASE_NOTES.md et constantes frontend synchronisés avec la nouvelle version.",
+                            "Intégrité i18n : Les 4 fichiers de langue (PT/EN/ES/FR) mis à jour avec un historique de versions cohérent."
+                        ]
+                    },
+                    {
+                        "version": "v2.2.0-ALPHA.37-PRO",
+                        "date": "2026-03-09",
+                        "changes": [
+                            "Ajout d'un dialogue de test de connexion manuelle dans le menu d'état réseau pour le débogage websocket en temps réel.",
+                            "Système mis à jour avec suivi de l'état de connexion, ajout de logique de reconnexion quand la connexion se ferme.",
+                            "Correction du problème où un ID de programme manquant dans la réponse EPG empêchait l'affichage complet de la grille."
+                        ]
+                    },
+                    {
+                        "version": "v2.2.0-ALPHA.36-PRO",
+                        "date": "2026-03-09",
+                        "changes": [
+                            "Correction i18n en Direct pour les Modèles : Les modèles prédéfinis (Programme du Matin, Liste 24H, Contenu en Boucle) se mettent à jour instantanément lors du changement de langue, grâce au modèle réactif useMemo au lieu d'un état statique.",
+                            "Refactorisation des Modèles : Séparation des modèles API des modèles prédéfinis dans le state, évitant les appels API redondants lors des changements de langue.",
+                            "Cohérence du Sélecteur de Langue : Tout le texte dynamique de la page Modèles reflète désormais les changements de langue en temps réel."
+                        ]
+                    },
+                    {
                         "version": "v2.2.0-ALPHA.35-PRO",
                         "date": "2026-03-08",
                         "changes": [

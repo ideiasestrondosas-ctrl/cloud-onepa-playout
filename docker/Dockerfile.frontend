@@ -1,46 +1,29 @@
 # Build stage
 FROM node:20-alpine AS builder
 
-# Absolute start with space check
-RUN echo "BUILD START - DISK STATUS:" && df -h
-
 WORKDIR /app
+
+# Install build tools if needed (Alpine specific)
+RUN apk add --no-cache libc6-compat
 
 # Copy package files
 COPY package*.json ./
 
-# Force non-cached dependency install using the CACHE_BUST argument
-ARG CACHE_BUST=1
-RUN echo "FORCE REBUILD TRIGGER: $CACHE_BUST"
-
-# Diagnostic: Check tools
-RUN set -x && node --version && npm --version
-
-# Install dependencies (broken down for debugging)
-RUN set -x && \
-    npm cache clean --force && \
-    npm install --include=dev --loglevel verbose
-
-# Diagnostic: Check installation result
-RUN set -x && \
-    ls -la node_modules || echo "node_modules missing!" && \
-    ls -la node_modules/.bin || echo "node_modules/.bin missing!"
+# Install dependencies using npm ci for deterministic builds
+RUN npm ci --include=dev
 
 # Copy source code
 COPY . .
 
-# Diagnostic: Verify source integrity
-RUN echo "SOURCE STATUS:" && ls -laR | grep -v node_modules | head -n 50
-
-# Build application with raw error capture and env audit
-ARG VITE_API_URL
+# Set environment variables for the build
+ARG VITE_API_URL=/api
 ENV VITE_API_URL=$VITE_API_URL
+ENV PATH="/app/node_modules/.bin:$PATH"
 
-RUN echo "ENVIRONMENT AUDIT:" && env | grep -E "VITE|NODE" && \
-    echo "FILE STRUCTURE AUDIT:" && ls -la && \
-    set -e; \
-    echo "Starting deterministic Vite build..." && \
-    ./node_modules/.bin/vite build --logLevel info
+# Diagnostic and build
+RUN set -x && \
+    ls -la node_modules/.bin/vite && \
+    npm run build -- --logLevel info
 
 # Final Forensic Check
 RUN echo "BUILD FINISHED - OUTPUT VERIFICATION:" && \

@@ -621,6 +621,33 @@
                 "empty": "NENHUM HISTÓRICO DISPONÍVEL",
                 "releases": [
                     {
+                        "version": "v2.2.0-ALPHA.38-PRO",
+                        "date": "2026-03-10",
+                        "changes": [
+                            "Lançamento Automático: Versão atualizada para ALPHA.38-PRO com sincronização completa do ecossistema.",
+                            "Documentação: Sincronizados README.md, RELEASE_NOTES.md e constantes do frontend com a nova versão.",
+                            "Integridade i18n: Todos os 4 ficheiros de idioma (PT/EN/ES/FR) atualizados com histórico de versões consistente."
+                        ]
+                    },
+                    {
+                        "version": "v2.2.0-ALPHA.37-PRO",
+                        "date": "2026-03-09",
+                        "changes": [
+                            "Adicionado diálogo de teste de ligação manual no menu de estado de rede para debugging de websocket em tempo real.",
+                            "Sistema atualizado com rastreamento de estado de ligação, adicionando lógica de reconexão quando a ligação fecha.",
+                            "Corrigido problema em que ID de programa em falta na resposta EPG impedia a exibição completa da grelha."
+                        ]
+                    },
+                    {
+                        "version": "v2.2.0-ALPHA.36-PRO",
+                        "date": "2026-03-09",
+                        "changes": [
+                            "Correção i18n ao Vivo em Modelos: Os modelos predefinidos (Programa de Manhã, Lista 24H, Conteúdo em Ciclo) atualizam instantaneamente ao mudar de língua, usando o padrão reativo useMemo em vez de estado estático.",
+                            "Refatoração de Modelos: Separação dos modelos da API dos modelos predefinidos no estado, evitando chamadas à API repetidas em mudanças de língua.",
+                            "Consistência do Seletor de Língua: Todo o texto dinâmico na página de Modelos reflete agora as mudanças de língua em tempo real."
+                        ]
+                    },
+                    {
                         "version": "v2.2.0-ALPHA.35-PRO",
                         "date": "2026-03-08",
                         "changes": [

@@ -159,28 +159,6 @@
             "no_logs": "No hay logs disponibles",
             "diag_failed": "No se pudo obtener el informe.",
             "refresh_now": "Actualizar ahora"
-        },
-        "health": {
-            "title": "Salud del Playout",
-            "updated_at": "Actualizado: {{time}}",
-            "score_good": "Saludable",
-            "score_warn": "Advertencia",
-            "score_poor": "Crítico",
-            "check_engine": "Motor",
-            "check_schedule": "Programación",
-            "check_playlist": "Lista de reproducción",
-            "check_media": "Media",
-            "check_protocols": "Protocolos",
-            "running": "En ejecución",
-            "stopped": "Detenido",
-            "active": "Activo",
-            "loaded": "Cargada",
-            "no_schedule": "Ninguno detectado",
-            "no_playlist": "Sin asociar",
-            "clips_count": "{{count}} clips",
-            "loading": "Cargando…",
-            "active_streams": "activos",
-            "engine_offline": "Motor apagado"
         }
     },
     "media": {
@@ -638,6 +616,41 @@
                 "empty": "NO HAY HISTORIAL DISPONIBLE",
                 "releases": [
                     {
+                        "version": "v2.2.0-ALPHA.38-PRO",
+                        "date": "2026-03-10",
+                        "changes": [
+                            "Lanzamiento Automático: Versión actualizada a ALPHA.38-PRO con sincronización completa del ecosistema.",
+                            "Documentación: Sincronizados README.md, RELEASE_NOTES.md y constantes del frontend con la nueva versión.",
+                            "Integridad i18n: Todos los 4 archivos de idioma (PT/EN/ES/FR) actualizados con historial de versiones consistente."
+                        ]
+                    },
+                    {
+                        "version": "v2.2.0-ALPHA.37-PRO",
+                        "date": "2026-03-09",
+                        "changes": [
+                            "Añadido diálogo de prueba de conexión manual en el menú de estado de red para depuración de websocket en tiempo real.",
+                            "Sistema actualizado con seguimiento de estado de conexión, añadiendo lógica de reconexión cuando la conexión se cierra.",
+                            "Corregido problema en que un ID de programa faltante en la respuesta EPG impedía mostrar la programación completa."
+                        ]
+                    },
+                    {
+                        "version": "v2.2.0-ALPHA.36-PRO",
+                        "date": "2026-03-09",
+                        "changes": [
+                            "Corrección i18n en Vivo de Plantillas: Las plantillas predefinidas (Programa de Mañana, Lista 24H, Contenido en Bucle) se actualizan al instante al cambiar de idioma, usando el patrón reactivo useMemo en lugar de estado estático.",
+                            "Refactorización de Plantillas: Separación de plantillas de API de plantillas predefinidas en el estado, evitando llamadas redundantes a la API en cambios de idioma.",
+                            "Coherencia del Selector de Idioma: Todo el texto dinámico en la página de Plantillas ahora refleja los cambios de idioma en tiempo real."
+                        ]
+                    },
+                    {
+                        "version": "v2.2.0-ALPHA.35-PRO",
+                        "date": "2026-03-08",
+                        "changes": [
+                            "Actualizaciones de Salud i18n: Se corrigieron las cadenas de métricas estáticas y se agregaron claves de traducción en portugués e inglés para el Panel de Salud del Sistema.",
+                            "Verificación de Consistencia de UI: Se agregaron claves de plantilla de programa a los 4 idiomas y se modificó el estilo de la Insignia de Versión en el Diseño para mejorar el contraste."
+                        ]
+                    },
+                    {
                         "version": "v2.2.0-ALPHA.34-PRO",
                         "date": "2026-03-06",
                         "changes": [
@@ -650,11 +663,10 @@
                         "version": "v2.2.0-ALPHA.33-PRO",
                         "date": "2026-03-05",
                         "changes": [
-                            "Gestor de Subidas: Nuevo panel de progreso en tiempo real para subidas masivas de archivos con soporte multi-archivo simultáneo",
-                            "Auditoría de Proxies Web: Nuevo diálogo de auditoría que detecta videos sin Proxy Web y permite generación en lote",
-                            "Asistente de Metadatos: Integración con TMDB/OMDB/TVMaze directamente en la Biblioteca para enriquecimiento automático de EPG",
-                            "Editor de Metadatos EPG: Formulario completo de edición de metadatos por video (título, descripción, género, elenco, director, póster)",
-                            "Estabilidad del Backend: Corrección de rutas de API y manejo robusto de errores en endpoints de metadatos"
+                            "Inteligencia de Metadatos: Revisión completa del asistente de metadatos con búsqueda automática en TMDB, OMDB y TVMaze en un flujo unificado",
+                            "Wizard Multi-Paso: Nuevo asistente paso a paso para metadatos con autocompletado, preview de póster y guardado directo en la biblioteca",
+                            "Enriquecimiento del EPG: Los metadatos se propagan automáticamente al EPG/Guía TV, incluyendo sinopsis, géneros, póster y director",
+                            "Resiliencia del Backend: Lógica de timeout y retry para APIs de metadatos externas para evitar bloqueos de interfaz en conexiones lentas"
                         ]
                     },
                     {
@@ -1686,6 +1698,42 @@
             "commercial": "COMERCIAL",
             "outro": "OUTRO",
             "filler": "RELLENO"
+        }
+    },
+    "health": {
+        "title": "Salud del Sistema",
+        "lastUpdate": "Última actualización",
+        "manualRefresh": "Forzar Actualización",
+        "systemScore": "Puntuación del Sistema",
+        "integrityIndex": "Índice de Integridad de Playout",
+        "scoreDescription": "Basado en la conexión de CasparCG, salud de la base de datos, disponibilidad de almacenamiento y sincronización de la línea de tiempo.",
+        "coreComponents": "Componentes Core",
+        "initializingDiagnostics": "Iniciando Motor de Diagnóstico...",
+        "waitingTelemetry": "Esperando datos de telemetría...",
+        "liveDiagnosticsStream": "Flujo de Diagnóstico en Vivo",
+        "kpis": {
+            "deviceName": "Host de Playout",
+            "clipsPlayed": "Clips Hoy",
+            "activeStreams": "Streams Activos",
+            "lastError": "Último Error"
+        },
+        "checks": {
+            "casparEngine": "Motor de Playout CasparCG",
+            "database": "Base de Datos del Sistema",
+            "mediaStorage": "Almacenamiento de Assets Multimedia",
+            "watchfolder": "Servicio de Watchfolder",
+            "initializingComm": "Iniciando comunicación...",
+            "awaitingMetrics": "Esperando métricas...",
+            "calculatingSpace": "Calculando espacio libre...",
+            "monitoringWatchfolders": "Monitoreando carpetas de vigilancia...",
+            "contentAvailability": "Disponibilidad de Contenido",
+            "timeSync": "Sincronización de Tiempo",
+            "allMediaVerified": "Todos los archivos multimedia para las próximas 24h están verificados y presentes.",
+            "ntpSync": "Sincronización NTP activa. Offset: < 2ms (Perfecto)"
+        },
+        "score": {
+            "perfect": "Perfecto",
+            "health": "Salud"
         }
     }
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useNotification } from '../contexts/NotificationContext';
@@ -69,25 +69,31 @@ export default function Templates() {
   const navigate = useNavigate();
   const { showSuccess, showError } = useNotification();
   const { t } = useTranslation();
-  const [templates, setTemplates] = useState([]);
+
+  // Preset templates recompute automatically whenever the language changes
+  const presetTemplates = useMemo(() => getPresetTemplates(t), [t]);
+
+  const [apiTemplates, setApiTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newTemplate, setNewTemplate] = useState({ name: '', description: '', duration: 3600, structure: [] });
 
+  // Combine live presets (reactive to language) with API templates
+  const allTemplates = useMemo(() => [...presetTemplates, ...apiTemplates], [presetTemplates, apiTemplates]);
+
   useEffect(() => {
-    fetchTemplates();
+    fetchApiTemplates();
   }, []);
 
-  const fetchTemplates = async () => {
-    const presets = getPresetTemplates(t);
+  const fetchApiTemplates = async () => {
     try {
       const response = await templateAPI.list();
-      setTemplates([...presets, ...response.data]);
+      setApiTemplates(response.data);
     } catch (error) {
       console.error('Failed to fetch templates:', error);
-      setTemplates(presets); // Fallback to presets
+      setApiTemplates([]);
     } finally {
       setLoading(false);
     }
@@ -119,7 +125,7 @@ export default function Templates() {
 
       setCreateDialogOpen(false);
       setNewTemplate({ name: '', description: '', duration: 3600, structure: [] });
-      fetchTemplates();
+      fetchApiTemplates();
     } catch (error) {
       console.error('Failed to save template:', error);
       showError(t('templates.notifications.error_save'));
@@ -143,7 +149,7 @@ export default function Templates() {
     try {
       await templateAPI.delete(id);
       showSuccess(t('templates.notifications.delete_success'));
-      fetchTemplates();
+      fetchApiTemplates();
     } catch (error) {
       console.error('Failed to delete template:', error);
       showError(t('templates.notifications.error_delete'));
@@ -205,7 +211,7 @@ export default function Templates() {
       {/* Templates Grid */}
       <Box sx={{ flexGrow: 1, overflowY: 'auto', pr: 1, '&::-webkit-scrollbar': { width: '8px' }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,255,255,0.05)', borderRadius: '4px' } }}>
         <Grid container spacing={2}>
-          {templates.map((template) => (
+          {allTemplates.map((template) => (
             <Grid item xs={12} md={6} lg={4} key={template.id}>
               <Paper className="glass-panel" sx={{
                 p: 1.5,
@@ -274,7 +280,7 @@ export default function Templates() {
                   >
                     {t('templates.grid.use_btn')}
                   </Button>
-                  {!getPresetTemplates(t).find(p => p.id === template.id) && (
+                  {!presetTemplates.find(p => p.id === template.id) && (
                     <Box sx={{ display: 'flex', gap: 0.5 }}>
                       <IconButton onClick={() => handleEditTemplate(template)} sx={{ bgcolor: 'rgba(0,229,255,0.05)', borderRadius: 2, color: 'primary.main', '&:hover': { bgcolor: 'rgba(0,229,255,0.1)' } }}>
                         <EditIcon sx={{ fontSize: 18 }} />

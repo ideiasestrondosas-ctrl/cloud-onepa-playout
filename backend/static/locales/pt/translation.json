@@ -166,28 +166,6 @@
             "no_logs": "Sem logs disponíveis",
             "diag_failed": "Não foi possível obter o relatório.",
             "refresh_now": "Actualizar agora"
-        },
-        "health": {
-            "title": "Saúde do Playout",
-            "updated_at": "Actualizado: {{time}}",
-            "score_good": "Saudável",
-            "score_warn": "Atenção",
-            "score_poor": "Crítico",
-            "check_engine": "Motor",
-            "check_schedule": "Agendamento",
-            "check_playlist": "Playlist",
-            "check_media": "Media",
-            "check_protocols": "Protocolos",
-            "running": "Em execução",
-            "stopped": "Parado",
-            "active": "Activo",
-            "loaded": "Carregada",
-            "no_schedule": "Nenhum detectado",
-            "no_playlist": "Não associada",
-            "clips_count": "{{count}} clips",
-            "loading": "A carregar…",
-            "active_streams": "activos",
-            "engine_offline": "Motor inactivo"
         }
     },
     "media": {
@@ -643,6 +621,41 @@
                 "empty": "NENHUM HISTÓRICO DISPONÍVEL",
                 "releases": [
                     {
+                        "version": "v2.2.0-ALPHA.38-PRO",
+                        "date": "2026-03-10",
+                        "changes": [
+                            "Lançamento Automático: Versão atualizada para ALPHA.38-PRO com sincronização completa do ecossistema.",
+                            "Documentação: Sincronizados README.md, RELEASE_NOTES.md e constantes do frontend com a nova versão.",
+                            "Integridade i18n: Todos os 4 ficheiros de idioma (PT/EN/ES/FR) atualizados com histórico de versões consistente."
+                        ]
+                    },
+                    {
+                        "version": "v2.2.0-ALPHA.37-PRO",
+                        "date": "2026-03-09",
+                        "changes": [
+                            "Adicionado diálogo de teste de ligação manual no menu de estado de rede para debugging de websocket em tempo real.",
+                            "Sistema atualizado com rastreamento de estado de ligação, adicionando lógica de reconexão quando a ligação fecha.",
+                            "Corrigido problema em que ID de programa em falta na resposta EPG impedia a exibição completa da grelha."
+                        ]
+                    },
+                    {
+                        "version": "v2.2.0-ALPHA.36-PRO",
+                        "date": "2026-03-09",
+                        "changes": [
+                            "Correção i18n ao Vivo em Modelos: Os modelos predefinidos (Programa de Manhã, Lista 24H, Conteúdo em Ciclo) atualizam instantaneamente ao mudar de língua, usando o padrão reativo useMemo em vez de estado estático.",
+                            "Refatoração de Modelos: Separação dos modelos da API dos modelos predefinidos no estado, evitando chamadas à API repetidas em mudanças de língua.",
+                            "Consistência do Seletor de Língua: Todo o texto dinâmico na página de Modelos reflete agora as mudanças de língua em tempo real."
+                        ]
+                    },
+                    {
+                        "version": "v2.2.0-ALPHA.35-PRO",
+                        "date": "2026-03-08",
+                        "changes": [
+                            "Atualizações de Saúde i18n: Correção de strings fixas de métricas e adição de chaves de tradução em Português e Inglês para o Dashboard de Saúde do Sistema.",
+                            "Verificação de Consistência da UI: Adicionadas chaves de template de programa aos 4 idiomas e estilização da Badge de Versão no Layout para melhor contraste."
+                        ]
+                    },
+                    {
                         "version": "v2.2.0-ALPHA.34-PRO",
                         "date": "2026-03-06",
                         "changes": [
@@ -655,11 +668,10 @@
                         "version": "v2.2.0-ALPHA.33-PRO",
                         "date": "2026-03-05",
                         "changes": [
-                            "Gestor de Uploads: Novo painel de progresso em tempo real para uploads em massa com suporte multi-arquivo simultâneo",
-                            "Auditoria de Proxies Web: Novo diálogo de auditoria detectando vídeos sem Proxy Web e permitindo geração em lote",
-                            "Assistente de Metadados: Integração com TMDB/OMDB/TVMaze diretamente na Biblioteca para enriquecimento automático do EPG",
-                            "Editor de Metadados EPG: Formulário completo de edição de metadados por vídeo (título, descrição, gênero, elenco, diretor, poster)",
-                            "Estabilidade do Backend: Correção de rotas de API e tratamento robusto de erros nos endpoints de metadados"
+                            "Inteligência de Metadados: Revisão completa do assistente de metadados com busca automática no TMDB, OMDB e TVMaze num fluxo unificado",
+                            "Wizard Multi-Passo: Novo assistente passo-a-passo para metadados com preenchimento automático, preview de poster e gravação direta na biblioteca",
+                            "Enriquecimento do EPG: Metadados propagam-se automaticamente para o EPG/Guia TV, incluindo sinopse, géneros, poster e realizador",
+                            "Resiliência do Backend: Lógica de timeout e retry para APIs de metadados externas para evitar bloqueio da UI em ligações lentas"
                         ]
                     },
                     {
@@ -1813,6 +1825,42 @@
             "commercial": "COMERCIAL",
             "outro": "OUTRO",
             "filler": "PREENCHIMENTO"
+        }
+    },
+    "health": {
+        "title": "Saúde do Sistema",
+        "lastUpdate": "Última atualização",
+        "manualRefresh": "Forçar Atualização",
+        "systemScore": "Pontuação do Sistema",
+        "integrityIndex": "Índice de Integridade do Playout",
+        "scoreDescription": "Baseado na ligação CasparCG, saúde da base de dados, disponibilidade de armazenamento e sincronização da timeline.",
+        "coreComponents": "Componentes Principais",
+        "initializingDiagnostics": "A inicializar o Motor de Diagnóstico...",
+        "waitingTelemetry": "Aguardando dados de telemetria...",
+        "liveDiagnosticsStream": "Stream de Diagnóstico em Direto",
+        "kpis": {
+            "deviceName": "Host do Playout",
+            "clipsPlayed": "Clips Hoje",
+            "activeStreams": "Streams Ativos",
+            "lastError": "Último Erro"
+        },
+        "checks": {
+            "casparEngine": "Motor CasparCG Playout",
+            "database": "Base de Dados do Sistema",
+            "mediaStorage": "Armazenamento de Media",
+            "watchfolder": "Serviço de Watchfolder",
+            "initializingComm": "A inicializar comunicação...",
+            "awaitingMetrics": "Aguardando métricas...",
+            "calculatingSpace": "A calcular espaço livre...",
+            "monitoringWatchfolders": "A monitorizar watchfolders...",
+            "contentAvailability": "Disponibilidade de Conteúdo",
+            "timeSync": "Sincronização de Hora",
+            "allMediaVerified": "Todos os ficheiros de media das próximas 24h estão verificados e presentes.",
+            "ntpSync": "NTP ativo. Desvio: < 2ms (Perfeito)"
+        },
+        "score": {
+            "perfect": "Perfeito",
+            "health": "Saúde"
         }
     }
 }

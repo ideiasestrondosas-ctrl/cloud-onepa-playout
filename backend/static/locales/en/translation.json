@@ -159,28 +159,6 @@
             "no_logs": "No logs available",
             "diag_failed": "Could not retrieve report.",
             "refresh_now": "Refresh now"
-        },
-        "health": {
-            "title": "Playout Health",
-            "updated_at": "Updated: {{time}}",
-            "score_good": "Healthy",
-            "score_warn": "Warning",
-            "score_poor": "Critical",
-            "check_engine": "Engine",
-            "check_schedule": "Schedule",
-            "check_playlist": "Playlist",
-            "check_media": "Media",
-            "check_protocols": "Protocols",
-            "running": "Running",
-            "stopped": "Stopped",
-            "active": "Active",
-            "loaded": "Loaded",
-            "no_schedule": "None detected",
-            "no_playlist": "Not associated",
-            "clips_count": "{{count}} clips",
-            "loading": "Loading…",
-            "active_streams": "active",
-            "engine_offline": "Engine offline"
         }
     },
     "media": {
@@ -635,6 +613,41 @@
                 "empty": "NO HISTORY AVAILABLE",
                 "releases": [
                     {
+                        "version": "v2.2.0-ALPHA.38-PRO",
+                        "date": "2026-03-10",
+                        "changes": [
+                            "Automated Release: Version bump to ALPHA.38-PRO with full ecosystem synchronization.",
+                            "Documentation: Synced README.md, RELEASE_NOTES.md and frontend constants with new version.",
+                            "i18n Completeness: All 4 locale files (PT/EN/ES/FR) updated with consistent version history entries."
+                        ]
+                    },
+                    {
+                        "version": "v2.2.0-ALPHA.37-PRO",
+                        "date": "2026-03-09",
+                        "changes": [
+                            "Added manual connection test dialog in the network status menu for realtime websocket debugging.",
+                            "Upgraded system to connection state tracking, adding reconnect logic when connection closes.",
+                            "Fixed issue where missing program ID in EPG response would prevent full schedule from displaying."
+                        ]
+                    },
+                    {
+                        "version": "v2.2.0-ALPHA.36-PRO",
+                        "date": "2026-03-09",
+                        "changes": [
+                            "Templates i18n Live-Switch Fix: Preset templates (Morning Show, 24H Playlist, Loop Content) now update instantly when switching language, using useMemo reactive pattern instead of stale state.",
+                            "Templates Refactor: Separated API templates from preset templates in state, ensuring API calls are not repeated on language change.",
+                            "Language Selector Consistency: All dynamic text in the Templates page now fully reflects language changes in real time."
+                        ]
+                    },
+                    {
+                        "version": "v2.2.0-ALPHA.35-PRO",
+                        "date": "2026-03-08",
+                        "changes": [
+                            "i18n Health Updates: Fixed hardcoded metrics strings and added translation keys in Portuguese and English for the System Health Dashboard.",
+                            "UI Consistency Check: Added program template keys to 4 locales and styled the Version Badge in Layout for better contrast."
+                        ]
+                    },
+                    {
                         "version": "v2.2.0-ALPHA.34-PRO",
                         "date": "2026-03-06",
                         "changes": [
@@ -647,11 +660,10 @@
                         "version": "v2.2.0-ALPHA.33-PRO",
                         "date": "2026-03-05",
                         "changes": [
-                            "Uploads Manager: New real-time progress panel for bulk file uploads with simultaneous multi-file support",
-                            "Web Proxy Audit: New audit dialog detecting videos without Web Proxy and enabling batch generation",
-                            "Metadata Assistant: TMDB/OMDB/TVMaze integration directly in the Library for automatic EPG enrichment",
-                            "EPG Metadata Editor: Complete per-video metadata editing form (title, description, genre, cast, director, poster)",
-                            "Backend Stability: Fixed API route paths and robust error handling in metadata endpoints"
+                            "Metadata Intelligence: Full overhaul of the metadata assistant with automatic sourcing from TMDB, OMDB and TVMaze in a single unified flow",
+                            "Wizard Multi-Step: New step-by-step metadata wizard with auto-fill, poster preview and direct save to the media library",
+                            "EPG Enrichment: Metadata now propagates automatically to EPG/TV Guide, including synopsis, genres, poster and director",
+                            "Backend Resilience: Timeout and retry logic for external metadata APIs to avoid UI blocking on slow connections"
                         ]
                     },
                     {
@@ -1687,6 +1699,42 @@
             "commercial": "COMMERCIAL",
             "outro": "OUTRO",
             "filler": "FILLER"
+        }
+    },
+    "health": {
+        "title": "System Health",
+        "lastUpdate": "Last update",
+        "manualRefresh": "Force Refresh",
+        "systemScore": "System Score",
+        "integrityIndex": "Playout Integrity Index",
+        "scoreDescription": "Based on CasparCG connection, database health, storage availability and timeline sync.",
+        "coreComponents": "Core Components",
+        "initializingDiagnostics": "Initializing Diagnostics Engine...",
+        "waitingTelemetry": "Waiting for telemetry data...",
+        "liveDiagnosticsStream": "Live Diagnostics Stream",
+        "kpis": {
+            "deviceName": "Playout Host",
+            "clipsPlayed": "Clips Today",
+            "activeStreams": "Active Streams",
+            "lastError": "Last Error"
+        },
+        "checks": {
+            "casparEngine": "CasparCG Playout Engine",
+            "database": "System Database",
+            "mediaStorage": "Media Assets Storage",
+            "watchfolder": "Watchfolder Service",
+            "initializingComm": "Initializing communication...",
+            "awaitingMetrics": "Awaiting metrics...",
+            "calculatingSpace": "Calculating free space...",
+            "monitoringWatchfolders": "Monitoring watchfolders...",
+            "contentAvailability": "Content Availability",
+            "timeSync": "Time Synchronization",
+            "allMediaVerified": "All media files for the next 24h are verified and present.",
+            "ntpSync": "NTP sync active. Offset: < 2ms (Perfect)"
+        },
+        "score": {
+            "perfect": "Perfect",
+            "health": "Health"
         }
     }
 }

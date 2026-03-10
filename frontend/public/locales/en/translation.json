@@ -613,6 +613,33 @@
                 "empty": "NO HISTORY AVAILABLE",
                 "releases": [
                     {
+                        "version": "v2.2.0-ALPHA.38-PRO",
+                        "date": "2026-03-10",
+                        "changes": [
+                            "Automated Release: Version bump to ALPHA.38-PRO with full ecosystem synchronization.",
+                            "Documentation: Synced README.md, RELEASE_NOTES.md and frontend constants with new version.",
+                            "i18n Completeness: All 4 locale files (PT/EN/ES/FR) updated with consistent version history entries."
+                        ]
+                    },
+                    {
+                        "version": "v2.2.0-ALPHA.37-PRO",
+                        "date": "2026-03-09",
+                        "changes": [
+                            "Added manual connection test dialog in the network status menu for realtime websocket debugging.",
+                            "Upgraded system to connection state tracking, adding reconnect logic when connection closes.",
+                            "Fixed issue where missing program ID in EPG response would prevent full schedule from displaying."
+                        ]
+                    },
+                    {
+                        "version": "v2.2.0-ALPHA.36-PRO",
+                        "date": "2026-03-09",
+                        "changes": [
+                            "Templates i18n Live-Switch Fix: Preset templates (Morning Show, 24H Playlist, Loop Content) now update instantly when switching language, using useMemo reactive pattern instead of stale state.",
+                            "Templates Refactor: Separated API templates from preset templates in state, ensuring API calls are not repeated on language change.",
+                            "Language Selector Consistency: All dynamic text in the Templates page now fully reflects language changes in real time."
+                        ]
+                    },
+                    {
                         "version": "v2.2.0-ALPHA.35-PRO",
                         "date": "2026-03-08",
                         "changes": [

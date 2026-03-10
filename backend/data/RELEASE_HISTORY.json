@@ -1,5 +1,14 @@
 [
   {
+    "version": "2.2.0-ALPHA.36-PRO",
+    "date": "2026-03-09",
+    "changes": [
+      "Automated Release: Version bump and statistics update.",
+      "Translations: Synchronized version history across locales.",
+      "Enhancements: Update Program Templates API integrations."
+    ]
+  },
+  {
     "version": "2.2.0-ALPHA.5-PRO",
     "date": "2026-02-04",
     "changes": [
