@@ -592,6 +592,9 @@ The Settings module provides comprehensive configuration for all aspects of ONEP
    - API documentation
    - Support resources
 
+**Nota API (Schedule):**
+- `GET /api/schedule?light=true` ou `GET /api/schedule/light` devolve uma resposta leve para o calendario (sem `playlist_content`).
+
 ---
 
 ## 9. Additional Features

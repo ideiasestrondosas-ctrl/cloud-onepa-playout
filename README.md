@@ -140,91 +140,11 @@ Este sistema foi desenvolvido e validado em ambientes de alta performance e virt
 
 ## 🎯 Roadmap & Future (v2.2.0-ALPHA.38-PRO — 2026-03-10)
 
-### 📡 Phase 22: Connectivity & Live Inputs
-
-_Focus: Expanding beyond file playback_
-
-- [x] **SRT Support**: Implementation of SRT (Secure Reliable Transport) for low-latency, reliable remote contribution. (Refining Caller Mode & Listener Support)
-- [ ] **Live Inputs Support**: Integration of WebRTC, NDI, and SDI inputs for live switching.
-
-### 📅 Phase 23: EPG & Metadata Engine
-
-_Focus: Professional program guide and discoverability_
-
-- [x] **EPG Generator**: Internal creation of Electronic Program Guides.
-- [x] **Web EPG Export**: Public JSON/XML API for external entities.
-- [x] **Standard Compliance**: XMLTV and DVB-EIT format support.
-- [x] **External Sync**: Link EPG with internal schedules and recurring events.
-
-### 🎨 Phase 24: Graphics & Visual Experience
-
-_Focus: Advanced on-air branding_
-
-- [ ] **Drag-and-Drop Editor**: Web-based WYSIWYG editor for active templates.
-- [ ] **HTML5 Graphics Engine**: Dynamic overlays using standard web technologies.
-- [ ] **Mobile Responsive Layout**: Full mobile support for the dashboard.
-- [ ] **Theme Customization**: Advanced user theming engine.
-
-### 🏢 Phase 25: Enterprise & Compliance
-
-_Focus: Scalability and professional requirements_
-
-- [ ] **Multi-User System**: Role-based access control (RBAC) and collaboration.
-- [ ] **Audit Logs**: Comprehensive tracking of all user actions.
-- [ ] **As-Run Logs**: Industry-standard logging for proof-of-play (compliance).
-- [ ] **SCTE-35 Support**: Ad-insertion triggers for cable/IPTV distribution.
-- [ ] **Analytics Dashboard**: Viewer stats and system health metrics.
-
-### 🚀 Phase 26: Future Technologies & Scalability
-
-_Focus: Innovation and High Availability_
-
-- [ ] **AI Integration**: Auto-tagging content and smart playlist generation.
-- [ ] **Multi-Channel Core**: Single instance managing multiple independent playout channels.
-- [ ] **High Availability**: Redundancy and failover architecture.
-
-Ver [RELEASE_NOTES.md](RELEASE_NOTES.md) para detalhes completos.
+Ver `docs/ROADMAP.md` para o roadmap completo e atualizado.
 
 ### Versão Atual: v2.2.0-ALPHA.38-PRO ()
 
-**Principais Novidades (UDP Static & Script Transparency):**
-- 📡 **Estabilidade UDP PUSH**: Melhoria no motor FFmpeg para Unicast PUSH, resolvendo o erro de "Address already in use" na rede do Host e garantindo recepção directa no VLC.
-- 📊 **Audit Ports 3.0 (Final)**: Motor de diagnóstico robusto com detecção de receptores e verificação de conectividade Host-to-Container em tempo real.
-- 🛡️ **Log Rotation & Persistence**: Implementação de política de rotação de logs (10MB/3-files) em todos os serviços Docker para máxima segurança de disco.
-- 📜 **Transparência de Scripts**: Padronização do output de versão em todos os scripts de instalação e manutenção (.sh e .bat).
-- ⚙️ **Process Guard**: Sistema de proteção contra colisões de portas internas no Playout Engine.
-
-### Versão Anterior: v2.2.0-ALPHA.31-PRO (2026-03-01)
-
-**Principais Novidades (VLC Push + Audit Visibility Fixes):**
-- 📡 **UDP Push Stability**: O stream UDP interno migrou para um modelo de "Push-to-Localhost" (`udp://@:1234`), erradicando os falsos-positivos "cannot peek" inerentes a conexões VLC baseadas em listeners.
-- 📊 **Precisão do Dashboard de Auditoria (`audit_ports.sh`)**: Integradas consultas reais na API Master do MediaMTX, resolvendo o bug visual de contabilizar a zero leitores `HLS`.
-- 🐛 **UI Bugfixes de Links de Conexão**: Limpeza drástica em lógicas client-side dos placeholders de SRT e UDP.
-
-**Principais Novidades (Gold Standard V2 & Protocol Stability):**
-- 📡 **"Gold Standard V2" Multiplexer**: Implementação definitiva do algoritmo perfeito para muxing via FFmpeg.
-- 🕒 **Extrema Presição em SRT/UDP**: Adição forçada da meta-regra `Annex B` para H264 e reinjeção massiva de PID tables com flags `+latm` corrigindo buffers no VLC.
-- 🎯 **Novo Tracker HLS**: Motor de auditoria atualizado para registar verdadeiras sessões proxy com Nginx.
-
-- 📡 **Distribuição Multi-Protocolo**: Suporte para DASH, MSS, RIST, RTSP e WebRTC (WHIP/WHEP).
-- 🧠 **Transcoding Inteligente**: Deteção automática de filtros para garantir estabilidade do stream em modo "Copy".
-- 🛡️ **Estabilidade Corrigida**: Resolução de falhas no Master Feed e erros de UI no painel de Definições.
-- 📊 **Monitorização Expandida**: Novo painel de controlo de protocolos avançados no Dashboard.
-
-- 🛡️ **Segurança Avançada**: Proteção contra SQL Injection em toda a API, parametrização de queries e sanitização de nomes de ficheiros para evitar path traversal.
-- ⚡ **Performance Otimizada**: Remoção de "healing" logic pesado na listagem de media, adição de índices de base de dados para agendamento e pesquisa.
-- 📡 **SRT Caller v2**: Refinamento do mapeamento de hostname e sugestões inteligentes de URL para modo Listener.
-- 📊 **Logs Integrados**: Nova janela de logs do backend diretamente na UI para diagnóstico rápido.
-- 🔄 **Retry Button**: Sistema de reatentativa inteligente para o playout.
-- 🔍 **Search Debounce**: Pesquisa na biblioteca de media otimizada com debouncing (500ms).
-- 🕒 **Header Clock**: Relógio e data em tempo real na barra superior.
-- 🧪 **LUFS Meter v2**: Análise de áudio melhorada.
-
-**Correções:**
-
-- ✅ Resolução de crash "White Screen" por falta de imports no painel de configurações.
-- ✅ Melhoria na persistência de definições de SRT e mapeamento Docker.
-- ✅ Otimização do arranque de serviços e sincronização com base de dados.
+Ver `RELEASE_NOTES.md` e `docs/RELEASE_NOTES.md` para o detalhe de novidades e correções.
 
 ## 📄 Licença
 

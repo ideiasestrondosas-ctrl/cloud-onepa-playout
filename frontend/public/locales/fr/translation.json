@@ -1,1737 +1,1476 @@
 {
-    "common": {
-        "save": "ENREGISTRER",
-        "saving": "ENREGISTREMENT...",
-        "cancel": "ANNULER",
-        "close": "FERMER",
-        "edit": "MODIFIER",
-        "delete": "SUPPRIMER",
-        "loading": "Chargement...",
-        "error": "Erreur",
-        "success": "Succès",
-        "warning": "Avertissement",
-        "search": "Rechercher...",
-        "confirm": "Confirmer",
-        "select_all": "Tout Sélectionner",
-        "deselect_all": "Tout Désélectionner",
-        "back": "RETOUR",
-        "next": "SUIVANT",
-        "previous": "PRÉCÉDENT",
-        "today": "AUJOURD'HUI",
-        "no_data": "Aucune donnée trouvée",
-        "backend_offline": "⚠️ BACKEND HORS LIGNE - Vérifiez la connexion au serveur ou si le conteneur est en cours d'exécution.",
-        "unknown": "Inconnu",
-        "error_details": "Erreur : {{error}}",
-        "exit": "QUITTER",
-        "refresh": "RAFRAÎCHIR"
+  "common": {
+    "save": "ENREGISTRER",
+    "saving": "ENREGISTREMENT...",
+    "cancel": "ANNULER",
+    "close": "FERMER",
+    "edit": "MODIFIER",
+    "delete": "SUPPRIMER",
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès",
+    "warning": "Avertissement",
+    "search": "Rechercher...",
+    "confirm": "Confirmer",
+    "select_all": "Tout Sélectionner",
+    "deselect_all": "Tout Désélectionner",
+    "back": "RETOUR",
+    "next": "SUIVANT",
+    "previous": "PRÉCÉDENT",
+    "today": "AUJOURD'HUI",
+    "no_data": "Aucune donnée trouvée",
+    "backend_offline": "⚠️ BACKEND HORS LIGNE - Vérifiez la connexion au serveur ou si le conteneur est en cours d'exécution.",
+    "unknown": "Inconnu",
+    "error_details": "Erreur : {{error}}",
+    "exit": "QUITTER",
+    "refresh": "RAFRAÎCHIR"
+  },
+  "navigation": {
+    "dashboard": "Tableau de Bord",
+    "media": "Bibliothèque",
+    "playlists": "Listes de Lecture",
+    "calendar": "Calendrier",
+    "graphics": "Graphismes",
+    "settings": "Paramètres",
+    "templates": "Modèles",
+    "epg": "GUIDE TV",
+    "logout": "Déconnexion",
+    "help": "Aide & Documentation",
+    "health": "Santé du Système"
+  },
+  "login": {
+    "user": "UTILISATEUR",
+    "password": "MOT DE PASSE",
+    "enter": "ENTRER",
+    "restricted_area": "ZONE RESTREINTE",
+    "welcome": "Bienvenue sur ALPHA",
+    "logging_in": "Connexion en cours...",
+    "username": "Utilisateur",
+    "submit": "CONNEXION AU SYSTÈME",
+    "monitoring": "Surveillance et Contrôle en Temps Réel",
+    "test_mode": "MODE DE TEST ALPHA"
+  },
+  "dashboard": {
+    "monitoring": "Surveillance & Contrôle",
+    "uptime": "Temps d'Activité",
+    "clips_today": "Clips du Jour",
+    "playing": "EN COURS",
+    "offline": "HORS LIGNE",
+    "on_air": "EN DIRECT",
+    "off_air": "HORS ANTENNE",
+    "standby": "VEILLE",
+    "start_engine": "LANCER L'ÉMISSION",
+    "stop_engine": "ARRÊTER L'ÉMISSION",
+    "skip_clip": "PASSER LE CLIP",
+    "distribution": "Distribution Globale",
+    "protocols": "Protocoles de Transmission",
+    "logs": "LOGS (Diagnostics)",
+    "live_preview": "Aperçu en Direct",
+    "active": "ACTIF",
+    "starting": "DÉMARRAGE",
+    "error_status": "ERREUR",
+    "click_to_enable": "Cliquer pour activer",
+    "click_to_disable": "Cliquer pour désactiver",
+    "readonly_protocol": "Protocole primaire (lecture seule)",
+    "check_schedule": "Vérifiez votre programme dans le Calendrier.",
+    "vlc_launcher": "Lanceur Intelligent VLC",
+    "vlc_manual": "Commande Manuelle",
+    "vlc_hint": "Conseil : Si VLC ne s'ouvre pas, utilisez la commande manuelle ci-dessous.",
+    "diagnosing": "Diagnostic en cours...",
+    "vlc": {
+      "title": "Lanceur Intelligent VLC & Diagnostic Réseau",
+      "how_to": "Comment visionner votre chaîne à l'extérieur :",
+      "real_time": "Le playout diffuse en temps réel. Utilisez les options ci-dessous pour surveiller en détail.",
+      "playback_link": "Lien de Lecture (VLC) :",
+      "no_url": "URL de sortie non définie dans les paramètres.",
+      "open_vlc": "Ouvrir dans VLC",
+      "browser_note": "Note : Le navigateur ne peut pas confirmer si VLC s'est ouvert. Si rien ne se passe, installez VLC ou copiez le lien ci-dessus manuellement.",
+      "configure_output": "Configurer l'URL de Sortie →",
+      "diag_steps": "Étapes de Diagnostic :",
+      "realtime_logs": "Logs de Connexion en Temps Réel :",
+      "waiting_conns": "> En attente de connexions...",
+      "clear_logs": "Effacer les Logs",
+      "common_errors": "Erreurs Courantes (Erreur E/S) :"
     },
-    "navigation": {
-        "dashboard": "Tableau de Bord",
-        "media": "Bibliothèque",
-        "playlists": "Listes de Lecture",
-        "calendar": "Calendrier",
-        "graphics": "Graphismes",
-        "settings": "Paramètres",
-        "templates": "Modèles",
-        "epg": "GUIDE TV",
-        "logout": "Déconnexion",
-        "help": "Aide & Documentation",
-        "health": "Santé du Système"
+    "restart": {
+      "title": "Options de Démarrage",
+      "msg": "Sélectionnez les protocoles qui doivent démarrer automatiquement à l'allumage du Backend.",
+      "master_switch": "Démarrage Automatique (Master Switch)"
     },
-    "login": {
-        "user": "UTILISATEUR",
-        "password": "MOT DE PASSE",
-        "enter": "ENTRER",
-        "restricted_area": "ZONE RESTREINTE",
-        "welcome": "Bienvenue sur ALPHA",
-        "logging_in": "Connexion en cours...",
-        "username": "Utilisateur",
-        "submit": "CONNEXION AU SYSTÈME",
-        "monitoring": "Surveillance et Contrôle en Temps Réel",
-        "test_mode": "MODE DE TEST ALPHA"
+    "schedule_error": {
+      "title": "ATTENTION : ERREUR DE PROGRAMME",
+      "msg": "Il n'y a aucune liste de lecture active ou programmée pour aujourd'hui.",
+      "hint": "Le moteur de playout ne peut pas démarrer sans contenu. Veuillez utiliser l'Assistant de Configuration ou aller au Calendrier pour programmer une liste.",
+      "open_wizard": "OUVRIR L'ASSISTANT"
     },
-    "dashboard": {
-        "monitoring": "Surveillance & Contrôle",
-        "uptime": "Temps d'Activité",
-        "clips_today": "Clips du Jour",
-        "playing": "EN COURS",
-        "offline": "HORS LIGNE",
-        "on_air": "EN DIRECT",
-        "off_air": "HORS ANTENNE",
-        "standby": "VEILLE",
-        "start_engine": "LANCER L'ÉMISSION",
-        "stop_engine": "ARRÊTER L'ÉMISSION",
-        "skip_clip": "PASSER LE CLIP",
-        "distribution": "Distribution Globale",
-        "protocols": "Protocoles de Transmission",
-        "logs": "LOGS (Diagnostics)",
-        "live_preview": "Aperçu en Direct",
-        "active": "ACTIF",
-        "starting": "DÉMARRAGE",
-        "error_status": "ERREUR",
-        "click_to_enable": "Cliquer pour activer",
-        "click_to_disable": "Cliquer pour désactiver",
-        "readonly_protocol": "Protocole primaire (lecture seule)",
-        "check_schedule": "Vérifiez votre programme dans le Calendrier.",
-        "vlc_launcher": "Lanceur Intelligent VLC",
-        "vlc_manual": "Commande Manuelle",
-        "vlc_hint": "Conseil : Si VLC ne s'ouvre pas, utilisez la commande manuelle ci-dessous.",
-        "diagnosing": "Diagnostic en cours...",
-        "vlc": {
-            "title": "Lanceur Intelligent VLC & Diagnostic Réseau",
-            "how_to": "Comment visionner votre chaîne à l'extérieur :",
-            "real_time": "Le playout diffuse en temps réel. Utilisez les options ci-dessous pour surveiller en détail.",
-            "playback_link": "Lien de Lecture (VLC) :",
-            "no_url": "URL de sortie non définie dans les paramètres.",
-            "open_vlc": "Ouvrir dans VLC",
-            "browser_note": "Note : Le navigateur ne peut pas confirmer si VLC s'est ouvert. Si rien ne se passe, installez VLC ou copiez le lien ci-dessus manuellement.",
-            "configure_output": "Configurer l'URL de Sortie →",
-            "diag_steps": "Étapes de Diagnostic :",
-            "realtime_logs": "Logs de Connexion en Temps Réel :",
-            "waiting_conns": "> En attente de connexions...",
-            "clear_logs": "Effacer les Logs",
-            "common_errors": "Erreurs Courantes (Erreur E/S) :"
-        },
-        "restart": {
-            "title": "Options de Démarrage",
-            "msg": "Sélectionnez les protocoles qui doivent démarrer automatiquement à l'allumage du Backend.",
-            "master_switch": "Démarrage Automatique (Master Switch)"
-        },
-        "schedule_error": {
-            "title": "ATTENTION : ERREUR DE PROGRAMME",
-            "msg": "Il n'y a aucune liste de lecture active ou programmée pour aujourd'hui.",
-            "hint": "Le moteur de playout ne peut pas démarrer sans contenu. Veuillez utiliser l'Assistant de Configuration ou aller au Calendrier pour programmer une liste.",
-            "open_wizard": "OUVRIR L'ASSISTANT"
-        },
-        "follow": "SUIT",
-        "empty_list": "Liste vide",
-        "clip_progress": "Progression",
-        "source_label": "Source :",
-        "source": {
-            "daily": "Quotidien (depuis {{date}})",
-            "weekly": "Hebdomadaire ({{dow}}, depuis {{date}})",
-            "direct": "Direct ({{date}})"
-        },
-        "engine_logs": "JOURNAUX DU MOTEUR",
-        "hls_copied": "Lien HLS copié !",
-        "validate_error": "Erreur lors de la validation du programme",
-        "toggle_dist_error": "Erreur lors du basculement de la distribution",
-        "skip_success": "Clip passé avec succès !",
-        "skip_error": "Erreur lors du passage du clip",
-        "protocol_enabled": "Protocole {{protocol}} activé !",
-        "protocol_disabled": "Protocole {{protocol}} désactivé !",
-        "protocol_error": "Erreur lors du basculement du protocole",
-        "safari": {
-            "audio_paused": "Analyse Audio en Pause (Safari)",
-            "enable_meter": "Activer le Vumètre"
-        },
-        "ops": {
-            "checking_db": "Vérification de la base de données...",
-            "ffmpeg_loaded": "Configurations FFmpeg chargées",
-            "starting_encoder": "Démarrage de l'encodeur matériel...",
-            "playing_rtmp": "Diffusion en cours via RTMP/HLS"
-        },
-        "diag": {
-            "title": "Diagnostic du Système",
-            "updated_at": "Mis à jour : {{time}} · Rafraîchissement 5s",
-            "engine_status": "État du Moteur",
-            "ffmpeg_engine": "Moteur FFmpeg",
-            "ffmpeg_running": "▶ En cours",
-            "ffmpeg_stopped": "◼ Arrêté",
-            "no_schedule_now": "Aucun détecté pour le moment",
-            "loaded": "Chargée",
-            "no_playlist": "Aucune liste associée",
-            "clips_available": "{{count}} clips disponibles",
-            "playlist_media": "Médias en Liste",
-            "overlay_status": "Overlay / Logo",
-            "configured_ready": "Configuré et prêt",
-            "disabled": "Désactivé",
-            "clips_played": "joués",
-            "current_clip": "Clip Actuel",
-            "active_protocols": "Protocolos Activos",
-            "no_active_protocols": "Aucun protocole actif",
-            "last_error_label": "Dernière erreur : {{error}}",
-            "missing_files": "Ficheiros em falta :",
-            "last_logs": "Dernières Entrées de Log",
-            "no_logs": "Aucun log disponible",
-            "diag_failed": "Impossible d'obtenir le rapport.",
-            "refresh_now": "Actualiser maintenant"
-        }
+    "follow": "SUIT",
+    "empty_list": "Liste vide",
+    "clip_progress": "Progression",
+    "source_label": "Source :",
+    "source": {
+      "daily": "Quotidien (depuis {{date}})",
+      "weekly": "Hebdomadaire ({{dow}}, depuis {{date}})",
+      "direct": "Direct ({{date}})"
     },
-    "media": {
-        "title": "Bibliothèque de Médias",
-        "subtitle": "Gestion Intelligente du Contenu",
-        "sync": "SYNCHRO",
-        "syncing": "SYNCHRONISATION...",
-        "audit": "AUDIT",
-        "bulk_select": "Sélection Multiple",
-        "cancel_selection": "Annuler la Sélection",
-        "new_folder": "Nouveau Dossier",
-        "items_selected": "{{count}} sélectionnés",
-        "select_all": "Tout Sélectionner",
-        "mark_filler": "Marquer comme Filler",
-        "mark_prog": "Marquer comme Prog",
-        "structure": "STRUCTURE",
-        "root": "Racine",
-        "hint_title": "ASTUCE",
-        "hint_msg": "Faites glisser les fichiers directement dans les dossiers pour organiser votre bibliothèque.",
-        "drop_to_upload": "RELACHER POUR TÉLÉVERSER",
-        "upload_media": "TÉLÉVERSER MÉDIAS",
-        "upload_hint": "Déposez des fichiers ou cliquez pour explorer (Destination: {{folder}})",
-        "search_placeholder": "Rechercher dans la bibliothèque...",
-        "files": "Fichiers",
-        "type": "Tipo",
-        "category": "Catégorie",
-        "all": "Tout",
-        "video": "Vidéo",
-        "image": "Image",
-        "audio": "Audio",
-        "both": "Les deux",
-        "fillers_general": "Fillers (Général)",
-        "programming": "Programmation",
-        "preview": "Aperçu",
-        "optimize_streaming": "Optimiser pour le Streaming",
-        "optimized_streaming": "Vidéo Optimisée pour le Streaming",
-        "generate_proxy": "Générer Proxy Web (Latence Zéro)",
-        "proxy_available": "Proxy Web Disponible",
-        "metadata_wizard": "Assistant de Métadonnées",
-        "edit": "Modifier",
-        "file": "Fichier",
-        "delete_folder_confirm": "Êtes-vous sûr de vouloir supprimer le dossier \"{{name}}\" et tous les fichiers qu'il contient ?",
-        "folder_created": "Dossier créé",
-        "sync_success": "Synchro terminée : {{added}} nouveaux fichiers identifiés.",
-        "sync_partial": "Synchro partielle : {{added}} ajoutés, {{errors}} erreurs.",
-        "upload_cancelled": "Tous les téléversements annulés",
-        "bulk_success": "Action terminée avec succès",
-        "batch_proxy_success": "Fichiers ajoutés à la file d'attente proxy avec succès !",
-        "batch_optimize_success": "Fichiers ajoutés à la file d'attente d'optimisation avec succès !",
-        "delete_confirm_title": "🗑️ Confirmer la Suppression",
-        "delete_confirm_msg": "Êtes-vous sûr de vouloir supprimer \"{{filename}}\" ?",
-        "delete_permanent_alert": "Cette action est irréversible.",
-        "delete_in_use_title": "⚠️ Fichier utilisé dans le Calendrier",
-        "delete_in_use_alert": "\"{{filename}}\" est programmé dans {{count}} événement(s).",
-        "delete_choose_option": "Choisissez une option :",
-        "delete_anyway": "Supprimer quand même",
-        "delete_anyway_hint": "⚠️ Les programmations deviendront invalides et peuvent causer des erreurs de playout",
-        "delete_replace_filler": "Remplacer par Filler et Supprimer",
-        "delete_replace_filler_hint": "✓ Sécurisé - Remplace automatiquement dans les programmes avant suppression",
-        "move_title": "Organiser \"{{filename}}\"",
-        "move_dest": "Choisissez le dossier de destination :",
-        "move_to_root": "Vers la Racine",
-        "copy_to_root": "Copier vers la Racine",
-        "copy_hint": "Crée un doublon",
-        "move_to_folder": "Vers \"{{name}}\"",
-        "copy_to_folder": "Copier vers \"{{name}}\"",
-        "metadata": {
-            "edit_title": "Modifier Métadonnées EPG",
-            "review_title": "🪄 Réviser Métadonnées Automatiques",
-            "info_from": "Information récupérée de : ",
-            "view_source": "🔗 Voir source originale sur {{service}} ↗",
-            "review_alert": "Ces données ont été trouvées automatiquement. Vous pouvez les modifier ci-dessous.",
-            "label_title": "Titre (EPG)",
-            "help_title": "Laisser vide pour utiliser le nom du fichier",
-            "label_description": "Description / Synopsis",
-            "label_genre": "Genre",
-            "genre_none": "Aucun",
-            "genre_comedy": "Comédie",
-            "genre_drama": "Drame",
-            "genre_news": "Actualités",
-            "genre_sports": "Sports",
-            "genre_documentary": "Documentaire",
-            "genre_action": "Action",
-            "genre_animation": "Animation",
-            "genre_music": "Musique",
-            "genre_other": "Autre",
-            "label_rating": "Classement",
-            "rating_none": "Aucun",
-            "rating_general": "Tout Public",
-            "label_keywords": "Mots-clés / Tags",
-            "keywords_placeholder": "sci-fi, romance",
-            "help_keywords": "Séparés par virgule",
-            "label_season": "Saison",
-            "label_episode": "Épisode",
-            "label_cast": "Distribution / Acteurs Principaux",
-            "label_director": "Réalisateur",
-            "label_writer": "Scénariste",
-            "technical_data": "Données Techniques",
-            "label_resolution": "Résolution",
-            "help_resolution": "Détecté automatiquement",
-            "label_fps": "FPS",
-            "label_vcodec": "Codec Vidéo",
-            "label_acodec": "Codec Audio",
-            "label_poster": "URL de l'Affiche",
-            "help_poster": "Lien vers l'image de couverture (chargé via l'Assistant)",
-            "label_subtitles": "Sous-titres / Langues",
-            "help_subtitles": "Langues disponibles séparées par virgule"
-        },
-        "uploads_manager": {
-            "title": "Gestionnaire de Téléchargements",
-            "status_pending": "EN ATTENTE",
-            "status_uploading": "TÉLÉVERSEMENT",
-            "status_completed": "TERMINÉ",
-            "all_processed": "Tous les téléchargements traités. Cette fenêtre va se fermer.",
-            "cancel_all": "TOUT ANNULER",
-            "close_window": "Fermer la Fenêtre"
-        },
-        "audit_dialog": {
-            "title": "Audit des Proxies Web",
-            "optimized": "Toutes les vidéos ont des Proxies Web ! Le système est optimisé.",
-            "missing_alert": "Détection de <b>{{count}} vidéos</b> sans version Proxy Web. Cela nécessite plus de CPU serveur.",
-            "videos_no_proxy": "VIDÉOS SANS PROXY",
-            "estimated_space": "ESPACE ESTIMÉ",
-            "batch_generate": "Générer par lot ({{count}})"
-        }
+    "engine_logs": "JOURNAUX DU MOTEUR",
+    "hls_copied": "Lien HLS copié !",
+    "validate_error": "Erreur lors de la validation du programme",
+    "toggle_dist_error": "Erreur lors du basculement de la distribution",
+    "skip_success": "Clip passé avec succès !",
+    "skip_error": "Erreur lors du passage du clip",
+    "protocol_enabled": "Protocole {{protocol}} activé !",
+    "protocol_disabled": "Protocole {{protocol}} désactivé !",
+    "protocol_error": "Erreur lors du basculement du protocole",
+    "safari": {
+      "audio_paused": "Analyse Audio en Pause (Safari)",
+      "enable_meter": "Activer le Vumètre"
     },
-    "playlist": {
-        "title": "ÉDITEUR DE PLAYLIST",
-        "subtitle": "GÉNÉRATEUR DE DIFFUSION AUTOMATIQUE & PROGRAMMÉE",
-        "delete_selected": "SUPPRIMER ({{count}})",
-        "automation": "AUTOMATISATION",
-        "new_playlist": "NOUVELLE PLAYLIST",
-        "save": "ENREGISTRER",
-        "saving": "ENREGISTREMENT...",
-        "tabs": {
-            "media": "MÉDIAS",
-            "playlists": "PLAYLISTS"
-        },
-        "sidebar": {
-            "root_all": "RACINE (TOUT)",
-            "filter_all": "A",
-            "filter_filler": "F",
-            "filter_no_filler": "-F",
-            "add_all_folder": "Ajouter tout ce dossier",
-            "duration": "DURÉE: {{duration}}"
-        },
-        "editor": {
-            "name_label": "NOM DE LA PLAYLIST",
-            "date_label": "DATE DE DIFFUSION",
-            "total_duration": "DURÉE TOTALE: {{duration}}",
-            "target_meta": "OBJECTIF: 24:00:00",
-            "missing_time": "⚠️ MANQUE {{duration}} POUR COMPLÉTER 24H",
-            "ready_msg": "✅ PLAYLIST PRÊTE POUR DIFFUSION (24H COMPLÈTES)",
-            "sequence_grid": "GRILLE DE SÉQUENCE ({{count}} CLIPS)",
-            "add_clip": "AJOUTER CLIP",
-            "empty_title": "PLAYLIST VIDE",
-            "empty_msg": "AJOUTEZ DES MÉDIAS DEPUIS LA BIBLIOTHÈQUE POUR COMMENCER",
-            "undo": "Annuler",
-            "redo": "Rétablir"
-        },
-        "dialogs": {
-            "media_selector": {
-                "title": "BIBLIOTHÈQUE MÉDIAS",
-                "filter_all": "TOUT",
-                "filter_filler": "FILLER UNIQUEMENT",
-                "filter_no_filler": "EXCLURE FILLER",
-                "add_all": "AJOUTER TOUT CE DOSSIER",
-                "select_all": "TOUT SÉLECTIONNER",
-                "all_folders": "TOUS LES DOSSIERS",
-                "selected_count": "{{count}} FICHIER(S) SÉLECTIONNÉ(S)",
-                "add_selected": "AJOUTER SÉLECTION ({{count}})"
-            },
-            "create": {
-                "title": "NOUVELLE PLAYLIST",
-                "name_label": "NOM DE LA PLAYLIST",
-                "placeholder": "ex: PLAYLIST LUNDI",
-                "btn_create": "CRÉER"
-            },
-            "automation": {
-                "title": "AUTOMATISATION DE REMPLISSAGE",
-                "msg": "CHOISISSEZ LA MÉTHODE POUR ATTEINDRE L'OBJECTIF DE 24H.",
-                "mode_random": "ALÉATOIRE PAR DOSSIER",
-                "mode_random_desc": "Choisit des médias aléatoires dans la source.",
-                "mode_sequential": "SÉQUENTIEL PAR DOSSIER",
-                "mode_sequential_desc": "Suit l'ordre alphabétique des fichiers.",
-                "mode_loop": "LOOP DE LA SÉLECTION ACTUELLE",
-                "mode_loop_desc": "Répète les clips déjà présents dans la grille.",
-                "source_folder": "Dossier Source",
-                "fillers_only": "Uniquement les clips marqués FILLER",
-                "run_now": "Exécuter Maintenant"
-            }
-        },
-        "notifications": {
-            "bulk_delete_confirm": "Êtes-vous sûr de vouloir supprimer les {{count}} clips sélectionnés ?",
-            "removed_count": "{{count}} clips supprimés",
-            "no_files_found": "Aucun fichier trouvé dans ce dossier avec ces filtres",
-            "added_count": "{{count}} clips ajoutés",
-            "enter_name": "Veuillez entrer un nom pour la playlist",
-            "update_success": "Playlist mise à jour avec succès !",
-            "create_success": "Playlist créée avec succès !",
-            "save_error": "Erreur lors de l'enregistrement de la playlist",
-            "delete_confirm": "Êtes-vous sûr de vouloir supprimer la playlist \"{{name}}\" ?",
-            "delete_success": "Playlist supprimée avec succès",
-            "delete_conflict": "Cette playlist est utilisée dans le calendrier et ne peut pas être supprimée.",
-            "delete_error": "Erreur lors de la suppression de la playlist",
-            "automation_success": "{{count}} clips ajoutés via automatisation ({{type}}).",
-            "automation_error": "Erreur lors de l'exécution de l'automatisation",
-            "automation_fail_time": "La playlist a déjà atteint ou dépassé les 24 heures.",
-            "automation_no_clips_loop": "Ajoutez au moins un clip comme base pour la boucle.",
-            "automation_no_files_folder": "Aucun fichier trouvé dans le dossier sélectionné{{filler}}.",
-            "automation_no_suitable": "Impossible de trouver des fichiers adaptés pour remplir le temps.",
-            "filler_flag": " avec le drapeau filler"
-        }
+    "ops": {
+      "checking_db": "Vérification de la base de données...",
+      "ffmpeg_loaded": "Configurations FFmpeg chargées",
+      "starting_encoder": "Démarrage de l'encodeur matériel...",
+      "playing_rtmp": "Diffusion en cours via RTMP/HLS"
     },
-    "calendar": {
-        "title": "CENTRE DE PROGRAMMATION",
-        "subtitle": "GESTIONNAIRE DE PROGRAMME & RÉCURRENCE",
-        "default_playlist_name": "Playlist",
-        "on_air_now": "EN DIRECT MAINTENANT",
-        "active_playlist": "PLAYLIST ACTIVE",
-        "bulk_delete": "NETTOYAGE EN MASSE",
-        "tv_guide": "GUIDE TV",
-        "shortcuts": "RACCOURCIS DE NETTOYAGE",
-        "clear_today": "VIDER AUJOURD'HUI",
-        "clear_week": "CETTE SEMAINE",
-        "clear_month": "CE MOIS",
-        "clear_year": "CETTE ANNÉE",
-        "legend": "LÉGENDE",
-        "single_event": "PROGRAMMATION UNIQUE",
-        "recurring_series": "SÉRIE RÉCURRENTE",
-        "playing_now": "EN LECTURE ACTUELLEMENT",
-        "dialogs": {
-            "manage": {
-                "title": "GÉRER LA PROGRAMMATION",
-                "date": "DATE",
-                "recurs": "RÉCURRENCE",
-                "edit_btn": "MODIFIER SÉRIE / ÉVÉNEMENT",
-                "ignore_today": "IGNORER AUJOURD'HUI UNIQUEMENT",
-                "confirm_ignore": "Supprimer uniquement l'occurrence du {{date}} ?",
-                "stop_series": "ARRÊTER LA SÉRIE RÉCURRENTE",
-                "delete_event": "SUPPRIMER LE PROGRAMME",
-                "confirm_stop_series": "Voulez-vous arrêter toute la série de \"{{title}}\" définitivement ?",
-                "confirm_delete_event": "Supprimer définitivement \"{{title}}\" ?"
-            },
-            "create": {
-                "title_edit": "MODIFIER PROGRAMMATION",
-                "title_new": "PROGRAMMER POUR LE {{date}}",
-                "playlist_label": "PLAYLIST",
-                "time_label": "HORAIRE",
-                "repeat_label": "TYPE DE RÉPÉTITION",
-                "no_repeat": "SANS RÉPÉTITION",
-                "daily": "QUOTIDIENNE",
-                "weekly": "HEBDOMADAIRE",
-                "monthly": "MENSUELLE"
-            },
-            "bulk": {
-                "title": "NETTOYAGE PERSONNALISÉ",
-                "msg": "CHOISISSEZ UNE PÉRIODE POUR SUPPRIMER TOUT LE PROGRAMME.",
-                "start_label": "DÉBUT",
-                "end_label": "FIN",
-                "btn_delete": "SUPPRIMER LA PÉRIODE"
-            }
-        },
-        "tooltips": {
-            "open_browser": "Ouvrir EPG dans le navigateur",
-            "export_xml": "Exporter et sauvegarder EPG sur disque (.xml)",
-            "url_not_configured": "URL EPG non configurée",
-            "open_xml": "Ouvrir EPG XML dans le navigateur",
-            "download_xml": "Télécharger EPG XML sur le disque",
-            "playing": "EN COURS",
-            "recurrent": "RÉCURRENT",
-            "occurrence": "OCCURRENCE",
-            "time": "HEURE"
-        },
-        "notifications": {
-            "fetch_error": "Erreur lors du chargement de l'agenda",
-            "playlist_required": "Veuillez sélectionner une playlist",
-            "update_success": "Programmation mise à jour",
-            "create_success": "Programmation créée",
-            "save_error": "Erreur lors de l'enregistrement",
-            "export_failed": "Échec de l'exportation",
-            "id_not_found": "Erreur : ID de programmation non trouvé",
-            "delete_success": "Programmation supprimée",
-            "delete_error": "Erreur lors de la suppression",
-            "missing_data_occurrence": "Erreur : Données insuffisantes pour supprimer l'occurrence",
-            "occurrence_removed": "Occurrence d'aujourd'hui supprimée",
-            "occurrence_error": "Erreur lors de la suppression de l'occurrence",
-            "bulk_error": "Erreur lors du nettoyage en masse",
-            "select_dates": "Veuillez sélectionner les dates"
-        }
+    "diag": {
+      "title": "Diagnostic du Système",
+      "updated_at": "Mis à jour : {{time}} · Rafraîchissement 5s",
+      "engine_status": "État du Moteur",
+      "ffmpeg_engine": "Moteur FFmpeg",
+      "ffmpeg_running": "▶ En cours",
+      "ffmpeg_stopped": "◼ Arrêté",
+      "no_schedule_now": "Aucun détecté pour le moment",
+      "loaded": "Chargée",
+      "no_playlist": "Aucune liste associée",
+      "clips_available": "{{count}} clips disponibles",
+      "playlist_media": "Médias en Liste",
+      "overlay_status": "Overlay / Logo",
+      "configured_ready": "Configuré et prêt",
+      "disabled": "Désactivé",
+      "clips_played": "joués",
+      "current_clip": "Clip Actuel",
+      "active_protocols": "Protocolos Activos",
+      "no_active_protocols": "Aucun protocole actif",
+      "last_error_label": "Dernière erreur : {{error}}",
+      "missing_files": "Ficheiros em falta :",
+      "last_logs": "Dernières Entrées de Log",
+      "no_logs": "Aucun log disponible",
+      "diag_failed": "Impossible d'obtenir le rapport.",
+      "refresh_now": "Actualiser maintenant"
+    }
+  },
+  "media": {
+    "title": "Bibliothèque de Médias",
+    "subtitle": "Gestion Intelligente du Contenu",
+    "sync": "SYNCHRO",
+    "syncing": "SYNCHRONISATION...",
+    "audit": "AUDIT",
+    "bulk_select": "Sélection Multiple",
+    "cancel_selection": "Annuler la Sélection",
+    "new_folder": "Nouveau Dossier",
+    "items_selected": "{{count}} sélectionnés",
+    "select_all": "Tout Sélectionner",
+    "mark_filler": "Marquer comme Filler",
+    "mark_prog": "Marquer comme Prog",
+    "structure": "STRUCTURE",
+    "root": "Racine",
+    "hint_title": "ASTUCE",
+    "hint_msg": "Faites glisser les fichiers directement dans les dossiers pour organiser votre bibliothèque.",
+    "drop_to_upload": "RELACHER POUR TÉLÉVERSER",
+    "upload_media": "TÉLÉVERSER MÉDIAS",
+    "upload_hint": "Déposez des fichiers ou cliquez pour explorer (Destination: {{folder}})",
+    "search_placeholder": "Rechercher dans la bibliothèque...",
+    "files": "Fichiers",
+    "type": "Tipo",
+    "category": "Catégorie",
+    "all": "Tout",
+    "video": "Vidéo",
+    "image": "Image",
+    "audio": "Audio",
+    "both": "Les deux",
+    "fillers_general": "Fillers (Général)",
+    "programming": "Programmation",
+    "preview": "Aperçu",
+    "optimize_streaming": "Optimiser pour le Streaming",
+    "optimized_streaming": "Vidéo Optimisée pour le Streaming",
+    "generate_proxy": "Générer Proxy Web (Latence Zéro)",
+    "proxy_available": "Proxy Web Disponible",
+    "metadata_wizard": "Assistant de Métadonnées",
+    "edit": "Modifier",
+    "file": "Fichier",
+    "delete_folder_confirm": "Êtes-vous sûr de vouloir supprimer le dossier \"{{name}}\" et tous les fichiers qu'il contient ?",
+    "folder_created": "Dossier créé",
+    "sync_success": "Synchro terminée : {{added}} nouveaux fichiers identifiés.",
+    "sync_partial": "Synchro partielle : {{added}} ajoutés, {{errors}} erreurs.",
+    "upload_cancelled": "Tous les téléversements annulés",
+    "bulk_success": "Action terminée avec succès",
+    "batch_proxy_success": "Fichiers ajoutés à la file d'attente proxy avec succès !",
+    "batch_optimize_success": "Fichiers ajoutés à la file d'attente d'optimisation avec succès !",
+    "delete_confirm_title": "🗑️ Confirmer la Suppression",
+    "delete_confirm_msg": "Êtes-vous sûr de vouloir supprimer \"{{filename}}\" ?",
+    "delete_permanent_alert": "Cette action est irréversible.",
+    "delete_in_use_title": "⚠️ Fichier utilisé dans le Calendrier",
+    "delete_in_use_alert": "\"{{filename}}\" est programmé dans {{count}} événement(s).",
+    "delete_choose_option": "Choisissez une option :",
+    "delete_anyway": "Supprimer quand même",
+    "delete_anyway_hint": "⚠️ Les programmations deviendront invalides et peuvent causer des erreurs de playout",
+    "delete_replace_filler": "Remplacer par Filler et Supprimer",
+    "delete_replace_filler_hint": "✓ Sécurisé - Remplace automatiquement dans les programmes avant suppression",
+    "move_title": "Organiser \"{{filename}}\"",
+    "move_dest": "Choisissez le dossier de destination :",
+    "move_to_root": "Vers la Racine",
+    "copy_to_root": "Copier vers la Racine",
+    "copy_hint": "Crée un doublon",
+    "move_to_folder": "Vers \"{{name}}\"",
+    "copy_to_folder": "Copier vers \"{{name}}\"",
+    "metadata": {
+      "edit_title": "Modifier Métadonnées EPG",
+      "review_title": "🪄 Réviser Métadonnées Automatiques",
+      "info_from": "Information récupérée de : ",
+      "view_source": "🔗 Voir source originale sur {{service}} ↗",
+      "review_alert": "Ces données ont été trouvées automatiquement. Vous pouvez les modifier ci-dessous.",
+      "label_title": "Titre (EPG)",
+      "help_title": "Laisser vide pour utiliser le nom du fichier",
+      "label_description": "Description / Synopsis",
+      "label_genre": "Genre",
+      "genre_none": "Aucun",
+      "genre_comedy": "Comédie",
+      "genre_drama": "Drame",
+      "genre_news": "Actualités",
+      "genre_sports": "Sports",
+      "genre_documentary": "Documentaire",
+      "genre_action": "Action",
+      "genre_animation": "Animation",
+      "genre_music": "Musique",
+      "genre_other": "Autre",
+      "label_rating": "Classement",
+      "rating_none": "Aucun",
+      "rating_general": "Tout Public",
+      "label_keywords": "Mots-clés / Tags",
+      "keywords_placeholder": "sci-fi, romance",
+      "help_keywords": "Séparés par virgule",
+      "label_season": "Saison",
+      "label_episode": "Épisode",
+      "label_cast": "Distribution / Acteurs Principaux",
+      "label_director": "Réalisateur",
+      "label_writer": "Scénariste",
+      "technical_data": "Données Techniques",
+      "label_resolution": "Résolution",
+      "help_resolution": "Détecté automatiquement",
+      "label_fps": "FPS",
+      "label_vcodec": "Codec Vidéo",
+      "label_acodec": "Codec Audio",
+      "label_poster": "URL de l'Affiche",
+      "help_poster": "Lien vers l'image de couverture (chargé via l'Assistant)",
+      "label_subtitles": "Sous-titres / Langues",
+      "help_subtitles": "Langues disponibles séparées par virgule"
     },
-    "epg": {
-        "title": "GUIDE TV",
-        "subtitle": "ONEPA PLAYOUT • ALPHA INTELLIGENCE",
-        "no_name": "Sans Nom",
-        "prev": "PRÉCÉDENT",
-        "today": "AUJOURD'HUI",
-        "next": "SUIVANT",
-        "empty_playlist": "PLAYLIST VIDE",
-        "duration_label": "DURÉE",
-        "no_schedule": "Aucun programme trouvé pour ce jour.",
-        "dialog": {
-            "title": "PROGRAMMATION DÉTAILLÉE",
-            "emission_time": "HEURE DE DIFFUSION",
-            "description": "SYNOPSIS / DESCRIPTION",
-            "no_description": "Ce contenu n'a pas de synopsis détaillé enregistré.",
-            "director": "RÉALISATION",
-            "category": "CATÉGORIE / GENRE",
-            "source_data": "SOURCE DE DONNÉES",
-            "visit_source": "VISITER LA SOURCE",
-            "close": "FERMER LES DÉTAILS",
-            "unknown": "Inconnu",
-            "general": "Général"
-        },
-        "tooltip": {
-            "click_view": "Cliquer pour tout voir"
-        }
+    "uploads_manager": {
+      "title": "Gestionnaire de Téléchargements",
+      "status_pending": "EN ATTENTE",
+      "status_uploading": "TÉLÉVERSEMENT",
+      "status_completed": "TERMINÉ",
+      "all_processed": "Tous les téléchargements traités. Cette fenêtre va se fermer.",
+      "cancel_all": "TOUT ANNULER",
+      "close_window": "Fermer la Fenêtre"
     },
-    "settings": {
-        "header": {
-            "title": "Paramètres",
-            "subtitle": "Panneau de Contrôle Système",
-            "refresh_btn": "RAFRAÎCHIR",
-            "refresh_tooltip": "Recharger les paramètres du serveur",
-            "history_btn": "NOTES DE VERSION",
-            "history_tooltip": "Voir les nouveautés de cette version",
-            "save_btn": "ENREGISTRER",
-            "save_btn_loading": "ENREGISTREMENT..."
-        },
-        "navigation": {
-            "title": "CONFIGURATION",
-            "output": "DIFFUSION & SORTIE",
-            "paths": "CHEMINS & MÉDIAS",
-            "playout": "PLAYOUT & PRÉRÉGLAGES",
-            "users": "UTILISATEURS",
-            "system": "TEMPLATES",
-            "about": "À PROPOS DU SYSTÈME",
-            "monitor": "MONITEUR BACKEND",
-            "support": "SUPPORT TECHNIQUE",
-            "explore_tooltip": "Explorer {{tab}}"
-        },
-        "tabs": {
-            "system": "TEMPLATES"
-        },
-        "about": {
-            "header": {
-                "title": "INFORMATIONS SYSTÈME",
-                "subtitle": "ÉTAT DU CORE ET JOURNAUX OPÉRATIONNELS"
-            },
-            "fields": {
-                "version": "VERSION",
-                "last_update": "DERNIÈRE MISE À JOUR",
-                "deployment": "ENVIRONNEMENT",
-                "env_value": "Docker Container (Linux)"
-            },
-            "roadmap": {
-                "title": "ROADMAP DU PRODUIT",
-                "subtitle": "PLANIFICATION DES FONCTIONNALITÉS ET EXPLORATION FUTURE",
-                "highlight_title": "POINTS FORTS DE LA VERSION",
-                "github_btn": "VOIR LE RÉPÔT",
-                "highlights": {
-                    "i18n_label": "MULTI-LANGUE",
-                    "i18n_value": "i18n Ready",
-                    "multichannel_label": "MULTI-CANAL",
-                    "multichannel_value": "Independent Core",
-                    "lowlatency_label": "LOW-LATENCY",
-                    "lowlatency_value": "Low-HLS / SRT"
-                },
-                "phases": {
-                    "p25_connectivity": {
-                        "title": "CONNECTIVITÉ ET ENTRÉES EN DIRECT",
-                        "focus": "Distribution Intelligente et Redondance SRT",
-                        "items": [
-                            "Support SRT : Implémentation (Caller & Listener) - STABLE",
-                            "Support SRT : Implémentation (Caller & Listener) - STABLE",
-                            "Bitrate Dynamique : Ajustement en temps réel basé sur le réseau",
-                            "Lecture Intelligente des Dossiers : Synchronisation automatique du nouveau contenu"
-                        ]
-                    },
-                    "p26_ux": {
-                        "title": "EXPÉRIENCE UTILISATEUR ÉLITE",
-                        "focus": "Nouvelle Console de Commande et Gestion des Médias",
-                        "items": [
-                            "Gestionnaire d'Espace : Audit physique vs DB en temps réel",
-                            "Branding Unifié : Synchronisation intelligente des assets",
-                            "RBAC : Profils système avec permissions granulaires",
-                            "Correction Structurelle : Moteur React optimisé pour la stabilité"
-                        ]
-                    },
-                    "p23_epg": {
-                        "title": "MOTEUR EPG & MÉTADONNÉES",
-                        "focus": "Guide de programmation professionnel et découverte de contenus",
-                        "items": [
-                            "Générateur EPG : Création interne de guides de programmes électroniques",
-                            "Export Web EPG : API publique JSON/XML pour entités externes",
-                            "Normes de Conformité : Support des formats XMLTV et DVB-EIT",
-                            "Sync Externe : Lier l'EPG aux horaires internes et événements récurrents"
-                        ]
-                    },
-                    "p24_graphics": {
-                        "title": "GRAPHIQUES & EXPÉRIENCE VISUELLE",
-                        "focus": "Branding à l'antenne avancé et UX multi-appareils",
-                        "items": [
-                            "Éditeur Drag-and-Drop : Éditeur WYSIWYG en ligne pour templates actifs",
-                            "Moteur Graphique HTML5 : Superpositions dynamiques via technos web standard",
-                            "Interface Mobile Réactive : Support mobile complet pour le dashboard",
-                            "Personnalisation des Thèmes : Moteur de thèmes avancé par utilisateur",
-                            "Support Multilingue : Implémentation complète i18n (PT/EN/ES/FR)"
-                        ]
-                    },
-                    "p25_enterprise": {
-                        "title": "ENTREPRISE & CONFORMITÉ",
-                        "focus": "Évolutivité et exigences de diffusion professionnelle",
-                        "items": [
-                            "Système Multi-Utilisateurs : Contrôle d'accès basé sur les profils (RBAC)",
-                            "Journaux d'Audit : Suivi complet de toutes les actions des utilisateurs",
-                            "Journaux de Diffusion (As-Run) : Preuves de diffusion standard de l'industrie",
-                            "Support SCTE-35 : Déclencheurs pour insertion pub en flux IPTV/Câble",
-                            "Tableau de Bord Analytique : Statistiques de visionnage et santé du système"
-                        ]
-                    },
-                    "p26_future": {
-                        "title": "TECH DU FUTUR & ÉVOLUTIVITÉ",
-                        "focus": "Innovation et Haute Disponibilité",
-                        "items": [
-                            "Intégration IA : Marquage auto du contenu et génération intelligente de playlists",
-                            "Noyau Multi-Canal : Une seule instance gérant plusieurs canaux indépendants",
-                            "Canaux Dédiés : Logos et dossiers médias/musique propres par canal",
-                            "Haute Disponibilité : Architecture de redondance et failover automatique",
-                            "Support Low-HLS : Latence ultra-faible pour streaming interactif"
-                        ]
-                    }
-                },
-                "idioma": {
-                    "title": "MULTILINGUE",
-                    "value": "Prêt pour i18n"
-                },
-                "canal": {
-                    "title": "MULTI-CANAL",
-                    "value": "Noyau Indépendant"
-                },
-                "latency": {
-                    "title": "BASSE LATENCE",
-                    "value": "Bas-HLS / SRT"
-                }
-            },
-            "history": {
-                "title": "HISTORIQUE DES VERSIONS",
-                "subtitle": "NOTES CRITIQUES ET ÉVOLUTION DU PROJET",
-                "dialog_title": "HISTORIQUE DES VERSIONS",
-                "version_label": "Version",
-                "close_btn": "COMPRIS",
-                "empty": "AUCUN HISTORIQUE DISPONIBLE",
-                "releases": [
-                    {
-                        "version": "v2.2.0-ALPHA.38-PRO",
-                        "date": "2026-03-10",
-                        "changes": [
-                            "Lancement Automatique : Version mise à jour vers ALPHA.38-PRO avec synchronisation complète de l'écosystème.",
-                            "Documentation : README.md, RELEASE_NOTES.md et constantes frontend synchronisés avec la nouvelle version.",
-                            "Intégrité i18n : Les 4 fichiers de langue (PT/EN/ES/FR) mis à jour avec un historique de versions cohérent."
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.37-PRO",
-                        "date": "2026-03-09",
-                        "changes": [
-                            "Ajout d'un dialogue de test de connexion manuelle dans le menu d'état réseau pour le débogage websocket en temps réel.",
-                            "Système mis à jour avec suivi de l'état de connexion, ajout de logique de reconnexion quand la connexion se ferme.",
-                            "Correction du problème où un ID de programme manquant dans la réponse EPG empêchait l'affichage complet de la grille."
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.36-PRO",
-                        "date": "2026-03-09",
-                        "changes": [
-                            "Correction i18n en Direct pour les Modèles : Les modèles prédéfinis (Programme du Matin, Liste 24H, Contenu en Boucle) se mettent à jour instantanément lors du changement de langue, grâce au modèle réactif useMemo au lieu d'un état statique.",
-                            "Refactorisation des Modèles : Séparation des modèles API des modèles prédéfinis dans le state, évitant les appels API redondants lors des changements de langue.",
-                            "Cohérence du Sélecteur de Langue : Tout le texte dynamique de la page Modèles reflète désormais les changements de langue en temps réel."
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.38-PRO",
-                        "date": "2026-03-08",
-                        "changes": [
-                            "Mises à jour de Santé i18n : Correction des chaînes de mesures fixes et ajout de clés de traduction en portugais et en anglais pour le Tableau de bord de santé du système.",
-                            "Vérification de la Cohérence de l'UI : Ajout de clés de modèle de programme aux 4 langues et modification du style du Badge de Version dans la Mise en page pour un meilleur contraste."
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.34-PRO",
-                        "date": "2026-03-06",
-                        "changes": [
-                            "Documentation Détaillée: Ajout d'une documentation complète (docs/app_features.md) couvrant toutes les fonctionnalités, écrans et fonctions du système",
-                            "Optimisation du Backend: Optimisation du pool de connexions du client reqwest et de l'utilisation de la mémoire de routage Axum, ajout d'un profil de version agressif dans Cargo.toml",
-                            "Rendu Frontend: Implémentation d'optimisations React.memo et useCallback sur l'interface pour réduire les rendus inutiles"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.33-PRO",
-                        "date": "2026-03-05",
-                        "changes": [
-                            "Intelligence des Métadonnées: Refonte complète de l'assistant de métadonnées avec récupération automatique depuis TMDB, OMDB et TVMaze en un seul flux unifié",
-                            "Wizard Multi-Étapes: Nouvel assistant pas-à-pas pour les métadonnées avec auto-complétion, aperçu de l'affiche et sauvegarde directe dans la bibliothèque",
-                            "Enrichissement EPG: Les métadonnées se propagent automatiquement vers l'EPG/Guide TV, incluant synopsis, genres, affiche et réalisateur",
-                            "Résilience du Backend: Logique de timeout et retry pour les APIs de métadonnées externes afin d'éviter le blocage de l'interface sur les connexions lentes"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.32-PRO",
-                        "date": "2026-03-03",
-                        "changes": [
-                            "UDP PUSH Stability: Résolu le conflit \"Address already in use\" entre Docker et Host, optimisant FFmpeg en mode Pusher natif",
-                            "Audit Ports 3.0: Nouveau module de diagnostic avec détection intelligente des récepteurs (VLC) et audit de connectivité hôte-vers-conteneur",
-                            "Log Management: Implémentation de la rotation des logs dans tous les services Docker (10MB/3-fichiers) pour prévenir l'épuisement du disque",
-                            "Process Guard: Protection interne contre les collisions de ports entre les processus master et relay dans le Moteur de Playout",
-                            "Script Versioning: Standardisation de l'output de version dans tous les scripts opérationnels (.sh et .bat) pour plus de transparence"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.31-PRO",
-                        "date": "2026-03-01",
-                        "changes": [
-                            "Dynamic EPG Hydration: Synchronisation en temps réel des métadonnées entre la Bibliothèque et le Guide TV/EPG XML",
-                            "Support aux Doublons: Hydratation totale des clips dupliqués dans les listes de lecture (IDs avec suffixes)",
-                            "Normes XML: EPG XML inclut désormais des descriptions détaillées et des catégories/genres réels"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.30-PRO",
-                        "date": "2026-03-01",
-                        "changes": [
-                            "UDP Push Stability: Refactor agressif du stream UDP interne migrant vers \"Push-to-Localhost\" (udp://@:1234), éradiquant le buffering VLC",
-                            "Précision Audit Ports 2.0: Connexions HLS à MediaMTX mesurées via API master, ignorant les raw sockets morts",
-                            "UI Connection Links: Réécriture des URLs de destination dans le tableau de bord (SRT/UDP) sans \"localhost\" fixe pour éviter la confusion d'interfaces"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.29-PRO",
-                        "date": "2026-02-28",
-                        "changes": [
-                            "Multiplexeur \"Gold Standard V2\": Injection hardcore de pcr tables (40ms), +latm et force copy timestamps (-mpegts_copyts 1)",
-                            "H.264 Annex B Force: Règle globale bsf:v h264_mp4toannexb et bsf:a aac_adtstoasc forcée en UDP",
-                            "SRT Stability: Refactoring absolu de l'URI en Listeners"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.28-PRO",
-                        "date": "2026-02-24",
-                        "changes": [
-                            "High-Density Help System: Refonte totale du menu d'aide pour une compacité maximale",
-                            "Protocol Stability: Correction du fallback RTMP pour éviter les échecs sur les connexions externes",
-                            "Backend Stabilization: Résolution de l'erreur VersionMismatch et nettoyage des logs",
-                            "Script Fix: Correction de la logique des suffixes redondants (-PRO-PRO) dans les scripts de release"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.27-PRO",
-                        "date": "2026-02-23",
-                        "changes": [
-                            "Surgical Compact Redesign: Amélioration massive des paddings et marges dans toutes les vues principales",
-                            "Optimisation EPG & Calendrier: Plus grande densité verticale dans la chronologie et les barres latérales",
-                            "Tableau de Bord des Protocoles: Barre de protocoles compactée pour une meilleure visibilité de la télémétrie",
-                            "Bug Fix: Résolu ReferenceError de EditIcon affectant la gestion des profils"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.26-PRO",
-                        "date": "2026-02-23",
-                        "changes": [
-                            "Branding & UI Consistency: Consolidation totale de l'identité visuelle dans tous les paramètres",
-                            "Compact Redesign: Chemins, Média et Moteur de Playout optimisés pour une empreinte verticale réduite",
-                            "Fix Structurel: Résolution définitive des erreurs JSX dans Settings et Layout",
-                            "Versioning Global: Synchronisation automatique des versions entre DB, Backend et Frontend"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.25-PRO",
-                        "date": "2026-02-22",
-                        "changes": [
-                            "Reality Sync Engine: Moteur robuste avec support global des chemins (Média, Assets, Fillers, Protégés)",
-                            "Filtre Professionnel: Assets système protégés masqués de la Bibliothèque par défaut",
-                            "Storage Audit: Métriques d'utilisation disque en temps réel pour les proxies web",
-                            "Sync Résilient: Timeout augmenté à 120s avec gestion agressive des erreurs de permission",
-                            "Nettoyage Automatique: Base de données nettoyée des fichiers système résiduels"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.24-PRO",
-                        "date": "2026-02-21",
-                        "changes": [
-                            "Reality Sync Engine: moteur proactif qui détecte les fichiers sur disque et les enregistre dans l'App automatiquement",
-                            "Elite Storage Audit: Gestionnaire d'Espace identifie les bibliothèques vs la réalité physique et détecte les proxies manquants",
-                            "Sync Résilient: nouveau moteur avec gestion d'erreurs détaillée, vérification des permissions et reporting granulaire",
-                            "Résilience des Métadonnées: correction des échecs de lecture de métadonnées dans les fichiers aux noms complexes",
-                            "Versioning: Consolidation totale vers ALPHA.24-PRO dans tout l'écosystème"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.23-PRO",
-                        "date": "2026-02-19",
-                        "changes": [
-                            "Streaming: Optimisation profonde de Nginx (buffering off, byte ranges)",
-                            "Frontend: Prévisualisation média avec support natif Buffering/Partial Content",
-                            "Backend: Implémentation des Range Requests dans l'endpoint de stream (Rust)",
-                            "Stabilité: Meilleure gestion des grands fichiers via Chunked Transfer"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.22-PRO",
-                        "date": "2026-02-18",
-                        "changes": [
-                            "Tableau de Bord: panneau de contrôle avec icônes professionnelles (PlayCircle/StopCircle/Cast/Terminal/SkipNext)",
-                            "États visuels dynamiques: couleur + icône + glow par état ON AIR/OFF AIR",
-                            "Animations pulse/glow sur le bouton principal et la distribution active",
-                            "Tooltip descriptif au survol sur tous les contrôles d'émission",
-                            "Paramètres: historique complet des versions jusqu'à ALPHA.22"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.21-PRO",
-                        "date": "2026-02-18",
-                        "changes": [
-                            "Uptime avec précision ms (00h 00m 00s 000ms)",
-                            "Stream clean preview (stream_clean.m3u8 sans overlay)",
-                            "Statut réel du protocole basé sur le processus relay actif",
-                            "SRT relay URL fix (publish: streamid)",
-                            "Paramètres: bouton RÉTABLIR LES VALEURS PAR DÉFAUT pour le branding"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.20-PRO",
-                        "date": "2026-02-18",
-                        "changes": [
-                            "Tableau de Bord: redesign icône UDP + statut réel de protocole",
-                            "Paramètres: UI DASH/MSS/RTSP/WebRTC (désactivé, bientôt disponible)",
-                            "Graphismes: preview 16:9 proportionnel sans images externes",
-                            "EPG: barre TV Guide avec date + icônes ouvrir/télécharger",
-                            "Logs: config de rotation (taille, fichiers, compression, rétention), filtre, export",
-                            "Branding: bouton RESTAURER DEFAULTS + auto-assign sur nouvelle vidéo"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.19-PRO",
-                        "date": "2026-02-18",
-                        "changes": [
-                            "Écran noir: GlobalErrorBoundary global dans main.jsx",
-                            "Fix HelpSystem: toggleHelpMode non déclaré",
-                            "Login: dégradé CSS local (sans Unsplash)",
-                            "Paramètres: panneau de versions scrollable avec historique réel",
-                            "Fallbacks de version corrigés pour ALPHA.19"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.18-PRO",
-                        "date": "2026-02-12",
-                        "changes": [
-                            "Logs de playout avec rotation automatique (50MB/5 fichiers)",
-                            "Log Viewer en temps réel avec refresh 2s dans les Paramètres"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.17-PRO",
-                        "date": "2026-02-12",
-                        "changes": [
-                            "Relay cooldown: 5s → 15s",
-                            "Master-feed inactive threshold: 10 → 20 ticks"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.16-PRO",
-                        "date": "2026-02-12",
-                        "changes": [
-                            "HLS dual: stream.m3u8 + stream_low.m3u8 (640×360)",
-                            "Player retry: 6 tentatives × 8s = 48s maximum"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.15-PRO",
-                        "date": "2026-02-12",
-                        "changes": [
-                            "Tableau de Bord Live Monitor: point orange/vert",
-                            "GraphicsEditor: cache-bust du logo après sauvegarde"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.14-PRO",
-                        "date": "2026-02-12",
-                        "changes": [
-                            "Preset de qualité avec dialogue de confirmation",
-                            "Limites de bitrate par résolution"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.13-PRO",
-                        "date": "2026-02-12",
-                        "changes": [
-                            "Layer Manager de graphismes",
-                            "Layers: Marquee, Lower Third, Clock",
-                            "API REST pour CRUD de graphics layers"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.12-PRO",
-                        "date": "2026-02-12",
-                        "changes": [
-                            "RBAC granulaire: profils avec permissions individuelles",
-                            "Gestion des profils et réinitialisation de mot de passe par admin"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.11-PRO",
-                        "date": "2026-02-12",
-                        "changes": [
-                            "Metadata Fetcher: TMDB, OMDB, TVMaze",
-                            "Révision des métadonnées dans la Bibliothèque",
-                            "EPG enrichi avec synopsis et images"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.10-PRO",
-                        "date": "2026-02-05",
-                        "changes": [
-                            "Gapless playback amélioré",
-                            "Engine watchdog avec redémarrage automatique"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.9-PRO",
-                        "date": "2026-02-05",
-                        "changes": [
-                            "SRT listener/caller mode configurable",
-                            "Scripts de diagnostic SRT"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.8-PRO",
-                        "date": "2026-02-05",
-                        "changes": [
-                            "UDP multicast/unicast configurable",
-                            "Dialogue de vérification réseau UDP"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.7-PRO",
-                        "date": "2026-02-05",
-                        "changes": [
-                            "HLS via MediaMTX",
-                            "Multi-protocol simultané",
-                            "Presets de codec"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.6-PRO",
-                        "date": "2026-02-05",
-                        "changes": [
-                            "Coordonnées d'overlay configurables",
-                            "Opacité et échelle en temps réel"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.5-PRO",
-                        "date": "2026-02-04",
-                        "changes": [
-                            "Exceptions de planning",
-                            "EPG XMLTV export",
-                            "Jours EPG configurables (1-30)"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.4-PRO",
-                        "date": "2026-02-03",
-                        "changes": [
-                            "Éditeur de Graphismes de base",
-                            "Modèles réutilisables"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.3-PRO",
-                        "date": "2026-01-31",
-                        "changes": [
-                            "Branding type: statique/animé",
-                            "Synchronisation du logo sidebar/overlay"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.2-PRO",
-                        "date": "2026-01-30",
-                        "changes": [
-                            "Chemins de stockage configurables",
-                            "Validation des chemins"
-                        ]
-                    },
-                    {
-                        "version": "v2.2.0-ALPHA.1",
-                        "date": "2026-01-28",
-                        "changes": [
-                            "Ports dédiés Alpha (3011/8181/5534)",
-                            "Docker-only workflow",
-                            "Login: erreurs 401 corrigées"
-                        ]
-                    }
-                ]
-            }
-        },
-        "warnings": {
-            "udp_config": "Protocole UDP prêt pour activation lors de l'enregistrement."
-        },
-        "output": {
-            "header": {
-                "title": "CONFIGURATION DE SORTIE",
-                "subtitle": "GESTION DES PROTOCOLES ET DISTRIBUTION",
-                "status_ready": "ENGINE EN LIGNE"
-            },
-            "main": {
-                "title": "PROTOCOLE PRINCIPAL",
-                "url_label": "URL DE SORTIE PRINCIPALE",
-                "udp_tip": "ASTUCE: Le format udp://@:1234 force le Push vers la machine locale (TRÈS STABLE). Dans VLC ouvrez: udp://@:1234",
-                "resolution": "RÉSOLUTION",
-                "resolutions": {
-                    "4k": "4K (Ultra HD)",
-                    "1080p": "1080p (Full HD)",
-                    "720p": "720p (HD)",
-                    "360p": "360p (SD)"
-                },
-                "bitrate": "DÉBIT VIDÉO (ex: 5000k)"
-            },
-            "multi": {
-                "title": "MULTI-STREAMING",
-                "subtitle": "ACTIVATION DES PROTOCOLES ADITIONNELS",
-                "soon": "À VENIR",
-                "dash_desc": "Streaming adaptatif multi-débit",
-                "mss_desc": "Smooth Streaming pour Azure/CDN",
-                "rtsp_desc": "Protocole para IPTV et caméras IP",
-                "webrtc_desc": "Latence inférieure à la seconde pour navigateur"
-            },
-            "links": {
-                "title": "LIENS DE CONNEXION DIRECTE (VLC, OBS)",
-                "rtmp_label": "RTMP (Maître de Distribution Locale)",
-                "rtmp_copied": "Lien RTMP copié !",
-                "srt_label": "SRT - Secure Reliable Transport (UDP)",
-                "srt_warning": "Attention: Le port doit être ouvert en UDP. Les clients doivent explicitement demander 'read:'",
-                "srt_copied": "Lien SRT copié !",
-                "udp_label": "UDP Stream (VLC Direct)",
-                "udp_tip": "Pour voir dans VLC: Médias > Ouvrir un flux réseau > entrez l'adresse ci-dessus.",
-                "udp_copied": "Lien UDP copié !",
-                "hls_label": "HLS Playlist (Nginx Proxy 3011)",
-                "hls_copied": "Lien HLS copié !",
-                "no_protocols": "Activez au moins un protocole ci-dessus (RTMP, SRT, HLS) pour révéler les ports et liens dédiés.",
-                "copied": "Lien copié !"
-            }
-        },
-        "paths": {
-            "header": {
-                "title": "CHEMINS DE STOCKAGE",
-                "subtitle": "CONFIGURATION DES RÉPERTOIRES ET VOLUMES"
-            },
-            "fields": {
-                "media": "MÉDIAS ET VIDÉO",
-                "thumbnails": "VIGNETTES",
-                "playlists": "BDD PLAYLISTS",
-                "fillers": "FILLERS ET BOUCLES",
-                "logs": "LOGS PLAYOUT",
-                "protected": "BRANDING ET ACTIFS PROTÉGÉS"
-            },
-            "helpers": {
-                "media": "Stockage principal des contenus",
-                "thumbnails": "Cache des vignettes générées",
-                "playlists": "Base de données des programmes",
-                "fillers": "Contenus de remplissage automatique",
-                "logs": "Emplacement du fichier de logs système",
-                "protected": "Emplacement des logos et vidéos institutionnelles"
-            }
-        },
-        "storage": {
-            "header": {
-                "title": "GESTION DE L'ESPACE (PROXIES WEB)",
-                "subtitle": "Surveillance du cache et synchronisation physique des répertoires.",
-                "sync_needed_label": "nouveaux fichiers sur le disque. Cliquez sur Synchroniser."
-            },
-            "stats": {
-                "db": "BDD",
-                "physical": "Disque",
-                "proxies": "Proxies"
-            },
-            "toolbar": {
-                "explore": "Explorer Gestionnaire d'Espace",
-                "sync": "Synchroniser les fichiers disque vers la BDD",
-                "purge": "Purger tous les Proxies (Libérer de l'espace)"
-            },
-            "explorer": {
-                "title": "GESTIONNAIRE D'ESPACE DE STOCKAGE",
-                "subtitle": "GESTION INDIVIDUELLE DES FICHIERS OPTIMISÉS POUR L'APERÇU",
-                "selected_count": "SÉLECTIONNÉS",
-                "mb_to_free": "MO À LIBÉRER",
-                "proxy_missing": "PROXY MANQUANT (Identifié sur disque, nécessite optimisation)",
-                "generate_btn": "GÉNÉRER MAINTENANT",
-                "generate_success": "Génération du proxy lancée en arrière-plan",
-                "empty": "AUCUN PROXY TROUVÉ SUR LE DISQUE",
-                "delete_btn": "SUPPRIMER SÉLECTIONNÉS"
-            },
-            "dialogs": {
-                "delete_proxies": {
-                    "title": "CONFIRMER LA SUPPRESSION",
-                    "warning1": "Êtes-vous sûr de vouloir supprimer {{count}} fichiers proxy ?",
-                    "space_label": "Total de l'espace à libérer:",
-                    "warning2": "⚠️ CETTE OPÉRATION EST IRRÉVERSIBLE. LES APERÇUS SERONT À NOUVEAU LENTS POUR CES VIDÉOS.",
-                    "confirm_btn": "CONFIRMER ET SUPPRIMER"
-                }
-            }
-        },
-        "api": {
-            "header": {
-                "title": "APIS DE MÉTADONNÉES",
-                "subtitle": "INDEXATION INTELLIGENTE (TMDB / OMDB)",
-                "auto_config_btn": "AUTO-CONFIG"
-            },
-            "fields": {
-                "key_placeholder": "Entrez la clé API..."
-            },
-            "toolbar": {
-                "test": "Tester la Connexion",
-                "save": "Enregistrer"
-            },
-            "dialogs": {
-                "auto_config": {
-                    "title": "Configuration Automatique",
-                    "desc": "Cette action va configurer automatiquement les clés API recommandées pour:",
-                    "warning": "Vos clés actuelles seront écrasées. Voulez-vous continuer ?"
-                },
-                "overlay_optimizer": {
-                    "title": "Optimiseur de Overlay Pro",
-                    "select_btn": "Sélectionner Image Originale",
-                    "width_label": "Largeur",
-                    "height_label": "Hauteur",
-                    "aspect_label": "Maintenir Aspect",
-                    "trim_label": "Auto-Trim",
-                    "change_btn": "Changer Image",
-                    "processing": "Traitement...",
-                    "apply_btn": "Appliquer et Enregistrer"
-                }
-            }
-        },
-        "branding": {
-            "header": {
-                "title": "Branding et Actifs",
-                "subtitle": "IDENTITÉ VISUELLE ET FALLBACKS"
-            },
-            "assets": {
-                "title": "ACTIFS DE MARQUE",
-                "subtitle": "LOGOS & MÉDIAS DE SECOURS",
-                "logo_label": "LOGO DE L'APP",
-                "fallback_img_label": "IMAGE DE SECOURS",
-                "image_fallback_label": "IMAGE DE SECOURS",
-                "change_btn": "MODIFIER",
-                "reset_btn": "RÉINITIALISER LES PARAMÈTRES",
-                "restore_defaults_btn": "RESTAURER DEFAULTS",
-                "restore_tooltip": "Restaurer le branding et les actifs aux valeurs par défaut du système",
-                "restore_defaults_tooltip": "Restaurer le branding et les actifs aux valeurs par défaut du système",
-                "defined_label": "DÉFINI",
-                "defined": "DÉFINI",
-                "missing_label": "MANQUANT",
-                "missing": "MANQUANT",
-                "reset_success": "Actifs réinitialisés avec succès !",
-                "reset_error": "Erreur lors de la réinitialisation des actifs",
-                "restore_success": "Valeurs par défaut restaurées avec succès !",
-                "restore_error": "Erreur lors de la restauration des valeurs par défaut",
-                "type_img": "IMG",
-                "type_vid": "VID"
-            },
-            "dialogs": {
-                "preview": {
-                    "set_default_btn": "Définir par défaut"
-                }
-            },
-            "upload_success": "Logo téléversé avec succès !",
-            "upload_error": "Erreur lors du téléversement du logo",
-            "overlay": {
-                "fallback_label": "VIDÉO DE SECOURS"
-            }
-        },
-        "playout": {
-            "header": {
-                "title": "MOTEUR DE PLAYOUT",
-                "subtitle": "PERFORMANCE ET SYNCHRO EN TEMPS RÉEL",
-                "wizard_btn": "ASSISTANT",
-                "reset_btn": "RESET"
-            },
-            "fields": {
-                "day_start": "DÉBUT DE JOURNÉE",
-                "channel_name": "NOM DE LA CHAÎNE",
-                "fps": "IMAGES/SECONDE (FPS)",
-                "encoding_preset": "PRÉRÉGLAGE D'ENCÔDAGE"
-            },
-            "tooltips": {
-                "day_start": "Heure de réinitialisation de la grille quotidienne",
-                "channel_name": "Identifiant public du flux",
-                "fps": "Images par seconde de base",
-                "encoding_preset": "Efficacité de compression CPU"
-            },
-            "epg": {
-                "title": "PROGRAMMATION ET EPG",
-                "subtitle": "DISTRIBUTION DU GUIDE (XMLTV)",
-                "url_label": "URL DE L'EPG FINAL",
-                "copy_tooltip": "Copier le point d'entrée",
-                "refresh_label": "RAFRAÎCHISSEMENT INTERNE",
-                "system_generated": "(AUTO-GÉNÉRÉ PAR LE SYSTÈME)",
-                "days_label": "JOURS",
-                "status_live": "LIVE",
-                "copied": "Point d'entrée EPG copié !"
-            },
-            "overlay": {
-                "title": "OVERLAY DE LA CHAÎNE",
-                "subtitle": "GESTIÓN DU FILIGRANE EN TEMPS RÉEL",
-                "preview": "APERÇU",
-                "disabled": "DÉSACTIVÉ",
-                "dpad_label": "CONTRÔLE DE POSITION (D-PAD)",
-                "opacity": "OPACITÉ",
-                "scale": "ÉCHELLE",
-                "path_label": "LOGO D'OVERLAY (LOCAL)",
-                "change_btn": "MODIFIER",
-                "magic_tooltip": "Processeur de Logo (Supprimer Fond)"
-            },
-            "presets": {
-                "title": "PRÉRÉGLAGES DE QUALITÉ",
-                "subtitle": "CONFIGURATION RAPIDE DU STREAMING",
-                "advanced_mode": "MODE AVANCÉ",
-                "list": {
-                    "720p": {
-                        "desc": "Équilibré (Streaming Normal)"
-                    },
-                    "1080p": {
-                        "desc": "Haute Fidélité (Broadcast)"
-                    },
-                    "4k": {
-                        "desc": "Qualité Maximale (UHD)"
-                    }
-                }
-            },
-            "dialogs": {
-                "reset": {
-                    "title": "Confirmer le Factory Reset",
-                    "warning1": "Êtes-vous sûr de vouloir supprimer TOUTES les données de cette chaîne ?",
-                    "warning2": "Cette action supprimera définitivement toutes les playlists, le calendrier et restaurera les paramètres par défaut. Aucun retour en arrière possible !",
-                    "confirm_btn": "Oui, tout supprimer",
-                    "success": "Chaîne réinitialisée avec succès !",
-                    "error": "Erreur lors de la réinitialisation de la chaîne"
-                },
-                "presets": {
-                    "title": "CHANGER LE PRÉRÉGLAGE DE QUALITÉ",
-                    "desc": "Application du préréglage",
-                    "resolution_label": "Résolution",
-                    "bitrate_label": "Débit",
-                    "fps_label": "FPS",
-                    "restart_warning": "Ce changement nécessite un redémarrage du moteur. Enregistrez les paramètres et redémarrez après confirmation.",
-                    "apply_btn": "APPLIQUER"
-                }
-            },
-            "save_error": "Erreur lors de l'enregistrement des paramètres",
-            "restart_warning": "Changements nécessitant un redémarrage détectés.",
-            "restart_success": "Diffusion redémarrée avec succès !",
-            "restart_error": "Erreur lors du redémarrage du moteur"
-        },
-        "users": {
-            "header": {
-                "title": "GESTION DES ACCÈS",
-                "subtitle": "UTILISATEURS ET PROFILS D'ACCÈS",
-                "add_user_btn": "AJOUTER UN USER",
-                "add_profile_btn": "CRÉER UN PROFIL"
-            },
-            "tabs": {
-                "users": "UTILISATEURS",
-                "profiles": "PROFILS"
-            },
-            "table": {
-                "username": "UTILISATEUR",
-                "description": "DESCRIPTION",
-                "profile": "PROFIL / RÔLE",
-                "status": "ÉTAT",
-                "actions": "ACTIONS",
-                "active": "ACTIF",
-                "permissions": "PERMISSIONS"
-            },
-            "tooltips": {
-                "change_password": "Changer le mot de passe",
-                "delete_user": "Supprimer l'utilisateur",
-                "edit_profile": "Modifier le profil",
-                "delete_profile": "Supprimer le profil"
-            },
-            "messages": {
-                "delete_success": "Utilisateur supprimé",
-                "delete_error": "Erreur lors de la suppression",
-                "password_changed": "Mot de passe changé avec succès !",
-                "password_change_error": "Erreur lors du changement de mot de passe",
-                "password_min_length": "Le mot de passe doit comporter au moins 8 caractères",
-                "profile_updated": "Profil mis à jour !",
-                "profile_created": "Profil créé !",
-                "save_profile_error": "Erreur lors de l'enregistrement du profil",
-                "profile_name_required": "Le nom du profil est obligatoire",
-                "profile_deleted": "Profil supprimé",
-                "delete_profile_error": "Erreur lors de la suppression du profil"
-            },
-            "dialogs": {
-                "add_user": {
-                    "title": "AJOUTER UTILISATEUR",
-                    "subtitle": "CRÉER UN NOUVEL ACCÈS SYSTÈME",
-                    "username_label": "NOM D'UTILISATEUR",
-                    "password_label": "MOT DE PASSE",
-                    "profile_label": "PROFIL D'ACCÈS"
-                },
-                "change_password": {
-                    "title": "CHANGER LE MOT DE PASSE : {{username}}",
-                    "new_password_label": "NOUVEAU MOT DE PASSE",
-                    "update_btn": "METTRE À JOUR"
-                },
-                "profile": {
-                    "new_title": "NOUVEAU PROFIL",
-                    "edit_title": "MODIFIER LE PROFIL",
-                    "subtitle": "GÉRER LES NIVEAUX DE PERMISSION",
-                    "name_label": "NOM DU PROFIL",
-                    "system_rename_warning": "Les profils système ne peuvent pas être renommés.",
-                    "permissions_label": "PERMISSIONS ACTIVES",
-                    "permissions_help": "Définissez la portée de visualisation, d'édition et d'exécution.",
-                    "create_btn": "CRÉER",
-                    "update_btn": "METTRE À JOUR"
-                },
-                "udp_verify": {
-                    "title": "Informations Importantes: Sortie UDP",
-                    "intro": "Le protocole UDP (User Datagram Protocol) est recommandé pour les réseaux locaux en raison de sa faible latence, mais possède des caractéristiques spécifiques :",
-                    "stability_title": "1. Stabilité vs SRT :",
-                    "stability_desc": "L'UDP n'a pas de retransmission de paquets. Si le réseau oscille, il y aura des \"drops\" visibles. Le SRT est préférable pour l'accès distant.",
-                    "network_title": "2. Configuration Réseau :",
-                    "network_external": "Accès Externe :",
-                    "network_desc": "Non recommandé pour l'UDP (utilisez le SRT). Si nécessaire, nécessite un Port Forwarding sur le routeur (Port 1234 UDP).",
-                    "sync_title": "3. Synchronisation & Buffer :",
-                    "sync_desc": "Notre système gérable PUSH initie et alimente continuellement le pare-feu de manière native, éliminant les latences de handshake et les erreurs d'émission initiales courantes.",
-                    "firewall_warning": "* Assurez-vous que le pare-feu du serveur autorise le trafic sur le port choisi.",
-                    "confirm_btn": "J'ai compris et je souhaite activer"
-                },
-                "delete_confirm": "Êtes-vous sûr de vouloir supprimer cet utilisateur ?",
-                "profile_delete_warning": "Êtes-vous sûr ? Les utilisateurs associés pourraient perdre leur accès."
-            }
-        },
-        "logs": {
-            "dialog": {
-                "title": "VISUALISEUR DE LOGS"
-            },
-            "rotation": {
-                "btn": "ROTATION",
-                "tooltip": "Configuration de la rotation des logs",
-                "header": "CONFIGURATION DE LA ROTATION DES LOGS",
-                "fields": {
-                    "max_size": "TAILLE MAX (MO)",
-                    "max_files": "NOMBRE MAX DE FICHIERS",
-                    "retention": "RÉTENTION (JOURS)",
-                    "compress": "COMPRESSER LES ANCIENS LOGS"
-                },
-                "save_btn": "ENREGISTRER LA CONFIG",
-                "save_success": "Configuration de rotation enregistrée !",
-                "save_error": "Erreur lors de l'enregistrement de la config",
-                "force_btn": "FORCER LA ROTATION",
-                "force_confirm": "Forcer la rotation maintenant ? Le log actuel sera archivé.",
-                "force_success": "Rotation effectuée ! Log réinitialisé.",
-                "force_error": "Erreur lors de la rotation"
-            },
-            "export": {
-                "btn": "EXPORTER TXT",
-                "tooltip": "Exporter les logs visibles au format TXT"
-            },
-            "tabs": {
-                "playout": "LOGS PLAYOUT",
-                "system": "LOGS VM / DOCKER"
-            },
-            "search_placeholder": "Rechercher dans les logs...",
-            "lines_count": "lignes",
-            "empty_filters": "AUCUN RÉSULTAT POUR LES FILTRES APPLIQUÉS",
-            "waiting": "EN ATTENTE DE LOGS...",
-            "system": {
-                "source_label": "SOURCE",
-                "empty_source": "Aucun log récent pour cette source.",
-                "none_detected": "AUCUN LOG SYSTÈME DÉTECTÉ DANS LE CONTENEUR."
-            },
-            "footer": {
-                "files": "fichiers",
-                "compress_on": "Compression ACTIVÉE",
-                "compress_off": "Compression DÉSACTIVÉE",
-                "days": "jours",
-                "restart_btn": "REDÉMARRER LE MOTEUR"
-            }
-        }
+    "audit_dialog": {
+      "title": "Audit des Proxies Web",
+      "optimized": "Toutes les vidéos ont des Proxies Web ! Le système est optimisé.",
+      "missing_alert": "Détection de <b>{{count}} vidéos</b> sans version Proxy Web. Cela nécessite plus de CPU serveur.",
+      "videos_no_proxy": "VIDÉOS SANS PROXY",
+      "estimated_space": "ESPACE ESTIMÉ",
+      "batch_generate": "Générer par lot ({{count}})"
+    }
+  },
+  "playlist": {
+    "title": "ÉDITEUR DE PLAYLIST",
+    "subtitle": "GÉNÉRATEUR DE DIFFUSION AUTOMATIQUE & PROGRAMMÉE",
+    "delete_selected": "SUPPRIMER ({{count}})",
+    "automation": "AUTOMATISATION",
+    "new_playlist": "NOUVELLE PLAYLIST",
+    "save": "ENREGISTRER",
+    "saving": "ENREGISTREMENT...",
+    "tabs": {
+      "media": "MÉDIAS",
+      "playlists": "PLAYLISTS"
+    },
+    "sidebar": {
+      "root_all": "RACINE (TOUT)",
+      "filter_all": "A",
+      "filter_filler": "F",
+      "filter_no_filler": "-F",
+      "add_all_folder": "Ajouter tout ce dossier",
+      "duration": "DURÉE: {{duration}}"
+    },
+    "editor": {
+      "name_label": "NOM DE LA PLAYLIST",
+      "date_label": "DATE DE DIFFUSION",
+      "total_duration": "DURÉE TOTALE: {{duration}}",
+      "target_meta": "OBJECTIF: 24:00:00",
+      "missing_time": "⚠️ MANQUE {{duration}} POUR COMPLÉTER 24H",
+      "ready_msg": "✅ PLAYLIST PRÊTE POUR DIFFUSION (24H COMPLÈTES)",
+      "sequence_grid": "GRILLE DE SÉQUENCE ({{count}} CLIPS)",
+      "add_clip": "AJOUTER CLIP",
+      "empty_title": "PLAYLIST VIDE",
+      "empty_msg": "AJOUTEZ DES MÉDIAS DEPUIS LA BIBLIOTHÈQUE POUR COMMENCER",
+      "undo": "Annuler",
+      "redo": "Rétablir"
+    },
+    "dialogs": {
+      "media_selector": {
+        "title": "BIBLIOTHÈQUE MÉDIAS",
+        "filter_all": "TOUT",
+        "filter_filler": "FILLER UNIQUEMENT",
+        "filter_no_filler": "EXCLURE FILLER",
+        "add_all": "AJOUTER TOUT CE DOSSIER",
+        "select_all": "TOUT SÉLECTIONNER",
+        "all_folders": "TOUS LES DOSSIERS",
+        "selected_count": "{{count}} FICHIER(S) SÉLECTIONNÉ(S)",
+        "add_selected": "AJOUTER SÉLECTION ({{count}})"
+      },
+      "create": {
+        "title": "NOUVELLE PLAYLIST",
+        "name_label": "NOM DE LA PLAYLIST",
+        "placeholder": "ex: PLAYLIST LUNDI",
+        "btn_create": "CRÉER"
+      },
+      "automation": {
+        "title": "AUTOMATISATION DE REMPLISSAGE",
+        "msg": "CHOISISSEZ LA MÉTHODE POUR ATTEINDRE L'OBJECTIF DE 24H.",
+        "mode_random": "ALÉATOIRE PAR DOSSIER",
+        "mode_random_desc": "Choisit des médias aléatoires dans la source.",
+        "mode_sequential": "SÉQUENTIEL PAR DOSSIER",
+        "mode_sequential_desc": "Suit l'ordre alphabétique des fichiers.",
+        "mode_loop": "LOOP DE LA SÉLECTION ACTUELLE",
+        "mode_loop_desc": "Répète les clips déjà présents dans la grille.",
+        "source_folder": "Dossier Source",
+        "fillers_only": "Uniquement les clips marqués FILLER",
+        "run_now": "Exécuter Maintenant"
+      }
     },
     "notifications": {
-        "save_success": "Paramètres de l'onglet {{tab}} enregistrés !",
-        "restart_success": "Flux redémarré avec succès !",
-        "save_error": "Erreur lors de l'enregistrement des paramètres",
-        "udp_ready": "Protocole UDP prêt à être activé lors de l'enregistrement."
+      "bulk_delete_confirm": "Êtes-vous sûr de vouloir supprimer les {{count}} clips sélectionnés ?",
+      "removed_count": "{{count}} clips supprimés",
+      "no_files_found": "Aucun fichier trouvé dans ce dossier avec ces filtres",
+      "added_count": "{{count}} clips ajoutés",
+      "enter_name": "Veuillez entrer un nom pour la playlist",
+      "update_success": "Playlist mise à jour avec succès !",
+      "create_success": "Playlist créée avec succès !",
+      "save_error": "Erreur lors de l'enregistrement de la playlist",
+      "delete_confirm": "Êtes-vous sûr de vouloir supprimer la playlist \"{{name}}\" ?",
+      "delete_success": "Playlist supprimée avec succès",
+      "delete_conflict": "Cette playlist est utilisée dans le calendrier et ne peut pas être supprimée.",
+      "delete_error": "Erreur lors de la suppression de la playlist",
+      "automation_success": "{{count}} clips ajoutés via automatisation ({{type}}).",
+      "automation_error": "Erreur lors de l'exécution de l'automatisation",
+      "automation_fail_time": "La playlist a déjà atteint ou dépassé les 24 heures.",
+      "automation_no_clips_loop": "Ajoutez au moins un clip comme base pour la boucle.",
+      "automation_no_files_folder": "Aucun fichier trouvé dans le dossier sélectionné{{filler}}.",
+      "automation_no_suitable": "Impossible de trouver des fichiers adaptés pour remplir le temps.",
+      "filler_flag": " avec le drapeau filler"
+    }
+  },
+  "calendar": {
+    "title": "CENTRE DE PROGRAMMATION",
+    "subtitle": "GESTIONNAIRE DE PROGRAMME & RÉCURRENCE",
+    "default_playlist_name": "Playlist",
+    "on_air_now": "EN DIRECT MAINTENANT",
+    "active_playlist": "PLAYLIST ACTIVE",
+    "bulk_delete": "NETTOYAGE EN MASSE",
+    "tv_guide": "GUIDE TV",
+    "shortcuts": "RACCOURCIS DE NETTOYAGE",
+    "clear_today": "VIDER AUJOURD'HUI",
+    "clear_week": "CETTE SEMAINE",
+    "clear_month": "CE MOIS",
+    "clear_year": "CETTE ANNÉE",
+    "legend": "LÉGENDE",
+    "single_event": "PROGRAMMATION UNIQUE",
+    "recurring_series": "SÉRIE RÉCURRENTE",
+    "playing_now": "EN LECTURE ACTUELLEMENT",
+    "dialogs": {
+      "manage": {
+        "title": "GÉRER LA PROGRAMMATION",
+        "date": "DATE",
+        "recurs": "RÉCURRENCE",
+        "edit_btn": "MODIFIER SÉRIE / ÉVÉNEMENT",
+        "ignore_today": "IGNORER AUJOURD'HUI UNIQUEMENT",
+        "confirm_ignore": "Supprimer uniquement l'occurrence du {{date}} ?",
+        "stop_series": "ARRÊTER LA SÉRIE RÉCURRENTE",
+        "delete_event": "SUPPRIMER LE PROGRAMME",
+        "confirm_stop_series": "Voulez-vous arrêter toute la série de \"{{title}}\" définitivement ?",
+        "confirm_delete_event": "Supprimer définitivement \"{{title}}\" ?"
+      },
+      "create": {
+        "title_edit": "MODIFIER PROGRAMMATION",
+        "title_new": "PROGRAMMER POUR LE {{date}}",
+        "playlist_label": "PLAYLIST",
+        "time_label": "HORAIRE",
+        "repeat_label": "TYPE DE RÉPÉTITION",
+        "no_repeat": "SANS RÉPÉTITION",
+        "daily": "QUOTIDIENNE",
+        "weekly": "HEBDOMADAIRE",
+        "monthly": "MENSUELLE"
+      },
+      "bulk": {
+        "title": "NETTOYAGE PERSONNALISÉ",
+        "msg": "CHOISISSEZ UNE PÉRIODE POUR SUPPRIMER TOUT LE PROGRAMME.",
+        "start_label": "DÉBUT",
+        "end_label": "FIN",
+        "btn_delete": "SUPPRIMER LA PÉRIODE"
+      }
     },
-    "udp_ready": "Protocole UDP prêt pour activation lors de la sauvegarde.",
-    "help": {
-        "title": "Centre d'Aide",
-        "subtitle": "CLOUD ONEPA PLAYOUT — GUIDE DES OPÉRATIONS",
-        "deactivate_btn": "Désactiver le Mode Aide",
-        "close_btn": "Fermer",
-        "tabs": {
-            "dashboard": "Tableau",
-            "media": "Média",
-            "playlists": "Playlists",
-            "calendar": "Calendrier",
-            "graphics": "Graphiques",
-            "settings": "Réglages",
-            "troubleshooting": "Problèmes"
+    "tooltips": {
+      "open_browser": "Ouvrir EPG dans le navigateur",
+      "export_xml": "Exporter et sauvegarder EPG sur disque (.xml)",
+      "url_not_configured": "URL EPG non configurée",
+      "open_xml": "Ouvrir EPG XML dans le navigateur",
+      "download_xml": "Télécharger EPG XML sur le disque",
+      "playing": "EN COURS",
+      "recurrent": "RÉCURRENT",
+      "occurrence": "OCCURRENCE",
+      "time": "HEURE"
+    },
+    "notifications": {
+      "fetch_error": "Erreur lors du chargement de l'agenda",
+      "playlist_required": "Veuillez sélectionner une playlist",
+      "update_success": "Programmation mise à jour",
+      "create_success": "Programmation créée",
+      "save_error": "Erreur lors de l'enregistrement",
+      "export_failed": "Échec de l'exportation",
+      "id_not_found": "Erreur : ID de programmation non trouvé",
+      "delete_success": "Programmation supprimée",
+      "delete_error": "Erreur lors de la suppression",
+      "missing_data_occurrence": "Erreur : Données insuffisantes pour supprimer l'occurrence",
+      "occurrence_removed": "Occurrence d'aujourd'hui supprimée",
+      "occurrence_error": "Erreur lors de la suppression de l'occurrence",
+      "bulk_error": "Erreur lors du nettoyage en masse",
+      "select_dates": "Veuillez sélectionner les dates"
+    }
+  },
+  "epg": {
+    "title": "GUIDE TV",
+    "subtitle": "ONEPA PLAYOUT • ALPHA INTELLIGENCE",
+    "no_name": "Sans Nom",
+    "prev": "PRÉCÉDENT",
+    "today": "AUJOURD'HUI",
+    "next": "SUIVANT",
+    "empty_playlist": "PLAYLIST VIDE",
+    "duration_label": "DURÉE",
+    "no_schedule": "Aucun programme trouvé pour ce jour.",
+    "dialog": {
+      "title": "PROGRAMMATION DÉTAILLÉE",
+      "emission_time": "HEURE DE DIFFUSION",
+      "description": "SYNOPSIS / DESCRIPTION",
+      "no_description": "Ce contenu n'a pas de synopsis détaillé enregistré.",
+      "director": "RÉALISATION",
+      "category": "CATÉGORIE / GENRE",
+      "source_data": "SOURCE DE DONNÉES",
+      "visit_source": "VISITER LA SOURCE",
+      "close": "FERMER LES DÉTAILS",
+      "unknown": "Inconnu",
+      "general": "Général"
+    },
+    "tooltip": {
+      "click_view": "Cliquer pour tout voir"
+    }
+  },
+  "settings": {
+    "header": {
+      "title": "Paramètres",
+      "subtitle": "Panneau de Contrôle Système",
+      "refresh_btn": "RAFRAÎCHIR",
+      "refresh_tooltip": "Recharger les paramètres du serveur",
+      "history_btn": "NOTES DE VERSION",
+      "history_tooltip": "Voir les nouveautés de cette version",
+      "save_btn": "ENREGISTRER",
+      "save_btn_loading": "ENREGISTREMENT..."
+    },
+    "navigation": {
+      "title": "CONFIGURATION",
+      "output": "DIFFUSION & SORTIE",
+      "paths": "CHEMINS & MÉDIAS",
+      "playout": "PLAYOUT & PRÉRÉGLAGES",
+      "users": "UTILISATEURS",
+      "system": "TEMPLATES",
+      "about": "À PROPOS DU SYSTÈME",
+      "monitor": "MONITEUR BACKEND",
+      "support": "SUPPORT TECHNIQUE",
+      "explore_tooltip": "Explorer {{tab}}"
+    },
+    "tabs": {
+      "system": "TEMPLATES"
+    },
+    "about": {
+      "header": {
+        "title": "INFORMATIONS SYSTÈME",
+        "subtitle": "ÉTAT DU CORE ET JOURNAUX OPÉRATIONNELS"
+      },
+      "fields": {
+        "version": "VERSION",
+        "last_update": "DERNIÈRE MISE À JOUR",
+        "deployment": "ENVIRONNEMENT",
+        "env_value": "Docker Container (Linux)"
+      },
+      "roadmap": {
+        "title": "ROADMAP DU PRODUIT",
+        "subtitle": "PLANIFICATION DES FONCTIONNALITÉS ET EXPLORATION FUTURE",
+        "highlight_title": "POINTS FORTS DE LA VERSION",
+        "github_btn": "VOIR LE RÉPÔT",
+        "highlights": {
+          "i18n_label": "MULTI-LANGUE (IMPLEMENTE)",
+          "i18n_value": "Implemente",
+          "multichannel_label": "MULTI-CANAL (PLANIFIE)",
+          "multichannel_value": "Planifie",
+          "lowlatency_label": "LOW-LATENCY (IMPLEMENTE)",
+          "lowlatency_value": "SRT / HLS (stable)"
         },
-        "dashboard": {
-            "title": "Tableau de Bord",
-            "intro": "Le tableau de bord est la page principale d'opération.",
-            "status_indicator": {
-                "title": "Indicateur ON AIR / OFF AIR",
-                "prefix": "En haut du tableau de bord, il y a un indicateur d'état :",
-                "on_air": "Moteur FFmpeg actif et en cours de diffusion",
-                "off_air": "Moteur arrêté ou pas de playlist"
-            },
-            "controls": {
-                "title": "Démarrer / Arrêter le Playout",
-                "step1": "Vérifiez que vous avez une playlist planifiée dans le Calendrier.",
-                "step2": "Cliquez sur DÉMARRER — le système valide le planning.",
-                "step3": "Choisissez les protocoles (RTMP, SRT, UDP) et cliquez sur 'Démarrer Moteur'.",
-                "step4": "Le LIVE PREVIEW montre le flux après 6-10 sec.",
-                "step5": "Pour arrêter, cliquez sur STOP.",
-                "warning": "Si aucune playlist n'est prévue, le playout ne démarrera pas."
-            },
-            "protocols": {
-                "title": "Protocoles de Diffusion",
-                "intro": "Le système supporte plusieurs protocoles :",
-                "master": "Streaming interne principal.",
-                "rtmp": "Idéal pour les réseaux sociaux et CDNs.",
-                "srt": "Streaming fiable sur réseaux instables.",
-                "udp": "Protocole pour réseaux locaux.",
-                "others": "Autres formats de streaming Web.",
-                "legend": "Status : 🟢 Actif | ⚪ Inactif | 🔴 Erreur"
-            },
-            "clips": {
-                "title": "Visualisation des Clips",
-                "intro": "Dans l'onglet Playlist, vous pouvez voir l'état :",
-                "playing": "Clip en cours de diffusion.",
-                "next": "Prochain clip dans la file.",
-                "skip": "Passer au suivant."
-            },
-            "logs": {
-                "title": "Surveillance (Engine Logs)",
-                "intro": "Informations techniques du moteur :",
-                "engine": "État du processus d'encodage.",
-                "uptime": "Temps total sans interruption.",
-                "schedule_validity": "Validation avec le calendrier.",
-                "active_protocols": "Liste des encodeurs actifs.",
-                "last_logs": "Messages du moteur en temps réel."
-            }
+        "phases": {
+          "p25_connectivity": {
+            "title": "ENTREES LIVE & PROTOCOLES AVANCES",
+            "focus": "Expansion au-dela du playback de fichiers",
+            "items": [
+              "Live Inputs Support : Integration WebRTC, NDI et SDI pour live switching",
+              "Social Streaming : Integration native YouTube Live et Facebook Live",
+              "Advanced SRT : Multi-caller et bonding"
+            ]
+          },
+          "p26_ux": {
+            "title": "GRAPHIQUES & EXPERIENCE VISUELLE",
+            "focus": "Branding avance on-air",
+            "items": [
+              "Drag-and-Drop Editor : Editeur WYSIWYG pour templates actifs",
+              "HTML5 Graphics Engine : Superpositions dynamiques avec technologies web",
+              "Mobile Responsive Layout : Support mobile complet pour le dashboard",
+              "Theme Customization : Moteur de themes avance par utilisateur"
+            ]
+          },
+          "p27_enterprise": {
+            "title": "ENTREPRISE & CONFORMITE",
+            "focus": "Evolutivite et exigences professionnelles",
+            "items": [
+              "Multi-User System : Controle d'acces base sur les profils (RBAC)",
+              "Audit Logs : Suivi complet des actions des utilisateurs",
+              "As-Run Logs : Logs de diffusion (Proof-of-Play)",
+              "SCTE-35 Support : Declencheurs pour insertion de publicites",
+              "Analytics Dashboard : Statistiques de visionnage et sante du systeme"
+            ]
+          },
+          "p28_future": {
+            "title": "TECH DU FUTUR & EVOLUTIVITE",
+            "focus": "Innovation et haute disponibilite",
+            "items": [
+              "AI Integration : Marquage auto et generation intelligente de playlists",
+              "Multi-Channel Core : Une instance gerant plusieurs canaux",
+              "High Availability : Redondance et failover automatique"
+            ]
+          }
         },
-        "library": {
-            "title": "Médiathèque",
-            "intro": "Répertoire central pour toutes les vidéos et audios.",
-            "upload": {
-                "title": "Charger Media",
-                "step1": "Cliquez sur Charger ou glissez les fichiers.",
-                "step2": "Formats : MP4, MOV, MKV, AVI, TS, MXF (H.264/H.265).",
-                "step3": "Extraction automatique des métadonnées.",
-                "step4": "Génération de miniature automatique.",
-                "nfs_hint": "Conseil : Les dossiers réseau (NFS/SMB) sont détectés automatiquement."
-            },
-            "metadata": {
-                "intro": "Chaque fichier chargé est analysé pour extraire les détails.",
-                "auto_review_title": "Révision des Métadonnées",
-                "auto_review": "Le système révise automatiquement les métadonnées.",
-                "field_title": "Titre",
-                "field_title_desc": "Nom du programme.",
-                "field_synopsis": "Synopsis",
-                "field_synopsis_desc": "Phrase résumant le contenu.",
-                "field_genre": "Genre",
-                "field_genre_desc": "Catégorie du contenu.",
-                "field_rating": "Classification",
-                "field_rating_desc": "Âge recommandé.",
-                "field_type": "Type",
-                "field_type_desc": "Série, Film, Documentaire, etc."
-            },
-            "fillers": {
-                "title": "Clips de Remplissage (Fillers)",
-                "desc": "Les fillers sont utilisés pour combler les espaces vides."
-            }
+        "idioma": {
+          "title": "MULTILINGUE",
+          "value": "Implemente"
         },
-        "playlists": {
-            "title": "Éditeur de Playlists",
-            "intro": "Séquences de contenu que le moteur playout reproduit.",
-            "create": {
-                "title": "Créer une Playlist",
-                "step1": "Allez au menu Playlists et cliquez sur 'Nouvelle Playlist'.",
-                "step2": "Attribuez un nom (ex : Matinée Cinéma).",
-                "step3": "Glissez des clips de la médiathèque vers la liste de droite.",
-                "step4": "Réordonnez les clips en les faisant glisser.",
-                "step5": "Cliquez sur ENREGISTRER."
-            },
-            "management": {
-                "title": "Gestion de Playlist",
-                "sorting": "Tri",
-                "sorting_desc": "Utilisez les flèches ou glissez pour changer l'ordre.",
-                "remove_clip": "Supprimer Clip",
-                "remove_clip_desc": "Cliquez sur la poubelle pour retirer un clip.",
-                "duplicate": "Dupliquer",
-                "duplicate_desc": "Copiez des playlists pour des variations rapides.",
-                "total_duration": "Temps Total",
-                "total_duration_desc": "Calculé automatiquement.",
-                "fillers": "Fillers",
-                "fillers_desc": "Les clips de remplissage sont ignorés dans le calcul mais utilisés en diffusion."
-            },
-            "best_practices": {
-                "title": "Meilleures Pratiques",
-                "bullets": "• Évitez les playlists de plus de 24h.\n• Validez les miniatures des clips.\n• Utilisez des noms descriptifs."
-            }
+        "canal": {
+          "title": "MULTI-CANAL",
+          "value": "Planifie"
         },
-        "calendar": {
-            "title": "Calendrier de Diffusion",
-            "intro": "Le calendrier permet de programmer vos émissions.",
-            "schedule": {
-                "title": "Planifier une Playlist",
-                "step1": "Cliquez sur un jour du calendrier pour ouvrir le dialogue.",
-                "step2": "Sélectionnez la playlist souhaitée.",
-                "step3": "Définissez l'heure de début (ex : 06h00).",
-                "step4": "Choisissez le modèle de répétition : Aucun, Quotidien, Hebdomadaire ou Mensuel.",
-                "step5": "Cliquez sur ENREGISTRER. L'événement apparaîtra dans le calendrier."
-            }
-        },
-        "graphics": {
-            "title": "Moteur Graphique",
-            "intro": "Le moteur graphique permet de positionner des logos."
-        },
-        "settings": {
-            "title": "Configuration Système",
-            "intro": "Le menu des paramètres comporte 5 zones principales."
-        },
-        "troubleshooting": {
-            "title": "Dépannage",
-            "intro": "Solutions aux problèmes courants."
+        "latency": {
+          "title": "BASSE LATENCE",
+          "value": "SRT / HLS (stable)"
         }
+      },
+      "history": {
+        "title": "HISTORIQUE DES VERSIONS",
+        "subtitle": "NOTES CRITIQUES ET ÉVOLUTION DU PROJET",
+        "dialog_title": "HISTORIQUE DES VERSIONS",
+        "version_label": "Version",
+        "close_btn": "COMPRIS",
+        "empty": "AUCUN HISTORIQUE DISPONIBLE",
+        "releases": [
+          {
+            "version": "v2.2.0-ALPHA.38-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Lancement Automatique : Mise a jour vers ALPHA.38-PRO.",
+              "Documentation : README.md, RELEASE_NOTES.md et constantes frontend synchronises.",
+              "Transcription : Optimisation du moteur pour meilleure precision."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.35-PRO",
+            "date": "2026-03-08",
+            "changes": [
+              "Lancement Automatique : Mise a jour de version et statistiques.",
+              "Documentation : README.md et historique de versions synchronises.",
+              "i18n Health : Traductions du tableau de bord de sante ajoutees."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.34-PRO",
+            "date": "2026-03-05",
+            "changes": [
+              "Lancement Automatique : Mise a jour de version et statistiques.",
+              "Documentation : README.md et historique de versions synchronises."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.32-PRO",
+            "date": "2026-03-03",
+            "changes": [
+              "UDP Stability : Correction du Unicast PUSH (\"Address already in use\").",
+              "Audit Ports 3.0 : Detection intelligente des recepteurs (VLC).",
+              "Log Management : Rotation des logs (10MB/3-fichiers).",
+              "Script Versioning : Versions standardisees dans les scripts.",
+              "Process Guard : Protection contre collisions de ports.",
+              "System Sync : Version synchronisee DB/Backend/Frontend."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.31-PRO",
+            "date": "2026-03-01",
+            "changes": [
+              "Dynamic EPG Hydration : Metadonnees en temps reel via Media Library.",
+              "Doublons : Clips dupliques hydratés correctement.",
+              "EPG XML : Descriptions et categories enrichies.",
+              "Automation : Versions synchronisees Frontend/Backend/DB."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.30-PRO",
+            "date": "2026-02-28",
+            "changes": [
+              "Lancement Automatique : Mise a jour de version et statistiques.",
+              "Documentation : README.md et historique de versions synchronises."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.29-PRO",
+            "date": "2026-02-27",
+            "changes": [
+              "Lancement Automatique : Mise a jour de version et statistiques.",
+              "Documentation : README.md et historique de versions synchronises."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.28-PRO",
+            "date": "2026-02-24",
+            "changes": [
+              "High-Density Help System : Redesign du menu d aide.",
+              "Protocol Stability : Correction du fallback RTMP.",
+              "Backend Recovery : Resolution du VersionMismatch.",
+              "Automation Integrity : Correction des suffixes de scripts."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.27-PRO",
+            "date": "2026-02-23",
+            "changes": [
+              "Surgical Compact Redesign : Paddings/marges reduits.",
+              "EPG & Calendar Optimization : Plus d evenements sans scroll.",
+              "Dashboard Protocol Focus : Telemetrie priorisee.",
+              "Bug Fix : EditIcon ReferenceError resolu."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.26-PRO",
+            "date": "2026-02-23",
+            "changes": [
+              "Lancement Automatique : Mise a jour de version et statistiques.",
+              "Documentation : README.md et historique de versions synchronises."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.25-PRO",
+            "date": "2026-02-22",
+            "changes": [
+              "ALPHA.25 Consolidation : Version synchronisee DB/Backend/Frontend.",
+              "Reality Sync Engine : Detection robuste des fichiers.",
+              "Storage Transparency : MB/GB en temps reel dans Settings.",
+              "Filtre Professionnel : Assets proteges masques.",
+              "Performance Streaming : Range Requests natifs.",
+              "Nettoyage des Donnees : Higienisation automatique."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.24-PRO",
+            "date": "2026-02-20",
+            "changes": [
+              "Details en attente : consolidation des notes de cette version."
+            ]
+          }
+        ]
+      }
+    },
+    "warnings": {
+      "udp_config": "Protocole UDP prêt pour activation lors de l'enregistrement."
+    },
+    "output": {
+      "header": {
+        "title": "CONFIGURATION DE SORTIE",
+        "subtitle": "GESTION DES PROTOCOLES ET DISTRIBUTION",
+        "status_ready": "ENGINE EN LIGNE"
+      },
+      "main": {
+        "title": "PROTOCOLE PRINCIPAL",
+        "url_label": "URL DE SORTIE PRINCIPALE",
+        "udp_tip": "ASTUCE: Le format udp://@:1234 force le Push vers la machine locale (TRÈS STABLE). Dans VLC ouvrez: udp://@:1234",
+        "resolution": "RÉSOLUTION",
+        "resolutions": {
+          "4k": "4K (Ultra HD)",
+          "1080p": "1080p (Full HD)",
+          "720p": "720p (HD)",
+          "360p": "360p (SD)"
+        },
+        "bitrate": "DÉBIT VIDÉO (ex: 5000k)"
+      },
+      "multi": {
+        "title": "MULTI-STREAMING",
+        "subtitle": "ACTIVATION DES PROTOCOLES ADITIONNELS",
+        "soon": "À VENIR",
+        "dash_desc": "Streaming adaptatif multi-débit",
+        "mss_desc": "Smooth Streaming pour Azure/CDN",
+        "rtsp_desc": "Protocole para IPTV et caméras IP",
+        "webrtc_desc": "Latence inférieure à la seconde pour navigateur"
+      },
+      "links": {
+        "title": "LIENS DE CONNEXION DIRECTE (VLC, OBS)",
+        "rtmp_label": "RTMP (Maître de Distribution Locale)",
+        "rtmp_copied": "Lien RTMP copié !",
+        "srt_label": "SRT - Secure Reliable Transport (UDP)",
+        "srt_warning": "Attention: Le port doit être ouvert en UDP. Les clients doivent explicitement demander 'read:'",
+        "srt_copied": "Lien SRT copié !",
+        "udp_label": "UDP Stream (VLC Direct)",
+        "udp_tip": "Pour voir dans VLC: Médias > Ouvrir un flux réseau > entrez l'adresse ci-dessus.",
+        "udp_copied": "Lien UDP copié !",
+        "hls_label": "HLS Playlist (Nginx Proxy 3011)",
+        "hls_copied": "Lien HLS copié !",
+        "no_protocols": "Activez au moins un protocole ci-dessus (RTMP, SRT, HLS) pour révéler les ports et liens dédiés.",
+        "copied": "Lien copié !"
+      }
+    },
+    "paths": {
+      "header": {
+        "title": "CHEMINS DE STOCKAGE",
+        "subtitle": "CONFIGURATION DES RÉPERTOIRES ET VOLUMES"
+      },
+      "fields": {
+        "media": "MÉDIAS ET VIDÉO",
+        "thumbnails": "VIGNETTES",
+        "playlists": "BDD PLAYLISTS",
+        "fillers": "FILLERS ET BOUCLES",
+        "logs": "LOGS PLAYOUT",
+        "protected": "BRANDING ET ACTIFS PROTÉGÉS"
+      },
+      "helpers": {
+        "media": "Stockage principal des contenus",
+        "thumbnails": "Cache des vignettes générées",
+        "playlists": "Base de données des programmes",
+        "fillers": "Contenus de remplissage automatique",
+        "logs": "Emplacement du fichier de logs système",
+        "protected": "Emplacement des logos et vidéos institutionnelles"
+      }
+    },
+    "storage": {
+      "header": {
+        "title": "GESTION DE L'ESPACE (PROXIES WEB)",
+        "subtitle": "Surveillance du cache et synchronisation physique des répertoires.",
+        "sync_needed_label": "nouveaux fichiers sur le disque. Cliquez sur Synchroniser."
+      },
+      "stats": {
+        "db": "BDD",
+        "physical": "Disque",
+        "proxies": "Proxies"
+      },
+      "toolbar": {
+        "explore": "Explorer Gestionnaire d'Espace",
+        "sync": "Synchroniser les fichiers disque vers la BDD",
+        "purge": "Purger tous les Proxies (Libérer de l'espace)"
+      },
+      "explorer": {
+        "title": "GESTIONNAIRE D'ESPACE DE STOCKAGE",
+        "subtitle": "GESTION INDIVIDUELLE DES FICHIERS OPTIMISÉS POUR L'APERÇU",
+        "selected_count": "SÉLECTIONNÉS",
+        "mb_to_free": "MO À LIBÉRER",
+        "proxy_missing": "PROXY MANQUANT (Identifié sur disque, nécessite optimisation)",
+        "generate_btn": "GÉNÉRER MAINTENANT",
+        "generate_success": "Génération du proxy lancée en arrière-plan",
+        "empty": "AUCUN PROXY TROUVÉ SUR LE DISQUE",
+        "delete_btn": "SUPPRIMER SÉLECTIONNÉS"
+      },
+      "dialogs": {
+        "delete_proxies": {
+          "title": "CONFIRMER LA SUPPRESSION",
+          "warning1": "Êtes-vous sûr de vouloir supprimer {{count}} fichiers proxy ?",
+          "space_label": "Total de l'espace à libérer:",
+          "warning2": "⚠️ CETTE OPÉRATION EST IRRÉVERSIBLE. LES APERÇUS SERONT À NOUVEAU LENTS POUR CES VIDÉOS.",
+          "confirm_btn": "CONFIRMER ET SUPPRIMER"
+        }
+      }
+    },
+    "api": {
+      "header": {
+        "title": "APIS DE MÉTADONNÉES",
+        "subtitle": "INDEXATION INTELLIGENTE (TMDB / OMDB)",
+        "auto_config_btn": "AUTO-CONFIG"
+      },
+      "fields": {
+        "key_placeholder": "Entrez la clé API..."
+      },
+      "toolbar": {
+        "test": "Tester la Connexion",
+        "save": "Enregistrer"
+      },
+      "dialogs": {
+        "auto_config": {
+          "title": "Configuration Automatique",
+          "desc": "Cette action va configurer automatiquement les clés API recommandées pour:",
+          "warning": "Vos clés actuelles seront écrasées. Voulez-vous continuer ?"
+        },
+        "overlay_optimizer": {
+          "title": "Optimiseur de Overlay Pro",
+          "select_btn": "Sélectionner Image Originale",
+          "width_label": "Largeur",
+          "height_label": "Hauteur",
+          "aspect_label": "Maintenir Aspect",
+          "trim_label": "Auto-Trim",
+          "change_btn": "Changer Image",
+          "processing": "Traitement...",
+          "apply_btn": "Appliquer et Enregistrer"
+        }
+      }
+    },
+    "branding": {
+      "header": {
+        "title": "Branding et Actifs",
+        "subtitle": "IDENTITÉ VISUELLE ET FALLBACKS"
+      },
+      "assets": {
+        "title": "ACTIFS DE MARQUE",
+        "subtitle": "LOGOS & MÉDIAS DE SECOURS",
+        "logo_label": "LOGO DE L'APP",
+        "fallback_img_label": "IMAGE DE SECOURS",
+        "image_fallback_label": "IMAGE DE SECOURS",
+        "change_btn": "MODIFIER",
+        "reset_btn": "RÉINITIALISER LES PARAMÈTRES",
+        "restore_defaults_btn": "RESTAURER DEFAULTS",
+        "restore_tooltip": "Restaurer le branding et les actifs aux valeurs par défaut du système",
+        "restore_defaults_tooltip": "Restaurer le branding et les actifs aux valeurs par défaut du système",
+        "defined_label": "DÉFINI",
+        "defined": "DÉFINI",
+        "missing_label": "MANQUANT",
+        "missing": "MANQUANT",
+        "reset_success": "Actifs réinitialisés avec succès !",
+        "reset_error": "Erreur lors de la réinitialisation des actifs",
+        "restore_success": "Valeurs par défaut restaurées avec succès !",
+        "restore_error": "Erreur lors de la restauration des valeurs par défaut",
+        "type_img": "IMG",
+        "type_vid": "VID"
+      },
+      "dialogs": {
+        "preview": {
+          "set_default_btn": "Définir par défaut"
+        }
+      },
+      "upload_success": "Logo téléversé avec succès !",
+      "upload_error": "Erreur lors du téléversement du logo",
+      "overlay": {
+        "fallback_label": "VIDÉO DE SECOURS"
+      }
+    },
+    "playout": {
+      "header": {
+        "title": "MOTEUR DE PLAYOUT",
+        "subtitle": "PERFORMANCE ET SYNCHRO EN TEMPS RÉEL",
+        "wizard_btn": "ASSISTANT",
+        "reset_btn": "RESET"
+      },
+      "fields": {
+        "day_start": "DÉBUT DE JOURNÉE",
+        "channel_name": "NOM DE LA CHAÎNE",
+        "fps": "IMAGES/SECONDE (FPS)",
+        "encoding_preset": "PRÉRÉGLAGE D'ENCÔDAGE"
+      },
+      "tooltips": {
+        "day_start": "Heure de réinitialisation de la grille quotidienne",
+        "channel_name": "Identifiant public du flux",
+        "fps": "Images par seconde de base",
+        "encoding_preset": "Efficacité de compression CPU"
+      },
+      "epg": {
+        "title": "PROGRAMMATION ET EPG",
+        "subtitle": "DISTRIBUTION DU GUIDE (XMLTV)",
+        "url_label": "URL DE L'EPG FINAL",
+        "copy_tooltip": "Copier le point d'entrée",
+        "refresh_label": "RAFRAÎCHISSEMENT INTERNE",
+        "system_generated": "(AUTO-GÉNÉRÉ PAR LE SYSTÈME)",
+        "days_label": "JOURS",
+        "status_live": "LIVE",
+        "copied": "Point d'entrée EPG copié !"
+      },
+      "overlay": {
+        "title": "OVERLAY DE LA CHAÎNE",
+        "subtitle": "GESTIÓN DU FILIGRANE EN TEMPS RÉEL",
+        "preview": "APERÇU",
+        "disabled": "DÉSACTIVÉ",
+        "dpad_label": "CONTRÔLE DE POSITION (D-PAD)",
+        "opacity": "OPACITÉ",
+        "scale": "ÉCHELLE",
+        "path_label": "LOGO D'OVERLAY (LOCAL)",
+        "change_btn": "MODIFIER",
+        "magic_tooltip": "Processeur de Logo (Supprimer Fond)"
+      },
+      "presets": {
+        "title": "PRÉRÉGLAGES DE QUALITÉ",
+        "subtitle": "CONFIGURATION RAPIDE DU STREAMING",
+        "advanced_mode": "MODE AVANCÉ",
+        "list": {
+          "720p": {
+            "desc": "Équilibré (Streaming Normal)"
+          },
+          "1080p": {
+            "desc": "Haute Fidélité (Broadcast)"
+          },
+          "4k": {
+            "desc": "Qualité Maximale (UHD)"
+          }
+        }
+      },
+      "dialogs": {
+        "reset": {
+          "title": "Confirmer le Factory Reset",
+          "warning1": "Êtes-vous sûr de vouloir supprimer TOUTES les données de cette chaîne ?",
+          "warning2": "Cette action supprimera définitivement toutes les playlists, le calendrier et restaurera les paramètres par défaut. Aucun retour en arrière possible !",
+          "confirm_btn": "Oui, tout supprimer",
+          "success": "Chaîne réinitialisée avec succès !",
+          "error": "Erreur lors de la réinitialisation de la chaîne"
+        },
+        "presets": {
+          "title": "CHANGER LE PRÉRÉGLAGE DE QUALITÉ",
+          "desc": "Application du préréglage",
+          "resolution_label": "Résolution",
+          "bitrate_label": "Débit",
+          "fps_label": "FPS",
+          "restart_warning": "Ce changement nécessite un redémarrage du moteur. Enregistrez les paramètres et redémarrez après confirmation.",
+          "apply_btn": "APPLIQUER"
+        }
+      },
+      "save_error": "Erreur lors de l'enregistrement des paramètres",
+      "restart_warning": "Changements nécessitant un redémarrage détectés.",
+      "restart_success": "Diffusion redémarrée avec succès !",
+      "restart_error": "Erreur lors du redémarrage du moteur"
+    },
+    "users": {
+      "header": {
+        "title": "GESTION DES ACCÈS",
+        "subtitle": "UTILISATEURS ET PROFILS D'ACCÈS",
+        "add_user_btn": "AJOUTER UN USER",
+        "add_profile_btn": "CRÉER UN PROFIL"
+      },
+      "tabs": {
+        "users": "UTILISATEURS",
+        "profiles": "PROFILS"
+      },
+      "table": {
+        "username": "UTILISATEUR",
+        "description": "DESCRIPTION",
+        "profile": "PROFIL / RÔLE",
+        "status": "ÉTAT",
+        "actions": "ACTIONS",
+        "active": "ACTIF",
+        "permissions": "PERMISSIONS"
+      },
+      "tooltips": {
+        "change_password": "Changer le mot de passe",
+        "delete_user": "Supprimer l'utilisateur",
+        "edit_profile": "Modifier le profil",
+        "delete_profile": "Supprimer le profil"
+      },
+      "messages": {
+        "delete_success": "Utilisateur supprimé",
+        "delete_error": "Erreur lors de la suppression",
+        "password_changed": "Mot de passe changé avec succès !",
+        "password_change_error": "Erreur lors du changement de mot de passe",
+        "password_min_length": "Le mot de passe doit comporter au moins 8 caractères",
+        "profile_updated": "Profil mis à jour !",
+        "profile_created": "Profil créé !",
+        "save_profile_error": "Erreur lors de l'enregistrement du profil",
+        "profile_name_required": "Le nom du profil est obligatoire",
+        "profile_deleted": "Profil supprimé",
+        "delete_profile_error": "Erreur lors de la suppression du profil"
+      },
+      "dialogs": {
+        "add_user": {
+          "title": "AJOUTER UTILISATEUR",
+          "subtitle": "CRÉER UN NOUVEL ACCÈS SYSTÈME",
+          "username_label": "NOM D'UTILISATEUR",
+          "password_label": "MOT DE PASSE",
+          "profile_label": "PROFIL D'ACCÈS"
+        },
+        "change_password": {
+          "title": "CHANGER LE MOT DE PASSE : {{username}}",
+          "new_password_label": "NOUVEAU MOT DE PASSE",
+          "update_btn": "METTRE À JOUR"
+        },
+        "profile": {
+          "new_title": "NOUVEAU PROFIL",
+          "edit_title": "MODIFIER LE PROFIL",
+          "subtitle": "GÉRER LES NIVEAUX DE PERMISSION",
+          "name_label": "NOM DU PROFIL",
+          "system_rename_warning": "Les profils système ne peuvent pas être renommés.",
+          "permissions_label": "PERMISSIONS ACTIVES",
+          "permissions_help": "Définissez la portée de visualisation, d'édition et d'exécution.",
+          "create_btn": "CRÉER",
+          "update_btn": "METTRE À JOUR"
+        },
+        "udp_verify": {
+          "title": "Informations Importantes: Sortie UDP",
+          "intro": "Le protocole UDP (User Datagram Protocol) est recommandé pour les réseaux locaux en raison de sa faible latence, mais possède des caractéristiques spécifiques :",
+          "stability_title": "1. Stabilité vs SRT :",
+          "stability_desc": "L'UDP n'a pas de retransmission de paquets. Si le réseau oscille, il y aura des \"drops\" visibles. Le SRT est préférable pour l'accès distant.",
+          "network_title": "2. Configuration Réseau :",
+          "network_external": "Accès Externe :",
+          "network_desc": "Non recommandé pour l'UDP (utilisez le SRT). Si nécessaire, nécessite un Port Forwarding sur le routeur (Port 1234 UDP).",
+          "sync_title": "3. Synchronisation & Buffer :",
+          "sync_desc": "Notre système gérable PUSH initie et alimente continuellement le pare-feu de manière native, éliminant les latences de handshake et les erreurs d'émission initiales courantes.",
+          "firewall_warning": "* Assurez-vous que le pare-feu du serveur autorise le trafic sur le port choisi.",
+          "confirm_btn": "J'ai compris et je souhaite activer"
+        },
+        "delete_confirm": "Êtes-vous sûr de vouloir supprimer cet utilisateur ?",
+        "profile_delete_warning": "Êtes-vous sûr ? Les utilisateurs associés pourraient perdre leur accès."
+      }
+    },
+    "logs": {
+      "dialog": {
+        "title": "VISUALISEUR DE LOGS"
+      },
+      "rotation": {
+        "btn": "ROTATION",
+        "tooltip": "Configuration de la rotation des logs",
+        "header": "CONFIGURATION DE LA ROTATION DES LOGS",
+        "fields": {
+          "max_size": "TAILLE MAX (MO)",
+          "max_files": "NOMBRE MAX DE FICHIERS",
+          "retention": "RÉTENTION (JOURS)",
+          "compress": "COMPRESSER LES ANCIENS LOGS"
+        },
+        "save_btn": "ENREGISTRER LA CONFIG",
+        "save_success": "Configuration de rotation enregistrée !",
+        "save_error": "Erreur lors de l'enregistrement de la config",
+        "force_btn": "FORCER LA ROTATION",
+        "force_confirm": "Forcer la rotation maintenant ? Le log actuel sera archivé.",
+        "force_success": "Rotation effectuée ! Log réinitialisé.",
+        "force_error": "Erreur lors de la rotation"
+      },
+      "export": {
+        "btn": "EXPORTER TXT",
+        "tooltip": "Exporter les logs visibles au format TXT"
+      },
+      "tabs": {
+        "playout": "LOGS PLAYOUT",
+        "system": "LOGS VM / DOCKER"
+      },
+      "search_placeholder": "Rechercher dans les logs...",
+      "lines_count": "lignes",
+      "empty_filters": "AUCUN RÉSULTAT POUR LES FILTRES APPLIQUÉS",
+      "waiting": "EN ATTENTE DE LOGS...",
+      "system": {
+        "source_label": "SOURCE",
+        "empty_source": "Aucun log récent pour cette source.",
+        "none_detected": "AUCUN LOG SYSTÈME DÉTECTÉ DANS LE CONTENEUR."
+      },
+      "footer": {
+        "files": "fichiers",
+        "compress_on": "Compression ACTIVÉE",
+        "compress_off": "Compression DÉSACTIVÉE",
+        "days": "jours",
+        "restart_btn": "REDÉMARRER LE MOTEUR"
+      }
+    }
+  },
+  "notifications": {
+    "save_success": "Paramètres de l'onglet {{tab}} enregistrés !",
+    "restart_success": "Flux redémarré avec succès !",
+    "save_error": "Erreur lors de l'enregistrement des paramètres",
+    "udp_ready": "Protocole UDP prêt à être activé lors de l'enregistrement."
+  },
+  "udp_ready": "Protocole UDP prêt pour activation lors de la sauvegarde.",
+  "help": {
+    "title": "Centre d'Aide",
+    "subtitle": "CLOUD ONEPA PLAYOUT — GUIDE DES OPÉRATIONS",
+    "deactivate_btn": "Désactiver le Mode Aide",
+    "close_btn": "Fermer",
+    "tabs": {
+      "dashboard": "Tableau",
+      "media": "Média",
+      "playlists": "Playlists",
+      "calendar": "Calendrier",
+      "graphics": "Graphiques",
+      "settings": "Réglages",
+      "troubleshooting": "Problèmes"
+    },
+    "dashboard": {
+      "title": "Tableau de Bord",
+      "intro": "Le tableau de bord est la page principale d'opération.",
+      "status_indicator": {
+        "title": "Indicateur ON AIR / OFF AIR",
+        "prefix": "En haut du tableau de bord, il y a un indicateur d'état :",
+        "on_air": "Moteur FFmpeg actif et en cours de diffusion",
+        "off_air": "Moteur arrêté ou pas de playlist"
+      },
+      "controls": {
+        "title": "Démarrer / Arrêter le Playout",
+        "step1": "Vérifiez que vous avez une playlist planifiée dans le Calendrier.",
+        "step2": "Cliquez sur DÉMARRER — le système valide le planning.",
+        "step3": "Choisissez les protocoles (RTMP, SRT, UDP) et cliquez sur 'Démarrer Moteur'.",
+        "step4": "Le LIVE PREVIEW montre le flux après 6-10 sec.",
+        "step5": "Pour arrêter, cliquez sur STOP.",
+        "warning": "Si aucune playlist n'est prévue, le playout ne démarrera pas."
+      },
+      "protocols": {
+        "title": "Protocoles de Diffusion",
+        "intro": "Le système supporte plusieurs protocoles :",
+        "master": "Streaming interne principal.",
+        "rtmp": "Idéal pour les réseaux sociaux et CDNs.",
+        "srt": "Streaming fiable sur réseaux instables.",
+        "udp": "Protocole pour réseaux locaux.",
+        "others": "Autres formats de streaming Web.",
+        "legend": "Status : 🟢 Actif | ⚪ Inactif | 🔴 Erreur"
+      },
+      "clips": {
+        "title": "Visualisation des Clips",
+        "intro": "Dans l'onglet Playlist, vous pouvez voir l'état :",
+        "playing": "Clip en cours de diffusion.",
+        "next": "Prochain clip dans la file.",
+        "skip": "Passer au suivant."
+      },
+      "logs": {
+        "title": "Surveillance (Engine Logs)",
+        "intro": "Informations techniques du moteur :",
+        "engine": "État du processus d'encodage.",
+        "uptime": "Temps total sans interruption.",
+        "schedule_validity": "Validation avec le calendrier.",
+        "active_protocols": "Liste des encodeurs actifs.",
+        "last_logs": "Messages du moteur en temps réel."
+      }
+    },
+    "library": {
+      "title": "Médiathèque",
+      "intro": "Répertoire central pour toutes les vidéos et audios.",
+      "upload": {
+        "title": "Charger Media",
+        "step1": "Cliquez sur Charger ou glissez les fichiers.",
+        "step2": "Formats : MP4, MOV, MKV, AVI, TS, MXF (H.264/H.265).",
+        "step3": "Extraction automatique des métadonnées.",
+        "step4": "Génération de miniature automatique.",
+        "nfs_hint": "Conseil : Les dossiers réseau (NFS/SMB) sont détectés automatiquement."
+      },
+      "metadata": {
+        "intro": "Chaque fichier chargé est analysé pour extraire les détails.",
+        "auto_review_title": "Révision des Métadonnées",
+        "auto_review": "Le système révise automatiquement les métadonnées.",
+        "field_title": "Titre",
+        "field_title_desc": "Nom du programme.",
+        "field_synopsis": "Synopsis",
+        "field_synopsis_desc": "Phrase résumant le contenu.",
+        "field_genre": "Genre",
+        "field_genre_desc": "Catégorie du contenu.",
+        "field_rating": "Classification",
+        "field_rating_desc": "Âge recommandé.",
+        "field_type": "Type",
+        "field_type_desc": "Série, Film, Documentaire, etc."
+      },
+      "fillers": {
+        "title": "Clips de Remplissage (Fillers)",
+        "desc": "Les fillers sont utilisés pour combler les espaces vides."
+      }
+    },
+    "playlists": {
+      "title": "Éditeur de Playlists",
+      "intro": "Séquences de contenu que le moteur playout reproduit.",
+      "create": {
+        "title": "Créer une Playlist",
+        "step1": "Allez au menu Playlists et cliquez sur 'Nouvelle Playlist'.",
+        "step2": "Attribuez un nom (ex : Matinée Cinéma).",
+        "step3": "Glissez des clips de la médiathèque vers la liste de droite.",
+        "step4": "Réordonnez les clips en les faisant glisser.",
+        "step5": "Cliquez sur ENREGISTRER."
+      },
+      "management": {
+        "title": "Gestion de Playlist",
+        "sorting": "Tri",
+        "sorting_desc": "Utilisez les flèches ou glissez pour changer l'ordre.",
+        "remove_clip": "Supprimer Clip",
+        "remove_clip_desc": "Cliquez sur la poubelle pour retirer un clip.",
+        "duplicate": "Dupliquer",
+        "duplicate_desc": "Copiez des playlists pour des variations rapides.",
+        "total_duration": "Temps Total",
+        "total_duration_desc": "Calculé automatiquement.",
+        "fillers": "Fillers",
+        "fillers_desc": "Les clips de remplissage sont ignorés dans le calcul mais utilisés en diffusion."
+      },
+      "best_practices": {
+        "title": "Meilleures Pratiques",
+        "bullets": "• Évitez les playlists de plus de 24h.\n• Validez les miniatures des clips.\n• Utilisez des noms descriptifs."
+      }
+    },
+    "calendar": {
+      "title": "Calendrier de Diffusion",
+      "intro": "Le calendrier permet de programmer vos émissions.",
+      "schedule": {
+        "title": "Planifier une Playlist",
+        "step1": "Cliquez sur un jour du calendrier pour ouvrir le dialogue.",
+        "step2": "Sélectionnez la playlist souhaitée.",
+        "step3": "Définissez l'heure de début (ex : 06h00).",
+        "step4": "Choisissez le modèle de répétition : Aucun, Quotidien, Hebdomadaire ou Mensuel.",
+        "step5": "Cliquez sur ENREGISTRER. L'événement apparaîtra dans le calendrier."
+      }
     },
     "graphics": {
-        "header": {
-            "title": "MOTEUR GRAPHIQUE — ÉDITEUR DE MARQUE ON-AIR WYSIWYG",
-            "subtitle": "ÉDITEUR VISUEL EN TEMPS RÉEL"
-        },
-        "tabs": {
-            "position": "POSITION",
-            "style": "STYLE",
-            "layer": "COUCHE"
-        },
-        "preview": {
-            "title": "APERÇU EN TEMPS RÉEL (16:9)",
-            "positioning": "POSITIONNEMENT...",
-            "ready": "PRÊT"
-        },
-        "position": {
-            "anchor_title": "POINT D'ANCRAGE",
-            "main_logo": "LOGO PRINCIPAL",
-            "layer_prefix": "COUCHE : ",
-            "offset_title": "RÉGLAGE FIN (OFFSET)",
-            "axis_x": "AXE X",
-            "axis_y": "AXE Y",
-            "select_active_layer": "OU SÉLECTIONNEZ UNE COUCHE ACTIVE"
-        },
-        "style": {
-            "scale_title": "ÉCHELLE & DIMENSION",
-            "magnitude": "MAGNITUDE",
-            "opacity_title": "OPACITÉ DE LA COUCHE",
-            "alpha": "ALPHA"
-        },
-        "buttons": {
-            "reset": "RÉINITIALISER",
-            "save": "ENREGISTRER LES MODIFICATIONS"
-        },
-        "tooltips": {
-            "reset": "Restaurar les paramètres enregistrés",
-            "save": "Enregistrer la position et le style",
-            "anchor": "Ancrer au coin {{pos}}"
-        },
-        "messages": {
-            "update_success": "Graphismes mis à jour avec succès !",
-            "load_settings_error": "Échec du chargement des paramètres",
-            "load_layers_error": "Échec du chargement des couches",
-            "save_success": "Graphismes mis à jour avec succès !",
-            "save_error": "Erreur lors de l'enregistrement"
-        },
-        "hint": {
-            "title": "CONSEIL ALPHA",
-            "logo_desc": "Faites glisser le logo directement dans l'aperçu. Utilisez les curseurs pour la précision.",
-            "layer_desc": "Modification de la couche \"{{name}}\". Cliquez sur le fond pour revenir au Logo."
-        }
+      "title": "Moteur Graphique",
+      "intro": "Le moteur graphique permet de positionner des logos."
     },
-    "wizard": {
-        "steps": {
-            "welcome": "Bienvenue",
-            "identity": "Identité",
-            "media": "Médias",
-            "transmission": "Transmission",
-            "summary": "Résumé",
-            "finish": "Terminer"
-        },
-        "welcome": {
-            "title": "Bienvenue sur Cloud Onepa Playout",
-            "description": "Nous allons configurer votre chaîne de télé professionnelle en quelques étapes."
-        },
-        "identity": {
-            "title": "Identité de la Chaîne",
-            "label_name": "Nom de la Chaîne",
-            "label_logo": "Logo de la Station",
-            "select_logo_btn": "Sélectionner le Logo",
-            "file_label": "Fichier : {{name}}",
-            "success_msg": "Identité configurée !",
-            "error_save": "Erreur lors de l'enregistrement de l'identité"
-        },
-        "media": {
-            "title": "Contenu Initial",
-            "alert_info": "Ajoutez des vidéos de votre bibliothèque ou des flux externes (RTMP/HLS) pour votre playlist initiale.",
-            "add_library_btn": "Ajouter de la Bibliothèque",
-            "add_external_btn": "Ajouter un Flux/URL",
-            "empty_msg": "La playlist est vide. Ajoutez du contenu ci-dessus.",
-            "duration_label": "Durée : {{duration}} | Type : {{type}}",
-            "type_stream": "Flux",
-            "type_file": "Fichier",
-            "error_library": "Erreur lors du chargement de la Media Library",
-            "error_playlist_empty": "Ajoutez au moins un élément à la playlist",
-            "dialog_library": {
-                "title": "Sélectionner des Médias (Multi-sélection)",
-                "files_selected": "{{count}} fichier(s) sélectionné(s)",
-                "no_media": "Aucun média trouvé dans la bibliothèque.",
-                "add_btn": "Ajouter ({{count}})"
-            },
-            "dialog_external": {
-                "title": "Ajouter un Flux Extterne",
-                "label_url": "URL du Flux (RTMP/HLS/HTTP)",
-                "label_duration": "Durée Estimée (secondes)",
-                "helper_duration": "Pour les flux 24/7, mettez une valeur élevée (ex : 86400)"
-            }
-        },
-        "transmission": {
-            "title": "Configuration de Transmission",
-            "label_output_type": "Type de Sortie",
-            "item_hls": "HLS (Web/Mobile)",
-            "item_rtmp": "RTMP (Réseaux Sociaux/Youtube)",
-            "label_url": "URL / Clé de Flux",
-            "success_msg": "Sortie configurée !",
-            "error_save": "Erreur lors de l'enregistrement de la sortie"
-        },
-        "summary": {
-            "title": "Résumé des Paramètres",
-            "alert_info": "Confirmez les données ci-dessous avant de finaliser la création de votre chaîne.",
-            "field_name": "Nom de la Chaîne",
-            "field_output": "Sortie Vidéo",
-            "field_playlist": "Playlist Initiale",
-            "playlist_desc": "{{count}} éléments planifiés pour 24/7"
-        },
-        "final": {
-            "title": "Tout est prêt !",
-            "description": "Votre chaîne est configurée et prête à émettre.",
-            "hint": "Cliquez sur TERMINER pour appliquer tous les changements.",
-            "success_start": "Diffusion démarrée avec succès !",
-            "error_start": "La chaîne a été configurée mais la diffusion n'a pas pu démarrer automatiquement. Vérifiez les fichiers sur le Dashboard.",
-            "success_setup": "Configuration terminée ! Redirection..."
-        },
-        "controls": {
-            "cancel": "Annuler",
-            "back": "Précédent",
-            "next": "Suivant",
-            "finish": "Terminer",
-            "confirm_finish": "Confirmer et Terminer"
-        },
-        "dialog_cancel": {
-            "title": "Annuler la Configuration ?",
-            "message": "Êtes-vous sûr de vouloir annuler ? Tout le progrès non enregistré sera perdu.",
-            "btn_no": "NON, CONTINUER",
-            "btn_yes": "OUI, QUITTER"
-        }
+    "settings": {
+      "title": "Configuration Système",
+      "intro": "Le menu des paramètres comporte 5 zones principales."
     },
-    "templates": {
-        "header": {
-            "title": "GÉNÉRATEUR DE MODÈLES",
-            "subtitle": "CRÉEZ & GÉREZ DES STRUCTURES DE CONTENU RÉUTILISABLES"
-        },
-        "controls": {
-            "create_btn": "CRÉER UN MODÈLE"
-        },
-        "grid": {
-            "no_name": "Sans Nom",
-            "blocks": "BLOCS",
-            "structure_title": "STRUCTURE DE LA SÉQUENCE",
-            "use_btn": "UTILISER"
-        },
-        "dialog_edit": {
-            "title_edit": "MODIFIER LE MODÈLE",
-            "title_create": "CRÉER UN NOUVEAU MODÈLE",
-            "label_name": "NOM DU MODÈLE",
-            "label_description": "DESCRIPTION",
-            "label_duration": "DURÉE TOTALE (SECONDES)",
-            "save_btn": "ENREGISTRER LE MODÈLE"
-        },
-        "dialog_use": {
-            "title": "GÉNÉRER UNE LISTE DE LECTURE À PARTIR DU MODÈLE",
-            "selected_template": "MODÈLE SÉLECTIONNÉ",
-            "label_playlist_name": "NOM DE LA LISTE DE LECTURE",
-            "label_emission_date": "DATE DE DIFFUSION",
-            "generate_now_btn": "GÉNÉRER MAINTENANT"
-        },
-        "notifications": {
-            "create_success": "Modèle créé avec succès !",
-            "update_success": "Modèle mis à jour avec succès !",
-            "delete_success": "Modèle supprimé !",
-            "playlist_success": "Liste de lecture créée à partir du modèle \"{{name}}\" !",
-            "error_fetch": "Erreur lors du chargement des modèles",
-            "error_save": "Erreur lors de l'enregistrement du modèle",
-            "error_delete": "Erreur lors de la suppression du modèle",
-            "error_playlist": "Erreur lors de la création de la liste de lecture à partir du modèle",
-            "error_name_required": "Le nom est obligatoire"
-        },
-        "confirm_delete": "Êtes-vous sûr de vouloir supprimer ce modèle ?",
-        "presets": {
-            "morning_show": {
-                "name": "PROGRAMME DU MATIN",
-                "description": "Modèle pour programme matinal (06:00 - 12:00)"
-            },
-            "full_day": {
-                "name": "LISTE DE LECTURE 24H",
-                "description": "Liste de lecture complète de 24 heures"
-            },
-            "loop_content": {
-                "name": "CONTENU EN BOUCLE",
-                "description": "Boucle de contenu avec pauses publicitaires"
-            }
-        },
-        "block_types": {
-            "intro": "INTRO",
-            "content": "CONTENU",
-            "commercial": "COMMERCIAL",
-            "outro": "OUTRO",
-            "filler": "REMPLISSAGE"
-        }
-    },
-    "health": {
-        "title": "Santé du Système",
-        "lastUpdate": "Dernière mise à jour",
-        "manualRefresh": "Forcer l'Actualisation",
-        "systemScore": "Score du Système",
-        "integrityIndex": "Indice d'Intégrité de Playout",
-        "scoreDescription": "Basé sur la connexion CasparCG, la santé de la base de données, la disponibilité du stockage et la synchronisation de la chronologie.",
-        "coreComponents": "Composants Core",
-        "initializingDiagnostics": "Initialisation du Moteur de Diagnostic...",
-        "waitingTelemetry": "En attente des données de télémétrie...",
-        "liveDiagnosticsStream": "Flux de Diagnostic en Direct",
-        "kpis": {
-            "deviceName": "Hôte de Playout",
-            "clipsPlayed": "Clips Aujourd'hui",
-            "activeStreams": "Flux Actifs",
-            "lastError": "Dernière Erreur"
-        },
-        "checks": {
-            "casparEngine": "Moteur de Playout CasparCG",
-            "database": "Base de Données Système",
-            "mediaStorage": "Stockage des Assets Médias",
-            "watchfolder": "Service de Watchfolder",
-            "initializingComm": "Initialisation de la communication...",
-            "awaitingMetrics": "En attente des mesures...",
-            "calculatingSpace": "Calcul du stockage libre...",
-            "monitoringWatchfolders": "Surveillance des dossiers de veille...",
-            "contentAvailability": "Disponibilité du Contenu",
-            "timeSync": "Synchronisation du Temps",
-            "allMediaVerified": "Tous les fichiers médias pour les prochaines 24h sont vérifiés et présents.",
-            "ntpSync": "Synchronisation NTP active. Décalage : < 2ms (Parfait)"
-        },
-        "score": {
-            "perfect": "Parfait",
-            "health": "Santé"
-        }
+    "troubleshooting": {
+      "title": "Dépannage",
+      "intro": "Solutions aux problèmes courants."
     }
+  },
+  "graphics": {
+    "header": {
+      "title": "MOTEUR GRAPHIQUE — ÉDITEUR DE MARQUE ON-AIR WYSIWYG",
+      "subtitle": "ÉDITEUR VISUEL EN TEMPS RÉEL"
+    },
+    "tabs": {
+      "position": "POSITION",
+      "style": "STYLE",
+      "layer": "COUCHE"
+    },
+    "preview": {
+      "title": "APERÇU EN TEMPS RÉEL (16:9)",
+      "positioning": "POSITIONNEMENT...",
+      "ready": "PRÊT"
+    },
+    "position": {
+      "anchor_title": "POINT D'ANCRAGE",
+      "main_logo": "LOGO PRINCIPAL",
+      "layer_prefix": "COUCHE : ",
+      "offset_title": "RÉGLAGE FIN (OFFSET)",
+      "axis_x": "AXE X",
+      "axis_y": "AXE Y",
+      "select_active_layer": "OU SÉLECTIONNEZ UNE COUCHE ACTIVE"
+    },
+    "style": {
+      "scale_title": "ÉCHELLE & DIMENSION",
+      "magnitude": "MAGNITUDE",
+      "opacity_title": "OPACITÉ DE LA COUCHE",
+      "alpha": "ALPHA"
+    },
+    "buttons": {
+      "reset": "RÉINITIALISER",
+      "save": "ENREGISTRER LES MODIFICATIONS"
+    },
+    "tooltips": {
+      "reset": "Restaurar les paramètres enregistrés",
+      "save": "Enregistrer la position et le style",
+      "anchor": "Ancrer au coin {{pos}}"
+    },
+    "messages": {
+      "update_success": "Graphismes mis à jour avec succès !",
+      "load_settings_error": "Échec du chargement des paramètres",
+      "load_layers_error": "Échec du chargement des couches",
+      "save_success": "Graphismes mis à jour avec succès !",
+      "save_error": "Erreur lors de l'enregistrement"
+    },
+    "hint": {
+      "title": "CONSEIL ALPHA",
+      "logo_desc": "Faites glisser le logo directement dans l'aperçu. Utilisez les curseurs pour la précision.",
+      "layer_desc": "Modification de la couche \"{{name}}\". Cliquez sur le fond pour revenir au Logo."
+    }
+  },
+  "wizard": {
+    "steps": {
+      "welcome": "Bienvenue",
+      "identity": "Identité",
+      "media": "Médias",
+      "transmission": "Transmission",
+      "summary": "Résumé",
+      "finish": "Terminer"
+    },
+    "welcome": {
+      "title": "Bienvenue sur Cloud Onepa Playout",
+      "description": "Nous allons configurer votre chaîne de télé professionnelle en quelques étapes."
+    },
+    "identity": {
+      "title": "Identité de la Chaîne",
+      "label_name": "Nom de la Chaîne",
+      "label_logo": "Logo de la Station",
+      "select_logo_btn": "Sélectionner le Logo",
+      "file_label": "Fichier : {{name}}",
+      "success_msg": "Identité configurée !",
+      "error_save": "Erreur lors de l'enregistrement de l'identité"
+    },
+    "media": {
+      "title": "Contenu Initial",
+      "alert_info": "Ajoutez des vidéos de votre bibliothèque ou des flux externes (RTMP/HLS) pour votre playlist initiale.",
+      "add_library_btn": "Ajouter de la Bibliothèque",
+      "add_external_btn": "Ajouter un Flux/URL",
+      "empty_msg": "La playlist est vide. Ajoutez du contenu ci-dessus.",
+      "duration_label": "Durée : {{duration}} | Type : {{type}}",
+      "type_stream": "Flux",
+      "type_file": "Fichier",
+      "error_library": "Erreur lors du chargement de la Media Library",
+      "error_playlist_empty": "Ajoutez au moins un élément à la playlist",
+      "dialog_library": {
+        "title": "Sélectionner des Médias (Multi-sélection)",
+        "files_selected": "{{count}} fichier(s) sélectionné(s)",
+        "no_media": "Aucun média trouvé dans la bibliothèque.",
+        "add_btn": "Ajouter ({{count}})"
+      },
+      "dialog_external": {
+        "title": "Ajouter un Flux Extterne",
+        "label_url": "URL du Flux (RTMP/HLS/HTTP)",
+        "label_duration": "Durée Estimée (secondes)",
+        "helper_duration": "Pour les flux 24/7, mettez une valeur élevée (ex : 86400)"
+      }
+    },
+    "transmission": {
+      "title": "Configuration de Transmission",
+      "label_output_type": "Type de Sortie",
+      "item_hls": "HLS (Web/Mobile)",
+      "item_rtmp": "RTMP (Réseaux Sociaux/Youtube)",
+      "label_url": "URL / Clé de Flux",
+      "success_msg": "Sortie configurée !",
+      "error_save": "Erreur lors de l'enregistrement de la sortie"
+    },
+    "summary": {
+      "title": "Résumé des Paramètres",
+      "alert_info": "Confirmez les données ci-dessous avant de finaliser la création de votre chaîne.",
+      "field_name": "Nom de la Chaîne",
+      "field_output": "Sortie Vidéo",
+      "field_playlist": "Playlist Initiale",
+      "playlist_desc": "{{count}} éléments planifiés pour 24/7"
+    },
+    "final": {
+      "title": "Tout est prêt !",
+      "description": "Votre chaîne est configurée et prête à émettre.",
+      "hint": "Cliquez sur TERMINER pour appliquer tous les changements.",
+      "success_start": "Diffusion démarrée avec succès !",
+      "error_start": "La chaîne a été configurée mais la diffusion n'a pas pu démarrer automatiquement. Vérifiez les fichiers sur le Dashboard.",
+      "success_setup": "Configuration terminée ! Redirection..."
+    },
+    "controls": {
+      "cancel": "Annuler",
+      "back": "Précédent",
+      "next": "Suivant",
+      "finish": "Terminer",
+      "confirm_finish": "Confirmer et Terminer"
+    },
+    "dialog_cancel": {
+      "title": "Annuler la Configuration ?",
+      "message": "Êtes-vous sûr de vouloir annuler ? Tout le progrès non enregistré sera perdu.",
+      "btn_no": "NON, CONTINUER",
+      "btn_yes": "OUI, QUITTER"
+    }
+  },
+  "templates": {
+    "header": {
+      "title": "GÉNÉRATEUR DE MODÈLES",
+      "subtitle": "CRÉEZ & GÉREZ DES STRUCTURES DE CONTENU RÉUTILISABLES"
+    },
+    "controls": {
+      "create_btn": "CRÉER UN MODÈLE"
+    },
+    "grid": {
+      "no_name": "Sans Nom",
+      "blocks": "BLOCS",
+      "structure_title": "STRUCTURE DE LA SÉQUENCE",
+      "use_btn": "UTILISER"
+    },
+    "dialog_edit": {
+      "title_edit": "MODIFIER LE MODÈLE",
+      "title_create": "CRÉER UN NOUVEAU MODÈLE",
+      "label_name": "NOM DU MODÈLE",
+      "label_description": "DESCRIPTION",
+      "label_duration": "DURÉE TOTALE (SECONDES)",
+      "save_btn": "ENREGISTRER LE MODÈLE"
+    },
+    "dialog_use": {
+      "title": "GÉNÉRER UNE LISTE DE LECTURE À PARTIR DU MODÈLE",
+      "selected_template": "MODÈLE SÉLECTIONNÉ",
+      "label_playlist_name": "NOM DE LA LISTE DE LECTURE",
+      "label_emission_date": "DATE DE DIFFUSION",
+      "generate_now_btn": "GÉNÉRER MAINTENANT"
+    },
+    "notifications": {
+      "create_success": "Modèle créé avec succès !",
+      "update_success": "Modèle mis à jour avec succès !",
+      "delete_success": "Modèle supprimé !",
+      "playlist_success": "Liste de lecture créée à partir du modèle \"{{name}}\" !",
+      "error_fetch": "Erreur lors du chargement des modèles",
+      "error_save": "Erreur lors de l'enregistrement du modèle",
+      "error_delete": "Erreur lors de la suppression du modèle",
+      "error_playlist": "Erreur lors de la création de la liste de lecture à partir du modèle",
+      "error_name_required": "Le nom est obligatoire"
+    },
+    "confirm_delete": "Êtes-vous sûr de vouloir supprimer ce modèle ?",
+    "presets": {
+      "morning_show": {
+        "name": "PROGRAMME DU MATIN",
+        "description": "Modèle pour programme matinal (06:00 - 12:00)"
+      },
+      "full_day": {
+        "name": "LISTE DE LECTURE 24H",
+        "description": "Liste de lecture complète de 24 heures"
+      },
+      "loop_content": {
+        "name": "CONTENU EN BOUCLE",
+        "description": "Boucle de contenu avec pauses publicitaires"
+      }
+    },
+    "block_types": {
+      "intro": "INTRO",
+      "content": "CONTENU",
+      "commercial": "COMMERCIAL",
+      "outro": "OUTRO",
+      "filler": "REMPLISSAGE"
+    }
+  },
+  "health": {
+    "title": "Santé du Système",
+    "lastUpdate": "Dernière mise à jour",
+    "manualRefresh": "Forcer l'Actualisation",
+    "systemScore": "Score du Système",
+    "integrityIndex": "Indice d'Intégrité de Playout",
+    "scoreDescription": "Basé sur la connexion CasparCG, la santé de la base de données, la disponibilité du stockage et la synchronisation de la chronologie.",
+    "coreComponents": "Composants Core",
+    "initializingDiagnostics": "Initialisation du Moteur de Diagnostic...",
+    "waitingTelemetry": "En attente des données de télémétrie...",
+    "liveDiagnosticsStream": "Flux de Diagnostic en Direct",
+    "kpis": {
+      "deviceName": "Hôte de Playout",
+      "clipsPlayed": "Clips Aujourd'hui",
+      "activeStreams": "Flux Actifs",
+      "lastError": "Dernière Erreur"
+    },
+    "checks": {
+      "casparEngine": "Moteur de Playout CasparCG",
+      "database": "Base de Données Système",
+      "mediaStorage": "Stockage des Assets Médias",
+      "watchfolder": "Service de Watchfolder",
+      "initializingComm": "Initialisation de la communication...",
+      "awaitingMetrics": "En attente des mesures...",
+      "calculatingSpace": "Calcul du stockage libre...",
+      "monitoringWatchfolders": "Surveillance des dossiers de veille...",
+      "contentAvailability": "Disponibilité du Contenu",
+      "timeSync": "Synchronisation du Temps",
+      "allMediaVerified": "Tous les fichiers médias pour les prochaines 24h sont vérifiés et présents.",
+      "ntpSync": "Synchronisation NTP active. Décalage : < 2ms (Parfait)"
+    },
+    "score": {
+      "perfect": "Parfait",
+      "health": "Santé"
+    }
+  }
 }

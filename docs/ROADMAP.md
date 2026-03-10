@@ -47,7 +47,9 @@ _Status atualizado em 2026-03-10 (v2.2.0-ALPHA.38-PRO)_
 _Focus: Expanding beyond file playback_
 
 - [ ] **Live Inputs Support**: Integration of WebRTC, NDI, and SDI inputs for live switching.
+  Status: WebRTC output already exists; live input switching (WebRTC/NDI/SDI) is not implemented.
 - [ ] **Social Streaming**: Native API integration for YouTube Live & Facebook Live.
+  Status: RTMP output to social platforms exists; native API integration is not implemented.
 - [ ] **Advanced SRT**: Multi-caller support and bonding.
 
 ### 🎨 Phase 26: Graphics & Visual Experience
@@ -55,7 +57,9 @@ _Focus: Expanding beyond file playback_
 _Focus: Advanced on-air branding_
 
 - [ ] **Drag-and-Drop Editor**: Web-based WYSIWYG editor for active templates.
+  Status: Graphics Editor (WYSIWYG + drag-and-drop for layers) exists; template editor still pending.
 - [ ] **HTML5 Graphics Engine**: Dynamic overlays using standard web technologies.
+  Status: HTML preview/editor exists; on-air HTML5 render pipeline not implemented.
 - [ ] **Mobile Responsive Layout**: Full mobile support for the dashboard.
 - [ ] **Theme Customization**: Advanced user theming engine.
 
@@ -63,11 +67,12 @@ _Focus: Advanced on-air branding_
 
 _Focus: Scalability and professional requirements_
 
-- [ ] **Multi-User System**: Role-based access control (RBAC) and collaboration.
+- [x] **Multi-User System**: Role-based access control (RBAC) and collaboration.
 - [ ] **Audit Logs**: Comprehensive tracking of all user actions.
 - [ ] **As-Run Logs**: Industry-standard logging for proof-of-play (compliance).
 - [ ] **SCTE-35 Support**: Ad-insertion triggers for cable/IPTV distribution.
 - [ ] **Analytics Dashboard**: Viewer stats and system health metrics.
+  Status: System health view exists; viewer analytics dashboard is not implemented.
 
 ### 🚀 Phase 28: Future Technologies & Scalability
 

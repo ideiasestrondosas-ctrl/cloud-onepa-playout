@@ -285,6 +285,8 @@ test("renders dashboard title", () => {
 ### Schedule
 
 - `GET /api/schedule` - Listar agendamentos
+- `GET /api/schedule?light=true` - Listar agendamentos (resposta leve, sem playlist_content)
+- `GET /api/schedule/light` - Listar agendamentos (resposta leve, sem playlist_content)
 - `POST /api/schedule` - Criar agendamento
 - `DELETE /api/schedule/{id}` - Deletar agendamento
 - `GET /api/schedule/for-date` - Obter playlist para data

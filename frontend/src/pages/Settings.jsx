@@ -886,82 +886,53 @@ function Settings() {
   const roadmapData = [
     {
       phase: 'Phase 25',
-      title: 'CONECTIVIDADE & LIVE INPUTS',
-      focus: 'Distribuição Inteligente e Redundância SRT',
+      title: 'LIVE INPUTS & ADVANCED PROTOCOL',
+      focus: 'Expansão além do playback de ficheiros',
       icon: <SensorsIcon />,
       color: '#00e5ff',
       items: [
-        { text: 'Suporte SRT: Implementação (Caller & Listener) - ESTÁVEL', done: true },
-        { text: 'Dynamic Bitrate: Ajuste em tempo real baseado em rede', done: true },
-        { text: 'Smart Folder Playback: Auto-sync de novos conteúdos', done: true }
+        { text: 'Live Inputs Support: Integração de WebRTC, NDI e SDI para live switching', done: false },
+        { text: 'Social Streaming: Integração nativa com YouTube Live e Facebook Live', done: false },
+        { text: 'Advanced SRT: Multi-caller e bonding', done: false }
       ]
     },
     {
       phase: 'Phase 26',
-      title: 'ELITE USER EXPERIENCE',
-      focus: 'Nova Consola de Comando e Gestão de Média',
-      icon: <RocketIcon />,
-      color: '#ce93d8',
-      items: [
-        { text: 'Gestor de Espaço: Auditoria física vs DB em tempo real', done: true },
-        { text: 'Branding Unificado: Sincronização inteligente de assets', done: true },
-        { text: 'RBAC: Perfis de sistema com permissões granulares', done: true },
-        { text: 'Fix Estrutural: Motor React optimizado para estabilidade', done: true }
-      ]
-    },
-    {
-      phase: 'Phase 23',
-      title: 'EPG & METADATA ENGINE',
-      focus: 'Guia de programação profissional e descoberta de conteúdos',
-      icon: <EpgIcon />,
-      color: '#ff9800',
-      items: [
-        { text: 'Gerador de EPG: Criação interna de guias eletrónicos de programação', done: true },
-        { text: 'EPG Web Export: API pública JSON/XML para entidades externas', done: true },
-        { text: 'Compliance Standards: Suporte para formatos XMLTV e DVB-EIT', done: true },
-        { text: 'Sincronização Externa: Ligar EPG com agendamentos internos e eventos recorrentes', done: true }
-      ]
-    },
-    {
-      phase: 'Phase 24',
       title: 'GRAPHICS & VISUAL EXPERIENCE',
-      focus: 'Branding avançado on-air e UX multi-dispositivo',
+      focus: 'Branding avançado on-air',
       icon: <GraphicsIcon />,
       color: '#e91e63',
       items: [
-        { text: 'Editor Drag-and-Drop: Editor WYSIWYG baseado na web para templates ativos', done: false },
-        { text: 'HTML5 Graphics Engine: Overlays dinâmicos usando tecnologias web standard', done: false },
+        { text: 'Drag-and-Drop Editor: Editor WYSIWYG para templates ativos', done: false },
+        { text: 'HTML5 Graphics Engine: Overlays dinâmicos com tecnologias web', done: false },
         { text: 'Mobile Responsive Layout: Suporte móvel total para o dashboard', done: false },
-        { text: 'Personalização de Temas: Motor avançado de temas por utilizador', done: false },
-        { text: 'Suporte Multi-idioma: Implementação total de i18n (PT/EN/ES)', done: false }
+        { text: 'Theme Customization: Motor avançado de temas por utilizador', done: false }
       ]
     },
     {
-      phase: 'Phase 25',
+      phase: 'Phase 27',
       title: 'ENTERPRISE & COMPLIANCE',
-      focus: 'Escalabilidade e requisitos profissionais de broadcast',
+      focus: 'Escalabilidade e requisitos profissionais',
       icon: <EnterpriseIcon />,
       color: '#4caf50',
       items: [
-        { text: 'Sistema Multi-Utilizador: Controlo de acessos baseado em perfis (RBAC)', done: true },
-        { text: 'Audit Logs: Rastreio completo de todas as ações de utilizadores', done: false },
-        { text: 'As-Run Logs: Logs de exibição (Proof-of-Play) padrão da indústria', done: false },
-        { text: 'Suporte SCTE-35: Gatilhos para inserção de anúncios em fluxos IPTV/Cabo', done: false },
-        { text: 'Analytics Dashboard: Estatísticas de visualização e métricas de saúde do sistema', done: false }
+        { text: 'Multi-User System: Controlo de acessos baseado em perfis (RBAC)', done: true },
+        { text: 'Audit Logs: Rastreio completo de ações de utilizadores', done: false },
+        { text: 'As-Run Logs: Logs de exibição (Proof-of-Play)', done: false },
+        { text: 'SCTE-35 Support: Gatilhos para inserção de anúncios', done: false },
+        { text: 'Analytics Dashboard: Estatísticas de visualização e saúde do sistema', done: false }
       ]
     },
     {
-      phase: 'Phase 26',
+      phase: 'Phase 28',
       title: 'FUTURE TECH & SCALABILITY',
-      focus: 'Inovação e Elevada Disponibilidade',
+      focus: 'Inovação e elevada disponibilidade',
       icon: <RocketIcon />,
       color: '#ce93d8',
       items: [
-        { text: 'Integração de IA: Auto-tagging de conteúdos e geração inteligente de playlists', done: false },
-        { text: 'Multi-Channel Core: Uma única instância gerindo múltiplos canais independentes', done: false },
-        { text: 'Canais Dedicados: Logótipos e pastas de média/música próprios por canal', done: false },
-        { text: 'Alta Disponibilidade: Arquitetura de redundância e failover automático', done: false },
-        { text: 'Low-HLS Support: Latência ultra-baixa para streaming interactivo', done: false }
+        { text: 'AI Integration: Auto-tagging e geração inteligente de playlists', done: false },
+        { text: 'Multi-Channel Core: Uma instância a gerir múltiplos canais', done: false },
+        { text: 'High Availability: Redundância e failover automático', done: false }
       ]
     }
   ];
@@ -3284,4 +3255,3 @@ export default function SafeSettings() {
     </ErrorBoundary>
   );
 }
-

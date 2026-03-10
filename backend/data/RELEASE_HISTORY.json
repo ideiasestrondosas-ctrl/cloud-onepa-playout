@@ -9,6 +9,23 @@
     ]
   },
   {
+    "version": "2.2.0-ALPHA.35-PRO",
+    "date": "2026-03-08",
+    "changes": [
+      "Automated Release: Version bump and statistics update.",
+      "Documentation: Synced README.md and version history.",
+      "i18n Health: Added system health dashboard translations."
+    ]
+  },
+  {
+    "version": "2.2.0-ALPHA.34-PRO",
+    "date": "2026-03-05",
+    "changes": [
+      "Automated Release: Version bump and statistics update.",
+      "Documentation: Synced README.md and version history."
+    ]
+  },
+  {
     "version": "2.2.0-ALPHA.36-PRO",
     "date": "2026-03-09",
     "changes": [

@@ -101,12 +101,6 @@ impl FFmpegService {
         service
     }
 
-    /// Probe system for the best available H.264 hardware encoder.
-    /// Priority: h264_videotoolbox (macOS) > h264_nvenc (NVIDIA) > h264_vaapi (Intel/AMD) > h264_qsv (Intel) > libx264 (CPU)
-    pub fn detect_hw_encoder(&self) -> String {
-        detect_hw_encoder_with_path(&self.ffmpeg_path)
-    }
-
     /// Extract media information using ffprobe
     pub fn get_media_info(&self, file_path: &str) -> Result<MediaInfo, String> {
         let output = Command::new(&self.ffprobe_path)

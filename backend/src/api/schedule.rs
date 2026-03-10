@@ -10,6 +10,7 @@ use crate::models::schedule::{CreateSchedule, Schedule};
 pub struct ScheduleQuery {
     pub start_date: Option<String>,
     pub end_date: Option<String>,
+    pub light: Option<bool>,
 }
 
 #[derive(Debug, Serialize, sqlx::FromRow)]
@@ -25,7 +26,11 @@ struct ScheduleLight {
 async fn list_schedule(
     query: web::Query<ScheduleQuery>,
     pool: web::Data<PgPool>,
-) -> impl Responder {
+) -> HttpResponse {
+    if query.light.unwrap_or(false) {
+        return list_schedule_light(query, pool).await;
+    }
+
     let mut query_builder: sqlx::QueryBuilder<sqlx::Postgres> = sqlx::QueryBuilder::new(
         "SELECT s.*, p.name as playlist_name, p.content as playlist_content 
          FROM schedule s 
@@ -69,7 +74,7 @@ async fn list_schedule(
 async fn list_schedule_light(
     query: web::Query<ScheduleQuery>,
     pool: web::Data<PgPool>,
-) -> impl Responder {
+) -> HttpResponse {
     let mut query_builder: sqlx::QueryBuilder<sqlx::Postgres> = sqlx::QueryBuilder::new(
         "SELECT s.id, s.playlist_id, s.date, s.start_time, s.repeat_pattern, p.name as playlist_name 
          FROM schedule s 
