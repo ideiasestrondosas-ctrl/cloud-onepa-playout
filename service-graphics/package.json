@@ -1,0 +1,17 @@
+{
+  "name": "onepa-service-graphics",
+  "version": "2.4.0-ALPHA.42-PRO",
+  "description": "HTML5 Graphics Compositor — Puppeteer headless renderer for broadcast overlays",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "puppeteer": "^22.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

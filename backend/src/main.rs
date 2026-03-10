@@ -115,10 +115,35 @@ async fn main() -> std::io::Result<()> {
 
     // Start Playout Engine
     let engine = std::sync::Arc::new(services::engine::PlayoutEngine::new(pool.clone()));
+
+    // Phase 1: Connect Redis EventBus (non-fatal if Redis is unavailable)
+    {
+        let engine_for_redis = engine.clone();
+        tokio::spawn(async move {
+            match services::event_bus::EventBus::new().await {
+                Ok(bus) => {
+                    engine_for_redis.set_event_bus(bus).await;
+                }
+                Err(e) => {
+                    log::warn!("Redis EventBus unavailable — real-time telemetry disabled: {}", e);
+                }
+            }
+        });
+    }
+
     let engine_clone = engine.clone();
     tokio::spawn(async move {
         engine_clone.start().await;
     });
+
+    // Phase 1: Create in-process broadcaster for WebSocket event relay
+    let ws_broadcaster = std::sync::Arc::new(api::ws::create_broadcaster());
+    {
+        let tx = (*ws_broadcaster).clone();
+        api::ws::bridge_redis_to_broadcaster("playout:default", tx).await;
+        let tx2 = (*ws_broadcaster).clone();
+        api::ws::bridge_redis_to_broadcaster("analytics:default", tx2).await;
+    }
 
     // Start HTTP server
     HttpServer::new(move || {
@@ -139,6 +164,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(engine.clone()))
+            .app_data(web::Data::from(ws_broadcaster.clone()))
             .wrap(cors)
             .wrap(middleware::Logger::default())
             .wrap_fn(|req, srv| {
@@ -245,6 +271,8 @@ async fn main() -> std::io::Result<()> {
                 .boxed_local()
             })
             .configure(api::routes::configure)
+            // Phase 1: WebSocket real-time event stream
+            .service(web::resource("/api/v2/events").route(web::get().to(api::ws::ws_handler)))
             .service(actix_files::Files::new("/hls", &hls_serve_path).show_files_listing())
             .service(actix_files::Files::new("/assets", &assets_serve_path).show_files_listing())
             .service(

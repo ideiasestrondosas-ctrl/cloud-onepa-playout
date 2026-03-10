@@ -1,10 +1,10 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useState, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
-import theme from './theme';
+import { buildMuiTheme, ThemeContextProvider } from './contexts/ThemeContext';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import useAuthStore from './stores/authStore';
@@ -14,9 +14,6 @@ import HelpSystem from './components/HelpSystem';
 import ConnectivityStatus from './components/ConnectivityStatus';
 
 // ─── Lazy-loaded pages ─────────────────────────────────────────────────────
-// Each page is a separate JS chunk. The browser only downloads a page's
-// code when the user navigates to it for the first time. Subsequent visits
-// are served from the browser cache.
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const MediaLibrary = lazy(() => import('./pages/MediaLibrary'));
 const PlaylistEditor = lazy(() => import('./pages/PlaylistEditor'));
@@ -28,17 +25,10 @@ const SetupWizard = lazy(() => import('./pages/Setup/Wizard'));
 const EPGView = lazy(() => import('./pages/EPGView'));
 const GraphicsEditor = lazy(() => import('./pages/GraphicsEditor'));
 const PlayoutHealth = lazy(() => import('./pages/PlayoutHealth'));
+
 // ─── Shared loading fallback ───────────────────────────────────────────────
 const PageLoader = () => (
-  <Box
-    sx={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      height: '100vh',
-      background: '#0a0a1a',
-    }}
-  >
+  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0a0a1a' }}>
     <CircularProgress sx={{ color: '#00bcd4' }} />
   </Box>
 );
@@ -57,37 +47,44 @@ const ProtectedLayout = ({ children }) => (
 function App() {
   const { isAuthenticated } = useAuthStore();
 
+  // Phase 2A: runtime-switchable MUI theme — ThemeContextProvider calls this
+  // whenever the user changes their theme preference.
+  const [muiTheme, setMuiTheme] = useState(() => buildMuiTheme());
+  const handleThemeChange = useCallback((newTheme) => setMuiTheme(newTheme), []);
+
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={muiTheme}>
       <CssBaseline />
       <NotificationProvider>
         <HelpProvider>
-          <HelpSystem />
-          <ConnectivityStatus />
-          <Router>
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                <Route
-                  path="/login"
-                  element={isAuthenticated ? <Navigate to="/" replace /> : <Login />}
-                />
-                {!isAuthenticated && (
-                  <Route path="*" element={<Navigate to="/login" replace />} />
-                )}
-                <Route path="/" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />
-                <Route path="/media" element={<ProtectedLayout><MediaLibrary /></ProtectedLayout>} />
-                <Route path="/playlists" element={<ProtectedLayout><PlaylistEditor /></ProtectedLayout>} />
-                <Route path="/calendar" element={<ProtectedLayout><Calendar /></ProtectedLayout>} />
-                <Route path="/settings" element={<ProtectedLayout><Settings /></ProtectedLayout>} />
-                <Route path="/epg" element={<ProtectedLayout><EPGView /></ProtectedLayout>} />
-                <Route path="/setup" element={<ProtectedLayout><SetupWizard /></ProtectedLayout>} />
-                <Route path="/graphics" element={<ProtectedLayout><GraphicsEditor /></ProtectedLayout>} />
-                <Route path="/templates" element={<ProtectedLayout><Templates /></ProtectedLayout>} />
-                <Route path="/health" element={<ProtectedLayout><PlayoutHealth /></ProtectedLayout>} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </Suspense>
-          </Router>
+          <ThemeContextProvider onThemeChange={handleThemeChange}>
+            <HelpSystem />
+            <ConnectivityStatus />
+            <Router>
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  <Route
+                    path="/login"
+                    element={isAuthenticated ? <Navigate to="/" replace /> : <Login />}
+                  />
+                  {!isAuthenticated && (
+                    <Route path="*" element={<Navigate to="/login" replace />} />
+                  )}
+                  <Route path="/" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />
+                  <Route path="/media" element={<ProtectedLayout><MediaLibrary /></ProtectedLayout>} />
+                  <Route path="/playlists" element={<ProtectedLayout><PlaylistEditor /></ProtectedLayout>} />
+                  <Route path="/calendar" element={<ProtectedLayout><Calendar /></ProtectedLayout>} />
+                  <Route path="/settings" element={<ProtectedLayout><Settings /></ProtectedLayout>} />
+                  <Route path="/epg" element={<ProtectedLayout><EPGView /></ProtectedLayout>} />
+                  <Route path="/setup" element={<ProtectedLayout><SetupWizard /></ProtectedLayout>} />
+                  <Route path="/graphics" element={<ProtectedLayout><GraphicsEditor /></ProtectedLayout>} />
+                  <Route path="/templates" element={<ProtectedLayout><Templates /></ProtectedLayout>} />
+                  <Route path="/health" element={<ProtectedLayout><PlayoutHealth /></ProtectedLayout>} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </Suspense>
+            </Router>
+          </ThemeContextProvider>
         </HelpProvider>
       </NotificationProvider>
     </ThemeProvider>

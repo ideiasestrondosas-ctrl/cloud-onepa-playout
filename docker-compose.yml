@@ -1,4 +1,25 @@
 services:
+  # Redis Event Bus (Phase 1 - Enterprise)
+  redis:
+    image: redis:7-alpine
+    container_name: alpha-redis
+    hostname: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - alpha-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
@@ -43,6 +64,7 @@ services:
       MEDIAMTX_HOST: mediamtx
       JWT_SECRET: ${JWT_SECRET:-alpha-secret-key-change-in-production}
       JWT_EXPIRATION: "86400"
+      REDIS_URL: redis://redis:6379
       ASSETS_PATH: /var/lib/onepa-playout/assets
       MEDIA_PATH: /var/lib/onepa-playout/media
       THUMBNAILS_PATH: /var/lib/onepa-playout/thumbnails
@@ -66,6 +88,8 @@ services:
         condition: service_healthy
       mediamtx:
         condition: service_started
+      redis:
+        condition: service_healthy
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://127.0.0.1:8181/api/health || exit 1" ]
       interval: 10s
@@ -123,6 +147,127 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── Phase 3 Microservices ────────────────────────────────────────────────
+
+  # Analytics & Audit microservice — Redis subscriber → PostgreSQL ingestion
+  service-analytics:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.analytics
+    container_name: alpha-service-analytics
+    hostname: service-analytics
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-onepa}:${POSTGRES_PASSWORD:-onepa}@postgres:5432/${POSTGRES_DB:-onepa_playout}
+      REDIS_URL: redis://redis:6379
+      PORT: 4001
+    ports:
+      - "4001:4001"
+    networks:
+      - alpha-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4001/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # HTML5 Graphics Compositor — Puppeteer headless Chromium renderer
+  service-graphics:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.graphics
+    container_name: alpha-service-graphics
+    hostname: service-graphics
+    environment:
+      PORT: 3002
+    ports:
+      - "3002:3002"
+    networks:
+      - alpha-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3002/health || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # AI Metadata Worker — faster-whisper ASR + silence detection
+  service-ai:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.ai
+    container_name: alpha-service-ai
+    hostname: service-ai
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-onepa}:${POSTGRES_PASSWORD:-onepa}@postgres:5432/${POSTGRES_DB:-onepa_playout}
+      REDIS_URL: redis://redis:6379
+      MEDIA_PATH: /var/lib/onepa-playout/media
+      WHISPER_MODEL: ${WHISPER_MODEL:-base}
+      POLL_INTERVAL: 15
+    volumes:
+      - ./data/media:/var/lib/onepa-playout/media
+    networks:
+      - alpha-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── Phase 5 Infrastructure ───────────────────────────────────────────────
+
+  # MinIO S3-Compatible Object Storage
+  minio:
+    image: minio/minio:latest
+    container_name: alpha-minio
+    hostname: minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - ./data/minio:/data
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Web Console
+    networks:
+      - alpha-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/minio/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     restart: always
     logging:
       driver: "json-file"

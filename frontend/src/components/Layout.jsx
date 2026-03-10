@@ -205,7 +205,7 @@ export default function Layout({ children }) {
             <Tooltip title={t(item.key)} placement="right" arrow>
               <ListItemButton
                 selected={location.pathname === item.path}
-                onClick={() => navigate(item.path)}
+                onClick={() => { navigate(item.path); setMobileOpen(false); }}
               >
                 <ListItemIcon>{item.icon}</ListItemIcon>
                 <ListItemText primary={t(item.key)} />

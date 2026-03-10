@@ -1,0 +1,62 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "onepa.name" . }}-ingress
+  labels:
+    {{- include "onepa.labels" . | nindent 4 }}
+  annotations:
+    {{- toYaml .Values.ingress.annotations | nindent 4 }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host }}
+      secretName: {{ .Values.ingress.tls.secretName }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
+          # API — backend service
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: onepa-backend
+                port:
+                  number: {{ .Values.backend.port }}
+          # WebSocket events
+          - path: /api/v2/events
+            pathType: Prefix
+            backend:
+              service:
+                name: onepa-backend
+                port:
+                  number: {{ .Values.backend.port }}
+          # HLS streams — direct to MediaMTX
+          - path: /hls
+            pathType: Prefix
+            backend:
+              service:
+                name: onepa-mediamtx
+                port:
+                  number: 8888
+          # MinIO console (admin only — restrict in production)
+          - path: /minio-console
+            pathType: Prefix
+            backend:
+              service:
+                name: onepa-minio
+                port:
+                  number: 9001
+          # Frontend — catch-all
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: onepa-frontend
+                port:
+                  number: 80
+{{- end }}

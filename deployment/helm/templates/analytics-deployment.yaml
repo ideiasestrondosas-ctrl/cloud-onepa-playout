@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "onepa.name" . }}-analytics
+  labels:
+    {{- include "onepa.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount.analytics }}
+  selector:
+    matchLabels:
+      app: onepa-analytics
+  template:
+    metadata:
+      labels:
+        app: onepa-analytics
+    spec:
+      containers:
+        - name: analytics
+          image: "{{ .Values.images.analytics.repository }}:{{ .Values.images.analytics.tag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          env:
+            - name: DATABASE_URL
+              value: "postgresql://{{ .Values.postgres.username }}:$(POSTGRES_PASSWORD)@onepa-postgres:5432/{{ .Values.postgres.database }}"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: onepa-secrets
+                  key: postgres-password
+            - name: REDIS_URL
+              value: redis://onepa-redis:6379
+            - name: PORT
+              value: "4001"
+          ports:
+            - containerPort: 4001
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 4001
+            initialDelaySeconds: 15
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: onepa-analytics
+spec:
+  selector:
+    app: onepa-analytics
+  ports:
+    - port: 4001
+      targetPort: 4001

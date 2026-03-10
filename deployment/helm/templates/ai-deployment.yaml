@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "onepa.name" . }}-ai
+  labels:
+    {{- include "onepa.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount.ai }}
+  selector:
+    matchLabels:
+      app: onepa-ai
+  template:
+    metadata:
+      labels:
+        app: onepa-ai
+    spec:
+      containers:
+        - name: ai-worker
+          image: "{{ .Values.images.ai.repository }}:{{ .Values.images.ai.tag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          env:
+            - name: DATABASE_URL
+              value: "postgresql://{{ .Values.postgres.username }}:$(POSTGRES_PASSWORD)@onepa-postgres:5432/{{ .Values.postgres.database }}"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: onepa-secrets
+                  key: postgres-password
+            - name: REDIS_URL
+              value: redis://onepa-redis:6379
+            - name: MEDIA_PATH
+              value: /var/lib/onepa-playout/media
+            - name: WHISPER_MODEL
+              value: base
+            - name: POLL_INTERVAL
+              value: "15"
+          volumeMounts:
+            - name: media
+              mountPath: /var/lib/onepa-playout/media
+      volumes:
+        - name: media
+          persistentVolumeClaim:
+            claimName: onepa-media-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: onepa-media-pvc
+spec:
+  accessModes: [ReadWriteMany]
+  storageClassName: {{ .Values.global.storageClass }}
+  resources:
+    requests:
+      storage: 200Gi

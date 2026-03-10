@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "onepa.name" . }}-graphics
+  labels:
+    {{- include "onepa.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount.graphics }}
+  selector:
+    matchLabels:
+      app: onepa-graphics
+  template:
+    metadata:
+      labels:
+        app: onepa-graphics
+    spec:
+      # Chromium requires specific security context
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: graphics
+          image: "{{ .Values.images.graphics.repository }}:{{ .Values.images.graphics.tag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          env:
+            - name: PORT
+              value: "3002"
+          ports:
+            - containerPort: 3002
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3002
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          securityContext:
+            capabilities:
+              add: ["SYS_ADMIN"]  # Required for Chromium --no-sandbox
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: onepa-graphics
+spec:
+  selector:
+    app: onepa-graphics
+  ports:
+    - port: 3002
+      targetPort: 3002

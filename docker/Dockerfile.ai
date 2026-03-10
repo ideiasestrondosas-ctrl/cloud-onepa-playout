@@ -1,0 +1,32 @@
+# ── service-ai — AI Metadata Worker ─────────────────────────────────────────
+# Phase 3 / v2.4.0-ALPHA.42-PRO
+FROM python:3.12-slim
+
+# System dependencies: ffmpeg for silence detection + libpq for psycopg2
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    libpq5 \
+    gcc \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Python dependencies (cached layer)
+COPY service-ai/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Application source
+COPY service-ai/worker.py ./
+
+# Non-root user
+RUN useradd -r -s /sbin/nologin aiworker
+USER aiworker
+
+# No port exposed — worker is poll-based, no HTTP
+# Healthcheck via Redis/DB connectivity is handled at app startup
+
+ENV WHISPER_MODEL=base \
+    POLL_INTERVAL=15
+
+CMD ["python", "-u", "worker.py"]

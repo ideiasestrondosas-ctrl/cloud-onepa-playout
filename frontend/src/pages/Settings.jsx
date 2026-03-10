@@ -886,53 +886,108 @@ function Settings() {
   const roadmapData = [
     {
       phase: 'Phase 25',
-      title: 'LIVE INPUTS & ADVANCED PROTOCOL',
-      focus: 'Expansão além do playback de ficheiros',
-      icon: <SensorsIcon />,
-      color: '#00e5ff',
+      version: 'v2.3.0-ALPHA.39',
+      title: 'ENTERPRISE FOUNDATION',
+      focus: 'Arquitetura multi-canal, Redis e WebSocket em tempo real',
+      icon: <EnterpriseIcon />,
+      color: '#4caf50',
+      done: true,
       items: [
-        { text: 'Live Inputs Support: Integração de WebRTC, NDI e SDI para live switching', done: false },
-        { text: 'Social Streaming: Integração nativa com YouTube Live e Facebook Live', done: false },
-        { text: 'Advanced SRT: Multi-caller e bonding', done: false }
+        { text: 'Multi-Canal Core: Tabela channels com isolamento multi-tenant por canal', done: true },
+        { text: 'Redis Event Bus: Sistema de pub/sub para eventos de playout em tempo real', done: true },
+        { text: 'WebSocket Events: Endpoint /api/v2/events com stream de dados ao vivo', done: true },
+        { text: 'Audit Logs: Registo completo de ações de utilizadores com IP e recurso', done: true },
+        { text: 'As-Run Logs: Logs de exibição automatizados (Proof-of-Play) por canal', done: true },
+        { text: 'Schema SCTE-35: Suporte para marcadores de inserção de anúncios no DB', done: true }
       ]
     },
     {
       phase: 'Phase 26',
-      title: 'GRAPHICS & VISUAL EXPERIENCE',
-      focus: 'Branding avançado on-air',
+      version: 'v2.3.0-ALPHA.40/41',
+      title: 'FRONTEND TRANSFORMATION',
+      focus: 'Dashboard responsivo, temas dinâmicos e editor de gráficos',
       icon: <GraphicsIcon />,
       color: '#e91e63',
+      done: true,
       items: [
-        { text: 'Drag-and-Drop Editor: Editor WYSIWYG para templates ativos', done: false },
-        { text: 'HTML5 Graphics Engine: Overlays dinâmicos com tecnologias web', done: false },
-        { text: 'Mobile Responsive Layout: Suporte móvel total para o dashboard', done: false },
-        { text: 'Theme Customization: Motor avançado de temas por utilizador', done: false }
+        { text: 'Theme Engine: Motor de temas por utilizador com CSS variables dinâmicas', done: true },
+        { text: 'Mobile Responsive Layout: MUI Drawer adaptativo para mobile e desktop', done: true },
+        { text: 'Analytics em Tempo Real: Dashboard WebSocket com gráficos Recharts', done: true },
+        { text: 'Drag-and-Drop Editor: Editor WYSIWYG para templates HTML5 de gráficos', done: true },
+        { text: 'Consolidação UI: Analytics integrado na Saúde, Templates nos Gráficos', done: true }
       ]
     },
     {
       phase: 'Phase 27',
-      title: 'ENTERPRISE & COMPLIANCE',
-      focus: 'Escalabilidade e requisitos profissionais',
-      icon: <EnterpriseIcon />,
-      color: '#4caf50',
+      version: 'v2.4.0-ALPHA.42',
+      title: 'MICROSERVICES ARCHITECTURE',
+      focus: 'Serviços independentes para analytics, gráficos e IA',
+      icon: <SensorsIcon />,
+      color: '#00e5ff',
+      done: true,
       items: [
-        { text: 'Multi-User System: Controlo de acessos baseado em perfis (RBAC)', done: true },
-        { text: 'Audit Logs: Rastreio completo de ações de utilizadores', done: false },
-        { text: 'As-Run Logs: Logs de exibição (Proof-of-Play)', done: false },
-        { text: 'SCTE-35 Support: Gatilhos para inserção de anúncios', done: false },
-        { text: 'Analytics Dashboard: Estatísticas de visualização e saúde do sistema', done: false }
+        { text: 'service-analytics: Worker para as-run e audit logs via Redis pub/sub', done: true },
+        { text: 'service-graphics: Compositor HTML5 com Puppeteer/Chromium headless', done: true },
+        { text: 'service-ai: Worker Python com Whisper para legendagem automática (ASR)', done: true },
+        { text: 'MediaMTX Integrado: Multi-protocolo RTMP, SRT, LL-HLS, WebRTC unificado', done: true }
       ]
     },
     {
       phase: 'Phase 28',
-      title: 'FUTURE TECH & SCALABILITY',
-      focus: 'Inovação e elevada disponibilidade',
+      version: 'v2.4.0-ALPHA.43',
+      title: 'SCTE-35 + LOW-LATENCY HLS',
+      focus: 'Conformidade broadcast e streaming de ultra-baixa latência',
       icon: <RocketIcon />,
-      color: '#ce93d8',
+      color: '#ff9800',
+      done: true,
       items: [
-        { text: 'AI Integration: Auto-tagging e geração inteligente de playlists', done: false },
-        { text: 'Multi-Channel Core: Uma instância a gerir múltiplos canais', done: false },
-        { text: 'High Availability: Redundância e failover automático', done: false }
+        { text: 'API SCTE-35: CRUD completo de marcadores de inserção de anúncios', done: true },
+        { text: 'Injeção FFmpeg: build_scte35_args() para marcadores nos clips de playout', done: true },
+        { text: 'PlaylistEditor Ad Cue: Botão e dialog de gestão SCTE-35 por item', done: true },
+        { text: 'Low-Latency HLS: hlsVariant lowLatency, segmentos 1s, partes 100ms', done: true }
+      ]
+    },
+    {
+      phase: 'Phase 29',
+      version: 'v2.5.0-ALPHA.44',
+      title: 'KUBERNETES + MINIO + CI/CD',
+      focus: 'Infraestrutura cloud-native e pipeline de entrega contínua',
+      icon: <ScalabilityIcon />,
+      color: '#9c27b0',
+      done: true,
+      items: [
+        { text: 'Helm Charts: 11 templates Kubernetes para todos os serviços da plataforma', done: true },
+        { text: 'MinIO S3: Armazenamento de objetos compatível com S3 (9000/9001)', done: true },
+        { text: 'Storage Service: Trait Rust Storage para backend local ou S3 por env var', done: true },
+        { text: 'GitHub Actions CI/CD: Build + push Docker para GHCR em PRs e main', done: true }
+      ]
+    },
+    {
+      phase: 'Phase 30',
+      version: 'Em Planeamento',
+      title: 'LIVE INPUTS & MULTI-CHANNEL UI',
+      focus: 'Expansão para live switching e gestão visual de múltiplos canais',
+      icon: <MagicIcon />,
+      color: '#607d8b',
+      done: false,
+      items: [
+        { text: 'Live Inputs: Integração WebRTC, NDI e SDI para live switching', done: false },
+        { text: 'Social Streaming: YouTube Live e Facebook Live nativos', done: false },
+        { text: 'Multi-Channel UI: Interface visual para gerir múltiplos canais simultâneos', done: false }
+      ]
+    },
+    {
+      phase: 'Phase 31',
+      version: 'Em Planeamento',
+      title: 'FUTURE TECH & HIGH AVAILABILITY',
+      focus: 'IA avançada, CDN edge e redundância automática',
+      icon: <RocketIcon />,
+      color: '#607d8b',
+      done: false,
+      items: [
+        { text: 'AI Playlist: Geração inteligente de playlists via análise de conteúdo', done: false },
+        { text: 'HA & Failover: Redundância automática e monitorização avançada', done: false },
+        { text: 'Edge CDN: Distribuição de conteúdo multi-edge com load balancing', done: false }
       ]
     }
   ];
@@ -2514,20 +2569,22 @@ function Settings() {
                     <Box sx={{
                       p: 3,
                       height: '100%',
-                      bgcolor: 'rgba(255,255,255,0.01)',
+                      bgcolor: item.done ? 'rgba(76,175,80,0.04)' : 'rgba(255,255,255,0.01)',
                       borderRadius: 4,
                       border: '1px solid',
-                      borderColor: 'rgba(255,255,255,0.05)',
+                      borderColor: item.done ? 'rgba(76,175,80,0.2)' : 'rgba(255,255,255,0.05)',
+                      borderLeft: item.done ? '3px solid #4caf50' : '3px solid rgba(255,255,255,0.08)',
                       transition: 'all 0.3s ease',
+                      opacity: item.done ? 1 : 0.65,
                       '&:hover': {
-                        bgcolor: 'rgba(255,255,255,0.02)',
-                        borderColor: item.color + '33',
-                        transform: 'translateY(-4px)'
+                        bgcolor: item.done ? 'rgba(76,175,80,0.07)' : 'rgba(255,255,255,0.02)',
+                        opacity: 1,
+                        transform: 'translateY(-2px)'
                       }
                     }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                         <Box sx={{
-                          width: 48, height: 48, borderRadius: 3,
+                          width: 44, height: 44, borderRadius: 3,
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           bgcolor: item.color + '1a',
                           color: item.color,
@@ -2536,38 +2593,51 @@ function Settings() {
                         }}>
                           {item.icon}
                         </Box>
-                        <Box>
-                          <Typography variant="caption" sx={{ fontWeight: 900, color: item.color, letterSpacing: 1 }}>{item.phase}</Typography>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.2 }}>{item.title}</Typography>
+                        <Box sx={{ flex: 1 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.3 }}>
+                            <Typography variant="caption" sx={{ fontWeight: 900, color: item.color, letterSpacing: 1 }}>{item.phase}</Typography>
+                            <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.disabled', fontSize: '0.6rem' }}>{item.version}</Typography>
+                          </Box>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 800, lineHeight: 1.2, fontSize: '0.82rem' }}>{item.title}</Typography>
                         </Box>
+                        {item.done ? (
+                          <Chip label="✓ COMPLETO" size="small" sx={{ height: 18, fontSize: '0.55rem', fontWeight: 900, bgcolor: 'rgba(76,175,80,0.2)', color: '#4caf50', border: '1px solid rgba(76,175,80,0.4)', flexShrink: 0 }} />
+                        ) : (
+                          <Chip label="PENDENTE" size="small" sx={{ height: 18, fontSize: '0.55rem', fontWeight: 900, bgcolor: 'rgba(96,125,139,0.15)', color: '#90a4ae', border: '1px solid rgba(96,125,139,0.3)', flexShrink: 0 }} />
+                        )}
                       </Box>
 
-                      <Typography variant="body2" sx={{ mb: 2, fontWeight: 600, opacity: 0.7, fontSize: '0.8rem' }}>
+                      <Typography variant="body2" sx={{ mb: 2, fontWeight: 600, opacity: 0.7, fontSize: '0.77rem' }}>
                         {item.focus}
                       </Typography>
 
                       <List dense sx={{ p: 0 }}>
                         {item.items.map((bullet, bIdx) => (
-                          <ListItem key={bIdx} sx={{ p: 0, mb: 0.5, alignItems: 'flex-start' }}>
-                            <ListItemIcon sx={{ minWidth: 24, mt: 0.5 }}>
+                          <ListItem key={bIdx} sx={{
+                            p: '3px 8px', mb: 0.5, alignItems: 'center',
+                            borderRadius: 1.5,
+                            bgcolor: bullet.done ? 'rgba(76,175,80,0.12)' : 'rgba(255,152,0,0.06)',
+                            border: '1px solid',
+                            borderColor: bullet.done ? 'rgba(76,175,80,0.2)' : 'rgba(255,152,0,0.15)',
+                          }}>
+                            <ListItemIcon sx={{ minWidth: 22 }}>
                               {bullet.done ? (
-                                <CheckIcon sx={{ fontSize: 14, color: 'success.main', opacity: 0.8 }} />
+                                <CheckIcon sx={{ fontSize: 13, color: '#4caf50' }} />
                               ) : (
-                                <PlayIcon sx={{ fontSize: 12, color: 'primary.main', opacity: 0.4, transform: 'rotate(-45deg)' }} />
+                                <PlayIcon sx={{ fontSize: 11, color: '#ff9800', opacity: 0.7, transform: 'rotate(-45deg)' }} />
                               )}
                             </ListItemIcon>
                             <ListItemText
                               primary={bullet.text}
                               primaryTypographyProps={{
                                 sx: {
-                                  fontSize: '0.75rem',
-                                  fontWeight: bullet.done ? 600 : 500,
-                                  opacity: bullet.done ? 1 : 0.6,
-                                  color: bullet.done ? 'inherit' : 'rgba(255,255,255,0.7)',
+                                  fontSize: '0.72rem',
+                                  fontWeight: bullet.done ? 700 : 500,
+                                  color: bullet.done ? '#fff' : 'rgba(255,152,0,0.85)',
                                 },
                               }}
                             />
-                            {bullet.done && <Chip label="OK" size="small" sx={{ height: 16, fontSize: '0.55rem', fontWeight: 900, bgcolor: 'rgba(76,175,80,0.15)', color: '#4caf50', border: '1px solid rgba(76,175,80,0.2)', ml: 1 }} />}
+                            {bullet.done && <Chip label="OK" size="small" sx={{ height: 15, fontSize: '0.52rem', fontWeight: 900, bgcolor: 'rgba(76,175,80,0.25)', color: '#4caf50', border: '1px solid rgba(76,175,80,0.45)', ml: 0.5, flexShrink: 0 }} />}
                           </ListItem>
                         ))}
                       </List>

@@ -1,0 +1,114 @@
+# ── Cloud Onepa Playout — Helm Values ────────────────────────────────────────
+# Override any value with: helm install onepa . -f my-values.yaml
+
+global:
+  imageRegistry: ghcr.io
+  imagePullPolicy: IfNotPresent
+  storageClass: standard
+
+# ── Service image tags ────────────────────────────────────────────────────────
+images:
+  backend:
+    repository: ghcr.io/youorg/cloud-onepa-backend
+    tag: latest
+  frontend:
+    repository: ghcr.io/youorg/cloud-onepa-frontend
+    tag: latest
+  analytics:
+    repository: ghcr.io/youorg/cloud-onepa-analytics
+    tag: latest
+  graphics:
+    repository: ghcr.io/youorg/cloud-onepa-graphics
+    tag: latest
+  ai:
+    repository: ghcr.io/youorg/cloud-onepa-ai
+    tag: latest
+  mediamtx:
+    repository: bluenviron/mediamtx
+    tag: latest
+  postgres:
+    repository: postgres
+    tag: "16-alpine"
+  redis:
+    repository: redis
+    tag: "7-alpine"
+  minio:
+    repository: minio/minio
+    tag: latest
+
+# ── Replica counts ────────────────────────────────────────────────────────────
+replicaCount:
+  backend: 1
+  frontend: 2
+  analytics: 1
+  graphics: 1
+  ai: 1
+  mediamtx: 1
+
+# ── PostgreSQL ────────────────────────────────────────────────────────────────
+postgres:
+  enabled: true
+  database: onepa_playout
+  username: onepa
+  password: onepa          # Override with secrets in production
+  storage: 20Gi
+
+# ── Redis ─────────────────────────────────────────────────────────────────────
+redis:
+  enabled: true
+
+# ── MinIO ─────────────────────────────────────────────────────────────────────
+minio:
+  enabled: true
+  rootUser: minioadmin
+  rootPassword: minioadmin  # Override with secrets in production
+  storage: 100Gi
+  bucket: onepa-media
+
+# ── Backend ───────────────────────────────────────────────────────────────────
+backend:
+  port: 8181
+  jwtSecret: alpha-secret-key-change-in-production
+  storageBackend: s3        # "local" or "s3"
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+# ── Frontend ──────────────────────────────────────────────────────────────────
+frontend:
+  port: 80
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+# ── Ingress ───────────────────────────────────────────────────────────────────
+ingress:
+  enabled: true
+  className: nginx
+  host: onepa.example.com   # Override with your domain
+  tls:
+    enabled: true
+    secretName: onepa-tls
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "2g"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+
+# ── HorizontalPodAutoscaler ───────────────────────────────────────────────────
+hpa:
+  enabled: true
+  frontend:
+    minReplicas: 2
+    maxReplicas: 8
+    targetCPUUtilizationPercentage: 70
+  backend:
+    minReplicas: 1
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 80

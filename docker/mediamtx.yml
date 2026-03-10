@@ -23,11 +23,12 @@ hlsAddress: :8888
 webrtcAddress: :8989
 srtAddress: :8890
 
-# HLS settings
-hlsVariant: fmp4
+# HLS settings — Phase 4: LL-HLS (Low-Latency HLS)
+# lowLatency variant enables CMAF chunked transfer with partial segments
+hlsVariant: lowLatency
 hlsSegmentCount: 7
-hlsSegmentDuration: 2s
-hlsPartDuration: 200ms
+hlsSegmentDuration: 1s
+hlsPartDuration: 100ms
 hlsMuxerCloseAfter: 60s
 hlsAlwaysRemux: yes
 

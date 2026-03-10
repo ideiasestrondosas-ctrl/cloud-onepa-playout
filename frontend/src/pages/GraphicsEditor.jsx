@@ -23,9 +23,12 @@ import {
   Visibility as VisibilityIcon,
   DragIndicator as DragIcon,
   Help as HelpIcon,
-  Replay as ResetIcon
+  Replay as ResetIcon,
+  Delete as DeleteIcon,
+  Refresh as RefreshIcon,
+  ViewModule as TemplatesIcon
 } from '@mui/icons-material';
-import { settingsAPI, playoutAPI } from '../services/api';
+import { settingsAPI, playoutAPI, templateAPI } from '../services/api';
 import graphicsService from '../services/graphicsLayersAPI';
 import { useNotification } from '../contexts/NotificationContext';
 import { useTranslation } from 'react-i18next';
@@ -57,10 +60,40 @@ export default function GraphicsEditor() {
 
   const selectedLayer = graphicsLayers.find(l => l.id === selectedLayerId);
 
+  // Templates tab state
+  const [templates, setTemplates] = useState([]);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+
+  const fetchTemplates = async () => {
+    setTemplatesLoading(true);
+    try {
+      const res = await templateAPI.list();
+      setTemplates(res.data || []);
+    } catch (_) {
+      showError('Failed to load templates');
+    } finally {
+      setTemplatesLoading(false);
+    }
+  };
+
+  const handleDeleteTemplate = async (id) => {
+    try {
+      await templateAPI.delete(id);
+      setTemplates(prev => prev.filter(t => t.id !== id));
+      showSuccess('Template deleted');
+    } catch (_) {
+      showError('Failed to delete template');
+    }
+  };
+
   useEffect(() => {
     fetchSettings();
     fetchLayers();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 3) fetchTemplates();
+  }, [activeTab]);
 
   const fetchSettings = async () => {
     try {
@@ -254,38 +287,37 @@ export default function GraphicsEditor() {
 
   return (
     <Box sx={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
         <Box>
           <Typography variant="h5" className="neon-text" sx={{ fontWeight: 800 }}>{t('graphics.header.title')}</Typography>
           <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: 1.2, fontSize: '0.65rem' }}>{t('graphics.header.subtitle')}</Typography>
         </Box>
-        <Stack direction="row" spacing={2}>
-          <Tooltip title={t('graphics.tooltips.reset')} arrow>
-            <Button
-              variant="outlined"
-              startIcon={<ResetIcon />}
-              onClick={fetchSettings}
-              disabled={saving}
-              sx={{ borderRadius: 2, fontWeight: 800 }}
-            >
-              {t('graphics.buttons.reset')}
-            </Button>
-          </Tooltip>
-          <Tooltip title={t('graphics.tooltips.save')} arrow>
-            <Button
-              variant="contained"
-              startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
-              onClick={handleSave}
-              disabled={saving}
-              sx={{ borderRadius: 2, fontWeight: 800, px: 4, minWidth: '220px' }}
-            >
-              {saving ? t('common.saving') : t('graphics.buttons.save')}
-            </Button>
-          </Tooltip>
-        </Stack>
+        {activeTab !== 3 && (
+          <Stack direction="row" spacing={2}>
+            <Tooltip title={t('graphics.tooltips.reset')} arrow>
+              <Button variant="outlined" startIcon={<ResetIcon />} onClick={fetchSettings} disabled={saving} sx={{ borderRadius: 2, fontWeight: 800 }}>
+                {t('graphics.buttons.reset')}
+              </Button>
+            </Tooltip>
+            <Tooltip title={t('graphics.tooltips.save')} arrow>
+              <Button variant="contained" startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />} onClick={handleSave} disabled={saving} sx={{ borderRadius: 2, fontWeight: 800, px: 4, minWidth: '220px' }}>
+                {saving ? t('common.saving') : t('graphics.buttons.save')}
+              </Button>
+            </Tooltip>
+          </Stack>
+        )}
       </Box>
 
-      <Grid container spacing={2} sx={{ flexGrow: 1, minHeight: 0 }}>
+      {/* Page-level tabs — always visible */}
+      <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{ mb: 1.5, borderBottom: 1, borderColor: 'divider', minHeight: 38 }}>
+        <Tab label={t('graphics.tabs.position')} sx={{ fontWeight: 800, minHeight: 38, fontSize: '0.75rem', textTransform: 'none' }} />
+        <Tab label={t('graphics.tabs.style')}    sx={{ fontWeight: 800, minHeight: 38, fontSize: '0.75rem', textTransform: 'none' }} />
+        <Tab label={t('graphics.tabs.layer')}    sx={{ fontWeight: 800, minHeight: 38, fontSize: '0.75rem', textTransform: 'none' }} />
+        <Tab label={t('graphics.tabs.templates', 'Templates')} sx={{ fontWeight: 800, minHeight: 38, fontSize: '0.75rem', textTransform: 'none' }} />
+      </Tabs>
+
+      {/* Preview + Controls grid — all tabs */}
+      {<Grid container spacing={2} sx={{ flexGrow: 1, minHeight: 0 }}>
         {/* Preview Area */}
         <Grid item xs={12} lg={8} sx={{ height: '100%' }}>
           <Paper className="glass-panel" sx={{
@@ -433,12 +465,6 @@ export default function GraphicsEditor() {
         {/* Controls Area */}
         <Grid item xs={12} lg={4} sx={{ height: '100%' }}>
           <Paper className="glass-panel" sx={{ p: 1.5, height: '100%', overflowY: 'auto' }}>
-            <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)} sx={{ mb: 1.5, minHeight: 36 }}>
-              <Tab label={t('graphics.tabs.position')} sx={{ fontWeight: 800, minHeight: 36, fontSize: '0.75rem' }} />
-              <Tab label={t('graphics.tabs.style')} sx={{ fontWeight: 800, minHeight: 36, fontSize: '0.75rem' }} />
-              <Tab label={t('graphics.tabs.layer')} sx={{ fontWeight: 800, minHeight: 36, fontSize: '0.75rem' }} />
-            </Tabs>
-
             {activeTab === 0 && (
               <Stack spacing={2}>
                 <Box>
@@ -658,21 +684,87 @@ export default function GraphicsEditor() {
               />
             )}
 
-            <Box sx={{ mt: 'auto', pt: 4 }}>
-              <Paper sx={{ p: 2, bgcolor: 'rgba(0, 229, 255, 0.05)', borderRadius: 2, border: '1px solid rgba(0, 229, 255, 0.2)' }}>
-                <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <HelpIcon sx={{ fontSize: 16 }} /> {t('graphics.hint.title')}
-                </Typography>
-                <Typography variant="caption" sx={{ display: 'block', mt: 1, opacity: 0.7 }}>
-                  {selectedLayer
-                    ? t('graphics.hint.layer_desc', { name: selectedLayer.name })
-                    : t('graphics.hint.logo_desc')}
-                </Typography>
-              </Paper>
-            </Box>
+            {activeTab === 3 && (
+              <Stack spacing={1.5}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <TemplatesIcon sx={{ fontSize: 18, color: 'primary.main' }} />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                      {t('graphics.tabs.templates', 'Templates')}
+                    </Typography>
+                    <Chip label={templates.length} size="small" sx={{ height: 18, fontSize: '0.6rem', fontWeight: 800 }} />
+                  </Box>
+                  <Tooltip title="Refresh list" arrow>
+                    <IconButton size="small" onClick={fetchTemplates} disabled={templatesLoading}>
+                      {templatesLoading ? <CircularProgress size={14} /> : <RefreshIcon sx={{ fontSize: 16 }} />}
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+
+                <Divider sx={{ opacity: 0.1 }} />
+
+                {templates.length === 0 && !templatesLoading && (
+                  <Box sx={{ py: 4, textAlign: 'center', opacity: 0.4 }}>
+                    <TemplatesIcon sx={{ fontSize: 40, mb: 1 }} />
+                    <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
+                      No saved templates yet.
+                    </Typography>
+                    <Typography variant="caption" sx={{ opacity: 0.7 }}>
+                      Create templates in the full editor.
+                    </Typography>
+                  </Box>
+                )}
+
+                {templates.map(tpl => (
+                  <Paper key={tpl.id} sx={{
+                    p: 1.5, borderRadius: 2,
+                    bgcolor: 'rgba(0,229,255,0.04)',
+                    border: '1px solid rgba(0,229,255,0.1)',
+                    '&:hover': { borderColor: 'rgba(0,229,255,0.25)' },
+                    transition: 'border-color 0.2s'
+                  }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <TemplatesIcon sx={{ fontSize: 16, color: 'primary.main', flexShrink: 0 }} />
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.78rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {tpl.name}
+                        </Typography>
+                        {tpl.description && (
+                          <Typography variant="caption" sx={{ opacity: 0.5, fontSize: '0.65rem', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {tpl.description}
+                          </Typography>
+                        )}
+                      </Box>
+                      <Tooltip title="Delete template" arrow>
+                        <IconButton size="small" color="error" onClick={() => handleDeleteTemplate(tpl.id)}
+                          sx={{ flexShrink: 0, '&:hover': { bgcolor: 'rgba(244,67,54,0.1)' } }}>
+                          <DeleteIcon sx={{ fontSize: 14 }} />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </Paper>
+                ))}
+              </Stack>
+            )}
+
+            {activeTab !== 3 && (
+              <Box sx={{ mt: 'auto', pt: 4 }}>
+                <Paper sx={{ p: 2, bgcolor: 'rgba(0, 229, 255, 0.05)', borderRadius: 2, border: '1px solid rgba(0, 229, 255, 0.2)' }}>
+                  <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <HelpIcon sx={{ fontSize: 16 }} /> {t('graphics.hint.title')}
+                  </Typography>
+                  <Typography variant="caption" sx={{ display: 'block', mt: 1, opacity: 0.7 }}>
+                    {selectedLayer
+                      ? t('graphics.hint.layer_desc', { name: selectedLayer.name })
+                      : t('graphics.hint.logo_desc')}
+                  </Typography>
+                </Paper>
+              </Box>
+            )}
           </Paper>
         </Grid>
-      </Grid>
+      </Grid>}
     </Box>
   );
 }
+

@@ -1,0 +1,23 @@
+# ── service-analytics — Analytics & Audit Microservice ──────────────────────
+# Phase 3 / v2.4.0-ALPHA.42-PRO
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Dependencies first (layer cache)
+COPY service-analytics/package.json ./
+RUN npm install --omit=dev --no-audit && npm cache clean --force
+
+# Application source
+COPY service-analytics/src ./src
+
+# Non-root user for security
+RUN addgroup -S analytics && adduser -S analytics -G analytics
+USER analytics
+
+EXPOSE 4001
+
+HEALTHCHECK --interval=15s --timeout=5s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:4001/health || exit 1
+
+CMD ["node", "src/index.js"]

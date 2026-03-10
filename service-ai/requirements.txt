@@ -1,0 +1,5 @@
+faster-whisper==1.0.3
+psycopg2-binary==2.9.9
+redis==5.0.1
+ffmpeg-python==0.2.0
+requests==2.31.0

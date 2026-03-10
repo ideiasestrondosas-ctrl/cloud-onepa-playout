@@ -36,7 +36,9 @@
     "epg": "TV GUIDE",
     "logout": "Log Out",
     "help": "Help & Documentation",
-    "health": "System Health"
+    "health": "System Health",
+    "analytics": "Analytics",
+    "templateEditor": "Template Editor"
   },
   "login": {
     "user": "USERNAME",
@@ -589,6 +591,78 @@
         "close_btn": "GOT IT",
         "empty": "NO HISTORY AVAILABLE",
         "releases": [
+          {
+            "version": "v2.5.0-ALPHA.44-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Phase 5 — Kubernetes + MinIO + CI/CD: Cloud-native deployment infrastructure.",
+              "Helm Charts: Full deployment/helm/ manifests for all 9 services with HPA and Ingress.",
+              "MinIO S3-Compatible Storage: Docker Compose + Helm StatefulSet. STORAGE_BACKEND=local|s3.",
+              "Storage Service: Trait-based backend/src/services/storage.rs — LocalStorage vs S3Storage.",
+              "Migration 077: media.s3_path TEXT column for S3-stored assets.",
+              "GitHub Actions CI/CD: On PR → cargo test + clippy + Playwright E2E. On merge → GHCR push.",
+              "Migration 078: system_version → v2.5.0-ALPHA.44-PRO."
+            ]
+          },
+          {
+            "version": "v2.4.0-ALPHA.43-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Phase 4 — SCTE-35 + LL-HLS: Ad-insertion cue markers per playlist item.",
+              "API: GET/POST/DELETE /api/v2/scte35 for splice_insert marker management.",
+              "FFmpeg: inject_scte35_markers() integrates SCTE-35 cues into stream pipeline.",
+              "Frontend: Ad Cue button in Playlist Editor with PTS offset and duration fields.",
+              "LL-HLS: mediamtx updated to lowLatency variant — 1s segments, 100ms parts.",
+              "Migration 076: system_version → v2.4.0-ALPHA.43-PRO."
+            ]
+          },
+          {
+            "version": "v2.4.0-ALPHA.42-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Phase 3 — Microservices: service-analytics, service-graphics, service-ai.",
+              "service-analytics (Node.js): Redis playout:* subscriber → as_run_logs + audit_logs. Port 4001.",
+              "service-graphics (Node.js + Puppeteer): HTML5 Compositor, 1920×1080 transparent PNG. Port 3002.",
+              "service-ai (Python 3.12): Whisper ASR captions + ffmpeg silence detection worker.",
+              "Docker Compose: Three new services with health checks and Redis/Postgres dependencies.",
+              "Migration 074: media_tasks AI job queue columns. Migration 075: version bump."
+            ]
+          },
+          {
+            "version": "v2.3.0-ALPHA.41-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Phase 2.1 — UI Consolidation: Analytics tab merged into Playout Health (/health).",
+              "Graphics Integration: Template Editor embedded as 4th tab in Graphics Editor (/graphics).",
+              "Sidebar reduced from 11 to 9 entries — cleaner, focused navigation.",
+              "Embedded component pattern: GraphicsTemplateEditor adapts height/padding via prop.",
+              "Migration 073: system_version → v2.3.0-ALPHA.41-PRO."
+            ]
+          },
+          {
+            "version": "v2.3.0-ALPHA.40-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Phase 2 — Frontend Transformation: Theme Personalization Engine via ThemeContext.",
+              "Mobile Responsive Layout: MUI Drawer with permanent/temporary modes per breakpoint.",
+              "Real-Time Analytics Dashboard: WebSocket-driven Recharts LineChart + BarChart.",
+              "Drag-and-Drop Template Editor: 16:9 canvas with @dnd-kit palette and property inspector.",
+              "Recharts: Added recharts@^2.12.0 to frontend dependencies."
+            ]
+          },
+          {
+            "version": "v2.3.0-ALPHA.39-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Phase 1 — Enterprise Foundation: channels table with multi-tenant scoping on all core tables.",
+              "Redis Event Bus: Real-time clip_start/clip_end events via Redis Pub/Sub.",
+              "As-Run Logs: as_run_logs table for compliance proof-of-play.",
+              "Audit Trail: audit_logs table for immutable user action history.",
+              "SCTE-35 Schema: scte_35_markers table for ad-insertion cues.",
+              "WebSocket Endpoint: GET /api/v2/events?token=<JWT> streams live telemetry.",
+              "v2 API: /api/v2/channels, /api/v2/analytics, /api/v2/analytics/preferences."
+            ]
+          },
           {
             "version": "v2.2.0-ALPHA.38-PRO",
             "date": "2026-03-10",

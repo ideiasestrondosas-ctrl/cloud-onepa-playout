@@ -1,0 +1,15 @@
+apiVersion: v2
+name: cloud-onepa-playout
+description: Cloud Onepa Playout — Multi-Channel 24/7 Broadcast Platform
+type: application
+version: 1.0.0
+appVersion: "2.5.0-ALPHA.44-PRO"
+keywords:
+  - broadcast
+  - playout
+  - streaming
+  - hls
+  - srt
+home: https://github.com/youorg/cloud-onepa
+maintainers:
+  - name: Cloud Onepa Team

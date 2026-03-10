@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "onepa.name" . }}-mediamtx
+  labels:
+    {{- include "onepa.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount.mediamtx }}
+  selector:
+    matchLabels:
+      app: onepa-mediamtx
+  template:
+    metadata:
+      labels:
+        app: onepa-mediamtx
+    spec:
+      containers:
+        - name: mediamtx
+          image: "{{ .Values.images.mediamtx.repository }}:{{ .Values.images.mediamtx.tag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - containerPort: 1935   # RTMP
+              name: rtmp
+            - containerPort: 8888   # HLS / LL-HLS
+              name: hls
+            - containerPort: 8890   # SRT
+              protocol: UDP
+              name: srt
+            - containerPort: 8989   # WebRTC
+              name: webrtc
+            - containerPort: 9997   # API
+              name: api
+          volumeMounts:
+            - name: mediamtx-config
+              mountPath: /mediamtx.yml
+              subPath: mediamtx.yml
+      volumes:
+        - name: mediamtx-config
+          configMap:
+            name: onepa-mediamtx-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: onepa-mediamtx
+spec:
+  selector:
+    app: onepa-mediamtx
+  ports:
+    - name: rtmp
+      port: 1935
+      targetPort: 1935
+    - name: hls
+      port: 8888
+      targetPort: 8888
+    - name: srt
+      port: 8890
+      targetPort: 8890
+      protocol: UDP
+    - name: webrtc
+      port: 8989
+      targetPort: 8989
+    - name: api
+      port: 9997
+      targetPort: 9997

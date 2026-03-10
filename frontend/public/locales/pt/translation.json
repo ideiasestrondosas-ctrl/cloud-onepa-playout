@@ -36,7 +36,9 @@
     "epg": "GUIA TV",
     "logout": "Sair do Sistema",
     "help": "Ajuda & Documentação",
-    "health": "Saúde do Sistema"
+    "health": "Saúde do Sistema",
+    "analytics": "Análises",
+    "templateEditor": "Editor de Templates"
   },
   "login": {
     "user": "UTILIZADOR",
@@ -597,6 +599,78 @@
         "close_btn": "ENTENDIDO",
         "empty": "NENHUM HISTÓRICO DISPONÍVEL",
         "releases": [
+          {
+            "version": "v2.5.0-ALPHA.44-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Fase 5 — Kubernetes + MinIO + CI/CD: Infraestrutura de implementação cloud-native.",
+              "Helm Charts: Manifestos completos em deployment/helm/ para os 9 serviços com HPA e Ingress.",
+              "MinIO Armazenamento S3: Docker Compose + Helm StatefulSet. STORAGE_BACKEND=local|s3.",
+              "Serviço de Armazenamento: backend/src/services/storage.rs baseado em trait — Local vs S3.",
+              "Migração 077: coluna media.s3_path TEXT para ativos armazenados em S3.",
+              "GitHub Actions CI/CD: No PR → cargo test + clippy + Playwright E2E. No merge → push GHCR.",
+              "Migração 078: system_version → v2.5.0-ALPHA.44-PRO."
+            ]
+          },
+          {
+            "version": "v2.4.0-ALPHA.43-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Fase 4 — SCTE-35 + LL-HLS: Marcadores de inserção de anúncios por item da lista.",
+              "API: GET/POST/DELETE /api/v2/scte35 para gestão de marcadores splice_insert.",
+              "FFmpeg: inject_scte35_markers() integra marcadores SCTE-35 no pipeline de stream.",
+              "Frontend: Botao Ad Cue no Editor de Playlists com campos de offset PTS e duração.",
+              "LL-HLS: mediamtx atualizado para variante lowLatency — segmentos 1s, partes 100ms.",
+              "Migração 076: system_version → v2.4.0-ALPHA.43-PRO."
+            ]
+          },
+          {
+            "version": "v2.4.0-ALPHA.42-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Fase 3 — Microsserviços: service-analytics, service-graphics, service-ai.",
+              "service-analytics (Node.js): Subscritor Redis playout:* → as_run_logs + audit_logs. Porta 4001.",
+              "service-graphics (Node.js + Puppeteer): Compositor HTML5, PNG transparente 1920×1080. Porta 3002.",
+              "service-ai (Python 3.12): Legendas Whisper ASR + worker de deteção de silêncio ffmpeg.",
+              "Docker Compose: Três novos serviços com health checks e dependências Redis/Postgres.",
+              "Migração 074: colunas da fila de tarefas AI em media_tasks. Migração 075: versão."
+            ]
+          },
+          {
+            "version": "v2.3.0-ALPHA.41-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Fase 2.1 — Consolidação UI: separador Analytics integrado em Saude do Sistema (/health).",
+              "Integração Gráficos: Editor de Templates embutido como 4o separador em Gráficos (/graphics).",
+              "Barra lateral reduzida de 11 para 9 entradas — navegação mais limpa e focada.",
+              "Padrão de componente embutido: GraphicsTemplateEditor adapta altura/padding via prop.",
+              "Migração 073: system_version → v2.3.0-ALPHA.41-PRO."
+            ]
+          },
+          {
+            "version": "v2.3.0-ALPHA.40-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Fase 2 — Transformação Frontend: Motor de Personalização de Temas via ThemeContext.",
+              "Layout Responsivo Móvel: MUI Drawer com modos permanente/temporário por breakpoint.",
+              "Dashboard Analytics em Tempo Real: Recharts LineChart + BarChart via WebSocket.",
+              "Editor de Templates Drag-and-Drop: canvas 16:9 com paleta @dnd-kit e inspetor de propriedades.",
+              "Recharts: Adicionado recharts@^2.12.0 às dependências do frontend."
+            ]
+          },
+          {
+            "version": "v2.3.0-ALPHA.39-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Fase 1 — Fundação Enterprise: tabela channels com âmbito multi-tenant em todas as tabelas.",
+              "Bus de Eventos Redis: eventos clip_start/clip_end em tempo real via Redis Pub/Sub.",
+              "Registos As-Run: tabela as_run_logs para prova de emissão de conformidade.",
+              "Trilha de Auditoria: tabela audit_logs para histórico imutável de ações do utilizador.",
+              "Schema SCTE-35: tabela scte_35_markers para cues de inserção de anúncios.",
+              "WebSocket: GET /api/v2/events?token=<JWT> transmite telemetria em tempo real.",
+              "API v2: /api/v2/channels, /api/v2/analytics, /api/v2/analytics/preferences."
+            ]
+          },
           {
             "version": "v2.2.0-ALPHA.38-PRO",
             "date": "2026-03-10",

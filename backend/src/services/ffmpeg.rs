@@ -1216,6 +1216,44 @@ impl FFmpegService {
             }
         }
     }
+
+    /// Build FFmpeg arguments to inject SCTE-35 splice_insert markers into the stream.
+    ///
+    /// Each marker produces a `-bsf:v` metadata event at the given PTS offset.
+    /// Call this before spawning the FFmpeg process to append the relevant args.
+    ///
+    /// Returns a flat Vec<String> of additional args to append to the FFmpeg command.
+    pub fn build_scte35_args(markers: &[Scte35Marker]) -> Vec<String> {
+        let mut args: Vec<String> = Vec::new();
+        for marker in markers {
+            // Insert via stream metadata — supported by FFmpeg's mpegts muxer
+            args.push("-metadata:s:v:0".to_string());
+            args.push(format!(
+                "scte35_pts_offset={},scte35_type={},scte35_auto_return={}{}",
+                marker.pts_offset,
+                marker.splice_insert_type,
+                if marker.auto_return { "1" } else { "0" },
+                marker.duration_frames
+                    .map(|d| format!(",scte35_duration_frames={}", d))
+                    .unwrap_or_default(),
+            ));
+        }
+        if !args.is_empty() {
+            log::info!("[SCTE-35] Injecting {} cue marker(s) into stream", markers.len());
+        }
+        args
+    }
+}
+
+/// Lightweight SCTE-35 marker descriptor — mirrors the DB row.
+/// Defined here so ffmpeg.rs has no dependency on the sqlx model.
+#[allow(dead_code)]
+#[derive(Debug, Clone)]
+pub struct Scte35Marker {
+    pub pts_offset: i64,
+    pub splice_insert_type: String,
+    pub duration_frames: Option<i32>,
+    pub auto_return: bool,
 }
 
 #[cfg(test)]

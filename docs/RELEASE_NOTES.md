@@ -1,5 +1,66 @@
 # Release Notes - Cloud Onepa Playout
 
+## v2.3.0-ALPHA.40-PRO (2026-03-10)
+
+### 🎨 Frontend Transformation — Phase 2
+
+_Version series: v2.3.x — Enterprise Broadcast Platform Upgrade_
+
+**Theme Personalization Engine**
+- `ThemeContext.jsx`: `buildMuiTheme(config)` builds a full MUI theme from a config object. `applyCssVars(config)` sets `--primary-color`, `--secondary-color`, `--bg-color`, `--surface-color` on `:root`. `ThemeContextProvider` loads user preferences from `/api/v2/analytics/preferences/{userId}` on login and applies the theme via `onThemeChange` callback.
+- `App.jsx`: `useState(() => buildMuiTheme())` holds active MUI theme state; `ThemeProvider` receives live state for runtime switching.
+
+**Mobile Responsive Layout**
+- `Layout.jsx`: Mobile drawer closes on any route navigation.
+- Analytics (`/analytics`) and Template Editor (`/graphics/template-editor`) added to sidebar with icons.
+- All 4 i18n locales (EN/PT/ES/FR) updated with `navigation.analytics` and `navigation.templateEditor` keys.
+
+**Real-Time Analytics Dashboard (`/analytics`)**
+- WebSocket connection to `/api/v2/events?token=<JWT>` with auto-reconnect.
+- Recharts `LineChart` for live stream bitrate; `BarChart` for clips/day (last 7 days from as-run REST).
+- KPI cards: Clips Today, Stream Health, Error Rate, Live Events.
+
+**Drag-and-Drop Graphics Template Editor (`/graphics/template-editor`)**
+- 16:9 canvas, @dnd-kit drag-from-palette, absolute-positioned elements.
+- Component types: Text, Clock, Lower Third, Marquee, Shape, Image.
+- Property Inspector with position, size, opacity, type-specific fields.
+- Save to templates API via `POST /api/templates`.
+
+**Dependencies & Migrations**
+- `recharts@^2.12.0` added to frontend.
+- Migration 072: `system_version` → `v2.3.0-ALPHA.40-PRO`.
+
+## v2.3.0-ALPHA.39-PRO (2026-03-10)
+
+### 🏗️ Enterprise Foundation — Phase 1
+
+_Version series: v2.3.x — Enterprise Broadcast Platform Upgrade_
+
+**Database & Schema**
+- New `channels` table with UUID PK + slug routing. Default channel pre-seeded for zero-disruption migration of all existing data.
+- `channel_id` FK added to: `playlists`, `schedule`, `media`, `folders`, `graphics_layers`, `settings`.
+- New `audit_logs`: immutable user action trail.
+- New `as_run_logs`: frame-accurate broadcast compliance log (proof-of-play).
+- New `scte_35_markers`: ad-insertion cue points.
+- New `themes` + `frontend_preferences`: per-user UI theme personalization.
+
+**Infrastructure**
+- Redis 7-alpine added to Docker Compose (`alpha-redis`, port 6379).
+
+**Backend**
+- `EventBus` service: Redis Pub/Sub, publishes `clip_start` on every clip transition.
+- WebSocket `GET /api/v2/events?token=<JWT>`: live telemetry streaming.
+- Engine: inserts `as_run_logs` row on clip start and gapless crossings.
+
+**New v2 API**
+- `/api/v2/channels` CRUD
+- `/api/v2/analytics/as-run` — compliance logs
+- `/api/v2/analytics/audit-logs` — audit trail
+- `/api/v2/analytics/themes` — theme management
+- `/api/v2/analytics/preferences/{user_id}` — user preferences
+
+---
+
 ## v2.2.0-ALPHA.38-PRO (2026-03-10)
 
 ### 🚀 Release Highlights

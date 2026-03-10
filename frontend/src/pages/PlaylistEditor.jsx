@@ -55,6 +55,7 @@ import {
   MoreVert as MoreIcon,
   Movie as MovieIcon,
   Folder as FolderIcon,
+  Tv as AdCueIcon,
 } from '@mui/icons-material';
 import {
   DndContext,
@@ -74,7 +75,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { playlistAPI, mediaAPI } from '../services/api';
 
-function SortableClip({ clip, onRemove, isSelected, onToggleSelection }) {
+function SortableClip({ clip, onRemove, isSelected, onToggleSelection, onAdCue }) {
   const { t } = useTranslation();
   const {
     attributes,
@@ -160,6 +161,20 @@ function SortableClip({ clip, onRemove, isSelected, onToggleSelection }) {
           </Stack>
         </Box>
 
+        <Tooltip title="Ad Cue (SCTE-35)" placement="top">
+          <IconButton
+            size="small"
+            onClick={() => onAdCue && onAdCue(clip)}
+            sx={{
+              color: 'warning.main',
+              bgcolor: 'rgba(255,193,7,0.05)',
+              '&:hover': { bgcolor: 'rgba(255,193,7,0.15)' }
+            }}
+          >
+            <AdCueIcon sx={{ fontSize: 16 }} />
+          </IconButton>
+        </Tooltip>
+
         <IconButton
           size="small"
           onClick={() => onRemove(clip.id)}
@@ -200,6 +215,7 @@ export default function PlaylistEditor() {
   const { showSuccess, showError, showWarning } = useNotification();
   const [playlists, setPlaylists] = useState([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
+  const [scte35Dialog, setScte35Dialog] = useState({ open: false, clip: null, markers: [], pts_offset: 0, duration_frames: '', auto_return: true });
   const [clips, setClipsState] = useState([]);
 
   const [history, setHistory] = useState([]);
@@ -221,6 +237,53 @@ export default function PlaylistEditor() {
       if (newHistory.length > 50) newHistory.shift();
       setHistory(newHistory);
       setHistoryIndex(newHistory.length - 1);
+    }
+  };
+
+  const handleOpenAdCue = async (clip) => {
+    try {
+      const res = await fetch(`/api/v2/scte35?playlist_item_id=${clip.id}`);
+      const markers = res.ok ? await res.json() : [];
+      setScte35Dialog({ open: true, clip, markers, pts_offset: 0, duration_frames: '', auto_return: true });
+    } catch {
+      setScte35Dialog({ open: true, clip, markers: [], pts_offset: 0, duration_frames: '', auto_return: true });
+    }
+  };
+
+  const handleAddScte35 = async () => {
+    const { clip, pts_offset, duration_frames, auto_return } = scte35Dialog;
+    try {
+      const res = await fetch('/api/v2/scte35', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          playlist_item_id: clip.id,
+          playlist_id: selectedPlaylist?.id || null,
+          pts_offset: Number(pts_offset) || 0,
+          duration_frames: duration_frames !== '' ? Number(duration_frames) : null,
+          auto_return,
+        }),
+      });
+      if (res.ok) {
+        const marker = await res.json();
+        setScte35Dialog(d => ({ ...d, markers: [...d.markers, marker] }));
+        showSuccess('Ad cue marker added');
+      } else {
+        showError('Failed to add Ad cue marker');
+      }
+    } catch {
+      showError('Failed to add Ad cue marker');
+    }
+  };
+
+  const handleDeleteScte35 = async (markerId) => {
+    try {
+      const res = await fetch(`/api/v2/scte35/${markerId}`, { method: 'DELETE' });
+      if (res.ok) {
+        setScte35Dialog(d => ({ ...d, markers: d.markers.filter(m => m.id !== markerId) }));
+      }
+    } catch {
+      showError('Failed to delete Ad cue marker');
     }
   };
 
@@ -1024,6 +1087,7 @@ export default function PlaylistEditor() {
                           onRemove={handleRemoveClip}
                           isSelected={selectedClipIds.includes(clip.id)}
                           onToggleSelection={toggleSelection}
+                          onAdCue={handleOpenAdCue}
                         />
                       ))}
                     </List>
@@ -1289,6 +1353,90 @@ export default function PlaylistEditor() {
             sx={{ borderRadius: 2, fontWeight: 800, px: 4, bgcolor: 'warning.main', color: 'black' }}
           >
             {t('playlist.dialogs.automation.run_now')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* SCTE-35 Ad Cue Dialog */}
+      <Dialog
+        open={scte35Dialog.open}
+        onClose={() => setScte35Dialog(d => ({ ...d, open: false }))}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ className: 'glass-panel', sx: { backgroundImage: 'none', border: '1px solid rgba(255,193,7,0.25)' } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: 'warning.main', display: 'flex', alignItems: 'center', gap: 1, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          <AdCueIcon /> AD CUE — {scte35Dialog.clip?.filename?.toUpperCase()}
+        </DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          <Typography variant="caption" sx={{ opacity: 0.5, fontWeight: 600, display: 'block', mb: 2 }}>
+            SCTE-35 splice_insert markers are injected into the broadcast stream at the defined PTS offset.
+          </Typography>
+
+          {/* Existing markers */}
+          {scte35Dialog.markers.length > 0 && (
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="caption" sx={{ fontWeight: 800, opacity: 0.7, letterSpacing: 1 }}>ACTIVE MARKERS</Typography>
+              {scte35Dialog.markers.map(m => (
+                <Box key={m.id} sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5, p: 1, borderRadius: 1, bgcolor: 'rgba(255,193,7,0.05)', border: '1px solid rgba(255,193,7,0.15)' }}>
+                  <AdCueIcon sx={{ fontSize: 14, color: 'warning.main' }} />
+                  <Typography variant="caption" sx={{ flexGrow: 1, fontWeight: 700, fontFamily: 'monospace' }}>
+                    {m.splice_insert_type} | PTS+{m.pts_offset} {m.duration_frames ? `| ${m.duration_frames}f` : ''} {m.auto_return ? '| AUTO' : ''}
+                  </Typography>
+                  <IconButton size="small" onClick={() => handleDeleteScte35(m.id)} sx={{ color: 'error.main', p: 0.3 }}>
+                    <DeleteIcon sx={{ fontSize: 14 }} />
+                  </IconButton>
+                </Box>
+              ))}
+            </Box>
+          )}
+
+          {/* Add new marker form */}
+          <Typography variant="caption" sx={{ fontWeight: 800, opacity: 0.7, letterSpacing: 1 }}>ADD MARKER</Typography>
+          <Stack direction="row" spacing={1.5} sx={{ mt: 1 }}>
+            <TextField
+              label="PTS Offset (90kHz ticks)"
+              type="number"
+              size="small"
+              value={scte35Dialog.pts_offset}
+              onChange={e => setScte35Dialog(d => ({ ...d, pts_offset: e.target.value }))}
+              sx={{ flex: 1 }}
+              InputLabelProps={{ shrink: true, sx: { fontWeight: 700 } }}
+              placeholder="0"
+            />
+            <TextField
+              label="Duration (frames)"
+              type="number"
+              size="small"
+              value={scte35Dialog.duration_frames}
+              onChange={e => setScte35Dialog(d => ({ ...d, duration_frames: e.target.value }))}
+              sx={{ flex: 1 }}
+              InputLabelProps={{ shrink: true, sx: { fontWeight: 700 } }}
+              placeholder="e.g. 750 = 30s@25fps"
+            />
+          </Stack>
+          <FormControlLabel
+            sx={{ mt: 1 }}
+            control={
+              <Checkbox
+                size="small"
+                checked={scte35Dialog.auto_return}
+                onChange={e => setScte35Dialog(d => ({ ...d, auto_return: e.target.checked }))}
+              />
+            }
+            label={<Typography variant="caption" sx={{ fontWeight: 700 }}>Auto-return after duration</Typography>}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setScte35Dialog(d => ({ ...d, open: false }))} sx={{ fontWeight: 800 }}>CLOSE</Button>
+          <Button
+            variant="contained"
+            color="warning"
+            onClick={handleAddScte35}
+            startIcon={<AdCueIcon />}
+            sx={{ borderRadius: 2, fontWeight: 800, color: 'black' }}
+          >
+            ADD CUE
           </Button>
         </DialogActions>
       </Dialog>

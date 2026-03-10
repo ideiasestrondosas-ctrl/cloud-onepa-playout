@@ -1,0 +1,37 @@
+# ── service-graphics — HTML5 Graphics Compositor ────────────────────────────
+# Phase 3 / v2.4.0-ALPHA.42-PRO
+# Uses Puppeteer (headless Chromium) — requires specific Alpine packages
+FROM node:20-alpine
+
+# Chromium dependencies
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont \
+    font-noto \
+    font-noto-cjk
+
+# Tell Puppeteer to use the system Chromium
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
+WORKDIR /app
+
+COPY service-graphics/package.json ./
+RUN npm install --omit=dev --no-audit && npm cache clean --force
+
+COPY service-graphics/src ./src
+
+# Non-root user (required for Chromium --no-sandbox in container)
+RUN addgroup -S graphics && adduser -S graphics -G graphics
+USER graphics
+
+EXPOSE 3002
+
+HEALTHCHECK --interval=20s --timeout=10s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:3002/health || exit 1
+
+CMD ["node", "src/index.js"]

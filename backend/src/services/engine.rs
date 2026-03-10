@@ -1,6 +1,7 @@
 use crate::models::playlist::Playlist;
 use crate::models::schedule::Schedule;
 use crate::models::settings::Settings;
+use crate::services::event_bus::EventBus;
 use crate::services::ffmpeg::FFmpegService;
 use chrono::{Datelike, Local, NaiveTime};
 use serde::{Deserialize, Serialize};
@@ -75,6 +76,8 @@ pub struct PlayoutEngine {
     master_inactive_count: Arc<Mutex<u32>>,
     // Track last known graphics_updated_at to detect layer changes
     last_graphics_updated_at: Arc<Mutex<Option<chrono::DateTime<chrono::Utc>>>>,
+    // Phase 1: Event bus for real-time telemetry (optional — degrades gracefully without Redis)
+    pub event_bus: Arc<Mutex<Option<EventBus>>>,
 }
 
 impl PlayoutEngine {
@@ -119,7 +122,63 @@ impl PlayoutEngine {
             preview_ips: Arc::new(Mutex::new(HashMap::new())),
             master_inactive_count: Arc::new(Mutex::new(0u32)),
             last_graphics_updated_at: Arc::new(Mutex::new(None)),
+            event_bus: Arc::new(Mutex::new(None)),
         }
+    }
+
+    /// Attach a Redis EventBus after construction (called from main once Redis connects).
+    pub async fn set_event_bus(&self, bus: EventBus) {
+        let mut eb = self.event_bus.lock().await;
+        *eb = Some(bus);
+        log::info!("PlayoutEngine: EventBus attached");
+    }
+
+    /// Insert an as_run_log row and publish a clip-start event to Redis.
+    /// Fire-and-forget — errors are logged but never propagate to the playout loop.
+    #[allow(dead_code)]
+    async fn record_clip_start(
+        &self,
+        clip_id: &str,
+        clip_filename: &str,
+        playlist_id: Uuid,
+        media_id: Option<Uuid>,
+    ) {
+        let pool = self.pool.clone();
+        let event_bus = self.event_bus.clone();
+        let clip_id = clip_id.to_string();
+        let clip_filename = clip_filename.to_string();
+
+        tokio::spawn(async move {
+            // 1. Insert as_run_log
+            let default_channel_id = Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap();
+            let _ = sqlx::query(
+                "INSERT INTO as_run_logs
+                 (channel_id, asset_id, playlist_id, clip_id, clip_filename, actual_start, status)
+                 VALUES ($1, $2, $3, $4, $5, NOW(), 'playing')"
+            )
+            .bind(default_channel_id)
+            .bind(media_id)
+            .bind(playlist_id)
+            .bind(&clip_id)
+            .bind(&clip_filename)
+            .execute(&pool)
+            .await;
+
+            // 2. Publish to Redis event bus
+            let eb = event_bus.lock().await;
+            if let Some(bus) = eb.as_ref() {
+                bus.publish(
+                    "playout:default",
+                    "clip_start",
+                    serde_json::json!({
+                        "clip_id": clip_id,
+                        "clip_filename": clip_filename,
+                        "playlist_id": playlist_id.to_string(),
+                    }),
+                )
+                .await;
+            }
+        });
     }
 
     // Add dashboard log with retention limit
@@ -861,6 +920,13 @@ impl PlayoutEngine {
                     status.clips_played_today += 1;
                     let new_count = status.clips_played_today;
                     let pool = self.pool.clone();
+                    let eb = self.event_bus.clone();
+                    let clip_id_log = clip_id.to_string();
+                    let filename_log = filename.clone();
+                    let playlist_id_log = playlist.id;
+                    let media_id_log: Option<Uuid> = item["media_id"]
+                        .as_str()
+                        .and_then(|s| Uuid::parse_str(s).ok());
                     tokio::spawn(async move {
                         let _ = sqlx::query(
                             "UPDATE settings SET clips_played_today = $1 WHERE id = TRUE",
@@ -868,6 +934,34 @@ impl PlayoutEngine {
                         .bind(new_count)
                         .execute(&pool)
                         .await;
+                        // Phase 1: as-run compliance log
+                        let default_ch = Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap();
+                        let _ = sqlx::query(
+                            "INSERT INTO as_run_logs \
+                             (channel_id, asset_id, playlist_id, clip_id, clip_filename, actual_start, status) \
+                             VALUES ($1, $2, $3, $4, $5, NOW(), 'playing')",
+                        )
+                        .bind(default_ch)
+                        .bind(media_id_log)
+                        .bind(playlist_id_log)
+                        .bind(&clip_id_log)
+                        .bind(&filename_log)
+                        .execute(&pool)
+                        .await;
+                        // Phase 1: real-time event
+                        let eb_lock = eb.lock().await;
+                        if let Some(bus) = eb_lock.as_ref() {
+                            bus.publish(
+                                "playout:default",
+                                "clip_start",
+                                serde_json::json!({
+                                    "clip_id": clip_id_log,
+                                    "clip_filename": filename_log,
+                                    "playlist_id": playlist_id_log.to_string(),
+                                }),
+                            )
+                            .await;
+                        }
                     });
                 }
                 *current_id = Some(clip_id.to_string());
@@ -882,6 +976,13 @@ impl PlayoutEngine {
                     status.clips_played_today += 1;
                     let new_count = status.clips_played_today;
                     let pool = self.pool.clone();
+                    let eb = self.event_bus.clone();
+                    let clip_id_log = clip_id.to_string();
+                    let filename_log = filename.clone();
+                    let playlist_id_log = playlist.id;
+                    let media_id_log: Option<Uuid> = item["media_id"]
+                        .as_str()
+                        .and_then(|s| Uuid::parse_str(s).ok());
                     tokio::spawn(async move {
                         let _ = sqlx::query(
                             "UPDATE settings SET clips_played_today = $1 WHERE id = TRUE",
@@ -889,6 +990,34 @@ impl PlayoutEngine {
                         .bind(new_count)
                         .execute(&pool)
                         .await;
+                        // Phase 1: as-run compliance log (gapless transition)
+                        let default_ch = Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap();
+                        let _ = sqlx::query(
+                            "INSERT INTO as_run_logs \
+                             (channel_id, asset_id, playlist_id, clip_id, clip_filename, actual_start, status) \
+                             VALUES ($1, $2, $3, $4, $5, NOW(), 'playing')",
+                        )
+                        .bind(default_ch)
+                        .bind(media_id_log)
+                        .bind(playlist_id_log)
+                        .bind(&clip_id_log)
+                        .bind(&filename_log)
+                        .execute(&pool)
+                        .await;
+                        // Phase 1: real-time event
+                        let eb_lock = eb.lock().await;
+                        if let Some(bus) = eb_lock.as_ref() {
+                            bus.publish(
+                                "playout:default",
+                                "clip_start",
+                                serde_json::json!({
+                                    "clip_id": clip_id_log,
+                                    "clip_filename": filename_log,
+                                    "playlist_id": playlist_id_log.to_string(),
+                                }),
+                            )
+                            .await;
+                        }
                     });
                     *current_id = Some(clip_id.to_string());
                 }
