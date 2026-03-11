@@ -588,7 +588,7 @@ function Settings() {
         defaultImagePath: data.default_image_path || '',
 
         defaultVideoPath: data.default_video_path || '',
-        version: data.system_version || 'v2.2.0-ALPHA.38-PRO',
+        version: data.system_version || 'v2.6.0-ALPHA.45-PRO',
         releaseDate: data.release_date || '2026-03-10',
         overlay_enabled: data.overlay_enabled ?? true,
         channelName: data.channel_name || 'Cloud Onepa',
@@ -598,7 +598,7 @@ function Settings() {
         srtMode: data.srt_mode || 'caller',
         protectedPath: data.protected_path || '/var/lib/onepa-playout/assets/protected',
         docsPath: data.docs_path || '/app/docs',
-        system_version: data.system_version || 'v2.2.0-ALPHA.38-PRO',
+        system_version: data.system_version || 'v2.6.0-ALPHA.45-PRO',
         release_date: data.release_date || '2026-03-10',
         rtmpOutputUrl: data.rtmp_output_url || '',
         srtOutputUrl: data.srt_output_url || '',
@@ -964,30 +964,32 @@ function Settings() {
     },
     {
       phase: 'Phase 30',
-      version: 'Em Planeamento',
+      version: 'v2.6.0-ALPHA.45',
       title: 'LIVE INPUTS & MULTI-CHANNEL UI',
       focus: 'Expansão para live switching e gestão visual de múltiplos canais',
       icon: <MagicIcon />,
-      color: '#607d8b',
-      done: false,
+      color: '#00bcd4',
+      done: true,
       items: [
-        { text: 'Live Inputs: Integração WebRTC, NDI e SDI para live switching', done: false },
-        { text: 'Social Streaming: YouTube Live e Facebook Live nativos', done: false },
-        { text: 'Multi-Channel UI: Interface visual para gerir múltiplos canais simultâneos', done: false }
+        { text: 'Live Input Service: WebRTC, NDI, SDI, RTMP, SRT com FFmpeg pipelines', done: true },
+        { text: 'Live Switching Engine: Cut/fade transitions, audio mixing, graphics overlay', done: true },
+        { text: 'Social Streaming: YouTube Live e Facebook Live nativos com reconnection', done: true },
+        { text: 'Multi-Channel UI: Grid dashboard com live previews e status indicators', done: true }
       ]
     },
     {
       phase: 'Phase 31',
-      version: 'Em Planeamento',
-      title: 'FUTURE TECH & HIGH AVAILABILITY',
+      version: 'v2.6.0-ALPHA.45',
+      title: 'AI AUTOMATION & HIGH AVAILABILITY',
       focus: 'IA avançada, CDN edge e redundância automática',
       icon: <RocketIcon />,
-      color: '#607d8b',
-      done: false,
+      color: '#4caf50',
+      done: true,
       items: [
-        { text: 'AI Playlist: Geração inteligente de playlists via análise de conteúdo', done: false },
-        { text: 'HA & Failover: Redundância automática e monitorização avançada', done: false },
-        { text: 'Edge CDN: Distribuição de conteúdo multi-edge com load balancing', done: false }
+        { text: 'AI Playlist Generation: Scene detection, speech-to-text, metadata enrichment', done: true },
+        { text: 'High Availability: Active-active nodes, automatic failover, health checks', done: true },
+        { text: 'Edge CDN: Origin server, edge nodes, cache layer, load balancer', done: true },
+        { text: 'Monitoring: Prometheus, Grafana, Alertmanager integration', done: true }
       ]
     }
   ];

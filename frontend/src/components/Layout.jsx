@@ -31,6 +31,8 @@ import {
   LiveTv as LiveTvIcon,
   Brush as GraphicsIcon,
   MonitorHeart as HealthIcon,
+  Input as InputIcon,
+  GridView as GridViewIcon,
 } from '@mui/icons-material';
 import { useHelp } from '../context/HelpContext';
 import { useTranslation } from 'react-i18next';
@@ -151,6 +153,8 @@ const menuItems = [
   { key: 'navigation.graphics', icon: <GraphicsIcon />, path: '/graphics' },
   { key: 'navigation.templates', icon: <TemplatesIcon />, path: '/templates' },
   { key: 'navigation.health', icon: <HealthIcon />, path: '/health' },
+  { key: 'navigation.liveInputs', icon: <InputIcon />, path: '/live-inputs' },
+  { key: 'navigation.multiChannel', icon: <GridViewIcon />, path: '/multi-channel' },
   { key: 'navigation.settings', icon: <SettingsIcon />, path: '/settings' },
 ];
 
@@ -170,7 +174,7 @@ export default function Layout({ children }) {
       try {
         setLoadingSettings(true);
         const response = await settingsAPI.get();
-        setVersion(response.data.system_version || 'v2.2.0-ALPHA.34-PRO');
+        setVersion(response.data.system_version || 'v2.6.0-ALPHA.45-PRO');
         const data = response.data;
         if (!data.branding_type) {
           data.branding_type = 'video';
@@ -196,10 +200,10 @@ export default function Layout({ children }) {
   };
 
   const drawer = (
-    <div>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <AppLogo version={version} settings={settings} loading={loadingSettings} />
       <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.1)', mb: 1 }} />
-      <List sx={{ pt: 1 }}>
+      <List sx={{ pt: 1, flexGrow: 1 }}>
         {menuItems.map((item) => (
           <ListItem key={item.key} disablePadding>
             <Tooltip title={t(item.key)} placement="right" arrow>
@@ -214,20 +218,21 @@ export default function Layout({ children }) {
           </ListItem>
         ))}
       </List>
-      <Divider />
+      <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.1)' }} />
       <List>
         <ListItem disablePadding>
           <Tooltip title={t('navigation.logout')} placement="right" arrow>
-            <ListItemButton onClick={handleLogout}>
-              <ListItemIcon>
-                <LogoutIcon />
-              </ListItemIcon>
+            <ListItemButton
+              onClick={handleLogout}
+              sx={{ '&:hover': { color: 'error.main', '& .MuiListItemIcon-root': { color: 'error.main' } } }}
+            >
+              <ListItemIcon><LogoutIcon /></ListItemIcon>
               <ListItemText primary={t('navigation.logout')} />
             </ListItemButton>
           </Tooltip>
         </ListItem>
       </List>
-    </div>
+    </Box>
   );
 
   return (

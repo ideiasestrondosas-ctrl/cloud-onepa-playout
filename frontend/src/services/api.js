@@ -162,4 +162,37 @@ export const protectedAPI = {
   getStreamUrl: (filename) => `${API_BASE_URL}/protected/${filename}`,
 };
 
+// Live Inputs endpoints (Phase 30)
+export const liveInputsAPI = {
+  list: (params) => api.get('/inputs', { params }),
+  get: (id) => api.get(`/inputs/${id}`),
+  create: (data) => api.post('/inputs', data),
+  update: (id, data) => api.put(`/inputs/${id}`, data),
+  delete: (id) => api.delete(`/inputs/${id}`),
+  getStatus: (id) => api.get(`/inputs/${id}/status`),
+  route: (id, data) => api.post(`/inputs/${id}/route`, data),
+  getRoutes: (id) => api.get(`/inputs/${id}/routes`),
+};
+
+// Social Streaming endpoints (Phase 30)
+export const socialStreamsAPI = {
+  list: () => api.get('/streams'),
+  get: (id) => api.get(`/streams/${id}`),
+  create: (data) => api.post('/streams', data),
+  update: (id, data) => api.put(`/streams/${id}`, data),
+  delete: (id) => api.delete(`/streams/${id}`),
+  start: (id) => api.post(`/streams/${id}/start`),
+  stop: (id) => api.post(`/streams/${id}/stop`),
+  getStatus: (id) => api.get(`/streams/${id}/status`),
+};
+
+// Channels endpoints (v2)
+export const channelsAPI = {
+  list: () => api.get('/v2/channels'),
+  get: (id) => api.get(`/v2/channels/${id}`),
+  create: (data) => api.post('/v2/channels', data),
+  update: (id, data) => api.put(`/v2/channels/${id}`, data),
+  delete: (id) => api.delete(`/v2/channels/${id}`),
+};
+
 export default api;

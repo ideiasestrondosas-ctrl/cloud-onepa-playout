@@ -1,5 +1,19 @@
 [
   {
+    "version": "2.6.0-ALPHA.45-PRO",
+    "date": "2026-03-10",
+    "changes": [
+      "Live Input Ingestion Service: WebRTC, NDI, SDI, RTMP, SRT support",
+      "Live Switching Engine: Cut/fade transitions, audio mixing, graphics overlay",
+      "Social Streaming: Multi-destination to YouTube Live and Facebook Live",
+      "Multi Channel Visual UI: Grid dashboard with live previews",
+      "AI Playlist Generation: Content analysis, scene detection, speech-to-text",
+      "High Availability: Active-active nodes, automatic failover",
+      "Edge CDN: Origin server, edge nodes, cache layer",
+      "Monitoring: Prometheus, Grafana, Alertmanager integration"
+    ]
+  },
+  {
     "version": "2.2.0-ALPHA.38-PRO",
     "date": "2026-03-10",
     "changes": [

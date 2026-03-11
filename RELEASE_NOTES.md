@@ -1,5 +1,30 @@
 # Release Notes - Cloud Onepa Playout
 
+## v2.6.0-ALPHA.45-PRO ()
+
+### 🚀 Release Highlights
+- **Automated Release**: Version bump and statistics update.
+- **Documentation**: Synced README.md and version history.
+
+## v2.6.0-ALPHA.45-PRO (2026-03-10)
+
+### 🎬 Live Inputs & Multi-Channel UI (Phase 30)
+- **Live Input Ingestion Service**: New service for registering and monitoring live sources (WebRTC, NDI, SDI, RTMP, SRT). FFmpeg pipelines with GPU acceleration support (NVENC/VAAPI).
+- **Live Switching Engine**: Cut and fade transitions between live sources, audio mixing, and graphics overlay integration with the playout pipeline. WebSocket control events.
+- **Social Streaming Integration**: Multi-destination streaming to YouTube Live and Facebook Live. Stream key management, automatic reconnection, and health monitoring.
+- **Multi Channel Visual UI**: Grid layout dashboard with live preview thumbnails, channel status indicators, quick input routing, and emergency override controls.
+
+### 🤖 AI Automation & High Availability (Phase 31)
+- **AI Playlist Generation**: Media content analysis with scene detection, speech-to-text, and metadata enrichment. Playlist suggestions based on content analysis.
+- **High Availability Architecture**: Active-active playout nodes, automatic failover, health checks, and shared storage configuration.
+- **Edge CDN**: Internal CDN distribution with origin server, edge nodes, cache layer, and load balancer for HLS segment caching.
+- **Monitoring & Alerting**: Prometheus metrics integration, Grafana dashboards, and Alertmanager for streaming pipeline and system monitoring.
+
+### 🚀 Release Highlights
+- **Automated Release**: Version bump to ALPHA.45-PRO.
+- **Documentation**: Synced README.md, RELEASE_NOTES.md and frontend constants.
+- **Roadmap Update**: Phase 30 and Phase 31 now marked as implemented.
+
 ## v2.5.0-ALPHA.44-PRO ()
 
 ### 🚀 Release Highlights

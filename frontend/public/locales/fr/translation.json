@@ -38,7 +38,9 @@
     "help": "Aide & Documentation",
     "health": "Santé du Système",
     "analytics": "Analytiques",
-    "templateEditor": "Éditeur de Templates"
+    "templateEditor": "Éditeur de Templates",
+    "liveInputs": "Entrées en Direct",
+    "multiChannel": "Multi-Canal"
   },
   "login": {
     "user": "UTILISATEUR",

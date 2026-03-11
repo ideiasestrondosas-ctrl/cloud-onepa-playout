@@ -38,7 +38,9 @@
     "help": "Ajuda & Documentação",
     "health": "Saúde do Sistema",
     "analytics": "Análises",
-    "templateEditor": "Editor de Templates"
+    "templateEditor": "Editor de Templates",
+    "liveInputs": "Entradas Ao Vivo",
+    "multiChannel": "Multi-Canal"
   },
   "login": {
     "user": "UTILIZADOR",
@@ -532,14 +534,16 @@
         "highlights": {
           "i18n_label": "MULTI-IDIOMA (IMPLEMENTADO)",
           "i18n_value": "Implementado",
-          "multichannel_label": "MULTI-CANAL (PLANEADO)",
-          "multichannel_value": "Planeado",
+          "multichannel_label": "MULTI-CANAL (IMPLEMENTADO)",
+          "multichannel_value": "Ativo",
           "lowlatency_label": "LOW-LATENCY (IMPLEMENTADO)",
-          "lowlatency_value": "SRT / HLS (estavel)"
+          "lowlatency_value": "SRT / HLS (estavel)",
+          "ai_label": "IA & HA (IMPLEMENTADO)",
+          "ai_value": "Ativo"
         },
         "phases": {
           "p25_connectivity": {
-            "title": "LIVE INPUTS & PROTOCOLOS AVANCADOS",
+            "title": "LIVE INPUTS & PROTOCOLOS AVANCADOS (IMPLEMENTADO)",
             "focus": "Expansao alem do playback de ficheiros",
             "items": [
               "Live Inputs Support: Integracao de WebRTC, NDI e SDI para live switching",
@@ -569,7 +573,7 @@
             ]
           },
           "p28_future": {
-            "title": "TECNOLOGIA FUTURA & ESCALABILIDADE",
+            "title": "IA & HIGH AVAILABILITY (IMPLEMENTADO)",
             "focus": "Inovacao e elevada disponibilidade",
             "items": [
               "AI Integration: Auto-tagging e geracao inteligente de playlists",
@@ -599,6 +603,22 @@
         "close_btn": "ENTENDIDO",
         "empty": "NENHUM HISTÓRICO DISPONÍVEL",
         "releases": [
+          {
+            "version": "v2.6.0-ALPHA.45-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Fase 30 & 31 — Live Inputs & Multi-Channel UI: Novas funcionalidades para transmissão ao vivo.",
+              "Live Input Ingestion: Suporte para RTMP, SRT, WebRTC, NDI e SDI.",
+              "Live Switching Engine: Transições cut/fade, mixing de áudio, overlays de gráficos.",
+              "Social Streaming: Multi-destinação para YouTube Live e Facebook Live.",
+              "Multi Channel Visual UI: Dashboard grid com pré-visualizações em tempo real.",
+              "AI Playlist Generation: Análise de conteúdo, deteção de cenas, speech-to-text.",
+              "High Availability: Nós active-active, failover automático.",
+              "Edge CDN: Servidor de origem, nós edge, camada de cache.",
+              "Monitoring: Integração com Prometheus, Grafana e Alertmanager.",
+              "Migração 079/080: system_version → v2.6.0-ALPHA.45-PRO."
+            ]
+          },
           {
             "version": "v2.5.0-ALPHA.44-PRO",
             "date": "2026-03-10",
@@ -1676,5 +1696,38 @@
       "perfect": "Perfeito",
       "health": "Saúde"
     }
+  },
+  "liveInputs": {
+    "title": "Entradas Live",
+    "liveInputs": "Entradas Live",
+    "socialStreaming": "Streaming Social",
+    "addInput": "Adicionar Entrada",
+    "addStream": "Adicionar Stream",
+    "editInput": "Editar Entrada",
+    "inputName": "Nome da Entrada",
+    "protocol": "Protocolo",
+    "noInputs": "Nenhuma entrada live configurada",
+    "noStreams": "Nenhum stream social configurado",
+    "confirmDelete": "Tem certeza que deseja eliminar?",
+    "status": "Estado",
+    "name": "Nome",
+    "platform": "Plataforma",
+    "streamUrl": "URL do Stream",
+    "actions": "Ações",
+    "start": "Iniciar",
+    "stop": "Parar"
+  },
+  "multiChannel": {
+    "title": "Multi-Canal",
+    "noDescription": "Sem descrição",
+    "noPreview": "Pré-visualização não disponível",
+    "currentClip": "Clip Atual",
+    "nextUp": "Próximo",
+    "bitrate": "Bitrate",
+    "stop": "Parar",
+    "play": "Reproduzir",
+    "skip": "Saltar",
+    "noChannels": "Nenhum canal configurado",
+    "noChannelsHint": "Configure canais nas configurações para usar o modo multi-canal"
   }
 }

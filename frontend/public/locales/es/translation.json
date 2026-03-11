@@ -46,7 +46,9 @@
     "help": "Ayuda & Documentación",
     "health": "Salud del Sistema",
     "analytics": "Analíticas",
-    "templateEditor": "Editor de Plantillas"
+    "templateEditor": "Editor de Plantillas",
+    "liveInputs": "Entradas en Vivo",
+    "multiChannel": "Multi-Canal"
   },
   "login": {
     "user": "USUARIO",

@@ -38,7 +38,9 @@
     "help": "Help & Documentation",
     "health": "System Health",
     "analytics": "Analytics",
-    "templateEditor": "Template Editor"
+    "templateEditor": "Template Editor",
+    "liveInputs": "Live Inputs",
+    "multiChannel": "Multi-Channel"
   },
   "login": {
     "user": "USERNAME",
@@ -524,14 +526,16 @@
         "highlights": {
           "i18n_label": "MULTI-LANGUAGE (IMPLEMENTED)",
           "i18n_value": "Implemented",
-          "multichannel_label": "MULTI-CHANNEL (PLANNED)",
-          "multichannel_value": "Planned",
+          "multichannel_label": "MULTI-CHANNEL (IMPLEMENTED)",
+          "multichannel_value": "Active",
           "lowlatency_label": "LOW-LATENCY (IMPLEMENTED)",
-          "lowlatency_value": "SRT / HLS (stable)"
+          "lowlatency_value": "SRT / HLS (stable)",
+          "ai_label": "AI & HA (IMPLEMENTED)",
+          "ai_value": "Active"
         },
         "phases": {
           "p25_connectivity": {
-            "title": "LIVE INPUTS & ADVANCED PROTOCOL",
+            "title": "LIVE INPUTS & ADVANCED PROTOCOLS (IMPLEMENTED)",
             "focus": "Expanding beyond file playback",
             "items": [
               "Live Inputs Support: WebRTC, NDI and SDI integration for live switching",
@@ -561,7 +565,7 @@
             ]
           },
           "p28_future": {
-            "title": "FUTURE TECH & SCALABILITY",
+            "title": "AI & HIGH AVAILABILITY (IMPLEMENTED)",
             "focus": "Innovation and high availability",
             "items": [
               "AI Integration: Auto-tagging and intelligent playlist generation",
@@ -591,6 +595,22 @@
         "close_btn": "GOT IT",
         "empty": "NO HISTORY AVAILABLE",
         "releases": [
+          {
+            "version": "v2.6.0-ALPHA.45-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Phase 30 & 31 — Live Inputs & Multi-Channel UI: New live broadcasting features.",
+              "Live Input Ingestion: Support for RTMP, SRT, WebRTC, NDI and SDI.",
+              "Live Switching Engine: Cut/fade transitions, audio mixing, graphics overlays.",
+              "Social Streaming: Multi-destination to YouTube Live and Facebook Live.",
+              "Multi Channel Visual UI: Grid dashboard with real-time previews.",
+              "AI Playlist Generation: Content analysis, scene detection, speech-to-text.",
+              "High Availability: Active-active nodes, automatic failover.",
+              "Edge CDN: Origin server, edge nodes, cache layer.",
+              "Monitoring: Integration with Prometheus, Grafana and Alertmanager.",
+              "Migration 079/080: system_version → v2.6.0-ALPHA.45-PRO."
+            ]
+          },
           {
             "version": "v2.5.0-ALPHA.44-PRO",
             "date": "2026-03-10",
@@ -1550,5 +1570,38 @@
       "perfect": "Perfect",
       "health": "Health"
     }
+  },
+  "liveInputs": {
+    "title": "Live Inputs",
+    "liveInputs": "Live Inputs",
+    "socialStreaming": "Social Streaming",
+    "addInput": "Add Input",
+    "addStream": "Add Stream",
+    "editInput": "Edit Input",
+    "inputName": "Input Name",
+    "protocol": "Protocol",
+    "noInputs": "No live inputs configured",
+    "noStreams": "No social streams configured",
+    "confirmDelete": "Are you sure you want to delete?",
+    "status": "Status",
+    "name": "Name",
+    "platform": "Platform",
+    "streamUrl": "Stream URL",
+    "actions": "Actions",
+    "start": "Start",
+    "stop": "Stop"
+  },
+  "multiChannel": {
+    "title": "Multi-Channel",
+    "noDescription": "No description",
+    "noPreview": "Preview not available",
+    "currentClip": "Current Clip",
+    "nextUp": "Next Up",
+    "bitrate": "Bitrate",
+    "stop": "Stop",
+    "play": "Play",
+    "skip": "Skip",
+    "noChannels": "No channels configured",
+    "noChannelsHint": "Configure channels in settings to use multi-channel mode"
   }
 }

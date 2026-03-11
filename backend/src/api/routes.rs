@@ -20,6 +20,17 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .service(web::scope("/channels").configure(crate::api::channels::configure))
                     .service(web::scope("/analytics").configure(crate::api::analytics::configure))
                     .service(web::scope("/scte35").configure(crate::api::scte35::configure)),
+            )
+            // Phase 30 — Live Inputs & Social Streaming
+            .service(
+                web::scope("").configure(crate::api::live_inputs::configure),
+            )
+            // Phase 31 — AI Automation & Monitoring
+            .service(
+                web::scope("/ai").configure(crate::api::ai::configure),
+            )
+            .service(
+                web::scope("/metrics").configure(crate::api::ai::configure),
             ),
     );
 }
