@@ -1,5 +1,18 @@
 # Release Notes - Cloud Onepa Playout
 
+## v2.6.0-ALPHA.46-PRO ()
+
+### 🚀 Release Highlights
+- **Automated Release**: Version bump and statistics update.
+- **Documentation**: Synced README.md and version history.
+
+## v2.6.0-ALPHA.46-PRO (2026-03-12)
+
+### 🎨 UI Refinements & Navigation (Phase 32)
+- **Menu Reorganization**: Sidebar now ordered as Dashboard → Live Input → EPG → Midia → Playlist → MultiChannel → Calendar → Graphics → Templates → Health → Config for a more intuitive workflow.
+- **Logoff Button Styling**: Logoff button now permanently uses the red alpha badge color (`#cc0000`) for a consistent, intentional visual identity. Hover brightens to `#ff2222`.
+- **Version Bump**: All components in the stack updated to `v2.6.0-ALPHA.46-PRO`.
+
 ## v2.6.0-ALPHA.45-PRO ()
 
 ### 🚀 Release Highlights

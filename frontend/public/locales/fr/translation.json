@@ -591,6 +591,17 @@
         "empty": "AUCUN HISTORIQUE DISPONIBLE",
         "releases": [
           {
+            "version": "v2.6.0-ALPHA.46-PRO",
+            "date": "2026-03-12",
+            "changes": [
+              "Phase 32 — Raffinements UI & Navigation : Barre latérale réorganisée pour un flux de travail plus intuitif.",
+              "Bouton Déconnexion déplacé dans la barre supérieure (AppBar) pour un accès cohérent sur toutes les pages.",
+              "Le bouton Déconnexion utilise en permanence la couleur rouge (#cc0000) avec mise en surbrillance (#ff2222) au survol.",
+              "Ordre de la barre latérale : Tableau de bord → Entrées en Direct → EPG → Bibliothèque → Listes de lecture → Multi-Canal → Calendrier → Graphiques → Modèles → Santé → Paramètres.",
+              "Migration 081 : system_version → v2.6.0-ALPHA.46-PRO."
+            ]
+          },
+          {
             "version": "v2.5.0-ALPHA.44-PRO",
             "date": "2026-03-10",
             "changes": [

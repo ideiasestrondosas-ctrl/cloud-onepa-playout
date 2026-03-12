@@ -20,7 +20,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY service-ai/worker.py ./
 
 # Non-root user
-RUN useradd -r -s /sbin/nologin aiworker
+RUN useradd -m aiworker
 USER aiworker
 
 # No port exposed — worker is poll-based, no HTTP

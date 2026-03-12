@@ -146,15 +146,15 @@ const drawerWidth = 240;
 
 const menuItems = [
   { key: 'navigation.dashboard', icon: <DashboardIcon />, path: '/' },
+  { key: 'navigation.liveInputs', icon: <InputIcon />, path: '/live-inputs' },
+  { key: 'epg.title', icon: <LiveTvIcon />, path: '/epg' },
   { key: 'navigation.media', icon: <VideoLibraryIcon />, path: '/media' },
   { key: 'navigation.playlists', icon: <PlaylistPlayIcon />, path: '/playlists' },
+  { key: 'navigation.multiChannel', icon: <GridViewIcon />, path: '/multi-channel' },
   { key: 'navigation.calendar', icon: <CalendarIcon />, path: '/calendar' },
-  { key: 'epg.title', icon: <LiveTvIcon />, path: '/epg' },
   { key: 'navigation.graphics', icon: <GraphicsIcon />, path: '/graphics' },
   { key: 'navigation.templates', icon: <TemplatesIcon />, path: '/templates' },
   { key: 'navigation.health', icon: <HealthIcon />, path: '/health' },
-  { key: 'navigation.liveInputs', icon: <InputIcon />, path: '/live-inputs' },
-  { key: 'navigation.multiChannel', icon: <GridViewIcon />, path: '/multi-channel' },
   { key: 'navigation.settings', icon: <SettingsIcon />, path: '/settings' },
 ];
 
@@ -174,7 +174,7 @@ export default function Layout({ children }) {
       try {
         setLoadingSettings(true);
         const response = await settingsAPI.get();
-        setVersion(response.data.system_version || 'v2.6.0-ALPHA.45-PRO');
+        setVersion(response.data.system_version || 'v2.6.0-ALPHA.46-PRO');
         const data = response.data;
         if (!data.branding_type) {
           data.branding_type = 'video';
@@ -217,20 +217,6 @@ export default function Layout({ children }) {
             </Tooltip>
           </ListItem>
         ))}
-      </List>
-      <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.1)' }} />
-      <List>
-        <ListItem disablePadding>
-          <Tooltip title={t('navigation.logout')} placement="right" arrow>
-            <ListItemButton
-              onClick={handleLogout}
-              sx={{ '&:hover': { color: 'error.main', '& .MuiListItemIcon-root': { color: 'error.main' } } }}
-            >
-              <ListItemIcon><LogoutIcon /></ListItemIcon>
-              <ListItemText primary={t('navigation.logout')} />
-            </ListItemButton>
-          </Tooltip>
-        </ListItem>
       </List>
     </Box>
   );
@@ -287,10 +273,6 @@ export default function Layout({ children }) {
             </Box>
 
             <Divider orientation="vertical" flexItem sx={{ borderColor: 'rgba(255,255,255,0.1)', height: 25, mx: 1 }} />
-
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              {/* Consistently using Sidebar for branding as per user request */}
-            </Box>
           </Box>
 
           <Box sx={{ mr: 2 }}>
@@ -304,6 +286,19 @@ export default function Layout({ children }) {
               sx={{ '&:hover': { color: 'primary.main' } }}
             >
               <HelpIcon />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title={t('navigation.logout')} arrow>
+            <IconButton
+              onClick={handleLogout}
+              sx={{
+                color: '#cc0000',
+                ml: 0.5,
+                '&:hover': { color: '#ff2222', bgcolor: 'rgba(204,0,0,0.1)' },
+              }}
+            >
+              <LogoutIcon />
             </IconButton>
           </Tooltip>
         </Toolbar>

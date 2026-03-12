@@ -1,5 +1,14 @@
 [
   {
+    "version": "2.6.0-ALPHA.46-PRO",
+    "date": "2026-03-12",
+    "changes": [
+      "Menu Reorganization: Sidebar reordered to Dashboard, Live Input, EPG, Midia, Playlist, MultiChannel, Calendar, Graphics, Templates, Health, Config",
+      "UI Refinements: Logoff button styled with permanent red (#cc0000) matching the ALPHA badge for consistent visual language",
+      "Version Bump: All stack components updated to v2.6.0-ALPHA.46-PRO"
+    ]
+  },
+  {
     "version": "2.6.0-ALPHA.45-PRO",
     "date": "2026-03-10",
     "changes": [

@@ -596,6 +596,17 @@
         "empty": "NO HISTORY AVAILABLE",
         "releases": [
           {
+            "version": "v2.6.0-ALPHA.46-PRO",
+            "date": "2026-03-12",
+            "changes": [
+              "Phase 32 — UI Refinements & Navigation: Sidebar reordered for a more intuitive workflow.",
+              "Logout button moved to the topbar AppBar for consistent access across all pages.",
+              "Logoff button permanently uses red alpha badge color (#cc0000) with hover brightening to #ff2222.",
+              "Sidebar order: Dashboard → Live Inputs → EPG → Library → Playlists → Multi-Channel → Calendar → Graphics → Templates → Health → Settings.",
+              "Migration 081: system_version → v2.6.0-ALPHA.46-PRO."
+            ]
+          },
+          {
             "version": "v2.6.0-ALPHA.45-PRO",
             "date": "2026-03-10",
             "changes": [

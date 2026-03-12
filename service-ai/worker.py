@@ -188,7 +188,7 @@ def process_task(task: dict, db_conn, r: redis.Redis):
 def poll(db_conn, r: redis.Redis):
     with db_conn.cursor() as cur:
         cur.execute(
-            """SELECT id, asset_id, task_type, metadata
+            """SELECT id, media_id, task_type, metadata
                FROM media_tasks
                WHERE task_type = 'ai-caption' AND status = 'pending'
                ORDER BY created_at ASC
@@ -221,6 +221,8 @@ def main():
             db_conn = None
         except Exception as e:
             log.error(f"Poll error: {e}")
+            if db_conn:
+                db_conn.rollback()
         time.sleep(POLL_INTERVAL)
 
 if __name__ == "__main__":
