@@ -47,6 +47,7 @@ pub struct ClipInfo {
 
 pub struct PlayoutEngine {
     pool: PgPool,
+    pub channel_id: Uuid,
     current_process: Arc<Mutex<Option<Child>>>,
     current_clip_id: Arc<Mutex<Option<String>>>,
     pub is_running: Arc<Mutex<bool>>,
@@ -82,8 +83,16 @@ pub struct PlayoutEngine {
 
 impl PlayoutEngine {
     pub fn new(pool: PgPool) -> Self {
+        let default_channel_id = Uuid::parse_str("00000000-0000-0000-0000-000000000001")
+            .expect("Invalid default channel UUID");
+        Self::new_with_channel(pool, default_channel_id)
+    }
+
+    /// Create a PlayoutEngine for a specific channel.
+    pub fn new_with_channel(pool: PgPool, channel_id: Uuid) -> Self {
         PlayoutEngine {
             pool,
+            channel_id,
             current_process: Arc::new(Mutex::new(None)),
             current_clip_id: Arc::new(Mutex::new(None)),
             is_running: Arc::new(Mutex::new(false)),

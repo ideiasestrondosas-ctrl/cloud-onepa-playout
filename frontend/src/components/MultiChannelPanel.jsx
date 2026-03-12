@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
     Box,
     Grid,
@@ -10,16 +10,17 @@ import {
     IconButton,
     Button,
     Paper,
-    LinearProgress,
     Tooltip,
-    Select,
-    MenuItem,
-    FormControl,
-    InputLabel,
     Alert,
     Divider,
     Avatar,
-    Badge
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogContentText,
+    DialogActions,
+    TextField,
+    CircularProgress,
 } from '@mui/material';
 import {
     PlayArrow as PlayIcon,
@@ -27,22 +28,14 @@ import {
     SkipNext as SkipIcon,
     LiveTv as LiveTvIcon,
     Videocam as VideocamIcon,
-    Warning as WarningIcon,
-    CheckCircle as CheckCircleIcon,
     Error as ErrorIcon,
     Refresh as RefreshIcon,
-    Settings as SettingsIcon,
-    FiberManualRecord as RecordIcon
+    Add as AddIcon,
+    Delete as DeleteIcon,
+    FiberManualRecord as RecordIcon,
 } from '@mui/icons-material';
-import { channelsAPI, playoutAPI } from '../services/api';
+import { channelsAPI, channelPlayoutAPI } from '../services/api';
 import { useTranslation } from 'react-i18next';
-
-const statusConfig = {
-    playing: { color: 'success', icon: <LiveTvIcon />, label: 'ON AIR' },
-    paused: { color: 'warning', icon: <PauseIcon />, label: 'PAUSED' },
-    stopped: { color: 'default', icon: <StopIcon />, label: 'STOPPED' },
-    error: { color: 'error', icon: <ErrorIcon />, label: 'ERROR' }
-};
 
 function PauseIcon() {
     return (
@@ -53,28 +46,165 @@ function PauseIcon() {
     );
 }
 
+const statusConfig = {
+    playing: { color: 'success', icon: <LiveTvIcon />, label: 'ON AIR' },
+    paused:  { color: 'warning', icon: <PauseIcon />, label: 'PAUSED' },
+    stopped: { color: 'default', icon: <StopIcon />,  label: 'STOPPED' },
+    error:   { color: 'error',   icon: <ErrorIcon />, label: 'ERROR' },
+};
+
+function CreateChannelDialog({ open, onClose, onCreated }) {
+    const { t } = useTranslation();
+    const [name, setName] = useState('');
+    const [slug, setSlug] = useState('');
+    const [description, setDescription] = useState('');
+    const [outputUrl, setOutputUrl] = useState('');
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState('');
+
+    const autoSlug = (n) => n.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+
+    const handleNameChange = (e) => {
+        const n = e.target.value;
+        setName(n);
+        setSlug(autoSlug(n));
+    };
+
+    const handleSubmit = async () => {
+        if (!name.trim() || !slug.trim()) {
+            setError('Name and slug are required.');
+            return;
+        }
+        setSaving(true);
+        setError('');
+        try {
+            const res = await channelsAPI.create({ name, slug, description, output_url: outputUrl });
+            onCreated(res.data);
+            setName(''); setSlug(''); setDescription(''); setOutputUrl('');
+            onClose();
+        } catch (err) {
+            setError(err.response?.data?.error || err.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+            <DialogTitle>{t('multiChannel.createChannel', 'New Channel')}</DialogTitle>
+            <DialogContent>
+                {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+                <TextField
+                    label={t('multiChannel.channelName', 'Channel Name')}
+                    value={name}
+                    onChange={handleNameChange}
+                    fullWidth
+                    sx={{ mb: 2, mt: 1 }}
+                    required
+                />
+                <TextField
+                    label="Slug"
+                    value={slug}
+                    onChange={(e) => setSlug(e.target.value)}
+                    fullWidth
+                    sx={{ mb: 2 }}
+                    helperText="URL-safe identifier (auto-filled from name)"
+                    required
+                />
+                <TextField
+                    label={t('multiChannel.description', 'Description')}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    fullWidth
+                    multiline
+                    rows={2}
+                    sx={{ mb: 2 }}
+                />
+                <TextField
+                    label={t('multiChannel.outputUrl', 'Output URL (RTMP/SRT)')}
+                    value={outputUrl}
+                    onChange={(e) => setOutputUrl(e.target.value)}
+                    fullWidth
+                    placeholder="rtmp://localhost:1935/live/stream-key"
+                />
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={onClose} disabled={saving}>{t('common.cancel', 'Cancel')}</Button>
+                <Button
+                    variant="contained"
+                    onClick={handleSubmit}
+                    disabled={saving}
+                    startIcon={saving ? <CircularProgress size={18} /> : <AddIcon />}
+                >
+                    {t('multiChannel.create', 'Create Channel')}
+                </Button>
+            </DialogActions>
+        </Dialog>
+    );
+}
+
+function DeleteChannelDialog({ channel, open, onClose, onDeleted }) {
+    const { t } = useTranslation();
+    const [deleting, setDeleting] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleDelete = async () => {
+        setDeleting(true);
+        setError('');
+        try {
+            await channelsAPI.delete(channel.id);
+            onDeleted(channel.id);
+            onClose();
+        } catch (err) {
+            setError(err.response?.data?.error || err.message);
+        } finally {
+            setDeleting(false);
+        }
+    };
+
+    return (
+        <Dialog open={open} onClose={onClose}>
+            <DialogTitle>{t('multiChannel.deleteChannel', 'Delete Channel')}</DialogTitle>
+            <DialogContent>
+                {error && <Alert severity="error" sx={{ mb: 1 }}>{error}</Alert>}
+                <DialogContentText>
+                    {t('multiChannel.deleteConfirm', 'Are you sure you want to delete channel "{{name}}"? This will stop its playout engine.', { name: channel?.name })}
+                </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={onClose} disabled={deleting}>{t('common.cancel', 'Cancel')}</Button>
+                <Button
+                    variant="contained"
+                    color="error"
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    startIcon={deleting ? <CircularProgress size={18} /> : <DeleteIcon />}
+                >
+                    {t('common.delete', 'Delete')}
+                </Button>
+            </DialogActions>
+        </Dialog>
+    );
+}
+
 export default function MultiChannelPanel() {
     const { t } = useTranslation();
     const [channels, setChannels] = useState([]);
     const [playoutStatus, setPlayoutStatus] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [createOpen, setCreateOpen] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState(null);
 
-    useEffect(() => {
-        fetchData();
-        const interval = setInterval(fetchData, 5000); // Refresh every 5 seconds
-        return () => clearInterval(interval);
-    }, []);
-
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         try {
             const channelsRes = await channelsAPI.list();
-            setChannels(channelsRes.data || []);
+            const list = channelsRes.data || [];
+            setChannels(list);
 
-            // Get playout status for each channel
-            const statusPromises = channelsRes.data.map(async (channel) => {
+            const statusPromises = list.map(async (channel) => {
                 try {
-                    const statusRes = await playoutAPI.status(channel.id);
+                    const statusRes = await channelPlayoutAPI.status(channel.id);
                     return { [channel.id]: statusRes.data };
                 } catch {
                     return { [channel.id]: { status: 'stopped' } };
@@ -82,94 +212,80 @@ export default function MultiChannelPanel() {
             });
 
             const statuses = await Promise.all(statusPromises);
-            const mergedStatus = statuses.reduce((acc, curr) => ({ ...acc, ...curr }), {});
-            setPlayoutStatus(mergedStatus);
+            const merged = statuses.reduce((acc, curr) => ({ ...acc, ...curr }), {});
+            setPlayoutStatus(merged);
         } catch (err) {
             setError(err.message);
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const handleStartChannel = async (channelId) => {
+    useEffect(() => {
+        fetchData();
+        const interval = setInterval(fetchData, 5000);
+        return () => clearInterval(interval);
+    }, [fetchData]);
+
+    const handleControl = async (action, channelId) => {
         try {
-            await playoutAPI.start(channelId);
+            await channelPlayoutAPI[action](channelId);
             fetchData();
         } catch (err) {
             setError(err.message);
         }
     };
 
-    const handleStopChannel = async (channelId) => {
-        try {
-            await playoutAPI.stop(channelId);
-            fetchData();
-        } catch (err) {
-            setError(err.message);
-        }
+    const handleChannelCreated = (channel) => {
+        setChannels((prev) => [...prev, channel]);
+        setPlayoutStatus((prev) => ({ ...prev, [channel.id]: { status: 'stopped' } }));
     };
 
-    const handleSkipChannel = async (channelId) => {
-        try {
-            await playoutAPI.skip(channelId);
-            fetchData();
-        } catch (err) {
-            setError(err.message);
-        }
+    const handleChannelDeleted = (id) => {
+        setChannels((prev) => prev.filter((c) => c.id !== id));
+        setPlayoutStatus((prev) => {
+            const copy = { ...prev };
+            delete copy[id];
+            return copy;
+        });
     };
 
-    const getChannelStatus = (channelId) => {
-        const status = playoutStatus[channelId];
-        return status?.status || 'stopped';
-    };
+    const getStatus = (channelId) => playoutStatus[channelId]?.status || 'stopped';
 
-    const getStatusChip = (channelId) => {
-        const status = getChannelStatus(channelId);
-        const config = statusConfig[status] || statusConfig.stopped;
-
-        return (
-            <Chip
-                icon={config.icon}
-                label={config.label}
-                color={config.color}
-                size="small"
-                sx={{
-                    fontWeight: 'bold',
-                    '& .MuiChip-icon': { color: 'inherit' }
-                }}
-            />
-        );
-    };
-
-    // Helper function to safely extract clip name from various data types
     const getClipName = (clip) => {
-        if (!clip) return '-';
-        if (typeof clip === 'string') return clip.substring(0, 20);
-        if (typeof clip === 'object') return clip.title?.substring(0, 20) || clip.name?.substring(0, 20) || JSON.stringify(clip).substring(0, 20);
-        return String(clip).substring(0, 20);
+        if (!clip) return '—';
+        if (typeof clip === 'string') return clip.substring(0, 24);
+        // ClipInfo struct: { filename, duration, position }
+        return (clip.filename || clip.title || clip.name || JSON.stringify(clip)).substring(0, 24);
     };
 
     if (loading) {
         return (
-            <Box sx={{ p: 3, textAlign: 'center' }}>
-                <Typography>{t('common.loading')}</Typography>
+            <Box sx={{ p: 4, textAlign: 'center' }}>
+                <CircularProgress />
             </Box>
         );
     }
 
     return (
         <Box sx={{ p: 3 }}>
+            {/* Header */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                 <Typography variant="h4" component="h1">
-                    {t('multiChannel.title')}
+                    {t('multiChannel.title', 'Multi-Channel')}
                 </Typography>
-                <Button
-                    variant="outlined"
-                    startIcon={<RefreshIcon />}
-                    onClick={fetchData}
-                >
-                    {t('common.refresh')}
-                </Button>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button variant="outlined" startIcon={<RefreshIcon />} onClick={fetchData}>
+                        {t('common.refresh', 'Refresh')}
+                    </Button>
+                    <Button
+                        variant="contained"
+                        startIcon={<AddIcon />}
+                        onClick={() => setCreateOpen(true)}
+                    >
+                        {t('multiChannel.newChannel', 'New Channel')}
+                    </Button>
+                </Box>
             </Box>
 
             {error && (
@@ -178,10 +294,13 @@ export default function MultiChannelPanel() {
                 </Alert>
             )}
 
+            {/* Channel Cards */}
             <Grid container spacing={3}>
                 {channels.map((channel) => {
-                    const status = getChannelStatus(channel.id);
+                    const status = getStatus(channel.id);
                     const isLive = status === 'playing';
+                    const st = playoutStatus[channel.id];
+                    const chipCfg = statusConfig[status] || statusConfig.stopped;
 
                     return (
                         <Grid item xs={12} md={6} lg={4} key={channel.id}>
@@ -191,41 +310,42 @@ export default function MultiChannelPanel() {
                                     border: isLive ? '2px solid' : '1px solid',
                                     borderColor: isLive ? 'success.main' : 'divider',
                                     transition: 'all 0.3s ease',
-                                    '&:hover': {
-                                        boxShadow: 6,
-                                        transform: 'translateY(-2px)'
-                                    }
+                                    '&:hover': { boxShadow: 6, transform: 'translateY(-2px)' },
                                 }}
                             >
+                                {/* LIVE badge */}
                                 {isLive && (
                                     <Box
                                         sx={{
-                                            position: 'absolute',
-                                            top: 8,
-                                            right: 8,
-                                            zIndex: 1,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 0.5,
-                                            bgcolor: 'error.main',
-                                            color: 'white',
-                                            px: 1,
-                                            py: 0.5,
-                                            borderRadius: 1,
+                                            position: 'absolute', top: 8, right: 48, zIndex: 1,
+                                            display: 'flex', alignItems: 'center', gap: 0.5,
+                                            bgcolor: 'error.main', color: 'white',
+                                            px: 1, py: 0.5, borderRadius: 1,
                                             animation: 'pulse 2s infinite',
                                             '@keyframes pulse': {
-                                                '0%': { opacity: 1 },
-                                                '50%': { opacity: 0.7 },
-                                                '100%': { opacity: 1 }
-                                            }
+                                                '0%': { opacity: 1 }, '50%': { opacity: 0.7 }, '100%': { opacity: 1 },
+                                            },
                                         }}
                                     >
-                                        <RecordIcon sx={{ fontSize: 12, animation: 'blink 1s infinite' }} />
+                                        <RecordIcon sx={{ fontSize: 12 }} />
                                         <Typography variant="caption" sx={{ fontWeight: 'bold', letterSpacing: 1 }}>
                                             LIVE
                                         </Typography>
                                     </Box>
                                 )}
+
+                                {/* Delete button */}
+                                <Box sx={{ position: 'absolute', top: 4, right: 4, zIndex: 1 }}>
+                                    <Tooltip title={t('common.delete', 'Delete')}>
+                                        <IconButton
+                                            size="small"
+                                            onClick={() => setDeleteTarget(channel)}
+                                            disabled={channel.id === '00000000-0000-0000-0000-000000000001'}
+                                        >
+                                            <DeleteIcon fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
+                                </Box>
 
                                 <CardHeader
                                     avatar={
@@ -234,90 +354,88 @@ export default function MultiChannelPanel() {
                                         </Avatar>
                                     }
                                     title={
-                                        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                                        <Typography variant="h6" sx={{ fontWeight: 'bold', pr: 4 }}>
                                             {channel.name}
                                         </Typography>
                                     }
                                     subheader={
                                         <Typography variant="caption" color="text.secondary">
-                                            {channel.description || t('multiChannel.noDescription')}
+                                            {channel.description || t('multiChannel.noDescription', 'No description')}
                                         </Typography>
                                     }
-                                    action={getStatusChip(channel.id)}
+                                    action={
+                                        <Chip
+                                            icon={chipCfg.icon}
+                                            label={chipCfg.label}
+                                            color={chipCfg.color}
+                                            size="small"
+                                            sx={{ fontWeight: 'bold', mr: 4, mt: 1, '& .MuiChip-icon': { color: 'inherit' } }}
+                                        />
+                                    }
                                 />
 
                                 <CardContent>
-                                    {/* Preview Area */}
+                                    {/* Preview */}
                                     <Paper
                                         sx={{
                                             position: 'relative',
-                                            paddingTop: '56.25%', // 16:9 aspect ratio
+                                            paddingTop: '56.25%',
                                             bgcolor: 'grey.900',
                                             mb: 2,
                                             borderRadius: 1,
-                                            overflow: 'hidden'
+                                            overflow: 'hidden',
                                         }}
                                     >
                                         {channel.preview_url ? (
                                             <iframe
                                                 src={channel.preview_url}
                                                 style={{
-                                                    position: 'absolute',
-                                                    top: 0,
-                                                    left: 0,
-                                                    width: '100%',
-                                                    height: '100%',
-                                                    border: 'none'
+                                                    position: 'absolute', top: 0, left: 0,
+                                                    width: '100%', height: '100%', border: 'none',
                                                 }}
                                                 title={`${channel.name} preview`}
                                             />
                                         ) : (
                                             <Box
                                                 sx={{
-                                                    position: 'absolute',
-                                                    top: 0,
-                                                    left: 0,
-                                                    width: '100%',
-                                                    height: '100%',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    flexDirection: 'column',
-                                                    gap: 1
+                                                    position: 'absolute', top: 0, left: 0,
+                                                    width: '100%', height: '100%',
+                                                    display: 'flex', alignItems: 'center',
+                                                    justifyContent: 'center', flexDirection: 'column', gap: 1,
                                                 }}
                                             >
                                                 <VideocamIcon sx={{ fontSize: 48, color: 'grey.700' }} />
                                                 <Typography variant="caption" color="text.secondary">
-                                                    {t('multiChannel.noPreview')}
+                                                    {t('multiChannel.noPreview', 'No preview available')}
                                                 </Typography>
                                             </Box>
                                         )}
                                     </Paper>
 
-                                    {/* Status Info */}
+                                    {/* Status info */}
                                     <Box sx={{ mb: 2 }}>
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                                             <Typography variant="caption" color="text.secondary">
-                                                {t('multiChannel.currentClip')}
+                                                {t('multiChannel.currentClip', 'Current Clip')}
                                             </Typography>
                                             <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
-                                                {getClipName(playoutStatus[channel.id]?.current_clip)}
+                                                {getClipName(st?.current_clip)}
                                             </Typography>
                                         </Box>
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                                             <Typography variant="caption" color="text.secondary">
-                                                {t('multiChannel.nextUp')}
+                                                {t('multiChannel.nextUp', 'Next Up')}
                                             </Typography>
                                             <Typography variant="caption">
-                                                {getClipName(playoutStatus[channel.id]?.next_clip)}
+                                                {getClipName(st?.next_clips?.[0])}
                                             </Typography>
                                         </Box>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <Typography variant="caption" color="text.secondary">
-                                                {t('multiChannel.bitrate')}
+                                                {t('multiChannel.uptime', 'Uptime')}
                                             </Typography>
                                             <Typography variant="caption">
-                                                {playoutStatus[channel.id]?.bitrate || '0'} kbps
+                                                {st?.uptime != null ? `${st.uptime}s` : '—'}
                                             </Typography>
                                         </Box>
                                     </Box>
@@ -326,15 +444,15 @@ export default function MultiChannelPanel() {
 
                                     {/* Controls */}
                                     <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
-                                        {status === 'playing' ? (
+                                        {isLive ? (
                                             <Button
                                                 size="small"
                                                 variant="contained"
                                                 color="error"
                                                 startIcon={<StopIcon />}
-                                                onClick={() => handleStopChannel(channel.id)}
+                                                onClick={() => handleControl('stop', channel.id)}
                                             >
-                                                {t('multiChannel.stop')}
+                                                {t('multiChannel.stop', 'Stop')}
                                             </Button>
                                         ) : (
                                             <Button
@@ -342,19 +460,19 @@ export default function MultiChannelPanel() {
                                                 variant="contained"
                                                 color="success"
                                                 startIcon={<PlayIcon />}
-                                                onClick={() => handleStartChannel(channel.id)}
+                                                onClick={() => handleControl('start', channel.id)}
                                             >
-                                                {t('multiChannel.play')}
+                                                {t('multiChannel.play', 'Play')}
                                             </Button>
                                         )}
                                         <Button
                                             size="small"
                                             variant="outlined"
                                             startIcon={<SkipIcon />}
-                                            onClick={() => handleSkipChannel(channel.id)}
-                                            disabled={status !== 'playing'}
+                                            onClick={() => handleControl('skip', channel.id)}
+                                            disabled={!isLive}
                                         >
-                                            {t('multiChannel.skip')}
+                                            {t('multiChannel.skip', 'Skip')}
                                         </Button>
                                     </Box>
                                 </CardContent>
@@ -364,16 +482,35 @@ export default function MultiChannelPanel() {
                 })}
             </Grid>
 
+            {/* Empty state */}
             {channels.length === 0 && (
                 <Paper sx={{ p: 4, textAlign: 'center' }}>
                     <LiveTvIcon sx={{ fontSize: 64, color: 'grey.400', mb: 2 }} />
                     <Typography variant="h6" color="text.secondary">
-                        {t('multiChannel.noChannels')}
+                        {t('multiChannel.noChannels', 'No channels yet')}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        {t('multiChannel.noChannelsHint')}
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        {t('multiChannel.noChannelsHint', 'Click "New Channel" to get started.')}
                     </Typography>
+                    <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
+                        {t('multiChannel.newChannel', 'New Channel')}
+                    </Button>
                 </Paper>
+            )}
+
+            {/* Dialogs */}
+            <CreateChannelDialog
+                open={createOpen}
+                onClose={() => setCreateOpen(false)}
+                onCreated={handleChannelCreated}
+            />
+            {deleteTarget && (
+                <DeleteChannelDialog
+                    channel={deleteTarget}
+                    open={!!deleteTarget}
+                    onClose={() => setDeleteTarget(null)}
+                    onDeleted={handleChannelDeleted}
+                />
             )}
         </Box>
     );

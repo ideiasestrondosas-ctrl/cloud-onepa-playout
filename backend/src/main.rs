@@ -113,8 +113,41 @@ async fn main() -> std::io::Result<()> {
     services::auth::configure();
     services::database::configure();
 
-    // Start Playout Engine
+    // Build ChannelRegistry and seed engines for all enabled channels
+    let registry = std::sync::Arc::new(services::channel_registry::ChannelRegistry::new());
+
+    // Start Playout Engine for the default channel
     let engine = std::sync::Arc::new(services::engine::PlayoutEngine::new(pool.clone()));
+
+    // Register the default channel engine in the registry
+    {
+        let default_id = uuid::Uuid::parse_str("00000000-0000-0000-0000-000000000001")
+            .expect("Invalid default channel UUID");
+        registry.insert(default_id, engine.clone()).await;
+    }
+
+    // Seed engines for all other enabled channels from DB
+    {
+        let channel_rows = sqlx::query(
+            "SELECT id FROM channels WHERE enabled = true AND id != '00000000-0000-0000-0000-000000000001'"
+        )
+        .fetch_all(&pool)
+        .await
+        .unwrap_or_default();
+
+        for row in channel_rows {
+            let cid: uuid::Uuid = sqlx::Row::get(&row, "id");
+            let ch_engine = std::sync::Arc::new(
+                services::engine::PlayoutEngine::new_with_channel(pool.clone(), cid)
+            );
+            registry.insert(cid, ch_engine.clone()).await;
+            let ch_engine_spawn = ch_engine.clone();
+            tokio::spawn(async move {
+                ch_engine_spawn.start().await;
+            });
+            log::info!("Seeded engine for channel {}", cid);
+        }
+    }
 
     // Phase 1: Connect Redis EventBus (non-fatal if Redis is unavailable)
     {
@@ -164,6 +197,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(engine.clone()))
+            .app_data(web::Data::new(registry.clone()))
             .app_data(web::Data::from(ws_broadcaster.clone()))
             .wrap(cors)
             .wrap(middleware::Logger::default())

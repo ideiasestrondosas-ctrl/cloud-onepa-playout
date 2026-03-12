@@ -113,7 +113,7 @@ export const scheduleAPI = {
   addException: (scheduleId, date) => api.post('/schedule/exception', { schedule_id: scheduleId, date }),
 };
 
-// Playout endpoints
+// Playout endpoints (default / legacy — used by Dashboard)
 export const playoutAPI = {
   status: () => api.get('/playout/status'),
   start: () => api.post('/playout/start'),
@@ -126,6 +126,14 @@ export const playoutAPI = {
   openMonitor: () => api.post('/playout/open-monitor'),
   getLogs: () => api.get('/playout/logs'),
   toggleProtocol: (protocol, enabled) => api.post('/playout/protocol/toggle', { protocol, enabled }),
+};
+
+// Per-channel playout endpoints — used by MultiChannelPanel
+export const channelPlayoutAPI = {
+  status: (channelId) => api.get(`/v2/channels/${channelId}/playout/status`),
+  start:  (channelId) => api.post(`/v2/channels/${channelId}/playout/start`),
+  stop:   (channelId) => api.post(`/v2/channels/${channelId}/playout/stop`),
+  skip:   (channelId) => api.post(`/v2/channels/${channelId}/playout/skip`),
 };
 
 // Settings endpoints

@@ -1559,5 +1559,44 @@
       "perfect": "Parfait",
       "health": "Santé"
     }
+  },
+  "liveInputs": {
+    "title": "Entrées en Direct",
+    "liveInputs": "Entrées en Direct",
+    "socialStreaming": "Streaming Social",
+    "addInput": "Ajouter une Entrée",
+    "addStream": "Ajouter un Stream",
+    "editInput": "Modifier l'Entrée",
+    "inputName": "Nom de l'Entrée",
+    "protocol": "Protocole",
+    "noInputs": "Aucune entrée en direct configurée",
+    "noStreams": "Aucun stream social configuré",
+    "confirmDelete": "Êtes-vous sûr de vouloir supprimer ?",
+    "status": "État",
+    "name": "Nom",
+    "platform": "Plateforme",
+    "streamUrl": "URL du Stream",
+    "actions": "Actions",
+    "start": "Démarrer",
+    "stop": "Arrêter",
+    "url": "URL",
+    "port": "Port",
+    "previewUrl": "URL d'Aperçu",
+    "editStream": "Modifier le Stream",
+    "streamName": "Nom du Stream",
+    "streamKey": "Clé du Stream"
+  },
+  "multiChannel": {
+    "title": "Multi-Canal",
+    "noDescription": "Aucune description",
+    "noPreview": "Aperçu non disponible",
+    "currentClip": "Clip Actuel",
+    "nextUp": "Suivant",
+    "bitrate": "Débit",
+    "stop": "Arrêter",
+    "play": "Lire",
+    "skip": "Passer",
+    "noChannels": "Aucun canal configuré",
+    "noChannelsHint": "Configurez des canaux dans les paramètres pour utiliser le mode multi-canal"
   }
 }

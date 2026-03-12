@@ -1726,7 +1726,13 @@
     "streamUrl": "URL do Stream",
     "actions": "Ações",
     "start": "Iniciar",
-    "stop": "Parar"
+    "stop": "Parar",
+    "url": "URL",
+    "port": "Porta",
+    "previewUrl": "URL de Pré-visualização",
+    "editStream": "Editar Stream",
+    "streamName": "Nome do Stream",
+    "streamKey": "Chave do Stream"
   },
   "multiChannel": {
     "title": "Multi-Canal",

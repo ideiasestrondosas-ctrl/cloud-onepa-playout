@@ -312,11 +312,11 @@ export default function LiveInputs() {
                                     />
                                     <CardContent>
                                         <Typography variant="body2" color="text.secondary" gutterBottom>
-                                            URL: {input.url}
+                                            {t('liveInputs.url')}: {input.url}
                                         </Typography>
                                         {input.port && (
                                             <Typography variant="body2" color="text.secondary">
-                                                Port: {input.port}
+                                                {t('liveInputs.port')}: {input.port}
                                             </Typography>
                                         )}
                                         <Box sx={{ mt: 2 }}>
@@ -343,6 +343,7 @@ export default function LiveInputs() {
 
                     {liveInputs.length === 0 && (
                         <Paper sx={{ p: 4, textAlign: 'center' }}>
+                            <LiveTvIcon sx={{ fontSize: 64, color: 'grey.400', mb: 2 }} />
                             <Typography color="text.secondary">
                                 {t('liveInputs.noInputs')}
                             </Typography>
@@ -436,6 +437,7 @@ export default function LiveInputs() {
 
                     {socialStreams.length === 0 && (
                         <Paper sx={{ p: 4, textAlign: 'center', mt: 2 }}>
+                            <StreamIcon sx={{ fontSize: 64, color: 'grey.400', mb: 2 }} />
                             <Typography color="text.secondary">
                                 {t('liveInputs.noStreams')}
                             </Typography>

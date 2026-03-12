@@ -107,7 +107,8 @@ import {
   SouthWest as SwIcon,
   SouthEast as SeIcon,
   RadioButtonChecked as TargetIcon,
-  Edit as EditIcon
+  Edit as EditIcon,
+  Layers as LayersIcon
 } from '@mui/icons-material';
 
 // --- Error Boundary for Safety ---
@@ -978,18 +979,18 @@ function Settings() {
       ]
     },
     {
-      phase: 'Phase 31',
-      version: 'v2.6.0-ALPHA.45',
-      title: 'AI AUTOMATION & HIGH AVAILABILITY',
-      focus: 'IA avançada, CDN edge e redundância automática',
-      icon: <RocketIcon />,
-      color: '#4caf50',
+      phase: 'Phase 32',
+      version: 'v2.7.0-ALPHA.47-PRO',
+      title: 'MULTI-CHANNEL CONTROL & SCALE',
+      focus: 'Gestão de múltiplos canais simultâneos e preview unificado',
+      icon: <LayersIcon />,
+      color: '#ff5722',
       done: true,
       items: [
-        { text: 'AI Playlist Generation: Scene detection, speech-to-text, metadata enrichment', done: true },
-        { text: 'High Availability: Active-active nodes, automatic failover, health checks', done: true },
-        { text: 'Edge CDN: Origin server, edge nodes, cache layer, load balancer', done: true },
-        { text: 'Monitoring: Prometheus, Grafana, Alertmanager integration', done: true }
+        { text: 'Dynamic Channel Grids: Layout adaptativo para monitorização de múltiplos canais', done: true },
+        { text: 'Independent Playouts: Cada canal com o seu próprio loop e estado de playout', done: true },
+        { text: 'Global State Management: Sincronização de playout via Redis e Socket.io', done: true },
+        { text: 'Performance Optimization: Redução de carga no backend e frontend para escala', done: true }
       ]
     }
   ];

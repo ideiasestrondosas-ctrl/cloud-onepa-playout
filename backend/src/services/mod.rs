@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod channel_registry;
 pub mod database;
 pub mod engine;
 pub mod event_bus;

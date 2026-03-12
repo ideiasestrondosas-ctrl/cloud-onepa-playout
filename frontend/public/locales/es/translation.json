@@ -1562,5 +1562,44 @@
       "perfect": "Perfecto",
       "health": "Salud"
     }
+  },
+  "liveInputs": {
+    "title": "Entradas en Vivo",
+    "liveInputs": "Entradas en Vivo",
+    "socialStreaming": "Streaming Social",
+    "addInput": "Agregar Entrada",
+    "addStream": "Agregar Stream",
+    "editInput": "Editar Entrada",
+    "inputName": "Nombre de Entrada",
+    "protocol": "Protocolo",
+    "noInputs": "No hay entradas en vivo configuradas",
+    "noStreams": "No hay streams sociales configurados",
+    "confirmDelete": "¿Está seguro de que desea eliminar?",
+    "status": "Estado",
+    "name": "Nombre",
+    "platform": "Plataforma",
+    "streamUrl": "URL del Stream",
+    "actions": "Acciones",
+    "start": "Iniciar",
+    "stop": "Detener",
+    "url": "URL",
+    "port": "Puerto",
+    "previewUrl": "URL de Vista Previa",
+    "editStream": "Editar Stream",
+    "streamName": "Nombre del Stream",
+    "streamKey": "Clave del Stream"
+  },
+  "multiChannel": {
+    "title": "Multi-Canal",
+    "noDescription": "Sin descripción",
+    "noPreview": "Vista previa no disponible",
+    "currentClip": "Clip Actual",
+    "nextUp": "Siguiente",
+    "bitrate": "Bitrate",
+    "stop": "Detener",
+    "play": "Reproducir",
+    "skip": "Saltar",
+    "noChannels": "No hay canales configurados",
+    "noChannelsHint": "Configure canales en ajustes para usar el modo multi-canal"
   }
 }
