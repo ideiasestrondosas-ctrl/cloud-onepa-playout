@@ -604,14 +604,14 @@
         "empty": "NENHUM HISTÓRICO DISPONÍVEL",
         "releases": [
           {
-            "version": "v2.6.0-ALPHA.46-PRO",
+            "version": "v2.6.0-ALPHA.47-PRO",
             "date": "2026-03-12",
             "changes": [
               "Fase 32 — Refinamentos de UI & Navegação: Barra lateral reordenada para um fluxo de trabalho mais intuitivo.",
               "Botão de Sair movido para a barra superior (AppBar) para acesso consistente em todas as páginas.",
               "Botão de Sair usa permanentemente a cor vermelha (#cc0000) com destaque ao passar o rato (#ff2222).",
               "Ordem da barra lateral: Dashboard → Entradas Ao Vivo → EPG → Biblioteca → Playlists → Multi-Canal → Calendário → Gráficos → Templates → Saúde → Definições.",
-              "Migração 081: system_version → v2.6.0-ALPHA.46-PRO."
+              "Migração 081: system_version → v2.6.0-ALPHA.47-PRO."
             ]
           },
           {

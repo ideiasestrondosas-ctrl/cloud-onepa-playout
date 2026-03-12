@@ -597,14 +597,14 @@
         "empty": "NO HAY HISTORIAL DISPONIBLE",
         "releases": [
           {
-            "version": "v2.6.0-ALPHA.46-PRO",
+            "version": "v2.6.0-ALPHA.47-PRO",
             "date": "2026-03-12",
             "changes": [
               "Fase 32 — Refinamientos de UI & Navegación: Barra lateral reordenada para un flujo de trabajo más intuitivo.",
               "Botón de Cerrar Sesión movido a la barra superior (AppBar) para acceso consistente en todas las páginas.",
               "Botón de Cerrar Sesión usa permanentemente el color rojo (#cc0000) con brillo al pasar el cursor (#ff2222).",
               "Orden de la barra lateral: Dashboard → Entradas en Vivo → EPG → Biblioteca → Listas de Reproducción → Multi-Canal → Calendario → Gráficos → Plantillas → Salud → Configuración.",
-              "Migración 081: system_version → v2.6.0-ALPHA.46-PRO."
+              "Migración 081: system_version → v2.6.0-ALPHA.47-PRO."
             ]
           },
           {

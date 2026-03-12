@@ -589,7 +589,7 @@ function Settings() {
         defaultImagePath: data.default_image_path || '',
 
         defaultVideoPath: data.default_video_path || '',
-        version: data.system_version || 'v2.6.0-ALPHA.46-PRO',
+         version: data.system_version || 'v2.6.0-ALPHA.47-PRO',
         releaseDate: data.release_date || '2026-03-12',
         overlay_enabled: data.overlay_enabled ?? true,
         channelName: data.channel_name || 'Cloud Onepa',
@@ -599,7 +599,7 @@ function Settings() {
         srtMode: data.srt_mode || 'caller',
         protectedPath: data.protected_path || '/var/lib/onepa-playout/assets/protected',
         docsPath: data.docs_path || '/app/docs',
-        system_version: data.system_version || 'v2.6.0-ALPHA.46-PRO',
+         system_version: data.system_version || 'v2.6.0-ALPHA.47-PRO',
         release_date: data.release_date || '2026-03-12',
         rtmpOutputUrl: data.rtmp_output_url || '',
         srtOutputUrl: data.srt_output_url || '',

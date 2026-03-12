@@ -174,7 +174,7 @@ export default function Layout({ children }) {
       try {
         setLoadingSettings(true);
         const response = await settingsAPI.get();
-        setVersion(response.data.system_version || 'v2.6.0-ALPHA.46-PRO');
+         setVersion(response.data.system_version || 'v2.6.0-ALPHA.47-PRO');
         const data = response.data;
         if (!data.branding_type) {
           data.branding_type = 'video';
