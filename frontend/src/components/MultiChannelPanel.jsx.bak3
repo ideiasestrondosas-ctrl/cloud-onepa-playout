@@ -195,7 +195,6 @@ export default function MultiChannelPanel() {
     const [error, setError] = useState(null);
     const [createOpen, setCreateOpen] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState(null);
-    const [settings, setSettings] = useState(null);
 
      const fetchData = useCallback(async () => {
          try {
@@ -239,19 +238,7 @@ export default function MultiChannelPanel() {
         fetchData();
         const interval = setInterval(fetchData, 5000);
         return () => clearInterval(interval);
-        }, [fetchData]);
-
-        useEffect(() => {
-            const fetchSettings = async () => {
-                try {
-                    const response = await settingsAPI.get();
-                    setSettings(response.data);
-                } catch (err) {
-                    console.error('Failed to fetch settings:', err);
-                }
-            };
-            fetchSettings();
-        }, []);
+    }, [fetchData]);
 
     const handleControl = async (action, channelId) => {
         try {
@@ -463,14 +450,6 @@ export default function MultiChannelPanel() {
                                             </Typography>
                                             <Typography variant="caption">
                                                 {st?.uptime != null ? `${st.uptime}s` : '—'}
-                                            </Typography>
-                                        </Box>
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <Typography variant="caption" color="text.secondary">
-                                                {t('multiChannel.bitrate', 'Bitrate')}
-                                            </Typography>
-                                            <Typography variant="caption">
-                                                {settings?.video_bitrate ?? '—'}
                                             </Typography>
                                         </Box>
                                     </Box>

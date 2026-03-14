@@ -596,17 +596,6 @@
         "empty": "NO HISTORY AVAILABLE",
         "releases": [
           {
-            "version": "v2.6.0-ALPHA.48-PRO",
-            "date": "2026-03-13",
-            "changes": [
-              "System Health menu: deduplicated Health & Analytics submenus, removed redundant widgets.",
-              "UI compressed to fit within screen without scrolling.",
-              "Added PT, EN, FR, ES translations for all System Health UI.",
-              "Updated version across backend, frontend, and database.",
-              "Default channel preview now starts muted (user can unmute)."
-            ]
-          },
-          {
             "version": "v2.6.0-ALPHA.47-PRO",
             "date": "2026-03-12",
             "changes": [
