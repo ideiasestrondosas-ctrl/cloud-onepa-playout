@@ -596,28 +596,6 @@
         "empty": "NO HISTORY AVAILABLE",
         "releases": [
           {
-            "version": "v2.6.0-ALPHA.50-PRO",
-            "date": "2026-03-17",
-            "changes": [
-              "Automated Release: Version bump to v2.6.0-ALPHA.50-PRO.",
-              "Project Synchronization: Updated backend, frontend, and documentation.",
-              "i18n: All translation files updated with latest version metadata."
-            ]
-          },
-          {
-            "version": "v2.6.0-ALPHA.50-PRO",
-            "date": "2026-03-14",
-            "changes": [
-              "Bug Fix: HelpSystem component — added missing HelpTemplates, HelpLiveInputs, HelpHealth, HelpMultiChannel components.",
-              "Bug Fix: Missing Material-UI icons (FavoriteIcon, TableChartIcon) added to imports.",
-              "Language Selector: Fixed i18n persistence and language change detection.",
-              "Graphics Preview: Optimized rendering performance with memoization and lazy loading.",
-              "Multi-Channel Preview: Fixed WebSocket connection and state synchronization.",
-              "Version History: Updated About System with ALPHA.49-PRO release notes.",
-              "i18n: All 4 locales (PT, EN, ES, FR) synchronized with latest translations."
-            ]
-          },
-          {
             "version": "v2.6.0-ALPHA.48-PRO",
             "date": "2026-03-13",
             "changes": [
@@ -1377,24 +1355,6 @@
     "troubleshooting": {
       "title": "Troubleshooting",
       "intro": "Solutions for the most common issues."
-    },
-    "liveInputs": {
-      "title": "Live Inputs",
-      "intro": "The Live Inputs module allows you to configure incoming video and audio streams for live broadcasting.",
-      "howToUse": {
-        "title": "How to Use",
-        "intro": "Follow these steps to set up a live input:",
-        "step1": "Click the \"+ Add Input\" button to create a new input.",
-        "step2": "Fill in the Input Name, select a Protocol (RTMP, SRT, UDP, WebRTC, NDI), and enter the Stream URL/Port.",
-        "step3": "If required, provide a Stream Key (e.g., for RTMP).",
-        "step4": "Optionally, set a Preview URL for HLS playback.",
-        "step5": "Save the input; it will appear in the list with its current status.",
-        "step6": "To start the stream, click the Play icon; to stop, click the Stop icon."
-      },
-      "tips": {
-        "title": "Tips & Best Practices",
-        "content": "• Use SRT for unreliable networks; it provides error recovery and low latency.\n• For local networks, UDP offers the lowest latency but lacks retransmission.\n• Ensure the server firewall allows inbound connections on the configured ports.\n• Monitor the status chip: green (active), orange (connecting), red (error).\n• You can edit or delete an input at any time via the icons in the card."
-      }
     }
   },
   "graphics": {

@@ -74,7 +74,7 @@ async fn create_channel(
     let hls_base = std::env::var("HLS_PATH")
         .unwrap_or_else(|_| "/var/lib/onepa-playout/hls".to_string());
     let hls_stream_path = format!("{}/{}/index.m3u8", hls_base, req.slug);
-    let preview_url = format!("/hls/{}/index.m3u8", req.slug);
+    let preview_url = format!("/hls-live/{}/index.m3u8", req.slug);
     let output_url = req.output_url.clone().unwrap_or_default();
 
     let result = sqlx::query_as::<_, Channel>(

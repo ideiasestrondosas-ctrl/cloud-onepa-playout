@@ -11,7 +11,7 @@
 //   let url   = store.public_url("media/foo.mp4");
 
 use std::env;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use tokio::fs;
 use bytes::Bytes;
 

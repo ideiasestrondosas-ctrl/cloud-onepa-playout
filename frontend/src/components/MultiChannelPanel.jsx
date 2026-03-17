@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
     Box,
     Grid,
@@ -34,8 +34,85 @@ import {
     Delete as DeleteIcon,
     FiberManualRecord as RecordIcon,
 } from '@mui/icons-material';
-import { channelsAPI, channelPlayoutAPI } from '../services/api';
+import { channelsAPI, channelPlayoutAPI, settingsAPI } from '../services/api';
 import { useTranslation } from 'react-i18next';
+
+/**
+ * ChannelHlsPreview – lightweight HLS player for a channel card.
+ * Uses native <video> + HLS.js so it works in Chrome/Firefox without video.js UI overhead.
+ * Only rendered when the channel is live, so we never open idle connections.
+ */
+function ChannelHlsPreview({ slug, channelName }) {
+    const videoRef = useRef(null);
+
+    useEffect(() => {
+        const src = `/hls-live/${slug}/index.m3u8`;
+        const video = videoRef.current;
+        if (!video) return;
+
+        let hls = null;
+
+        const isNativeHls = video.canPlayType('application/vnd.apple.mpegurl') !== '';
+
+        if (isNativeHls) {
+            // Safari — native HLS
+            video.src = src;
+            video.play().catch(() => {});
+        } else {
+            // Chrome/Firefox — need HLS.js
+            // HLS.js is bundled with video.js; import from there to avoid extra dep
+            import('video.js/dist/video.js').then(({ default: videojs }) => {
+                // videojs bundles @videojs/http-streaming which ships Hls.js internals
+                // but for a plain <video>, we use the window.Hls if available, otherwise
+                // we do a dynamic import of hls.js as a fallback.
+            });
+
+            // Dynamic import of hls.js (should already be in node_modules via video.js)
+            import('hls.js').then(({ default: Hls }) => {
+                if (!Hls.isSupported()) return;
+                hls = new Hls({
+                    lowLatencyMode: true,
+                    backBufferLength: 8,
+                    maxBufferLength: 15,
+                    liveSyncDurationCount: 2,
+                });
+                hls.loadSource(src);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    video.play().catch(() => {});
+                });
+            }).catch(() => {
+                // hls.js not available — try native fallback
+                video.src = src;
+                video.play().catch(() => {});
+            });
+        }
+
+        return () => {
+            if (hls) {
+                hls.destroy();
+                hls = null;
+            }
+            video.src = '';
+        };
+    }, [slug]);
+
+    return (
+        <video
+            ref={videoRef}
+            muted
+            playsInline
+            title={`${channelName} preview`}
+            style={{
+                position: 'absolute',
+                top: 0, left: 0,
+                width: '100%', height: '100%',
+                objectFit: 'contain',
+                background: '#000',
+            }}
+        />
+    );
+}
 
 function PauseIcon() {
     return (
@@ -412,15 +489,10 @@ export default function MultiChannelPanel() {
                                             overflow: 'hidden',
                                         }}
                                     >
-                                        {channel.preview_url ? (
-                                            <iframe
-                                                src={channel.preview_url}
-                                                style={{
-                                                    position: 'absolute', top: 0, left: 0,
-                                                    width: '100%', height: '100%', border: 'none',
-                                                }}
-                                                title={`${channel.name} preview`}
-                                                muted
+                                        {isLive ? (
+                                            <ChannelHlsPreview
+                                                slug={channel.slug}
+                                                channelName={channel.name}
                                             />
                                         ) : (
                                             <Box

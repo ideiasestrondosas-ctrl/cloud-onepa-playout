@@ -1,8 +1,27 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from './App.jsx'
 import './index.css'
 import './i18n'
+
+// React Query Client Configuration - OPTIMIZED for production
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30000, // 30 seconds - reduces unnecessary refetches
+      cacheTime: 300000, // 5 minutes - longer cache for better UX
+      refetchOnWindowFocus: false,
+      retry: 1,
+      // Add deduplication for simultaneous requests
+      structuralSharing: true,
+    },
+    mutations: {
+      // Mutations should retry less frequently
+      retry: 0,
+    },
+  },
+})
 
 // Global ErrorBoundary — prevents silent black screen on JS crash
 class GlobalErrorBoundary extends React.Component {
@@ -78,11 +97,19 @@ class GlobalErrorBoundary extends React.Component {
   }
 }
 
-console.log('🚀 Cloud Onepa Playout — v2.6.0-ALPHA.47-PRO booting...')
-ReactDOM.createRoot(document.getElementById('root')).render(
+console.log('🚀 Cloud Onepa Playout — v2.6.0-ALPHA.50-PRO booting...')
+const rootElement = document.getElementById('root')
+console.log('Root element:', rootElement)
+if (!rootElement) {
+  console.error('❌ Root element not found!')
+  throw new Error('Root element #root not found in DOM')
+}
+ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <GlobalErrorBoundary>
-      <App />
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
     </GlobalErrorBoundary>
   </React.StrictMode>,
 )

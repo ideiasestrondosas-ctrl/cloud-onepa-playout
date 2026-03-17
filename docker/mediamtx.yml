@@ -38,7 +38,10 @@ apiAddress: :9997
 
 # Path settings
 paths:
-  # Master feed (FFmpeg push point)
+  # Raw feed (no graphics) — for GraphicsEditor preview
+  raw:
+    # FFmpeg pushes raw feed here WITHOUT logo overlay
+  # Master feed (FFmpeg push point) — with graphics applied
   master:
     # RTMP pushes to this path will be accepted anonymously
   # Final distribution point (relayed from master)

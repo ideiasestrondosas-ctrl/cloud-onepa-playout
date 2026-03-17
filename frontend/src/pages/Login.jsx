@@ -10,7 +10,7 @@ import {
   Alert,
   CircularProgress,
 } from '@mui/material';
-import { authAPI, settingsAPI } from '../services/api';
+import { authAPI, settingsAPI, APP_VERSION_FALLBACK } from '../services/api';
 import useAuthStore from '../stores/authStore';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from '../components/LanguageSelector';
@@ -36,7 +36,7 @@ export default function Login() {
           response.data.branding_type = 'video';
         }
         setSettings(response.data);
-        setVersion(response.data.system_version);
+        setVersion(response.data.system_version || APP_VERSION_FALLBACK);
       } catch (err) {
         console.error('Failed to fetch settings:', err);
       }

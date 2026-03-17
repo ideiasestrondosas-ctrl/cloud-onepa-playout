@@ -11,7 +11,7 @@ use uuid::Uuid;
 use chrono::{DateTime, Utc};
 
 use crate::models::media::{CreateFolder, Folder, Media, MediaTask};
-use crate::services::ffmpeg::FFmpegService;
+use crate::services::ffmpeg::{FFmpegService, FFMPEG_SERVICE};
 use crate::services::metadata_fetcher::MetadataFetcherService;
 
 #[derive(serde::Deserialize)]
@@ -34,101 +34,78 @@ async fn list_media(query: web::Query<MediaQuery>, pool: web::Data<PgPool>) -> i
     let limit = query.limit.unwrap_or(20);
     let offset = (page - 1) * limit;
 
-    let mut query_builder: sqlx::QueryBuilder<sqlx::Postgres> =
-        sqlx::QueryBuilder::new("SELECT * FROM media WHERE path NOT LIKE '%.proxy.%' AND path NOT LIKE '%.optimized.%' AND (path NOT LIKE '%/assets/protected/%' OR filename = 'big_buck_bunny_1080p_h264.mov')");
-
+    // OPTIMIZED: Single query with window function for count - replaces old dual query approach
+    // Build filter conditions efficiently
+    let mut conditions = Vec::new();
+    
     if let Some(ref media_type) = query.media_type {
         if !media_type.is_empty() {
-            query_builder.push(" AND media_type = ");
-            query_builder.push_bind(media_type);
+            conditions.push(format!("media_type = '{}'", media_type));
         }
     }
-
+    
     if let Some(is_filler) = query.is_filler {
-        query_builder.push(" AND is_filler = ");
-        query_builder.push_bind(is_filler);
+        conditions.push(format!("is_filler = {}", is_filler));
     }
-
+    
     if let Some(ref search) = query.search {
         if !search.is_empty() {
-            query_builder.push(" AND filename ILIKE ");
-            query_builder.push_bind(format!("%{}%", search));
+            conditions.push(format!("filename ILIKE '%{}%'", search));
         }
     }
-
-    if let Some(ref folder_id) = query.folder_id {
+    
+    let folder_condition = if let Some(ref folder_id) = query.folder_id {
         if folder_id == "root" || folder_id.is_empty() {
-            query_builder.push(" AND folder_id IS NULL");
+            Some("folder_id IS NULL".to_string())
         } else if let Ok(uid) = Uuid::parse_str(folder_id) {
-            query_builder.push(" AND folder_id = ");
-            query_builder.push_bind(uid);
+            Some(format!("folder_id = '{}'", uid))
+        } else {
+            None
         }
-    }
-
-    // Count is more complex with QueryBuilder for the same query.
-    // Usually we wrap it or just run a separate count query for simplicity if performance allows.
-    // For now, let's keep it simple and just run the list query.
-
-    let count_query = "SELECT COUNT(*) FROM media WHERE path NOT LIKE '%.proxy.%' AND path NOT LIKE '%.optimized.%' AND (path NOT LIKE '%/assets/protected/%' OR filename = 'big_buck_bunny_1080p_h264.mov')";
-    let mut count_builder: sqlx::QueryBuilder<sqlx::Postgres> =
-        sqlx::QueryBuilder::new(count_query);
-
-    if let Some(ref media_type) = query.media_type {
-        if !media_type.is_empty() {
-            count_builder.push(" AND media_type = ");
-            count_builder.push_bind(media_type);
-        }
-    }
-
-    if let Some(is_filler) = query.is_filler {
-        count_builder.push(" AND is_filler = ");
-        count_builder.push_bind(is_filler);
-    }
-
-    if let Some(ref search) = query.search {
-        if !search.is_empty() {
-            count_builder.push(" AND filename ILIKE ");
-            count_builder.push_bind(format!("%{}%", search));
-        }
-    }
-
-    if let Some(ref folder_id) = query.folder_id {
-        if folder_id == "root" || folder_id.is_empty() {
-            count_builder.push(" AND folder_id IS NULL");
-        } else if let Ok(uid) = Uuid::parse_str(folder_id) {
-            count_builder.push(" AND folder_id = ");
-            count_builder.push_bind(uid);
-        }
-    }
-
-    let total: (i64,) = match count_builder
-        .build_query_as::<(i64,)>()
-        .fetch_one(pool.get_ref())
-        .await
-    {
-        Ok(t) => t,
-        Err(e) => {
-            log::error!("Failed to count media: {}", e);
-            return HttpResponse::InternalServerError()
-                .json(serde_json::json!({"error": "Database error"}));
-        }
+    } else {
+        None
     };
-
-    query_builder.push(" ORDER BY created_at DESC");
-    query_builder.push(" LIMIT ");
-    query_builder.push_bind(limit);
-    query_builder.push(" OFFSET ");
-    query_builder.push_bind(offset);
-
-    let media_result = query_builder
-        .build_query_as::<Media>()
+    
+    let folder_clause = folder_condition.map(|c| format!(" AND {}", c)).unwrap_or_default();
+    let where_clause = if conditions.is_empty() {
+        format!(
+            "WHERE path NOT LIKE '%.proxy.%' AND path NOT LIKE '%.optimized.%' AND (path NOT LIKE '%/assets/protected/%' OR filename = 'big_buck_bunny_1080p_h264.mov'){}",
+            folder_clause
+        )
+    } else {
+        let cond_str = conditions.join(" AND ");
+        format!(
+            "WHERE path NOT LIKE '%.proxy.%' AND path NOT LIKE '%.optimized.%' AND (path NOT LIKE '%/assets/protected/%' OR filename = 'big_buck_bunny_1080p_h264.mov') AND {}{}",
+            cond_str,
+            folder_clause
+        )
+    };
+    
+    // Single optimized query with window function
+    let sql = format!(
+        "SELECT *, COUNT(*) OVER() as total_count FROM media {} ORDER BY created_at DESC LIMIT {} OFFSET {}",
+        where_clause, limit, offset
+    );
+    
+    #[derive(sqlx::FromRow)]
+    struct MediaWithCount {
+        #[sqlx(flatten)]
+        media: Media,
+        total_count: i64,
+    }
+    
+    let media_result = sqlx::query_as::<_, MediaWithCount>(&sql)
         .fetch_all(pool.get_ref())
         .await;
 
     match media_result {
-        Ok(media) => {
-            // Add proxy existence and optimization flags for video files
-            let ffmpeg = FFmpegService::new();
+        Ok(media_with_count) => {
+            // Get total from first row (all have same count)
+            let total = media_with_count.first().map(|m| m.total_count).unwrap_or(0);
+            let media: Vec<Media> = media_with_count.into_iter().map(|m| m.media).collect();
+            
+            // Use lazy static FFmpegService for proxy checking
+            let ffmpeg = &FFMPEG_SERVICE;
             let media_with_proxy: Vec<serde_json::Value> = media.into_iter().map(|item| {
                 let mut val = serde_json::to_value(&item).unwrap();
                 let mut has_proxy = false;
@@ -157,10 +134,10 @@ async fn list_media(query: web::Query<MediaQuery>, pool: web::Data<PgPool>) -> i
 
             HttpResponse::Ok().json(serde_json::json!({
                 "media": media_with_proxy,
-                "total": total.0,
+                "total": total,
                 "page": page,
                 "limit": limit,
-                "pages": (total.0 as f64 / limit as f64).ceil() as i64
+                "pages": (total as f64 / limit as f64).ceil() as i64
             }))
         },
         Err(e) => {

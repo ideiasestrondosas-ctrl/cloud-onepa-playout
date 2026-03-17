@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import ReactPlayer from 'react-player';
+import VideoPreview from '../components/VideoPreview';
+import { useAudioAnalysis } from '../hooks/useAudioAnalysis';
 import {
   Box,
   Grid,
@@ -93,7 +94,6 @@ export default function Dashboard() {
   const [diagnosing, setDiagnosing] = useState(false);
   const [debugReport, setDebugReport] = useState(null);
   const [debugDialogOpen, setDebugDialogOpen] = useState(false);
-  const [audioLevel, setAudioLevel] = useState(0);
   const [previewPaused, setPreviewPaused] = useState(false);
   const [previewMuted, setPreviewMuted] = useState(true);
   const [vlcDialogOpen, setVlcDialogOpen] = useState(false);
@@ -104,7 +104,6 @@ export default function Dashboard() {
   const [hlsReady, setHlsReady] = useState(false);
   const [hlsRetryCount, setHlsRetryCount] = useState(0);
   const hlsRetryTimerRef = useRef(null);
-  const [audioContextSuspended, setAudioContextSuspended] = useState(false);
   const [restartDialogOpen, setRestartDialogOpen] = useState(false);
   const [restartOptions, setRestartOptions] = useState({
     auto_start: true,
@@ -115,13 +114,24 @@ export default function Dashboard() {
   const [isValidating, setIsValidating] = useState(false);
 
   const playerRef = useRef(null);
-  const audioCtxRef = useRef(null);
-  const analyzerRef = useRef(null);
-  const animationRef = useRef(null);
-  const sourceNodeRef = useRef(null);
-
-
   const [scheduleAlertOpen, setScheduleAlertOpen] = useState(false);
+
+  // Derive isPlaying early to avoid temporal dead zone
+  const isPlaying = status.status === 'playing';
+  const isDistributionActive = settings?.rtmp_enabled || settings?.srt_enabled || settings?.udp_enabled || settings?.hls_enabled;
+
+  // Use the encapsulated audio analysis hook
+  const {
+    audioLevel,
+    isContextSuspended: audioContextSuspended,
+    initializeAudio,
+    resumeContext,
+    resetSource
+  } = useAudioAnalysis({
+    enabled: isPlaying && !previewPaused && !previewMuted,
+    muted: previewMuted,
+    safariSimulation: isSafari
+  });
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -139,8 +149,6 @@ export default function Dashboard() {
     const interval = setInterval(fetchStatus, 2000);
     return () => {
       clearInterval(interval);
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
-      if (audioCtxRef.current) audioCtxRef.current.close().catch(e => console.warn('AudioContext close failed:', e));
     };
   }, [fetchStatus]);
 
@@ -183,15 +191,12 @@ export default function Dashboard() {
     };
   }, [status.status, hlsReady, hlsRetryCount]);
 
-  // NOTE: setupAudioAnalysis is intentionally omitted from deps (stable ref, deps=[])
-  // to avoid TDZ in Rollup production bundle (setupAudioAnalysis declared later in scope).
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const handlePlayerReady = useCallback(() => {
     console.log('[HLS] Stream ready — stopping retry loop');
     setHlsReady(true);
     setHlsRetryCount(0);
     if (hlsRetryTimerRef.current) clearTimeout(hlsRetryTimerRef.current);
-    setupAudioAnalysis();
+    // Audio analysis is now handled by the useAudioAnalysis hook
   }, []);
 
   const handlePlayerError = useCallback((e) => {
@@ -200,99 +205,89 @@ export default function Dashboard() {
     // Retry is handled by the useEffect above — no manual setTimeout needed here
   }, []);
 
-  // Reset audio source reference when player reloads (critical for LUFS meter)
-  useEffect(() => {
-    console.log('[AudioAnalysis] Player reloaded (key changed), resetting source node reference');
-    sourceNodeRef.current = null;
-  }, [playerKey]);
-
+  // Setup audio analysis using the hook
   const setupAudioAnalysis = useCallback(() => {
-    try {
-      if (!playerRef.current) return;
-      const internalPlayer = playerRef.current.getInternalPlayer();
-      if (!internalPlayer || !(internalPlayer instanceof HTMLMediaElement)) return;
-
-      // Ensure crossOrigin is set on the actual DOM element for AudioContext
-      internalPlayer.crossOrigin = "anonymous";
-      const initAudio = async () => {
-        if (!audioCtxRef.current) {
-          // Safari requires webkitAudioContext
-          const AudioCtx = window.AudioContext || window.webkitAudioContext;
-          audioCtxRef.current = new AudioCtx();
-          analyzerRef.current = audioCtxRef.current.createAnalyser();
-          analyzerRef.current.fftSize = 256;
-          // Creating context in Safari must be done in a user action, which initAudio is attached to.
-          console.log('[AudioAnalysis] Context & Analyzer created via user click');
-        }
-
-        if (audioCtxRef.current.state === 'suspended') {
-          try {
-            await audioCtxRef.current.resume();
-            console.log('[AudioAnalysis] Context resumed');
-            setAudioContextSuspended(false);
-          } catch (err) {
-            console.warn('[AudioAnalysis] Resume failed:', err);
-            setAudioContextSuspended(true);
-          }
-        }
-
-        if (audioCtxRef.current.state === 'running' && !internalPlayer.__audioSourceConnected) {
-          try {
-            sourceNodeRef.current = audioCtxRef.current.createMediaElementSource(internalPlayer);
-            sourceNodeRef.current.connect(analyzerRef.current);
-            analyzerRef.current.connect(audioCtxRef.current.destination);
-            internalPlayer.__audioSourceConnected = true;
-            console.log('[AudioAnalysis] Source connected to analyzer');
-          } catch (e) {
-            console.warn('[AudioAnalysis] Connection failed (already connected?):', e);
-            internalPlayer.__audioSourceConnected = true;
-          }
-        }
-      };
-
-      // Add listener to the whole document
-      document.addEventListener('click', initAudio, { once: true });
-      document.addEventListener('touchstart', initAudio, { once: true });
-
-      // If already playing and running, try immediately
-      if (audioCtxRef.current?.state === 'running') {
-        initAudio();
-      }
-
-      // Guard against null analyzer
-      if (!analyzerRef.current) {
-        console.warn('[AudioAnalysis] Analyzer not initialized yet');
-        return;
-      }
-
-      const bufferLength = analyzerRef.current.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
-      const updateLevel = () => {
-        if (!analyzerRef.current) return;
-        analyzerRef.current.getByteFrequencyData(dataArray);
-        // Calculate RMS
-        let sum = 0;
-        for (let i = 0; i < bufferLength; i++) sum += dataArray[i] * dataArray[i];
-        const rms = Math.sqrt(sum / bufferLength);
-        let level = Math.min(100, (rms / 128) * 100);
-
-        // Safari Fallback: If playing but level is 0 (context blocked), simulate meter smoothly
-        if (isSafari && level === 0 && !playerRef.current?.getInternalPlayer()?.paused) {
-          const time = Date.now() / 1000;
-          // Smoother Sine-wave based simulation (Breathing effect + mild jitter)
-          level = 30 + Math.sin(time * 3) * 15 + Math.cos(time * 7) * 10 + Math.random() * 5;
-        }
-
-        setAudioLevel(level);
-
-        // Throttle to ~20fps (every 50ms) for better smoothness with CSS transition
-        animationRef.current = setTimeout(updateLevel, 50);
-      };
-      updateLevel();
-    } catch (e) {
-      console.error('Audio analysis failed:', e);
+    if (playerRef.current) {
+      initializeAudio(playerRef.current);
     }
-  }, []);
+  }, [initializeAudio]);
+
+  // Trigger audio analysis when player is ready
+  useEffect(() => {
+    if (hlsReady && isPlaying && !previewPaused && !previewMuted) {
+      setupAudioAnalysis();
+    }
+  }, [hlsReady, isPlaying, previewPaused, previewMuted, setupAudioAnalysis]);
+
+  // Resume audio context on user interaction (for Safari)
+  const handleResumeAudio = useCallback(async () => {
+    const success = await resumeContext();
+    if (success) {
+      showSuccess('Audio enabled');
+    }
+  }, [resumeContext, showSuccess]);
+
+  // Update Safari overlay button to use the hook's resumeContext
+  const handleSafariAudioEnable = useCallback((e) => {
+    e.stopPropagation();
+    handleResumeAudio();
+  }, [handleResumeAudio]);
+
+  // Update the Safari overlay button to use the new handler
+  const safariAudioButton = audioContextSuspended ? (
+    <Button
+      variant="contained"
+      size="small"
+      color="success"
+      onClick={handleSafariAudioEnable}
+    >
+      {t('dashboard.safari.enable_meter')}
+    </Button>
+  ) : null;
+
+  // Update the Safari overlay to use the new button
+  const safariOverlay = audioContextSuspended ? (
+    <Box sx={{
+      position: 'absolute',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      zIndex: 60,
+      bgcolor: 'rgba(0,0,0,0.7)',
+      p: 2,
+      borderRadius: 2,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 1
+    }}>
+      {/* VU Meter Visual */}
+      <Box sx={{
+        width: 8,
+        height: 30,
+        bgcolor: '#333',
+        borderRadius: 1,
+        overflow: 'hidden',
+        position: 'relative'
+      }}>
+        <Box sx={{
+          width: '100%',
+          height: `${audioLevel}%`,
+          bgcolor: audioLevel > 80 ? '#f44336' : audioLevel > 60 ? '#ff9800' : '#4caf50',
+          position: 'absolute',
+          bottom: 0,
+          transition: 'height 0.1s linear' // CSS Transition for Smoothness
+        }} />
+      </Box>
+      <Typography variant="body2" sx={{ color: '#fff', fontWeight: 'bold' }}>
+        {t('dashboard.safari.audio_paused')}
+      </Typography>
+      {safariAudioButton}
+    </Box>
+  ) : null;
+
+  // Update the Safari overlay in the video preview to use the new overlay
+  const videoPreviewSafariOverlay = audioContextSuspended ? safariOverlay : null;
 
 
 
@@ -458,18 +453,17 @@ export default function Dashboard() {
     setVlcLogs(prev => [...prev, { msg, type }]);
   };
 
-  const isPlaying = status.status === 'playing';
-  const isDistributionActive = settings?.rtmp_enabled || settings?.srt_enabled || settings?.udp_enabled || settings?.hls_enabled;
-
+  // Audio analysis is now handled by the useAudioAnalysis hook
   useEffect(() => {
-    if (isPlaying && !previewPaused && !previewMuted) {
-      const timer = setTimeout(setupAudioAnalysis, 1000);
-      return () => clearTimeout(timer);
-    } else {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
-      setAudioLevel(0);
+    if (!isPlaying || previewPaused || previewMuted) {
+      resetSource();
     }
-  }, [isPlaying, previewPaused, previewMuted, setupAudioAnalysis, playerKey]);
+  }, [isPlaying, previewPaused, previewMuted, resetSource]);
+
+  // Reset source when player key changes (player reloads)
+  useEffect(() => {
+    resetSource();
+  }, [playerKey, resetSource]);
 
   // Local position ticker — increments every second so the progress bar moves smoothly
   // between API polls (which happen every 2s)
@@ -875,162 +869,155 @@ export default function Dashboard() {
         );
       })()}
 
-      <Paper className="glass-panel" sx={{ mt: 1.5, p: 0, height: 380, position: 'relative', bgcolor: '#000', borderRadius: 3, overflow: 'hidden', border: '2px solid', borderColor: isPlaying ? 'primary.main' : 'rgba(255, 255, 255, 0.1)', boxShadow: isPlaying ? '0 0 20px rgba(0, 229, 255, 0.1)' : 'none', zIndex: 1 }}>
-        <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, p: 2, display: 'flex', justifyContent: 'space-between', background: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%)' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <TvIcon className={isPlaying ? "neon-text" : ""} sx={{ fontSize: 20 }} />
-            <Typography variant="caption" sx={{ color: '#fff', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 2 }}>{t('dashboard.live_preview')}</Typography>
-            {isPlaying && (
-              <Tooltip title={hlsReady ? t('dashboard.active') : t('dashboard.starting')} arrow>
-                <Box sx={{
-                  width: 8, height: 8, borderRadius: '50%',
-                  bgcolor: hlsReady ? '#4caf50' : '#ff9800',
-                  animation: 'logo-pulse 1s infinite',
-                  transition: 'background-color 0.5s ease'
-                }} />
-              </Tooltip>
-            )}
-          </Box>
-          <Box display="flex" gap={1}>
-            <IconButton size="small" sx={{ color: '#fff', bgcolor: 'rgba(255, 255, 255, 0.1)', '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.2)' } }} onClick={handleTogglePause}>
-              {previewPaused ? <PlayCircleOutlineIcon /> : <PauseCircleOutlineIcon />}
-            </IconButton>
-            <IconButton size="small" sx={{ color: '#fff', bgcolor: 'rgba(255, 255, 255, 0.1)', '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.2)' } }} onClick={() => setPreviewMuted(!previewMuted)}>
-              {previewMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
-            </IconButton>
-          </Box>
-        </Box>
-
-        {isPlaying ? (
-          <Box sx={{ width: '100%', height: '100%', position: 'relative' }}>
-            <ReactPlayer
-              key={playerKey}
-              ref={playerRef}
-              url="/hls-live/master/index.m3u8"
-              playing={!previewPaused}
-              muted={previewMuted}
-              width="100%"
-              height="100%"
-              onReady={handlePlayerReady}
-              onPlay={setupAudioAnalysis}
-              onError={handlePlayerError}
-              config={{
-                file: {
-                  forceHLS: !isSafari, // Use native HLS on Safari
-                  attributes: {
-                    crossOrigin: 'anonymous',
-                    playsInline: true
-                  },
-                  hlsOptions: {
-                    enableWorker: true,
-                    lowLatencyMode: true,
-                    backBufferLength: 0,
-                  }
-                }
-              }}
-            />
-            <Box sx={{ position: 'absolute', right: 15, bottom: 15, height: 260, zIndex: 50 }}>
-              <LufsMeter level={audioLevel} active={isPlaying && !previewPaused && !previewMuted} />
-            </Box>
-            <Box sx={{ position: 'absolute', left: 15, bottom: 15, zIndex: 50 }}>
-              <Chip
-                icon={<PlayIcon />}
-                label={t('dashboard.live_preview')}
-                onClick={() => {
-                  // Usa o host atual e proxy do nginx
-                  let hlsOrigin = window.location.origin;
-                  const url = `${hlsOrigin}/hls-live/master/index.m3u8`;
-
-                  // Fallback for non-HTTPS or Direct IP access where navigator.clipboard might fail
-                  const copyFunc = (text) => {
-                    if (navigator.clipboard && navigator.clipboard.writeText) {
-                      navigator.clipboard.writeText(text)
-                        .then(() => showSuccess(t('dashboard.hls_copied')))
-                        .catch(() => fallbackCopy(text));
-                    } else {
-                      fallbackCopy(text);
-                    }
-                  };
-
-                  const fallbackCopy = (text) => {
-                    const textArea = document.createElement("textarea");
-                    textArea.value = text;
-                    document.body.appendChild(textArea);
-                    textArea.select();
-                    try {
-                      document.execCommand('copy');
-                      showSuccess(t('dashboard.hls_copied'));
-                    } catch (err) {
-                      console.error('Bypass copy failed', err);
-                    }
-                    document.body.removeChild(textArea);
-                  };
-
-                  copyFunc(url);
-                }}
-                sx={{ bgcolor: 'rgba(0,0,0,0.6)', color: '#fff', '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' }, cursor: 'pointer' }}
-                size="small"
-              />
-            </Box>
-
-            {/* Safari Audio Context Resume Overlay */}
-            {audioContextSuspended && (
-              <Box sx={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                zIndex: 60,
-                bgcolor: 'rgba(0,0,0,0.7)',
-                p: 2,
-                borderRadius: 2,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 1
-              }}>
-                {/* VU Meter Visual */}
-                <Box sx={{
-                  width: 8,
-                  height: 30,
-                  bgcolor: '#333',
-                  borderRadius: 1,
-                  overflow: 'hidden',
-                  position: 'relative'
-                }}>
+      <Box sx={{
+        width: '640px',
+        height: '360px',
+        position: 'relative',
+        bgcolor: '#000',
+        borderRadius: 3,
+        overflow: 'hidden',
+        border: '2px solid',
+        borderColor: isPlaying ? 'primary.main' : 'rgba(255, 255, 255, 0.1)',
+        boxShadow: isPlaying ? '0 0 20px rgba(0, 229, 255, 0.1)' : 'none',
+        zIndex: 1,
+        mx: 'auto'
+      }}>
+        <Box sx={{ position: 'absolute', inset: 0, bgcolor: '#000', borderRadius: 3, overflow: 'hidden' }}>
+          <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, p: 2, display: 'flex', justifyContent: 'space-between', background: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%)' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <TvIcon className={isPlaying ? "neon-text" : ""} sx={{ fontSize: 20 }} />
+              <Typography variant="caption" sx={{ color: '#fff', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 2 }}>{t('dashboard.live_preview')}</Typography>
+              {isPlaying && (
+                <Tooltip title={hlsReady ? t('dashboard.active') : t('dashboard.starting')} arrow>
                   <Box sx={{
-                    width: '100%',
-                    height: `${audioLevel}%`,
-                    bgcolor: audioLevel > 80 ? '#f44336' : audioLevel > 60 ? '#ff9800' : '#4caf50',
-                    position: 'absolute',
-                    bottom: 0,
-                    transition: 'height 0.1s linear' // CSS Transition for Smoothness
+                    width: 8, height: 8, borderRadius: '50%',
+                    bgcolor: hlsReady ? '#4caf50' : '#ff9800',
+                    animation: 'logo-pulse 1s infinite',
+                    transition: 'background-color 0.5s ease'
                   }} />
-                </Box>
-                <Typography variant="body2" sx={{ color: '#fff', fontWeight: 'bold' }}>
-                  {t('dashboard.safari.audio_paused')}
-                </Typography>
-                <Button
-                  variant="contained"
-                  size="small"
-                  color="success"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // Setup Audio again explicitly on user click
-                    setupAudioAnalysis();
-                  }}
-                >
-                  {t('dashboard.safari.enable_meter')}
-                </Button>
+                </Tooltip>
+              )}
+            </Box>
+            <Box display="flex" gap={1}>
+              <IconButton size="small" sx={{ color: '#fff', bgcolor: 'rgba(255, 255, 255, 0.1)', '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.2)' } }} onClick={() => setPreviewMuted(!previewMuted)}>
+                {previewMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
+              </IconButton>
+            </Box>
+          </Box>
+
+          {isPlaying ? (
+            <Box sx={{ width: '100%', height: '100%', position: 'relative' }}>
+              <VideoPreview
+                ref={playerRef}
+                src="/hls-live/default/index.m3u8"
+                playing={!previewPaused}
+                muted={previewMuted}
+                onReady={handlePlayerReady}
+                onPlay={setupAudioAnalysis}
+                onError={handlePlayerError}
+                audioLevel={audioLevel}
+                showMeter={false} // Dashboard has its own meter positioning
+                status={status.status === 'playing' ? 'playing' : 'stopped'}
+              />
+              <Box sx={{ position: 'absolute', right: 15, bottom: 15, height: 260, zIndex: 50 }}>
+                <LufsMeter level={audioLevel} active={isPlaying && !previewPaused && !previewMuted} />
               </Box>
-            )}
-          </Box>
-        ) : (
-          <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#444' }}>
-            <TvIcon sx={{ fontSize: 100, opacity: 0.1 }} />
-          </Box>
-        )}
-      </Paper>
+              <Box sx={{ position: 'absolute', left: 15, bottom: 15, zIndex: 50 }}>
+                <Chip
+                  icon={<PlayIcon />}
+                  label={t('dashboard.live_preview')}
+                  onClick={() => {
+                    // Usa o host atual e proxy do nginx
+                    let hlsOrigin = window.location.origin;
+                    const url = `${hlsOrigin}/hls-live/default/index.m3u8`;
+
+                    // Fallback for non-HTTPS or Direct IP access where navigator.clipboard might fail
+                    const copyFunc = (text) => {
+                      if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(text)
+                          .then(() => showSuccess(t('dashboard.hls_copied')))
+                          .catch(() => fallbackCopy(text));
+                      } else {
+                        fallbackCopy(text);
+                      }
+                    };
+
+                    const fallbackCopy = (text) => {
+                      const textArea = document.createElement("textarea");
+                      textArea.value = text;
+                      document.body.appendChild(textArea);
+                      textArea.select();
+                      try {
+                        document.execCommand('copy');
+                        showSuccess(t('dashboard.hls_copied'));
+                      } catch (err) {
+                        console.error('Bypass copy failed', err);
+                      }
+                      document.body.removeChild(textArea);
+                    };
+
+                    copyFunc(url);
+                  }}
+                  sx={{ bgcolor: 'rgba(0,0,0,0.6)', color: '#fff', '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' }, cursor: 'pointer' }}
+                  size="small"
+                />
+              </Box>
+
+              {/* Safari Audio Context Resume Overlay */}
+              {audioContextSuspended && (
+                <Box sx={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  zIndex: 60,
+                  bgcolor: 'rgba(0,0,0,0.7)',
+                  p: 2,
+                  borderRadius: 2,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 1
+                }}>
+                  {/* VU Meter Visual */}
+                  <Box sx={{
+                    width: 8,
+                    height: 30,
+                    bgcolor: '#333',
+                    borderRadius: 1,
+                    overflow: 'hidden',
+                    position: 'relative'
+                  }}>
+                    <Box sx={{
+                      width: '100%',
+                      height: `${audioLevel}%`,
+                      bgcolor: audioLevel > 80 ? '#f44336' : audioLevel > 60 ? '#ff9800' : '#4caf50',
+                      position: 'absolute',
+                      bottom: 0,
+                      transition: 'height 0.1s linear' // CSS Transition for Smoothness
+                    }} />
+                  </Box>
+                  <Typography variant="body2" sx={{ color: '#fff', fontWeight: 'bold' }}>
+                    {t('dashboard.safari.audio_paused')}
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    color="success"
+                    onClick={handleSafariAudioEnable}
+                  >
+                    {t('dashboard.safari.enable_meter')}
+                  </Button>
+                </Box>
+              )}
+            </Box>
+          ) : (
+            <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#444' }}>
+              <TvIcon sx={{ fontSize: 100, opacity: 0.1 }} />
+            </Box>
+          )}
+        </Box>
+      </Box>
 
       <Grid container spacing={2} sx={{ mt: 1, position: 'relative', zIndex: 1 }}>
         <Grid item xs={12} md={7}>
@@ -1485,15 +1472,11 @@ export default function Dashboard() {
           <Button onClick={() => setScheduleAlertOpen(false)} sx={{ fontWeight: 800 }}>{t('common.close')}</Button>
           <Button
             variant="contained"
-            color="primary"
-            onClick={() => {
-              setScheduleAlertOpen(false);
-              navigate('/settings?tab=playout&wizard=true');
-            }}
-            startIcon={<WizardIcon />}
-            sx={{ fontWeight: 800 }}
+            size="small"
+            color="success"
+            onClick={handleSafariAudioEnable}
           >
-            {t('dashboard.schedule_error.open_wizard')}
+            {t('dashboard.safari.enable_meter')}
           </Button>
         </DialogActions>
       </Dialog>

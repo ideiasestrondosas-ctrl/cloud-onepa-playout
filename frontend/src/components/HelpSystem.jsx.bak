@@ -37,10 +37,7 @@ import {
   Settings as SettingsIcon,
   Tv as TvIcon,
   LiveTv as LiveTvIcon,
-  BugReport as BugReport,
-  Description as DescriptionIcon,
-  Favorite as FavoriteIcon,
-  TableChart as TableChartIcon
+  BugReport as BugReport
 } from '@mui/icons-material';
 import { useHelp } from '../context/HelpContext';
 import { useTranslation } from 'react-i18next';
@@ -281,71 +278,20 @@ const HelpTroubleshooting = () => {
   );
 };
 
-const HelpTemplates = () => {
-  const { t } = useTranslation();
-  return (
-    <Box>
-      <Section title={t('help.templates.title') || "Templates"}>
-        <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
-          {t('help.templates.intro') || "Gerencie templates de gráficos e overlays."}
-        </Typography>
-      </Section>
-    </Box>
-  );
-};
-
-const HelpLiveInputs = () => {
-  const { t } = useTranslation();
-  return (
-    <Box>
-      <Section title={t('help.live_inputs.title') || "Live Inputs"}>
-        <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
-          {t('help.live_inputs.intro') || "Configure e gerencie entradas de vídeo ao vivo."}
-        </Typography>
-      </Section>
-    </Box>
-  );
-};
-
-const HelpHealth = () => {
-  const { t } = useTranslation();
-  return (
-    <Box>
-      <Section title={t('help.health.title') || "Saúde do Sistema"}>
-        <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
-          {t('help.health.intro') || "Monitore a saúde e o desempenho do sistema."}
-        </Typography>
-      </Section>
-    </Box>
-  );
-};
-
-const HelpMultiChannel = () => {
-  const { t } = useTranslation();
-  return (
-    <Box>
-      <Section title={t('help.multi_channel.title') || "Multi-Canal"}>
-        <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
-          {t('help.multi_channel.intro') || "Gerencie múltiplos canais de playout simultaneamente."}
-        </Typography>
-      </Section>
-    </Box>
-  );
-};
-
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
 
 const TABS = [
-    { id: 'dashboard', icon: <DashboardIcon sx={{ fontSize: 14 }} />, content: <HelpDashboard /> },
-    { id: 'media', icon: <LibraryIcon sx={{ fontSize: 14 }} />, content: <HelpLibrary /> },
-    { id: 'playlists', icon: <PlaylistIcon sx={{ fontSize: 14 }} />, content: <HelpPlaylists /> },
-    { id: 'calendar', icon: <CalendarIcon sx={{ fontSize: 14 }} />, content: <HelpCalendar /> },
-    { id: 'graphics', icon: <GraphicsIcon sx={{ fontSize: 14 }} />, content: <HelpGraphics /> },
-    { id: 'settings', icon: <SettingsIcon sx={{ fontSize: 14 }} />, content: <HelpSettings /> },
-    { id: 'templates', icon: <DescriptionIcon sx={{ fontSize: 14 }} />, content: <HelpTemplates /> },
-    { id: 'live-inputs', icon: <LiveTvIcon sx={{ fontSize: 14 }} />, content: <HelpLiveInputs /> },
-    { id: 'health', icon: <FavoriteIcon sx={{ fontSize: 14 }} />, content: <HelpHealth /> },
-    { id: 'multi-channel', icon: <TableChartIcon sx={{ fontSize: 14 }} />, content: <HelpMultiChannel /> },
+const TABS = [
+  { id: 'dashboard', icon: <DashboardIcon sx={{ fontSize: 14 }} />, content: <HelpDashboard /> },
+  { id: 'media', icon: <LibraryIcon sx={{ fontSize: 14 }} />, content: <HelpLibrary /> },
+  { id: 'playlists', icon: <PlaylistIcon sx={{ fontSize: 14 }} />, content: <HelpPlaylists /> },
+  { id: 'calendar', icon: <CalendarIcon sx={{ fontSize: 14 }} />, content: <HelpCalendar /> },
+  { id: 'graphics', icon: <GraphicsIcon sx={{ fontSize: 14 }} />, content: <HelpGraphics /> },
+  { id: 'settings', icon: <SettingsIcon sx={{ fontSize: 14 }} />, content: <HelpSettings /> },
+  { id: 'liveInputs', icon: <LiveTvIcon sx={{ fontSize: 14 }} />, content: <HelpLiveInputs /> },
+  { id: 'liveInputs', icon: <LiveTvIcon sx={{ fontSize: 14 }} />, content: <HelpLiveInputs /> >,
+  { id: 'troubleshooting', icon: <BugIcon sx={{ fontSize: 14 }} />, content: <HelpTroubleshooting /> },
+];
 ];
 
 

@@ -28,6 +28,7 @@ lazy_static! {
     static ref HW_ENCODER_CACHE: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
     static ref FASTSTART_CACHE: Mutex<HashMap<String, (bool, Instant)>> =
         Mutex::new(HashMap::new());
+    pub static ref FFMPEG_SERVICE: FFmpegService = FFmpegService::new();
 }
 
 const FASTSTART_CACHE_TTL: Duration = Duration::from_secs(600);
@@ -950,8 +951,14 @@ impl FFmpegService {
             final_output_url.to_string(),
         ]);
 
-        // Clean Background Preview (Lower resolution, high compression for minimal CPU impact)
-        let clean_output_url = final_output_url.replace("master", "stream_clean");
+        let clean_output_url = if let Some(idx) = final_output_url.find('?') {
+            format!("{}_clean{}", &final_output_url[..idx], &final_output_url[idx..])
+        } else {
+            format!("{}_clean", final_output_url)
+        };
+        // Clean feed: use ultrafast preset to minimize encoding latency.
+        // This stream is only used internally by the GraphicsEditor preview \u2014
+        // quality is less important than low latency here.
         args.extend(vec![
             "-f".to_string(),
             "flv".to_string(),
@@ -963,12 +970,14 @@ impl FFmpegService {
             "libx264".to_string(),
             "-preset".to_string(),
             "ultrafast".to_string(),
+            "-tune".to_string(),
+            "zerolatency".to_string(),
             "-crf".to_string(),
-            "30".to_string(),
+            "23".to_string(),
             "-c:a".to_string(),
-            "aac".to_string(), // Encode audio too for the second stream
+            "aac".to_string(),
             "-b:a".to_string(),
-            "64k".to_string(),
+            "128k".to_string(),
             clean_output_url,
         ]);
 

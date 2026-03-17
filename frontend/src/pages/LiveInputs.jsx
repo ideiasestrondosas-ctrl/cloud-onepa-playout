@@ -342,7 +342,7 @@ export default function LiveInputs() {
                     </Grid>
 
                     {liveInputs.length === 0 && (
-                        <Paper sx={{ p: 4, textAlign: 'center' }}>
+                        <Paper sx={{ p: 4, textAlign: 'center', mt: 4 }}>
                             <LiveTvIcon sx={{ fontSize: 64, color: 'grey.400', mb: 2 }} />
                             <Typography color="text.secondary">
                                 {t('liveInputs.noInputs')}

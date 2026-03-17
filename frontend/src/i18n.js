@@ -1,27 +1,47 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import LanguageDetector from 'i18next-browser-languagedetector';
 import HttpApi from 'i18next-http-backend';
 
-// Translation files are located in public/locales/{en,pt,es,fr}/translation.json
+const SUPPORTED_LANGS = ['pt', 'en', 'es', 'fr'];
+
+// Determine the starting language from localStorage, falling back to 'pt'.
+// We do NOT use LanguageDetector here — it resolves full locale tags like
+// 'en-US' which don't match our supportedLngs and cause Select value mismatches.
+function detectLanguage() {
+    const stored = localStorage.getItem('i18nextLng');
+    if (stored && SUPPORTED_LANGS.includes(stored)) return stored;
+    // Attempt to match browser language root (e.g. 'en-US' → 'en')
+    const nav = navigator.language?.split('-')[0];
+    if (nav && SUPPORTED_LANGS.includes(nav)) return nav;
+    return 'pt';
+}
+
+// Translation files are loaded from public/locales/{lng}/translation.json
 i18n
     .use(HttpApi)
-    .use(LanguageDetector)
     .use(initReactI18next)
     .init({
+        lng: detectLanguage(),
         fallbackLng: 'pt',
-        supportedLngs: ['pt', 'en', 'es', 'fr'],
+        supportedLngs: SUPPORTED_LANGS,
         debug: false,
         interpolation: {
-            escapeValue: false, // not needed for react as it escapes by default
+            escapeValue: false,
         },
         backend: {
             loadPath: '/locales/{{lng}}/translation.json',
         },
-        detection: {
-            order: ['localStorage', 'cookie', 'htmlTag', 'path', 'subdomain'],
-            caches: ['localStorage', 'cookie'],
+        react: {
+            useSuspense: false,
         },
     });
+
+// Force language from backend/external setting if it differs from current
+export function setLanguage(lang) {
+    if (lang && SUPPORTED_LANGS.includes(lang) && i18n.language !== lang) {
+        i18n.changeLanguage(lang);
+        localStorage.setItem('i18nextLng', lang);
+    }
+}
 
 export default i18n;

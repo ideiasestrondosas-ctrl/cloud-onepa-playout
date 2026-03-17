@@ -32,7 +32,8 @@ cd frontend
 rm -rf node_modules/
 rm -rf dist/
 rm -rf build/
-rm -f package-lock.json
+# Keep package-lock.json for npm ci
+# rm -f package-lock.json
 cd ..
 
 # Clean Docker build cache

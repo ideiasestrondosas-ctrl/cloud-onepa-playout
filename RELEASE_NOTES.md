@@ -1,5 +1,28 @@
 # Release Notes - Cloud Onepa Playout
 
+## v2.6.0-ALPHA.50-PRO ()
+
+### 🚀 Release Highlights
+- **Automated Release**: Version bump and statistics update.
+- **Documentation**: Synced README.md and version history.
+
+### Fixed
+- Database version mismatch for system_version.
+- Cleaned up duplicated locale stubs in About System.
+
+# Release Notes - Cloud Onepa Playout
+
+## v2.6.0-ALPHA.50-PRO (17/03/2026)
+
+### 🚀 Release Highlights
+- **Automated Release**: Version bump and synchronization across documentation and translations.
+- **Project Structure**: Updated backend and frontend configurations.
+
+## v2.6.0-ALPHA.49-PRO (17/03/2026)
+
+### 🚀 Release Highlights
+- **Automated Release**: Version bump and synchronization.
+
 ## v2.6.0-ALPHA.48-PRO ()
 
 ### 🚀 Release Highlights

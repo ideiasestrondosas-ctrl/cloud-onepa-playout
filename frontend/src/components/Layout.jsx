@@ -1,7 +1,7 @@
 import { useState, useEffect, memo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import useAuthStore from '../stores/authStore';
-import { settingsAPI } from '../services/api';
+import { settingsAPI, APP_VERSION_FALLBACK } from '../services/api';
 import {
   Box,
   Drawer,
@@ -174,7 +174,7 @@ export default function Layout({ children }) {
       try {
         setLoadingSettings(true);
         const response = await settingsAPI.get();
-         setVersion(response.data.system_version || 'v2.6.0-ALPHA.47-PRO');
+         setVersion(response.data.system_version || APP_VERSION_FALLBACK);
         const data = response.data;
         if (!data.branding_type) {
           data.branding_type = 'video';

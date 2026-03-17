@@ -1,5 +1,34 @@
 [
   {
+    "version": "2.6.0-ALPHA.50-PRO",
+    "date": "2026-03-17",
+    "changes": [
+      "Database Migration: Added SQL migration 082 to persist v2.6.0-ALPHA.50-PRO in DB settings table.",
+      "Version Fix: Resolved mismatch between DB version (ALPHA.46) and code fallback (ALPHA.50).",
+      "Locale Cleanup: Removed duplicate ALPHA.49 stub entries from all 4 locale files.",
+      "Documentation: Synchronized RELEASE_HISTORY.json with current version."
+    ]
+  },
+  {
+    "version": "2.6.0-ALPHA.49-PRO",
+    "date": "2026-03-14",
+    "changes": [
+      "Performance Optimizations: Database connection pooling increased to 20 connections",
+      "Performance Optimizations: Media listing query optimizations with FFmpeg service caching",
+      "Performance Optimizations: Redis caching layer for frequently accessed data",
+      "Performance Optimizations: HTTP response compression enabled",
+      "UI Optimizations: React Query implementation for API request deduplication",
+      "UI Optimizations: Settings page split into tabbed interface",
+      "UI Optimizations: Bundle size optimization with enhanced code splitting",
+      "Database Optimizations: Additional composite indexes for media search",
+      "Docker Optimizations: Resource limits (CPU/memory) added for all containers",
+      "Docker Optimizations: Multi-stage build optimization with BuildKit",
+      "Operator Workflow: Keyboard shortcuts implementation",
+      "Operator Workflow: Bulk operations for media library",
+      "Operator Workflow: Real-time updates via WebSocket"
+    ]
+  },
+  {
     "version": "2.6.0-ALPHA.46-PRO",
     "date": "2026-03-12",
     "changes": [

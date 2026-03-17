@@ -1,4 +1,7 @@
 # Multi-stage build for Rust backend
+# Enable BuildKit for faster builds with cache mounts
+# syntax=docker/dockerfile:1.4
+
 FROM rust:alpine AS builder
 
 # Install dependencies required for building

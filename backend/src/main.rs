@@ -61,7 +61,9 @@ async fn main() -> std::io::Result<()> {
     
     let pool = loop {
         match PgPoolOptions::new()
-            .max_connections(5)
+            .max_connections(20)
+            .acquire_timeout(std::time::Duration::from_secs(10))
+            .idle_timeout(std::time::Duration::from_secs(600))
             .connect(&database_url)
             .await 
         {
@@ -180,6 +182,8 @@ async fn main() -> std::io::Result<()> {
 
     // Start HTTP server
     HttpServer::new(move || {
+        use actix_web::middleware::Compress;
+        
         let cors = Cors::default()
             .allow_any_origin()
             .allow_any_method()
@@ -196,6 +200,7 @@ async fn main() -> std::io::Result<()> {
 
         App::new()
             .app_data(web::Data::new(pool.clone()))
+            .wrap(Compress::default())
             .app_data(web::Data::new(engine.clone()))
             .app_data(web::Data::new(registry.clone()))
             .app_data(web::Data::from(ws_broadcaster.clone()))

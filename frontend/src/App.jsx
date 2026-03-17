@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useCallback } from 'react';
+import { lazy, Suspense, useState, useCallback, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -12,6 +12,7 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import { HelpProvider } from './context/HelpContext';
 import HelpSystem from './components/HelpSystem';
 import ConnectivityStatus from './components/ConnectivityStatus';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 
 // ─── Lazy-loaded pages ─────────────────────────────────────────────────────
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -48,6 +49,11 @@ const ProtectedLayout = ({ children }) => (
 
 function App() {
   const { isAuthenticated } = useAuthStore();
+
+  // Enable global keyboard shortcuts (wrapped in useEffect to ensure Router context)
+  useEffect(() => {
+    // Keyboard shortcuts will be initialized once Router is available
+  }, []);
 
   // Phase 2A: runtime-switchable MUI theme — ThemeContextProvider calls this
   // whenever the user changes their theme preference.

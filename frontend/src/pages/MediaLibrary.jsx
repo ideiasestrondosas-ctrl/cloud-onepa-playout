@@ -644,7 +644,10 @@ export default function MediaLibrary() {
   // Preload video headers on hover to speed up playback start
   const handlePreload = (item) => {
     if (item.media_type === 'video') {
-      const url = `/api/media/${item.id}/stream`;
+      // Use proxy URL when available — smaller file, faster moov atom fetch
+      const url = item.has_proxy
+        ? `/api/media/${item.id}/stream?proxy=true`
+        : `/api/media/${item.id}/stream`;
       // Fetching only the first few bytes is enough to warm up the connection
       // and potentially fetch the moov atom (faststart) into browser cache
       fetch(url, { headers: { 'Range': 'bytes=0-1024' } }).catch(() => { });

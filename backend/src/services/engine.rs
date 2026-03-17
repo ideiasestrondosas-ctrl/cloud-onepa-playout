@@ -79,6 +79,8 @@ pub struct PlayoutEngine {
     last_graphics_updated_at: Arc<Mutex<Option<chrono::DateTime<chrono::Utc>>>>,
     // Phase 1: Event bus for real-time telemetry (optional — degrades gracefully without Redis)
     pub event_bus: Arc<Mutex<Option<EventBus>>>,
+    // Cached channel slug (populated on first use from DB to avoid per-tick queries)
+    channel_slug_cache: Arc<Mutex<Option<String>>>,
 }
 
 impl PlayoutEngine {
@@ -132,7 +134,27 @@ impl PlayoutEngine {
             master_inactive_count: Arc::new(Mutex::new(0u32)),
             last_graphics_updated_at: Arc::new(Mutex::new(None)),
             event_bus: Arc::new(Mutex::new(None)),
+            channel_slug_cache: Arc::new(Mutex::new(None)),
         }
+    }
+
+    /// Return the channel's slug from DB, caching the result for subsequent calls.
+    /// Falls back to "master" if the DB lookup fails (preserves backwards compatibility).
+    async fn channel_slug(&self) -> String {
+        let mut cache = self.channel_slug_cache.lock().await;
+        if let Some(ref slug) = *cache {
+            return slug.clone();
+        }
+        let slug = sqlx::query_scalar::<_, String>(
+            "SELECT slug FROM channels WHERE id = $1",
+        )
+        .bind(self.channel_id)
+        .fetch_optional(&self.pool)
+        .await
+        .unwrap_or(None)
+        .unwrap_or_else(|| "master".to_string());
+        *cache = Some(slug.clone());
+        slug
     }
 
     /// Attach a Redis EventBus after construction (called from main once Redis connects).
@@ -859,8 +881,9 @@ impl PlayoutEngine {
                 let hls_preview_path = hls_preview_path_str.as_str();
                 std::fs::create_dir_all(hls_preview_path).ok();
 
-                // Main engine always pushes to an internal master feed. Anonymous publishing in mediamtx.yml
-                let output_url = format!("rtmp://{}:1935/master", mediamtx_host);
+                // Push to the channel-specific path so MediaMTX HLS matches the channel slug
+                let channel_stream_path = self.channel_slug().await;
+                let output_url = format!("rtmp://{}:1935/{}", mediamtx_host, channel_stream_path);
 
                 let logo_path = if settings.overlay_enabled {
                     settings
@@ -1528,8 +1551,9 @@ impl PlayoutEngine {
         let ffmpeg = FFmpegService::new();
         let mediamtx_host =
             std::env::var("MEDIAMTX_HOST").unwrap_or_else(|_| "localhost".to_string());
-        // Use standard URL for internal push. Anonymous publishing allowed in mediamtx.yml
-        let master_url = format!("rtmp://{}:1935/master", mediamtx_host);
+        // Use channel-scoped path so each engine reads from the correct MediaMTX stream
+        let channel_stream_path = self.channel_slug().await;
+        let master_url = format!("rtmp://{}:1935/{}", mediamtx_host, channel_stream_path);
 
         // 1. RTMP
         let rtmp_enabled = settings.rtmp_enabled
@@ -1647,7 +1671,7 @@ impl PlayoutEngine {
         // UDP sockets can take time to be fully released by the kernel after process exit.
         // 30s cooldown ensures a previous FFmpeg process has fully released any bound ports
         // before we try to rebind (avoids EADDRINUSE on restart).
-        const COOLDOWN_SECS: u64 = 30;
+        const COOLDOWN_SECS: u64 = 2; // Reduced from 30 to 2 for faster recovery
 
         let mut needs_remove = false;
         let is_running = if let Some(child) = procs.get_mut(key) {
@@ -1847,14 +1871,15 @@ impl PlayoutEngine {
                     if let Ok(json) = resp.json::<serde_json::Value>().await {
                         if let Some(items) = json.get("items") {
                             // MediaMTX path items can be a list or a map
+                            let slug = self.channel_slug().await;
                             let master_path = if items.is_object() {
-                                items.get("master")
+                                items.get(&slug)
                             } else if items.is_array() {
                                 items.as_array().and_then(|arr| {
                                     arr.iter().find(|item| {
                                         item.get("name")
                                             == Some(&serde_json::Value::String(
-                                                "master".to_string(),
+                                                slug.clone(),
                                             ))
                                     })
                                 })

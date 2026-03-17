@@ -34,8 +34,7 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useTranslation } from 'react-i18next';
 import LayerManager from '../components/GraphicsLayers/LayerManager';
 import LayerPreview from '../components/GraphicsLayers/LayerPreview';
-import videojs from 'video.js';
-import 'video.js/dist/video-js.css';
+import Hls from 'hls.js';
 
 export default function GraphicsEditor() {
   const { t } = useTranslation();
@@ -131,44 +130,69 @@ export default function GraphicsEditor() {
       } catch (_) { }
     };
     check();
-    const iv = setInterval(check, 5000);
+    // Poll at 2s instead of 5s for faster initial player startup
+    const iv = setInterval(check, 2000);
     return () => clearInterval(iv);
   }, []);
 
-  // Video.js HLS player for clean preview in GraphicsEditor (works in Chrome/Firefox/Linux)
+  // hls.js player for the clean preview in GraphicsEditor
+  // Uses /hls-live/default_clean/ — the RAW feed BEFORE any graphics are applied
   const cleanVideoRef = useRef(null);
-  const cleanPlayerRef = useRef(null);
+  const hlsRef = useRef(null);
 
   useEffect(() => {
-    if (isLivePlaying && cleanVideoRef.current && !cleanPlayerRef.current) {
-      cleanPlayerRef.current = videojs(cleanVideoRef.current, {
-        controls: false,
-        autoplay: true,
-        muted: true,
-        preload: 'auto',
-        fluid: false,
-        fill: true,
-        liveui: true,
-        html5: { vhs: { overrideNative: true } },
-        sources: [
-          { src: '/hls-live/stream_clean/index.m3u8', type: 'application/x-mpegURL' },
-        ],
+    const video = cleanVideoRef.current;
+    if (!video) return;
+
+    // Tear down any previous instance
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+      hlsRef.current = null;
+    }
+
+    if (!isLivePlaying) return;
+
+    const src = '/hls-live/default_clean/index.m3u8';
+
+    if (Hls.isSupported()) {
+      const hls = new Hls({
+        enableWorker: true,
+        lowLatencyMode: true,
+        backBufferLength: 30,
+        liveSyncDurationCount: 3,
+        liveMaxLatencyDurationCount: 10,
+        // Let hls.js handle retries internally — no need to destroy the player
+        manifestLoadingMaxRetry: 10,
+        levelLoadingMaxRetry: 10,
+        fragLoadingMaxRetry: 6,
       });
-      cleanPlayerRef.current.on('error', () => {
-        // Fallback to low quality stream if clean not yet available
-        if (cleanPlayerRef.current) {
-          cleanPlayerRef.current.src({ src: '/hls-live/stream_clean/index.m3u8', type: 'application/x-mpegURL' });
+      hls.loadSource(src);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        video.play().catch(e => console.warn('[GraphicsEditor] Autoplay blocked:', e));
+      });
+      hls.on(Hls.Events.ERROR, (_, data) => {
+        if (data.fatal) {
+          console.error('[GraphicsEditor] Fatal HLS error:', data.type);
+          // hls.js will attempt recovery on its own via recoverMediaError / startLoad
+          if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+            hls.recoverMediaError();
+          }
         }
       });
+      hlsRef.current = hls;
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      // Native HLS (Safari)
+      video.src = src;
+      video.addEventListener('loadedmetadata', () => {
+        video.play().catch(e => console.warn('[GraphicsEditor] Autoplay blocked:', e));
+      });
     }
-    if (!isLivePlaying && cleanPlayerRef.current) {
-      cleanPlayerRef.current.dispose();
-      cleanPlayerRef.current = null;
-    }
+
     return () => {
-      if (cleanPlayerRef.current) {
-        cleanPlayerRef.current.dispose();
-        cleanPlayerRef.current = null;
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
       }
     };
   }, [isLivePlaying]);
@@ -311,8 +335,8 @@ export default function GraphicsEditor() {
       {/* Page-level tabs — always visible */}
       <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{ mb: 1.5, borderBottom: 1, borderColor: 'divider', minHeight: 38 }}>
         <Tab label={t('graphics.tabs.position')} sx={{ fontWeight: 800, minHeight: 38, fontSize: '0.75rem', textTransform: 'none' }} />
-        <Tab label={t('graphics.tabs.style')}    sx={{ fontWeight: 800, minHeight: 38, fontSize: '0.75rem', textTransform: 'none' }} />
-        <Tab label={t('graphics.tabs.layer')}    sx={{ fontWeight: 800, minHeight: 38, fontSize: '0.75rem', textTransform: 'none' }} />
+        <Tab label={t('graphics.tabs.style')} sx={{ fontWeight: 800, minHeight: 38, fontSize: '0.75rem', textTransform: 'none' }} />
+        <Tab label={t('graphics.tabs.layer')} sx={{ fontWeight: 800, minHeight: 38, fontSize: '0.75rem', textTransform: 'none' }} />
         <Tab label={t('graphics.tabs.templates', 'Templates')} sx={{ fontWeight: 800, minHeight: 38, fontSize: '0.75rem', textTransform: 'none' }} />
       </Tabs>
 
@@ -372,7 +396,7 @@ export default function GraphicsEditor() {
                     ))}
                   </Box>
                 )}
-                {/* Live HLS feed background — clean stream (no logo overlay) — uses video.js for Chrome/Firefox compat */}
+                {/* Live HLS feed background — clean stream (no logo overlay) — hls.js direct */}
                 {isLivePlaying && (
                   <Box
                     sx={{
@@ -381,18 +405,14 @@ export default function GraphicsEditor() {
                       zIndex: 0,
                       pointerEvents: 'none',
                       bgcolor: '#000',
-                      '& .video-js': { width: '100% !important', height: '100% !important' },
-                      '& .vjs-big-play-button': { display: 'none' },
-                      '& .vjs-control-bar': { display: 'none' },
                     }}
                   >
-                    <div data-vjs-player style={{ width: '100%', height: '100%' }}>
-                      <video
-                        ref={cleanVideoRef}
-                        className="video-js"
-                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                      />
-                    </div>
+                    <video
+                      ref={cleanVideoRef}
+                      muted
+                      playsInline
+                      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    />
                   </Box>
                 )}
 

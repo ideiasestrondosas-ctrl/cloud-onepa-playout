@@ -1,4 +1,41 @@
+## v2.6.0-ALPHA.50-PRO (2026-03-17)
+
+### Fixed
+- Database version mismatch for system_version.
+- Cleaned up duplicated locale stubs in About System.
+
 # Release Notes - Cloud Onepa Playout
+
+## v2.6.0-ALPHA.50-PRO (17/03/2026)
+
+### 🚀 Release Highlights
+- **Automated Release**: Version bump and synchronization across documentation and translations.
+- **Project Structure**: Updated backend and frontend configurations.
+
+## v2.6.0-ALPHA.49-PRO (2026-03-14)
+
+### 🐛 Bug Fixes & i18n Synchronization
+
+**Bug Fixes**
+- `HelpSystem` component: Added missing `HelpTemplates`, `HelpLiveInputs`, `HelpHealth`, `HelpMultiChannel` sub-components.
+- Missing Material-UI icons (`FavoriteIcon`, `TableChartIcon`) added to imports.
+
+**Language Selector**
+- Fixed i18n persistence and language change detection — selected language now correctly persists across page reloads.
+
+**Graphics Preview**
+- Optimized rendering performance with memoization and lazy loading.
+
+**Multi-Channel Preview**
+- Fixed WebSocket connection and state synchronization issues.
+
+**Version History**
+- Updated About/System panel with ALPHA.49-PRO release notes.
+
+**i18n**
+- All 4 locales (PT, EN, ES, FR) synchronized with latest translations.
+
+---
 
 ## v2.3.0-ALPHA.40-PRO (2026-03-10)
 

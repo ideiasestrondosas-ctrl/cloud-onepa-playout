@@ -41,76 +41,76 @@ services:
       timeout: 5s
       retries: 5
     restart: always
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  # Rust Backend
-  backend:
-    build:
-      context: ./backend
-      dockerfile: ../docker/Dockerfile.backend
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    container_name: alpha-backend
-    hostname: backend
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-onepa}:${POSTGRES_PASSWORD:-onepa}@postgres:5432/${POSTGRES_DB:-onepa_playout}
-      SERVER_HOST: 0.0.0.0
-      SERVER_PORT: 8181
-      RUST_LOG: ${RUST_LOG:-warn}
-      MEDIAMTX_HOST: mediamtx
-      JWT_SECRET: ${JWT_SECRET:-alpha-secret-key-change-in-production}
-      JWT_EXPIRATION: "86400"
-      REDIS_URL: redis://redis:6379
-      ASSETS_PATH: /var/lib/onepa-playout/assets
-      MEDIA_PATH: /var/lib/onepa-playout/media
-      THUMBNAILS_PATH: /var/lib/onepa-playout/thumbnails
-      PLAYLIST_PATH: /var/lib/onepa-playout/playlists
-      HLS_PATH: /var/lib/onepa-playout/hls
-      LOG_PATH: /var/log/onepa
-      FRONTEND_PATH: /nonexistent
-    volumes:
-      - ./data/media:/var/lib/onepa-playout/media
-      - ./data/thumbnails:/var/lib/onepa-playout/thumbnails
-      - ./data/playlists:/var/lib/onepa-playout/playlists
-      - ./data/hls:/var/lib/onepa-playout/hls
-      - ./data/logs:/var/log/onepa
-      - ./backend/assets:/var/lib/onepa-playout/assets
-    ports:
-      - "8182:8181"
-      - "10901:10900/udp" # SRT Listener port
-    networks:
-      - alpha-network
-    depends_on:
-      postgres:
-        condition: service_healthy
-      mediamtx:
-        condition: service_started
-      redis:
-        condition: service_healthy
-    healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://127.0.0.1:8181/api/health || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 180s
-    restart: always
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 2G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+     logging:
+       driver: "json-file"
+       options:
+         max-size: "10m"
+         max-file: "3"
+ 
+   # Rust Backend
+   backend:
+     build:
+       context: ./backend
+       dockerfile: ../docker/Dockerfile.backend
+     extra_hosts:
+       - "host.docker.internal:host-gateway"
+     container_name: alpha-backend
+     hostname: backend
+     environment:
+       DATABASE_URL: postgresql://${POSTGRES_USER:-onepa}:${POSTGRES_PASSWORD:-onepa}@postgres:5432/${POSTGRES_DB:-onepa_playout}
+       SERVER_HOST: 0.0.0.0
+       SERVER_PORT: 8181
+       RUST_LOG: ${RUST_LOG:-warn}
+       MEDIAMTX_HOST: mediamtx
+       JWT_SECRET: ${JWT_SECRET:-alpha-secret-key-change-in-production}
+       JWT_EXPIRATION: "86400"
+       REDIS_URL: redis://redis:6379
+       ASSETS_PATH: /var/lib/onepa-playout/assets
+       MEDIA_PATH: /var/lib/onepa-playout/media
+       THUMBNAILS_PATH: /var/lib/onepa-playout/thumbnails
+       PLAYLIST_PATH: /var/lib/onepa-playout/playlists
+       HLS_PATH: /var/lib/onepa-playout/hls
+       LOG_PATH: /var/log/onepa
+       FRONTEND_PATH: /nonexistent
+     volumes:
+       - ./data/media:/var/lib/onepa-playout/media
+       - ./data/thumbnails:/var/lib/onepa-playout/thumbnails
+       - ./data/playlists:/var/lib/onepa-playout/playlists
+       - ./data/hls:/var/lib/onepa-playout/hls
+       - ./data/logs:/var/log/onepa
+       - ./backend/assets:/var/lib/onepa-playout/assets
+     ports:
+       - "8182:8181"
+       - "10901:10900/udp" # SRT Listener port
+     networks:
+       - alpha-network
+     depends_on:
+       postgres:
+         condition: service_healthy
+       mediamtx:
+         condition: service_started
+       redis:
+         condition: service_healthy
+     healthcheck:
+       test: [ "CMD-SHELL", "curl -f http://127.0.0.1:8181/api/health || exit 1" ]
+       interval: 10s
+       timeout: 5s
+       retries: 5
+       start_period: 180s
+     restart: always
+     deploy:
+       resources:
+         limits:
+           cpus: '2'
+           memory: 2G
+         reservations:
+           cpus: '0.5'
+           memory: 512M
+     logging:
+       driver: "json-file"
+       options:
+         max-size: "10m"
+         max-file: "3"
 
   mediamtx:
     image: bluenviron/mediamtx:latest
