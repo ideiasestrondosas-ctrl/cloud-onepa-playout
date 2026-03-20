@@ -1,3 +1,4 @@
+use crate::models::graphics_layer::GraphicsLayer;
 use crate::models::settings::Settings;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
@@ -6,6 +7,287 @@ use std::env;
 use std::process::Command;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
+
+/// Build FFmpeg drawtext filters from graphics layers (Phase 1)
+/// Returns filter string fragment to be applied after logo overlay
+/// Escape a string for use in an FFmpeg drawtext `text=` option.
+/// FFmpeg's filtergraph parser treats `:` as an option separator and `'` as a
+/// quote delimiter even inside single-quoted values, so both must be escaped.
+fn escape_drawtext(s: &str) -> String {
+    s.replace('\\', "\\\\")  // backslash first
+     .replace(':', "\\:")     // colon — option separator in filter syntax
+     .replace('\'', "\\'" )    // single-quote — string delimiter
+     .replace('[', "\\[")     // prevents user text being parsed as a pad label
+     .replace(']', "\\]")     // closing pad label
+     .replace(';', "\\;")     // prevents user text being parsed as a filter separator
+}
+
+/// Normalize any CSS colour string to an FFmpeg-safe format and extract alpha.
+///
+/// FFmpeg's filtergraph parser splits on commas, so `rgba(0,229,255,0.9)` would shatter
+/// the drawtext option string.  This function converts known CSS formats to FFmpeg's
+/// `0xRRGGBB` hex notation and returns the alpha separately so callers can render
+/// `boxcolor=0xRRGGBB@alpha` without any embedded commas.
+///
+/// Supports:
+/// - `rgba(r, g, b, a)` → `("0xRRGGBB", a)`
+/// - `rgb(r, g, b)`     → `("0xRRGGBB", 1.0)`
+/// - `#RRGGBB`          → passed through as-is, alpha = 1.0
+/// - `white`, `black`   → passed through as-is, alpha = 1.0
+/// - Anything else      → passed through as-is, alpha = 1.0
+fn normalize_color_for_ffmpeg(color: &str) -> (String, f64) {
+    let c = color.trim();
+
+    // rgba(r, g, b, a)
+    if let Some(inner) = c.strip_prefix("rgba(").and_then(|s| s.strip_suffix(')')) {
+        let parts: Vec<&str> = inner.split(',').collect();
+        if parts.len() == 4 {
+            let r = parts[0].trim().parse::<u8>().unwrap_or(0);
+            let g = parts[1].trim().parse::<u8>().unwrap_or(0);
+            let b = parts[2].trim().parse::<u8>().unwrap_or(0);
+            let a = parts[3].trim().parse::<f64>().unwrap_or(1.0).clamp(0.0, 1.0);
+            return (format!("0x{:02X}{:02X}{:02X}", r, g, b), a);
+        }
+    }
+
+    // rgb(r, g, b)
+    if let Some(inner) = c.strip_prefix("rgb(").and_then(|s| s.strip_suffix(')')) {
+        let parts: Vec<&str> = inner.split(',').collect();
+        if parts.len() == 3 {
+            let r = parts[0].trim().parse::<u8>().unwrap_or(0);
+            let g = parts[1].trim().parse::<u8>().unwrap_or(0);
+            let b = parts[2].trim().parse::<u8>().unwrap_or(0);
+            return (format!("0x{:02X}{:02X}{:02X}", r, g, b), 1.0);
+        }
+    }
+
+    // Hex or named colour — pass through unchanged, alpha comes from layer.opacity
+    (c.to_string(), 1.0)
+}
+
+/// Build a properly-chained FFmpeg filter_complex fragment for graphics overlays.
+///
+/// Returns `(filter_chain, output_label)`.
+/// - `filter_chain` is the segment to append to the existing filter_complex string
+///   (without a trailing semicolon).
+/// - `output_label` is the named pad that the chain terminates with and that should
+///   be used for downstream `-map` arguments (always `[v_out]`).
+///
+/// When there are no enabled layers the returned chain is empty and `output_label`
+/// equals `input_label`, so the caller can use `input_label` directly for `-map`.
+pub fn build_graphics_filters(
+    layers: &[GraphicsLayer],
+    resolution: &str,
+    input_label: &str,
+) -> (String, String) {
+    // Parse resolution
+    let res_parts: Vec<&str> = resolution.split('x').collect();
+    let width: i32 = res_parts.first().and_then(|s| s.parse().ok()).unwrap_or(1920);
+    let height: i32 = res_parts.get(1).and_then(|s| s.parse().ok()).unwrap_or(1080);
+
+    // Pre-filter to only known, renderable layer types and sort by z_index.
+    let mut renderable: Vec<&GraphicsLayer> = layers.iter()
+        .filter(|l| l.enabled)
+        .filter(|l| matches!(l.layer_type.as_str(), "clock" | "lower_third" | "marquee"))
+        .collect();
+    renderable.sort_by_key(|l| l.z_index);
+
+    if renderable.is_empty() {
+        log::info!("[Graphics-F1] No renderable layers — passing through as {}", input_label);
+        return (String::new(), input_label.to_string());
+    }
+
+    log::info!(
+        "[Graphics-F1] Building chained filters for {} layers ({}x{}), input={}",
+        renderable.len(), width, height, input_label
+    );
+
+    let total = renderable.len();
+    let mut chain_parts: Vec<String> = Vec::new();
+    let mut current_label = input_label.to_string();
+
+    for (idx, layer) in renderable.iter().enumerate() {
+        let (x_pos, y_pos) = calculate_position(
+            layer.position_x,
+            layer.position_y,
+            layer.anchor.as_str(),
+            width,
+            height,
+        );
+
+        let font_size = layer.config.get("font_size")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(32) as i32;
+        // Lower-third and marquee use "text_color"; clock uses "font_color".
+        let font_color = layer.config.get("font_color")
+            .or_else(|| layer.config.get("text_color"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("white");
+        let bg_color_raw = layer.config.get("background_color")
+            .and_then(|v| v.as_str())
+            .unwrap_or("black@0.5");
+        let layer_opacity = layer.opacity.clamp(0.0, 1.0);
+        // Convert any CSS rgba()/rgb() to FFmpeg-safe hex.  Commas inside rgba()
+        // shatter the filtergraph chain parser, so this conversion is mandatory.
+        let (bg_color_hex, color_alpha) = normalize_color_for_ffmpeg(bg_color_raw);
+        // Final alpha = color's own alpha * layer opacity (both 0-1).
+        let box_alpha = (color_alpha * layer_opacity as f64 * 100.0).round() / 100.0;
+
+        // Each element is one drawtext segment (some layers emit two).
+        // Each segment gets its own intermediate label; the *very last segment
+        // of the very last layer* gets [v_out].
+        let is_last_layer = idx == total - 1;
+
+        // Build ordered list of drawtext segments for this layer.
+        let segments: Vec<String> = match layer.layer_type.as_str() {
+            "clock" => {
+                // Map the UI format string to a strftime pattern.
+                // Colons inside the text='' value are already safe here because
+                // they are inside the strftime pattern, not bare option separators.
+                let fmt = layer.config.get("format")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("HH:mm:ss");
+                let strftime_fmt = match fmt {
+                    "HH:mm:ss"   => "%H\\:%M\\:%S",
+                    "hh:mm:ss A" => "%I\\:%M\\:%S %p",
+                    "HH:mm"      => "%H\\:%M",
+                    "hh:mm A"    => "%I\\:%M %p",
+                    _            => "%H\\:%M\\:%S",
+                };
+                // NOTE: FFmpeg's strftime expansion uses the SERVER timezone.
+                // The UI lets the user pick a timezone but we cannot pass it
+                // to drawtext directly (no TZ-aware strftime option). Best-effort
+                // for now; a future improvement may prefix an `setpts` / `settb`
+                // or run per-channel TZ via the process env.
+                let seg = format!(
+                    "drawtext=expansion=strftime:text='{}':fontsize={}:fontcolor={}:x={}:y={}:box=1:boxcolor=black@0.5:boxborderw=5",
+                    strftime_fmt, font_size, font_color, x_pos, y_pos
+                );
+                log::info!("[Graphics-F1] Clock '{}': {}", layer.name, seg);
+                vec![seg]
+            },
+
+            "lower_third" => {
+                let primary_text = layer.config.get("primary_text")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let secondary_text = layer.config.get("secondary_text")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let text_color = layer.config.get("text_color")
+                    .or_else(|| layer.config.get("font_color"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("white");
+                let primary_size = layer.config.get("primary_font_size")
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(32) as i32;
+                let secondary_size = layer.config.get("secondary_font_size")
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(24) as i32;
+
+                let primary_escaped  = escape_drawtext(primary_text);
+                let secondary_escaped = escape_drawtext(secondary_text);
+
+                // Primary text bar
+                let seg1 = format!(
+                    "drawtext=text={}:fontsize={}:fontcolor={}:x={}:y={}:box=1:boxcolor={}@{}:boxborderw=10",
+                    primary_escaped, primary_size, text_color, x_pos, y_pos, bg_color_hex, box_alpha
+                );
+
+                let mut segs = vec![seg1];
+
+                // Secondary text — only if provided
+                if !secondary_text.is_empty() {
+                    let y2 = y_pos + primary_size + 4;
+                    let seg2 = format!(
+                        "drawtext=text={}:fontsize={}:fontcolor={}:x={}:y={}:box=1:boxcolor={}@{}:boxborderw=8",
+                        secondary_escaped, secondary_size, text_color, x_pos, y2, bg_color_hex, box_alpha
+                    );
+                    segs.push(seg2);
+                }
+
+                log::info!("[Graphics-F1] LowerThird '{}': {} segment(s)", layer.name, segs.len());
+                segs
+            },
+
+            "marquee" => {
+                let raw = layer.config.get("text")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let text = escape_drawtext(raw);
+                let text_color = layer.config.get("text_color")
+                    .or_else(|| layer.config.get("font_color"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("white");
+                let speed = layer.config.get("scroll_speed")
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(50.0);
+                let direction = layer.config.get("direction")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("right_to_left");
+
+                // px per frame at 25 fps; escape the comma so FFmpeg doesn't
+                // treat it as a separator inside the expression.
+                let px_per_frame = speed / 25.0;
+                let x_expr = if direction == "left_to_right" {
+                    // starts off left edge, moves right
+                    format!("mod(n*{:.3}\\,w+tw)-tw", px_per_frame)
+                } else {
+                    // starts off right edge, moves left (default)
+                    format!("w-mod(n*{:.3}\\,w+tw)", px_per_frame)
+                };
+
+                let seg = format!(
+                    "drawtext=text={}:fontsize={}:fontcolor={}:x={}:y={}:box=1:boxcolor={}@{}",
+                    text, font_size, text_color, x_expr, y_pos, bg_color_hex, box_alpha
+                );
+                log::info!("[Graphics-F1] Marquee '{}': speed={} dir={}", layer.name, speed, direction);
+                vec![seg]
+            },
+
+            // Pre-filtered above — unreachable.
+            _ => continue,
+        };
+
+        // Push each segment as a separate chain step with its own label.
+        let seg_count = segments.len();
+        for (seg_idx, drawtext) in segments.into_iter().enumerate() {
+            let is_last_seg = seg_idx == seg_count - 1;
+            let is_absolute_last = is_last_layer && is_last_seg;
+
+            let out_label = if is_absolute_last {
+                "[v_out]".to_string()
+            } else {
+                format!("[v_gfx{}]", chain_parts.len())
+            };
+
+            chain_parts.push(format!("{}{}{}", current_label, drawtext, out_label));
+            current_label = out_label;
+        }
+    }
+
+    // Guard: if somehow nothing was pushed, return input label.
+    if chain_parts.is_empty() {
+        return (String::new(), input_label.to_string());
+    }
+
+    let filter_chain = chain_parts.join(";");
+    (filter_chain, current_label)
+}
+
+
+
+/// Calculate x,y position based on anchor
+fn calculate_position(x: i32, y: i32, anchor: &str, width: i32, height: i32) -> (i32, i32) {
+    match anchor {
+        "top-left" => (x, y),
+        "top-right" => (width - x - 200, y),
+        "bottom-left" => (x, height - y - 50),
+        "bottom-right" => (width - x - 200, height - y - 50),
+        "center" => ((width - 200) / 2, (height - 50) / 2),
+        _ => (x, y),
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MediaInfo {
@@ -513,6 +795,7 @@ impl FFmpegService {
     }
 
     /// Start a live stream from a file with HLS preview
+    /// graphics_layers: Optional layers from graphics_layers table to render as overlays
     pub fn start_stream(
         &self,
         input_path: &str,
@@ -521,6 +804,7 @@ impl FFmpegService {
         settings: &Settings,
         _hls_preview_path: Option<&str>,
         logo_path: Option<&str>,
+        graphics_layers: Option<&[GraphicsLayer]>,
     ) -> Result<std::process::Child, String> {
         let resolution = &settings.resolution;
         let video_bitrate = &settings.video_bitrate;
@@ -622,28 +906,67 @@ impl FFmpegService {
             let logo_pixel_width = (res_w * scale).round() as i32;
 
             filter_complex.push_str(&format!(
-                "[1:v]scale={}:-1,format=rgba,colorchannelmixer=aa={}[logo];[v_to_logo][logo]overlay={}[v_out];",
+                "[1:v]scale={}:-1,format=rgba,colorchannelmixer=aa={}[logo];[v_to_logo][logo]overlay={}[v_with_logo];",
                 logo_pixel_width, opacity, pos_coords
             ));
+            
+            // FASE 1: Add graphics layers filter after logo
+            let (gfx_chain, gfx_out) = build_graphics_filters(
+                graphics_layers.unwrap_or(&[]),
+                resolution,
+                "[v_with_logo]",
+            );
+            if !gfx_chain.is_empty() {
+                // Chained drawtext filters already include input/output labels.
+                // Append them with a trailing semicolon, then rename the final
+                // output to [v_out] only if build_graphics_filters didn't already
+                // produce it (it always does, but be explicit).
+                filter_complex.push_str(&format!("{}", gfx_chain));
+                if gfx_out != "[v_out]" {
+                    filter_complex.push_str(&format!("[v_out];"));
+                } else {
+                    filter_complex.push_str(";");
+                }
+            } else {
+                // No graphics layers - pipe logo output straight to [v_out]
+                filter_complex.push_str(&format!("{}copy[v_out];", gfx_out));
+            }
         } else {
-            filter_complex.push_str("[v_to_logo]copy[v_out];");
+            // No logo - check for graphics layers
+            let (gfx_chain, gfx_out) = build_graphics_filters(
+                graphics_layers.unwrap_or(&[]),
+                resolution,
+                "[v_to_logo]",
+            );
+            if !gfx_chain.is_empty() {
+                filter_complex.push_str(&format!("{}", gfx_chain));
+                if gfx_out != "[v_out]" {
+                    filter_complex.push_str(&format!("[v_out];"));
+                } else {
+                    filter_complex.push_str(";");
+                }
+            } else {
+                // No graphics layers - pipe input straight to [v_out]
+                filter_complex.push_str(&format!("{}copy[v_out];", gfx_out));
+            }
         }
 
         // 3. Audio Chain (Standardize to EBU R128 and split for dual output)
         filter_complex.push_str("[0:a]volume=0.8,asplit=2[a_out1][a_out2]");
 
         // 3. CODEC SELECTION LOGIC
-        // Force transcoding if logo/overlay is enabled, even if "copy" was selected.
+        // Force transcoding if logo/overlay or graphics layers are enabled, even if "copy" was selected.
         // Filters require re-encoding.
-        let v_codec = if has_logo && settings.video_codec == "copy" {
-            log::info!("[FFmpeg] Logo enabled, forcing libx264 transcoding instead of 'copy'");
+        let has_graphics = has_logo || graphics_layers.map(|l| !l.is_empty()).unwrap_or(false);
+        let v_codec = if has_graphics && settings.video_codec == "copy" {
+            log::info!("[FFmpeg] Graphics enabled, forcing libx264 transcoding instead of 'copy'");
             "h264"
         } else {
             &settings.video_codec
         };
 
-        let a_codec = if has_logo && settings.audio_codec == "copy" {
-            log::info!("[FFmpeg] Logo/Filters enabled, forcing aac transcoding instead of 'copy'");
+        let a_codec = if has_graphics && settings.audio_codec == "copy" {
+            log::info!("[FFmpeg] Graphics enabled, forcing aac transcoding instead of 'copy'");
             "aac"
         } else {
             &settings.audio_codec

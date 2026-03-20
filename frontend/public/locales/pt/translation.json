@@ -596,6 +596,17 @@
         "empty": "NÃO HISTÓRIA DISPONÍVEL",
         "releases": [
           {
+            "version": "v2.6.0-ALPHA.51-PRO",
+            "date": "2026-03-20",
+            "changes": [
+              "Documentação: Adicionada documentação do menu Multi-Canal (PT/EN/FR/ES)",
+              "Documentação: Adicionada documentação do menu Entradas ao Vivo (PT/EN/FR/ES)",
+              "Documentação: Adicionada documentação do menu Saúde do Sistema (PT/EN/FR/ES)",
+              "Correção: Componentes HelpSystem (HelpTemplates, HelpLiveInputs, HelpHealth, HelpMultiChannel)",
+              "i18n: Sincronização dos 4 ficheiros de tradução (PT, EN, FR, ES)"
+            ]
+          },
+          {
             "version": "v2.6.0-ALFA.50-PRO",
             "date": "2026-03-17",
             "changes": [
@@ -1247,7 +1258,73 @@
       "calendar": "Calendário",
       "graphics": "Gráficos",
       "settings": "Configurações",
-      "troubleshooting": "Problemas"
+      "templates": "Modelos",
+      "troubleshooting": "Problemas",
+      "live-inputs": "Entradas ao Vivo",
+      "multi-channel": "Multi-Canal",
+      "health": "Saúde do Sistema"
+    },
+    "multi_channel": {
+      "title": "Multi-Canal",
+      "intro": "Gerencie múltiplos canais de playout simultaneamente a partir de uma única interface. Cada canal opera de forma independente com seu próprio motor de reprodução.",
+      "management": {
+        "title": "Gestão de Canais",
+        "intro": "Crie e elimine canais de acordo com as suas necessidades de transmissão.",
+        "create": "Criar Novo Canal",
+        "create_desc": "Clique no botão '+' para adicionar um novo canal. Cada canal requer um nome único e será inicializado com as definições padrão do sistema.",
+        "delete": "Eliminar Canal",
+        "delete_desc": "Selecione o canal que deseja remover e clique no ícone de eliminação. O canal deve estar parado antes de poder ser eliminado.",
+        "default": "Canal Principal",
+        "default_desc": "O canal principal (main) é sempre preservado e não pode ser eliminado. Este canal é usado como referência principal do sistema."
+      },
+      "status": {
+        "title": "Estados do Canal",
+        "intro": "Cada canal pode encontrar-se num dos seguintes estados:",
+        "playing": "Em Execução (ON AIR)",
+        "playing_desc": "O canal está atualmente a transmitir conteúdo. O clip atual está em reprodução e o contador de uptime está ativo.",
+        "paused": "Pausado",
+        "paused_desc": "A reprodução foi temporariamente interrompida. O conteúdo permanece visível mas não avança. O uptime continua a contar.",
+        "stopped": "Parado",
+        "stopped_desc": "O canal está inativo e não está a transmitir. O uptime é resetado e nenhum conteúdo está em reprodução.",
+        "error": "Erro",
+        "error_desc": "Ocorreu um problema na reprodução do canal. Verifique os logs do sistema para mais detalhes sobre o erro."
+      },
+      "preview": {
+        "title": "Pré-visualização",
+        "intro": "Visualize o conteúdo de cada canal em tempo real através de streams HLS.",
+        "hls": "Stream HLS",
+        "hls_desc": "Cada canal gera uma stream HLS que pode ser visualizada diretamente no navegador. O URL é gerado automaticamente para cada canal.",
+        "safari": "Safari (nativo)",
+        "safari_desc": "O Safari tem suporte nativo a HLS. Basta clicar no ícone de preview para abrir o player nativo.",
+        "chrome": "Chrome/Edge/Firefox",
+        "chrome_desc": "Estes navegadores requerem a biblioteca hls.js para reproduzir streams HLS. O sistema carrega automaticamente quando necessário."
+      },
+      "info": {
+        "title": "Informações do Canal",
+        "intro": "Detalhes exibidos para cada canal:",
+        "currentClip": "Clip Atual",
+        "currentClip_desc": "Nome do clip de mídia que está atualmente em reprodução neste canal.",
+        "nextUp": "Próximo Clip",
+        "nextUp_desc": "Nome do próximo clip na playlist que será reproduzido após o clip atual.",
+        "uptime": "Tempo de Execução",
+        "uptime_desc": "Tempo decorrido desde que o canal entrou em estado 'Em Execução' (formato HH:MM:SS).",
+        "bitrate": "Taxa de Bits",
+        "bitrate_desc": "Taxa de bits atual do stream de saída em Mbps (megabits por segundo)."
+      },
+      "controls": {
+        "title": "Controlos do Canal",
+        "intro": "Botões de controlo disponíveis para cada canal:",
+        "play": "Reproduzir",
+        "play_desc": "Inicia ou retoma a reprodução do canal. O canal muda para o estado 'Em Execução'.",
+        "stop": "Parar",
+        "stop_desc": "Pára a reprodução imediatamente. O canal muda para o estado 'Parado'.",
+        "skip": "Saltar",
+        "skip_desc": "Avança imediatamente para o próximo clip na playlist, independentemente do progresso do clip atual."
+      },
+      "tips": {
+        "title": "Dicas e Recomendações",
+        "content": "• Cada canal adicional requer recursos do sistema (CPU, memória). Em sistemas com recursos limitados, recomenda-se limitar a 2-3 canais simultâneos.\n• O canal principal é sempre criado automaticamente na inicialização do sistema.\n• Utilize a função de pré-visualização para verificar a qualidade da transmissão antes de a disponibilizar ao público.\n• Em caso de erros persistentes, verifique a conexão de rede e os logs do sistema na secção de Diagnóstico."
+      }
     },
     "dashboard": {
       "title": "Painel",
@@ -1367,34 +1444,362 @@
       }
     },
     "graphics": {
-      "title": "Motor gráfico",
-      "intro": "O Motor Gráfico permite posicionar o logotipo da estação e as camadas animadas."
+      "title": "Editor Gráfico",
+      "intro": "O Editor Gráfico permite criar e gerenciar sobreposições visuais, logotipos e camadas animadas para suas transmissões em tempo real.",
+      "features_title": "Principais Recursos",
+      "features_intro": "O Editor Gráfico oferece ferramentas profissionais para produção de gráficos de transmissão:",
+      "feature1": "Posicionamento preciso de logotipo e gráficos com suporte a múltiplos pontos de ancoragem",
+      "feature2": "Controle total de escala, opacidade e rotação para cada elemento gráfico",
+      "feature3": "Sistema de camadas para organizar sobreposições complexas com controle individual",
+      "feature4": "Integração com biblioteca de templates para reutilização rápida de designs",
+      "feature5": "Suporte a múltiplas camadas de texto, imagens, formas e animações",
+      "feature6": "Visualização em tempo real com pré-visualização de saída 16:9",
+      "position_tab_title": "Tab Posição",
+      "position_tab_intro": "Controle a posição exata dos elementos gráficos na tela de transmissão.",
+      "anchor_point": "Ponto de Âncora",
+      "anchor_point_desc": "Selecione um dos 4 cantos (superior-esquerdo, superior-direito, inferior-esquerdo, inferior-direito) como referência de posicionamento.",
+      "offset_x": "Offset X (Horizontal)",
+      "offset_x_desc": "Ajuste fino da posição horizontal em pixels (0-1920). Use o slider ou arraste o logotipo na pré-visualização.",
+      "offset_y": "Offset Y (Vertical)",
+      "offset_y_desc": "Ajuste fino da posição vertical em pixels (0-1080). Use o slider ou arraste o logotipo na pré-visualização.",
+      "drag_drop": "Arrastar e Soltar",
+      "drag_drop_desc": "Arraste o logotipo diretamente na área de pré-visualização para posicionamento intuitivo em tempo real.",
+      "style_tab_title": "Tab Estilo",
+      "style_tab_intro": "Ajuste as propriedades visuais como tamanho e transparência dos elementos gráficos.",
+      "scale": "Escala",
+      "scale_desc": "Controla o tamanho do logotipo (10%-300%). O valor representa a percentagem da largura da tela de saída.",
+      "opacity": "Opacidade",
+      "opacity_desc": "Controla a transparência do elemento (10%-100%). Valores abaixo de 80% são recomendados para sobreposições não intrusivas.",
+      "layer_tab_title": "Tab Camada",
+      "layer_tab_intro": "Crie e gerencie múltiplas camadas gráficas sobrepostas. Cada camada pode ser de um tipo diferente.",
+      "layer_clock": "Relógio (Clock)",
+      "layer_clock_desc": "Exibe um relógio digital em tempo real com formato, timezone e estilo personalizáveis.",
+      "layer_lower_third": "Lower Third",
+      "layer_lower_third_desc": "Banner de texto com título e subtítulo, ideal para identificação de apresentadores ou informações.",
+      "layer_marquee": "Marquee / Crawler",
+      "layer_marquee_desc": "Texto rolante horizontal com velocidade e direção configuráveis, ideal para notícias de última hora.",
+      "clock_config_title": "Configuração do Relógio",
+      "clock_config_intro": "Personalize a aparência e comportamento da camada de relógio.",
+      "clock_format": "Formato de Hora",
+      "clock_format_desc": "Escolha entre 24h (HH:mm:ss) ou 12h (hh:mm:ss AM/PM), com ou sem segundos.",
+      "clock_timezone": "Fuso Horário",
+      "clock_timezone_desc": "Selecione o fuso horário para exibição. Inclui todas as regiões mundiais organizadas por continente.",
+      "clock_font": "Família de Fonte",
+      "clock_font_desc": "Escolha a tipografia: Roboto Mono, Inter, Courier New ou Arial.",
+      "clock_size": "Tamanho da Fonte",
+      "clock_size_desc": "Defina o tamanho da fonte em pixels. Recomendado: 48px para telas grandes.",
+      "clock_color": "Cor do Texto",
+      "clock_color_desc": "Selecione a cor do texto do relógio usando o seletor de cores.",
+      "clock_bg": "Cor de Fundo",
+      "clock_bg_desc": "Defina a cor de fundo em formato RGBA. Ex: rgba(0,0,0,0.7) para fundo semi-transparente.",
+      "lower_third_config_title": "Configuração do Lower Third",
+      "lower_third_config_intro": "Personalize o banner de texto que aparece na parte inferior da tela.",
+      "lt_primary": "Texto Primário",
+      "lt_primary_desc": "Nome ou título principal que aparece em destaque no banner.",
+      "lt_secondary": "Texto Secundário",
+      "lt_secondary_desc": "Subtítulo ou descrição complementar que aparece abaixo do texto primário.",
+      "lt_animation": "Animação",
+      "lt_animation_desc": "Escolha o efeito de entrada: Slide da Esquerda, Slide da Direita, Fade In ou Sem Animação.",
+      "lt_duration": "Duração (ms)",
+      "lt_duration_desc": "Tempo em milissegundos que o lower third permanece visível antes de desaparecer.",
+      "marquee_config_title": "Configuração do Marquee",
+      "marquee_config_intro": "Personalize o texto rolante que aparece na tela de transmissão.",
+      "marquee_text": "Texto do Marquee",
+      "marquee_text_desc": "Digite o texto que será exibido como crawler rolante. Suporta múltiplas linhas.",
+      "marquee_speed": "Velocidade (px/s)",
+      "marquee_speed_desc": "Controla a velocidade de rolagem em pixels por segundo. Valores mais altos = rolagem mais rápida.",
+      "marquee_direction": "Direção",
+      "marquee_direction_desc": "Escolha a direção da rolagem: da Esquerda para Direita ou da Direita para Esquerda.",
+      "templates_tab_title": "Tab Templates",
+      "templates_tab_intro": "Acesse e gerencie templates salvos para reutilização rápida de configurações gráficas predefinidas.",
+      "how_to_title": "Como Usar",
+      "how_to_intro": "Siga estas etapas para usar o Editor Gráfico efetivamente:",
+      "step1": "Acesse o Editor Gráfico através do menu Gráficos na barra lateral",
+      "step2": "Use a aba \"Posicionamento\" para definir o local exato do seu logotipo na tela",
+      "step3": "Ajuste escala e opacidade na aba \"Estilo\" para obter a aparência desejada",
+      "step4": "Na aba \"Camadas\", clique em \"Adicionar Camada\" e escolha o tipo (Relógio, Lower Third ou Marquee)",
+      "step5": "Configure cada camada individualmente clicando no ícone de edição",
+      "step6": "Reordene as camadas arrastando-as para definir a ordem de sobreposição",
+      "step7": "Visualize suas alterações em tempo real no monitor de pré-visualização 16:9",
+      "step8": "Clique em \"Salvar Alterações\" para aplicar as configurações ao seu playout",
+      "tips_title": "Dicas e Boas Práticas",
+      "tips_content": "• Use pontos de ancoragem para manter o posicionamento relativo ao redimensionar a tela\n• Mantenha a opacidade abaixo de 80% para sobreposições não intrusivas\n• Organize camadas por ordem de importância (fundo → sobreposições → texto)\n• Salve configurações frequentes como templates para reutilização rápida\n• Pré-visualize sempre em tela cheia para verificar a aparência final\n• Use cores contrastantes para garantir legibilidade em diferentes condições de iluminação\n• Ative/desative camadas individualmente para testar diferentes composições\n• Use o relógio com timezone correto para emissões internacionais"
     },
     "settings": {
       "title": "Configurações do sistema",
-      "intro": "O menu Configurações possui 5 áreas principais."
+      "intro": "O menu Configurações permite configurar todos os aspetos do sistema de playout, desde protocolos de transmissão até gestão de utilizadores.",
+      "features_title": "Principais Funcionalidades",
+      "features_intro": "O menu Configurações oferece ferramentas completas para gestão do sistema:",
+      "feature1": "Configuração de protocolos de transmissão (RTMP, SRT, UDP, HLS)",
+      "feature2": "Gestão de caminhos de armazenamento e APIs de metadados",
+      "feature3": "Configuração do motor de playout e predefinições de qualidade",
+      "feature4": "Gestão de utilizadores e perfis de acesso",
+      "feature5": "Informações do sistema e histórico de versões",
+      "output_tab_title": "Tab Emissão e Saída",
+      "output_tab_intro": "Configure os protocolos de transmissão e parâmetros de saída de vídeo.",
+      "primary_protocol": "Protocolo Primário",
+      "primary_protocol_desc": "Selecione o protocolo principal: RTMP, SRT, UDP ou HLS.",
+      "resolution": "Resolução",
+      "resolution_desc": "Defina a resolução de saída: 4K, 1080p, 720p ou 360p.",
+      "bitrate": "Bitrate de Vídeo",
+      "bitrate_desc": "Configure a taxa de bits do vídeo de saída (ex: 5000k).",
+      "multi_streaming": "Multi-Streaming",
+      "multi_streaming_desc": "Ative protocolos adicionais para transmissão simultânea.",
+      "connection_links": "Links de Conexão",
+      "connection_links_desc": "Links diretos para VLC, OBS e outros reprodutores.",
+      "paths_tab_title": "Tab Caminhos e Mídia",
+      "paths_tab_intro": "Configure os caminhos de armazenamento e APIs de metadados.",
+      "storage_paths": "Caminhos de Armazenamento",
+      "storage_paths_desc": "Defina os diretórios para mídia, miniaturas, playlists e logs.",
+      "space_management": "Gestão de Espaço",
+      "space_management_desc": "Monitore e limpe proxies web para libertar espaço em disco.",
+      "metadata_apis": "APIs de Metadados",
+      "metadata_apis_desc": "Configure chaves de API para TMDB, OMDB e TVMaze.",
+      "branding_assets": "Ativos de Marca",
+      "branding_assets_desc": "Carregue logotipos, imagens e vídeos de fallback.",
+      "playout_tab_title": "Tab Reprodução e Presets",
+      "playout_tab_intro": "Configure o motor de playout e predefinições de qualidade.",
+      "basic_config": "Configurações Básicas",
+      "basic_config_desc": "Defina início do dia, nome do canal, FPS e codificação.",
+      "epg_config": "Configuração EPG",
+      "epg_config_desc": "Configure a distribuição EPG e número de dias.",
+      "overlay_config": "Sobreposição de Canal",
+      "overlay_config_desc": "Configure logotipo, posição, opacidade e escala da sobreposição.",
+      "quality_presets": "Predefinições de Qualidade",
+      "quality_presets_desc": "Selecione rapidamente 720p, 1080p ou 4K com configurações otimizadas.",
+      "users_tab_title": "Tab Utilizadores",
+      "users_tab_intro": "Gestão de utilizadores e perfis de acesso.",
+      "user_management": "Gestão de Utilizadores",
+      "user_management_desc": "Adicione, elimine utilizadores e altere passwords.",
+      "profile_management": "Gestão de Perfis",
+      "profile_management_desc": "Crie e edite perfis com permissões personalizadas.",
+      "about_tab_title": "Tab Sobre o Sistema",
+      "about_tab_intro": "Informações do sistema, histórico de versões e roteiro do produto.",
+      "system_info": "Informações do Sistema",
+      "system_info_desc": "Versão, data de atualização e ambiente de implantação.",
+      "version_history": "Histórico de Versões",
+      "version_history_desc": "Notas de lançamento e evolução do projeto.",
+      "product_roadmap": "Roteiro do Produto",
+      "product_roadmap_desc": "Funcionalidades implementadas e planeadas para o futuro.",
+      "how_to_title": "Como Usar",
+      "how_to_intro": "Siga estas etapas para configurar o sistema efetivamente:",
+      "step1": "Aceda ao menu Configurações na barra lateral",
+      "step2": "Na tab \"Emissão e Saída\", selecione o protocolo e configure a resolução",
+      "step3": "Na tab \"Caminhos e Mídia\", defina os diretórios de armazenamento",
+      "step4": "Configure as APIs de metadados (TMDB, OMDB) para enriquecimento automático",
+      "step5": "Na tab \"Reprodução\", ajuste as configurações do motor de playout",
+      "step6": "Na tab \"Utilizadores\", crie perfis e utilizadores com permissões adequadas",
+      "step7": "Clique em \"Salvar Alterações\" para aplicar todas as configurações",
+      "tips_title": "Dicas e Boas Práticas",
+      "tips_content": "• Salve as configurações após cada alteração para evitar perda de dados\n• Use predefinições de qualidade para configuração rápida e otimizada\n• Configure backups regulares dos caminhos de armazenamento\n• Monitore o espaço em disco na secção de Gestão de Espaço\n• Crie perfis de utilizador com permissões mínimas necessárias\n• Verifique regularmente o histórico de versões para atualizações\n• Teste os links de conexão após alterar configurações de protocolo"
     },
     "troubleshooting": {
       "title": "Solução de problemas",
       "intro": "Soluções para os problemas mais comuns."
     },
     "liveInputs": {
-      "title": "Entradas ao vivo",
-      "intro": "O módulo Live Inputs permite configurar fluxos de entrada de vídeo e áudio para transmissão ao vivo.",
+      "title": "Entradas em Vivo",
+      "intro": "O módulo Entradas em Vivo permite configurar transmissões de vídeo e áudio de entrada para transmissão ao vivo. Este recurso permite que seu sistema de playout aceite fontes externas ao vivo e as distribua para seu público.",
       "howToUse": {
-        "title": "Como usar",
-        "intro": "Siga estas etapas para configurar uma entrada ao vivo:",
-        "step1": "Clique no botão \"+ Adicionar entrada\" para criar uma nova entrada.",
-        "step2": "Preencha o nome de entrada, selecione um protocolo (RTMP, SRT, UDP, WebRTC, NDI) e insira o URL/porta do stream.",
-        "step3": "Se necessário, forneça uma chave de fluxo (por exemplo, para RTMP).",
-        "step4": "Opcionalmente, defina um URL de visualização para reprodução HLS.",
-        "step5": "Salve a entrada; ele aparecerá na lista com seu status atual.",
-        "step6": "Para iniciar a transmissão, clique no ícone Play; para parar, clique no ícone Parar."
+        "title": "Como Utilizar",
+        "intro": "Siga estes passos para configurar uma entrada em vivo:",
+        "step1": "Clique no botão \"+ Adicionar Entrada\" para criar uma nova entrada.",
+        "step2": "Preencha o Nome da Entrada, selecione um Protocolo (RTMP, SRT, UDP, WebRTC, NDI) e insira a URL/Porta da Transmissão.",
+        "step3": "Se necessário, forneça uma Chave de Transmissão (ex: para RTMP).",
+        "step4": "Opcionalmente, defina uma URL de Visualização para reprodução HLS.",
+        "step5": "Salve a entrada; ela aparecerá na lista com seu status atual.",
+        "step6": "Para iniciar a transmissão, clique no ícone Reproduzir; para parar, clique no ícone Parar."
+      },
+      "protocols": {
+        "title": "Protocolos Suportados",
+        "intro": "O sistema suporta múltiplos protocolos para diferentes casos de uso:",
+        "rtmp": "RTMP (Real-Time Messaging Protocol) - Ideal para plataformas de mídia social como YouTube e Facebook. Requer uma chave de transmissão. Porta: 1935.",
+        "srt": "SRT (Secure Reliable Transport) - Transmissão de alta confiabilidade sobre redes instáveis com recuperação de erros e baixa latência. Porta: 9000.",
+        "udp": "UDP (User Datagram Protocol) - Menor latência para redes locais, mas sem retransmissão. Use para codificadores IP e distribuição local. Porta: 1234.",
+        "webrtc": "WebRTC - Comunicação em tempo real baseada em navegador, ideal para fontes ao vivo baseadas na web e streaming de baixa latência via navegador.",
+        "ndi": "NDI (Network Device Interface) - Fluxo de trabalho de vídeo IP profissional, ideal para ambientes de estúdio e fontes de vídeo em rede.",
+        "sdi": "SDI (Serial Digital Interface) - Padrão de transmissão tradicional para conexões de vídeo diretas via placas de captura."
+      },
+      "socialStreaming": {
+        "title": "Transmissão Social",
+        "intro": "Transmita diretamente para plataformas de mídia social usando a aba Transmissão Social:",
+        "youtube": "YouTube Live - Requer chave de transmissão do YouTube Studio. Use protocolo RTMP com rtmp://a.rtmp.youtube.com/live2.",
+        "facebook": "Facebook Live - Requer chave de transmissão da Página do Facebook. Use protocolo RTMP com rtmp://rtmp-api.facebook.com:1935/rtmp/.",
+        "management": "Gerencie transmissões sociais na aba Transmissão Social. Inicie/pare transmissões diretamente da interface e monitore status em tempo real."
+      },
+      "statusMonitoring": {
+        "title": "Monitoramento de Status",
+        "intro": "Indicadores de status em tempo real ajudam a monitorar suas transmissões:",
+        "active": "Verde - Ativo e transmitindo com sucesso",
+        "connecting": "Laranja - Conectando à fonte",
+        "error": "Vermelho - Erro de conexão ou parado",
+        "inactive": "Cinza - Inativo ou não configurado"
+      },
+      "preview": {
+        "title": "Funcionalidade de Visualização",
+        "intro": "Defina uma URL de Visualização para ver sua transmissão no aplicativo:",
+        "hls": "URLs de visualização HLS funcionam melhor (formato m3u8). O sistema gera visualizações HLS automaticamente para fontes locais.",
+        "latency": "Nota: A visualização tem latência inerente (6-10 segundos para HLS, sub-segundo para SRT/WebRTC).",
+        "local": "Para fontes locais, use http://localhost:8080/hls/stream.m3u8 ou similar."
       },
       "tips": {
-        "title": "Dicas e práticas recomendadas",
-        "content": "• Use SRT para redes não confiáveis; ele fornece recuperação de erros e baixa latência.\n• Para redes locais, o UDP oferece a latência mais baixa, mas carece de retransmissão.\n• Certifique-se de que o firewall do servidor permita conexões de entrada nas portas configuradas.\n• Monitore o chip de status: verde (ativo), laranja (conectando), vermelho (erro).\n• Você pode editar ou excluir uma entrada a qualquer momento através dos ícones do cartão."
+        "title": "Dicas e Melhores Práticas",
+        "content": "• Use SRT para redes não confiáveis; ele oferece recuperação de erros e baixa latência.\n• Para redes locais, UDP oferece a menor latência mas não tem retransmissão.\n• Certifique-se de que o firewall do servidor permite conexões de entrada nas portas configuradas (1935 para RTMP, 9000 para SRT, 1234 para UDP).\n• Monitore o chip de status: verde (ativo), laranja (conectando), vermelho (erro).\n• Você pode editar ou excluir uma entrada a qualquer momento via os ícones no cartão.\n• Para transmissão social, use a aba Transmissão Social dedicada para melhor gerenciamento.\n• Sempre teste sua transmissão antes de ir ao ar.\n• Mantenha as chaves de transmissão seguras e rotacione-as regularmente.\n• Use nomes descritivos para fácil identificação.\n• Para fontes NDI, certifique-se de que todos os dispositivos estão na mesma sub-rede de rede.\n• WebRTC requer HTTPS em ambientes de produção."
+      },
+      "troubleshooting": {
+        "title": "Solução de Problemas",
+        "items": [
+          "Conexão falhou: Verifique URL, porta e configurações de firewall",
+          "Chave de transmissão inválida: Verifique a chave no painel da plataforma",
+          "Sem visualização: Certifique-se de que a URL de visualização é acessível e está no formato HLS",
+          "Alta latência: Considere usar SRT em vez de HLS para menor latência",
+          "Problemas de áudio: Verifique compatibilidade de codec e níveis de áudio",
+          "Porta já em uso: Verifique se outro serviço está usando a porta configurada",
+          "NDI não detectado: Verifique se as ferramentas NDI estão instaladas e se a rede permite multicast"
+        ]
       }
+    },
+    "health": {
+      "title": "Saúde do Sistema",
+      "intro": "O módulo Saúde do Sistema permite monitorizar a saúde e o desempenho do seu sistema de playout em tempo real. Inclui pontuação de sistema, verificações de componentes e análise de transmissões.",
+      "healthTab": {
+        "title": "Separador Saúde",
+        "intro": "O separador Saúde apresenta KPIs principais e verificações de estado do sistema."
+      },
+      "kpis": {
+        "title": "Indicadores-Chave (KPIs)",
+        "deviceName": "Host de Playout",
+        "deviceName_desc": "Nome do servidor onde o playout está a funcionar",
+        "clipsPlayed": "Clipes Hoje",
+        "clipsPlayed_desc": "Número de clips reproduzidos desde a meia-noite",
+        "activeStreams": "Streams Ativos",
+        "activeStreams_desc": "Número de streams de saída ativos atualmente",
+        "lastError": "Último Erro",
+        "lastError_desc": "Último erro registado no sistema (Clean = sem erros)"
+      },
+      "systemScore": {
+        "title": "Pontuação do Sistema",
+        "intro": "Índice de integridade geral de 0-100% baseado em múltiplos fatores.",
+        "perfect": "Perfeito (90-100)",
+        "perfect_desc": "Sistema a funcionar perfeitamente, sem problemas detetados",
+        "healthy": "Saudável (70-89)",
+        "healthy_desc": "Sistema funcional com alguns avisos menores",
+        "critical": "Crítico (<70)",
+        "critical_desc": "Requer atenção imediata, problemas significativos detetados"
+      },
+      "components": {
+        "title": "Componentes Principais",
+        "intro": "Verificações de estado dos componentes core do sistema:",
+        "engine": "Motor CasparCG",
+        "engine_desc": "Motor de reprodução de mídia, conexão com o servidor de graphics",
+        "database": "Base de Dados",
+        "database_desc": "Estado da conexão e integridade da base de dados PostgreSQL",
+        "mediaStorage": "Armazenamento de Mídia",
+        "mediaStorage_desc": "Espaço disponível em disco para mídia e integridade dos ficheiros",
+        "watchfolder": "Pasta de Monitorização",
+        "watchfolder_desc": "Serviço que monitoriza pastas para novos ficheiros de mídia"
+      },
+      "checks": {
+        "title": "Verificações Adicionais",
+        "content": "Disponibilidade de Conteúdo",
+        "content_desc": "Verifica se todos os ficheiros de mídia agendados para as próximas 24 horas estão presentes",
+        "timeSync": "Sincronização de Hora",
+        "timeSync_desc": "Estado da sincronização NTP (deve estar <2ms para broadcast)"
+      },
+      "analyticsTab": {
+        "title": "Separador Análise",
+        "intro": "O separador Análise apresenta gráficos em tempo real e estatísticas de transmissão."
+      },
+      "charts": {
+        "title": "Gráficos de Análise",
+        "bitrate": "Bitrate em Tempo Real",
+        "bitrate_desc": "Gráfico de linha mostrando a variação do bitrate ao longo do tempo (atualizado via WebSocket)",
+        "clipsDay": "Clipes por Dia",
+        "clipsDay_desc": "Gráfico de barras mostrando o número de clips reproduzidos nos últimos 7 dias"
+      },
+      "websocket": {
+        "title": "Estado WebSocket",
+        "connected": "Conectado (LIVE)",
+        "connected_desc": "WebSocket ativo, a receber dados de telemetria em tempo real",
+        "disconnected": "Desconectado (OFFLINE)",
+        "disconnected_desc": "WebSocket inativo, gráficos de análise não serão atualizados"
+      },
+      "status": {
+        "title": "Indicadores de Estado",
+        "intro": "Cores usadas para indicar o estado dos componentes:",
+        "ok": "Verde (OK)",
+        "ok_desc": "Componente a funcionar corretamente",
+        "warning": "Laranja (Aviso)",
+        "warning_desc": "Atenção necessária, mas não crítico",
+        "error": "Vermelho (Erro)",
+        "error_desc": "Problema crítico que requer atenção imediata"
+      },
+      "tips": {
+        "title": "Dicas e Melhores Práticas",
+        "content": "• Monitorize a Pontuação do Sistema diariamente\n• Mantenha pelo menos 20% de espaço livre em disco\n• Verifique regularmente os logs de diagnóstico ao vivo\n• A sincronização NTP deve estar ativa para transmissão\n• Recarregue a página manualmente se os dados não atualizarem\n• O WebSocket deve estar conectado para análise em tempo real\n• Verifique a disponibilidade de conteúdo antes de transmissões importantes"
+      },
+      "troubleshooting": {
+        "title": "Resolução de Problemas",
+        "content": "Pontuação baixa: Verifique os componentes com estado de erro ou aviso.\nWebSocket desconectado: Recarregue a página ou verifique a conexão de rede.\nEspaço em disco baixo: Elimine mídia antiga ou expanda o armazenamento.\nErros de base de dados: Reinicie o serviço ou contacte suporte."
+      }
+    },
+    "templates": {
+      "title": "Modelos",
+      "intro": "O sistema de Modelos permite criar, gerenciar e reutilizar estruturas de playlist para agendamento eficiente de transmissões.",
+      "features_title": "Principais Funcionalidades",
+      "features_intro": "O Gerador de Modelos oferece ferramentas poderosas para estruturação de conteúdo:",
+      "feature1": "Modelos pré-configurados para cenários comuns de transmissão (programas matinais, 24/7, etc.)",
+      "feature2": "Criação de modelos personalizados com duração flexível e composição de blocos",
+      "feature3": "Biblioteca de modelos com estruturas pré-definidas que podem ser rapidamente adaptadas",
+      "feature4": "Geração de playlist com um clique a partir de qualquer modelo",
+      "feature5": "Arquitetura baseada em blocos (Introdução, Conteúdo, Comercial, Encerramento, Preenchimento)",
+      "feature6": "Capacidades de edição e exclusão de modelos",
+      "presets_title": "Modelos Pré-definidos",
+      "presets_intro": "O sistema inclui três modelos pré-definidos prontos para uso:",
+      "preset_morning": "Programa Matinal",
+      "preset_morning_desc": "Um modelo de 6 horas projetado para programação matinal (06:00-12:00) com blocos de conteúdo estruturados e intervalos.",
+      "preset_full_day": "Playlist de 24 Horas",
+      "preset_full_day_desc": "Um modelo completo de 24 horas com conteúdo contínuo e um buffer de 1 hora de preenchimento para flexibilidade de agendamento.",
+      "preset_loop": "Loop de Conteúdo",
+      "preset_loop_desc": "Um modelo de 24 horas em loop com blocos de conteúdo e intervalos comerciais, ideal para programação em loop contínuo.",
+      "structure_title": "Estrutura do Modelo",
+      "structure_intro": "Os modelos são compostos por blocos sequenciais que definem o fluxo de programação:",
+      "block_intro": "Introdução",
+      "block_intro_desc": "Segmento de abertura (tipicamente 30 segundos) usado para introduções de programas, identificações da estação ou créditos de abertura.",
+      "block_content": "Conteúdo",
+      "block_content_desc": "Bloco de programação principal contendo o conteúdo de vídeo real. A duração varia conforme o formato do programa.",
+      "block_commercial": "Comercial",
+      "block_commercial_desc": "Segmento de publicidade ou intervalo. Usado para spots comerciais, identificação da estação ou anúncios de serviço público.",
+      "block_outro": "Encerramento",
+      "block_outro_desc": "Segmento de fechamento (tipicamente 30 segundos) para finais de programas, créditos ou despedidas da estação.",
+      "block_filler": "Preenchimento",
+      "block_filler_desc": "Conteúdo de emergência ou buffer usado para preencher lacunas no agendamento. Inserido automaticamente quando necessário.",
+      "create_title": "Criando um Modelo",
+      "create_intro": "Siga estas etapas para criar um modelo personalizado:",
+      "create_name": "Nome do Modelo",
+      "create_name_desc": "Digite um nome descritivo que identifique o propósito do modelo (ex: \"Notícias Matinais de Segunda-feira\").",
+      "create_description": "Descrição",
+      "create_description_desc": "Adicione uma breve explicação de quando e como usar este modelo.",
+      "create_duration": "Duração Total",
+      "create_duration_desc": "Defina o comprimento total em segundos. Para modelos de 24 horas, insira 86400 segundos.",
+      "use_title": "Usando Modelos",
+      "use_intro": "Gere uma playlist a partir de qualquer modelo em algumas etapas:",
+      "use_select": "Selecionar Modelo",
+      "use_select_desc": "Escolha um modelo na página de Modelos clicando no botão \"USAR\".",
+      "use_name": "Nomear a Playlist",
+      "use_name_desc": "Digite um nome único para a playlist gerada (ex: \"Programa Matinal - 20 de Março\").",
+      "use_date": "Definir Data de Transmissão",
+      "use_date_desc": "Selecione a data em que esta playlist será agendada no Calendário.",
+      "how_to_title": "Fluxo de Trabalho Completo",
+      "how_to_intro": "Aqui está o processo completo da criação do modelo até a transmissão:",
+      "step1": "Acesse a página de Modelos no menu lateral",
+      "step2": "Navegue pelos modelos existentes ou crie um novo com \"CRIAR MODELO\"",
+      "step3": "Defina a estrutura do modelo com blocos e durações apropriados",
+      "step4": "Salve o modelo para uso futuro",
+      "step5": "Quando necessário, clique em \"USAR\" em qualquer modelo para gerar uma playlist",
+      "step6": "A playlist gerada aparece na seção de Playlists pronta para agendamento",
+      "tips_title": "Dicas e Melhores Práticas",
+      "tips_content": "• Crie modelos para padrões de programação recorrentes (programas diários, especiais semanais)\n• Use nomes descritivos que incluam duração e propósito\n• Inclua blocos de preenchimento nos modelos para flexibilidade de agendamento\n• Teste modelos gerando playlists de amostra antes de usá-los no ar\n• Mantenha as durações dos modelos realistas (evite sobreagendamento)\n• Atualize os modelos periodicamente com base nas alterações de programação\n• Use o modelo de 24 horas como ponto de partida para variações personalizadas\n• Lembre-se de que as playlists geradas podem ser editadas posteriormente no Editor de Playlist"
     }
   },
   "graphics": {
@@ -1599,6 +2004,7 @@
   },
   "health": {
     "title": "Saúde do sistema",
+    "analyticsTitle": "Análise",
     "lastUpdate": "Última atualização",
     "manualRefresh": "Forçar atualização",
     "systemScore": "Pontuação do sistema",
@@ -1631,6 +2037,10 @@
     "score": {
       "perfect": "Perfeito",
       "health": "Saúde"
+    },
+    "tab": {
+      "health": "Saúde",
+      "analytics": "Análise"
     }
   },
   "liveInputs": {
@@ -1670,7 +2080,10 @@
     "play": "Jogar",
     "skip": "Pular",
     "noChannels": "Nenhum canal configurado",
-    "noChannelsHint": "Configure canais nas configurações para usar o modo multicanal"
+    "noChannelsHint": "Configure canais nas configurações para usar o modo multicanal",
+    "status_paused": "PAUSADO",
+    "status_stopped": "PARADO",
+    "status_error": "ERRO"
   },
   "analytics": {
     "title": "Análise",
@@ -1681,9 +2094,11 @@
       "errorRate": "Taxa de erro"
     },
     "charts": {
-      "liveBitrate": "Taxa de bits ao vivo (ao vivo)"
+      "liveBitrate": "Taxa de bits ao vivo (ao vivo)",
+      "clipsPerDay": "Clipes / Dia (últimos 7 dias)"
     },
-    "noAsRunData": "Ainda não há dados de registro de execução disponíveis."
+    "noAsRunData": "Ainda não há dados de registro de execução disponíveis.",
+    "waitingWsData": "A aguardar dados do WebSocket…"
   },
   "websocket": {
     "connected": "Ao vivo",

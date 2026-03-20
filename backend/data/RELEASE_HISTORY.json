@@ -1,5 +1,16 @@
 [
   {
+    "version": "2.6.0-ALPHA.51-PRO",
+    "date": "2026-03-20",
+    "changes": [
+      "Documentation: Added Multi-Channel menu documentation (PT/EN/FR/ES)",
+      "Documentation: Added Live Inputs menu documentation (PT/EN/FR/ES)",
+      "Documentation: Added System Health menu documentation (PT/EN/FR/ES)",
+      "Bug Fix: HelpSystem components (HelpTemplates, HelpLiveInputs, HelpHealth, HelpMultiChannel)",
+      "i18n: Synchronized all 4 translation files (PT, EN, FR, ES)"
+    ]
+  },
+  {
     "version": "2.6.0-ALPHA.50-PRO",
     "date": "2026-03-17",
     "changes": [

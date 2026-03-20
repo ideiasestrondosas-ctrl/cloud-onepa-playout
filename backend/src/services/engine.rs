@@ -1,3 +1,4 @@
+use crate::models::graphics_layer::GraphicsLayer;
 use crate::models::playlist::Playlist;
 use crate::models::schedule::Schedule;
 use crate::models::settings::Settings;
@@ -81,6 +82,8 @@ pub struct PlayoutEngine {
     pub event_bus: Arc<Mutex<Option<EventBus>>>,
     // Cached channel slug (populated on first use from DB to avoid per-tick queries)
     channel_slug_cache: Arc<Mutex<Option<String>>>,
+    // Timestamp when the master FFmpeg process was last (re)started — used for "starting" timeout
+    process_start_time: Arc<Mutex<Option<std::time::Instant>>>,
 }
 
 impl PlayoutEngine {
@@ -135,6 +138,7 @@ impl PlayoutEngine {
             last_graphics_updated_at: Arc::new(Mutex::new(None)),
             event_bus: Arc::new(Mutex::new(None)),
             channel_slug_cache: Arc::new(Mutex::new(None)),
+            process_start_time: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -821,7 +825,7 @@ impl PlayoutEngine {
                 seq.clear();
             }
 
-            let is_running = process_alive && !overlay_changed && !settings_changed;
+            let is_running = process_alive && !overlay_changed && !settings_changed && !graphics_changed;
 
             // If the process is healthy AND the target clip is inside the currently running sequence...
             // We assume FFmpeg is handling the transition internally.
@@ -907,6 +911,25 @@ impl PlayoutEngine {
                     None
                 };
 
+                // FASE 1: Fetch enabled graphics layers from database
+                let graphics_layers: Vec<GraphicsLayer> = match sqlx::query_as::<_, GraphicsLayer>(
+                    "SELECT * FROM graphics_layers WHERE enabled = true ORDER BY z_index ASC"
+                )
+                .fetch_all(&self.pool)
+                .await
+                {
+                    Ok(layers) => {
+                        if !layers.is_empty() {
+                            log::info!("[Graphics-F1] Found {} enabled graphics layers", layers.len());
+                        }
+                        layers
+                    }
+                    Err(e) => {
+                        log::warn!("[Graphics-F1] Failed to fetch graphics layers: {}", e);
+                        vec![]
+                    }
+                };
+
                 let mut child = ffmpeg.start_stream(
                     playlist_path.to_str().unwrap(),
                     &output_url,
@@ -914,6 +937,7 @@ impl PlayoutEngine {
                     &settings,
                     Some(hls_preview_path),
                     logo_path.as_deref(),
+                    Some(&graphics_layers),
                 )?;
 
                 // Capture stderr to system logs for debugging Master Feed issues
@@ -941,6 +965,11 @@ impl PlayoutEngine {
 
                 *proc_lock = Some(child);
                 *current_id = Some(clip_id.to_string());
+                // Record when this process started — used by update_stream_stats for "starting" timeout
+                {
+                    let mut pst = self.process_start_time.lock().await;
+                    *pst = Some(std::time::Instant::now());
+                }
                 log::info!("FFmpeg GAPLESS process started for sequence.");
                 self.add_log("✓ Playout engine started successfully".to_string())
                     .await;
@@ -1178,10 +1207,35 @@ impl PlayoutEngine {
                 false
             }
         };
-        let master_info = mediamtx_paths.get("master");
+
+        // Use the channel slug to look up the correct MediaMTX path (may differ from "master")
+        let channel_path_key = self.channel_slug().await;
+        let master_info = mediamtx_paths.get(&channel_path_key)
+            .or_else(|| mediamtx_paths.get("master"));
         let master_mediamtx_ready = master_info.map(|i| i.ready).unwrap_or(false);
+
+        // Timeout fallback: if FFmpeg has been alive for > 15s but MediaMTX hasn't confirmed
+        // frames yet, treat as active to avoid the dashboard staying stuck in "starting".
+        // This can happen when MediaMTX is slow to register the path.
+        let process_elapsed_secs = {
+            let pst = self.process_start_time.lock().await;
+            pst.map(|t| t.elapsed().as_secs()).unwrap_or(0)
+        };
+        let master_mediamtx_ready_or_timeout = master_mediamtx_ready
+            || (master_process_alive && process_elapsed_secs > 15);
+        if master_process_alive && !master_mediamtx_ready && process_elapsed_secs > 15 {
+            log::warn!(
+                "[Master Feed] FFmpeg alive for {}s but MediaMTX path '{}' not ready — \
+                 treating as active (timeout fallback). Keys available: {:?}",
+                process_elapsed_secs,
+                channel_path_key,
+                mediamtx_paths.keys().collect::<Vec<_>>()
+            );
+        }
+
         // Master is only truly active when FFmpeg is running AND MediaMTX confirms frames
-        let master_ready = master_process_alive && master_mediamtx_ready;
+        // (or the 15-second startup timeout has elapsed)
+        let master_ready = master_process_alive && master_mediamtx_ready_or_timeout;
         streams.push(ActiveStream {
             protocol: "MASTER".to_string(),
             status: if master_ready && engine_running {
@@ -1200,21 +1254,22 @@ impl PlayoutEngine {
         // 1. RTMP Status — primary: relay process alive; secondary: MediaMTX path ready
         let rtmp_active = settings.rtmp_enabled || settings.output_type == "rtmp";
         let rtmp_path_info = mediamtx_paths.get("stream");
-        let rtmp_status = if rtmp_active && master_ready {
+        let rtmp_status = if rtmp_active {
             let mut procs = self.distribution_processes.lock().await;
             let relay_alive = procs.get_mut("rtmp")
                 .map(|child| matches!(child.try_wait(), Ok(None)))
                 .unwrap_or(false);
-            let path_ready = rtmp_path_info.map(|i| i.ready).unwrap_or(false);
-            if relay_alive && path_ready {
+            if relay_alive {
+                // Relay process is running — always show "active" regardless of master_ready.
+                // The relay may briefly buffer during a graphics-layer-triggered FFmpeg restart
+                // but it stays alive and the status should not flicker to "starting".
                 "active".to_string()
-            } else if relay_alive {
+            } else if master_process_alive && engine_running {
+                // Relay not yet spawned but master feed is coming up
                 "starting".to_string()
             } else {
                 "idle".to_string()
             }
-        } else if rtmp_active && master_process_alive {
-            "starting".to_string()
         } else {
             "idle".to_string()
         };
@@ -1261,21 +1316,19 @@ impl PlayoutEngine {
         // 3. SRT Status — primary: relay process alive; secondary: MediaMTX path ready
         let srt_active = settings.srt_enabled || settings.output_type == "srt";
         let srt_path_info = mediamtx_paths.get("stream_srt");
-        let srt_status = if srt_active && master_ready {
+        let srt_status = if srt_active {
             let mut procs = self.distribution_processes.lock().await;
             let relay_alive = procs.get_mut("srt")
                 .map(|child| matches!(child.try_wait(), Ok(None)))
                 .unwrap_or(false);
-            let path_ready = srt_path_info.map(|i| i.ready).unwrap_or(false);
-            if relay_alive && path_ready {
+            if relay_alive {
+                // Relay process alive — stays "active" during master FFmpeg restarts
                 "active".to_string()
-            } else if relay_alive {
+            } else if master_process_alive && engine_running {
                 "starting".to_string()
             } else {
                 "idle".to_string()
             }
-        } else if srt_active && master_process_alive {
-            "starting".to_string()
         } else {
             "idle".to_string()
         };

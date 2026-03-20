@@ -1,0 +1,1624 @@
+{
+  "common": {
+    "save": "SAVE",
+    "saving": "SAVING...",
+    "cancel": "CANCEL",
+    "close": "CLOSE",
+    "edit": "EDIT",
+    "delete": "DELETE",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "warning": "Warning",
+    "search": "Search...",
+    "confirm": "Confirm",
+    "select_all": "Select All",
+    "deselect_all": "Deselect All",
+    "back": "BACK",
+    "next": "NEXT",
+    "previous": "PREVIOUS",
+    "today": "TODAY",
+    "no_data": "No data found",
+    "backend_offline": "⚠️ BACKEND OFFLINE - Check server connection or if the container is running.",
+    "unknown": "Unknown",
+    "error_details": "Error: {{error}}",
+    "exit": "EXIT",
+    "refresh": "REFRESH"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "media": "Library",
+    "playlists": "Playlists",
+    "calendar": "Calendar",
+    "graphics": "Graphics",
+    "settings": "Settings",
+    "templates": "Templates",
+    "epg": "TV GUIDE",
+    "logout": "Log Out",
+    "help": "Help & Documentation",
+    "health": "System Health",
+    "analytics": "Analytics",
+    "templateEditor": "Template Editor",
+    "liveInputs": "Live Inputs",
+    "multiChannel": "Multi-Channel"
+  },
+  "login": {
+    "user": "USERNAME",
+    "password": "PASSWORD",
+    "enter": "LOG IN",
+    "restricted_area": "RESTRICTED AREA",
+    "welcome": "Welcome to ALPHA",
+    "logging_in": "Logging in...",
+    "username": "Username",
+    "submit": "SIGN IN",
+    "monitoring": "Real-time Monitoring & Control",
+    "test_mode": "ALPHA TEST MODE"
+  },
+  "dashboard": {
+    "monitoring": "Monitoring & Control",
+    "uptime": "Uptime",
+    "clips_today": "Clips Today",
+    "playing": "RUNNING",
+    "offline": "OFFLINE",
+    "on_air": "ON AIR",
+    "off_air": "OFF AIR",
+    "standby": "STANDBY",
+    "start_engine": "START EMISSION",
+    "stop_engine": "STOP EMISSION",
+    "skip_clip": "SKIP CLIP",
+    "distribution": "Global Distribution",
+    "protocols": "Transmission Protocols",
+    "logs": "LOGS (Diagnostics)",
+    "live_preview": "Live Preview",
+    "active": "ACTIVE",
+    "starting": "STARTING",
+    "error_status": "ERROR",
+    "click_to_enable": "Click to enable",
+    "click_to_disable": "Click to disable",
+    "readonly_protocol": "Primary protocol (read-only)",
+    "check_schedule": "Check your schedule in the Calendar.",
+    "vlc_launcher": "VLC Smart Launcher",
+    "vlc_manual": "Manual Command",
+    "vlc_hint": "Tip: If VLC does not open, use the Manual Command below.",
+    "diagnosing": "Diagnosing...",
+    "vlc": {
+      "title": "VLC Smart Launcher & Network Diagnostics",
+      "how_to": "How to view your channel externally:",
+      "real_time": "The playout is emitting in real-time. Use the options below to monitor with total detail.",
+      "playback_link": "Playback Link (VLC):",
+      "no_url": "Output URL not defined in settings.",
+      "open_vlc": "Open in VLC",
+      "browser_note": "Note: The browser cannot confirm if VLC opened successfully. If nothing happens, install VLC or copy the link above manually.",
+      "configure_output": "Configure Output URL →",
+      "diag_steps": "Diagnostic Steps:",
+      "realtime_logs": "Real-time Connection Logs:",
+      "waiting_conns": "> Waiting for connections...",
+      "clear_logs": "Clear Logs",
+      "common_errors": "Common Errors (I/O Error):",
+      "error_1935": "Port 1935 BLOCKED: Check if port 1935 (RTMP) or 9000 (SRT) is open on Firewall/Router.",
+      "error_not_started": "Stream not started: Player needs Playout to be in START state to receive data.",
+      "error_latency": "Latency: In Safari, there may be a 2-5 second delay in HLS. Use SRT for sub-second latency.",
+      "connecting": "Opening: {{url}}",
+      "command_sent": "Command sent. Check if VLC opened.",
+      "open_success": "Command sent to VLC!",
+      "configuring": "Starting VLC Smart Launcher...",
+      "trying_protocol": "Trying via vlc:// protocol..."
+    },
+    "restart": {
+      "title": "Startup Options",
+      "msg": "Select the protocols that should be automatically started when turning on the Backend.",
+      "master_switch": "Auto-start Protocols (Master Switch)"
+    },
+    "schedule_error": {
+      "title": "WARNING: SCHEDULE ERROR",
+      "msg": "There is no active or scheduled playlist for today.",
+      "hint": "The playout engine cannot start without content. Please use the Setup Assistant or go to the Calendar to schedule a playlist.",
+      "open_wizard": "OPEN ASSISTANT"
+    },
+    "follow": "FOLLOW",
+    "empty_list": "Empty list",
+    "current_clip_title": "NOW PLAYING",
+    "source_label": "Source:",
+    "no_active_clip": "No active clip",
+    "hls_copied": "HLS Link copied!",
+    "validate_error": "Error validating schedule",
+    "toggle_dist_error": "Error toggling distribution",
+    "skip_success": "Clip skipped successfully!",
+    "skip_error": "Error skipping clip",
+    "protocol_enabled": "Protocol {{protocol}} enabled!",
+    "protocol_disabled": "Protocol {{protocol}} disabled!",
+    "protocol_error": "Error toggling protocol",
+    "safari": {
+      "audio_paused": "Audio Analysis Paused (Safari)",
+      "enable_meter": "Enable Audio Meter"
+    },
+    "ops": {
+      "checking_db": "Checking database...",
+      "ffmpeg_loaded": "FFmpeg settings loaded",
+      "starting_encoder": "Starting HW Encoder...",
+      "playing_rtmp": "Playout running via RTMP/HLS"
+    },
+    "diag": {
+      "title": "System Diagnostics",
+      "updated_at": "Updated: {{time}} · Auto-refresh 5s",
+      "engine_status": "Engine Status",
+      "ffmpeg_engine": "FFmpeg Engine",
+      "ffmpeg_running": "▶ Running",
+      "ffmpeg_stopped": "◼ Stopped",
+      "no_schedule_now": "None detected for now",
+      "loaded": "Loaded",
+      "no_playlist": "No playlist associated",
+      "clips_available": "{{count}} clips available",
+      "playlist_media": "Playlist Media",
+      "overlay_status": "Overlay / Logo",
+      "configured_ready": "Configured and ready",
+      "disabled": "Disabled",
+      "clips_played": "played",
+      "current_clip": "Current Clip",
+      "active_protocols": "Active Protocols",
+      "no_active_protocols": "No active protocols",
+      "last_error_label": "Last error: {{error}}",
+      "missing_files": "Missing files:",
+      "last_logs": "Last Log Entries",
+      "no_logs": "No logs available",
+      "diag_failed": "Could not retrieve report.",
+      "refresh_now": "Refresh now"
+    }
+  },
+  "media": {
+    "title": "Media Library",
+    "subtitle": "Intelligent Content Management",
+    "sync": "SYNC",
+    "syncing": "SYNCING...",
+    "audit": "AUDIT",
+    "bulk_select": "Multiple Selection",
+    "cancel_selection": "Cancel Selection",
+    "new_folder": "New Folder",
+    "items_selected": "{{count}} selected",
+    "select_all": "Select All",
+    "mark_filler": "Mark as Filler",
+    "mark_prog": "Mark as Prog",
+    "structure": "STRUCTURE",
+    "root": "Root",
+    "hint_title": "TIP",
+    "hint_msg": "Drag files directly to folders to organize your library.",
+    "drop_to_upload": "RELEASE TO UPLOAD",
+    "upload_media": "UPLOAD MEDIA",
+    "upload_hint": "Drag files or click to explore (Destination: {{folder}})",
+    "search_placeholder": "Search library...",
+    "files": "Files",
+    "type": "Type",
+    "category": "Category",
+    "all": "All",
+    "video": "Video",
+    "image": "Image",
+    "audio": "Audio",
+    "both": "Both",
+    "fillers_general": "Fillers (General)",
+    "programming": "Programming",
+    "preview": "Preview",
+    "optimize_streaming": "Optimize for Streaming",
+    "optimized_streaming": "Video Optimized for Streaming",
+    "generate_proxy": "Generate Web Proxy (Zero Latency)",
+    "proxy_available": "Web Proxy Available",
+    "metadata_wizard": "Metadata Assistant",
+    "edit": "Edit",
+    "file": "File",
+    "delete_folder_confirm": "Are you sure you want to delete folder \"{{name}}\" and all files inside it?",
+    "folder_created": "Folder created",
+    "sync_success": "Sync completed: {{added}} new files identified.",
+    "sync_partial": "Partial sync: {{added}} added, {{errors}} errors.",
+    "upload_cancelled": "All uploads cancelled",
+    "bulk_success": "Action completed successfully",
+    "batch_proxy_success": "Files added to proxy queue successfully!",
+    "batch_optimize_success": "Files added to optimization queue successfully!",
+    "delete_confirm_title": "🗑️ Confirm Deletion",
+    "delete_confirm_msg": "Are you sure you want to delete \"{{filename}}\"?",
+    "delete_permanent_alert": "This action cannot be undone.",
+    "delete_in_use_title": "⚠️ File in Use in Calendar",
+    "delete_in_use_alert": "\"{{filename}}\" is scheduled in {{count}} event(s).",
+    "delete_choose_option": "Choose an option:",
+    "delete_anyway": "Delete Anyway",
+    "delete_anyway_hint": "⚠️ Schedules will become invalid and may cause playout errors",
+    "delete_replace_filler": "Replace with Filler and Delete",
+    "delete_replace_filler_hint": "✓ Safe - Automatically replaces in schedules before deleting",
+    "move_title": "Organize \"{{filename}}\"",
+    "move_dest": "Choose destination folder:",
+    "move_to_root": "Move to Root",
+    "copy_to_root": "Copy to Root",
+    "copy_hint": "Creates duplicate",
+    "move_to_folder": "Move to \"{{name}}\"",
+    "copy_to_folder": "Copy to \"{{name}}\"",
+    "metadata": {
+      "edit_title": "Edit EPG Metadata",
+      "review_title": "🪄 Review Automatic Metadata",
+      "info_from": "Information retrieved from: ",
+      "view_source": "🔗 View original source on {{service}} ↗",
+      "review_alert": "These data were found automatically. You can edit them below before saving.",
+      "label_title": "Title (EPG)",
+      "help_title": "Leave empty to use filename",
+      "label_description": "Description / Synopsis",
+      "label_genre": "Genre",
+      "genre_none": "None",
+      "genre_comedy": "Comedy",
+      "genre_drama": "Drama",
+      "genre_news": "News",
+      "genre_sports": "Sports",
+      "genre_documentary": "Documentary",
+      "genre_action": "Action",
+      "genre_animation": "Animation",
+      "genre_music": "Music",
+      "genre_other": "Other",
+      "label_rating": "Rating",
+      "rating_none": "None",
+      "rating_general": "General",
+      "label_keywords": "Keywords / Tags",
+      "keywords_placeholder": "sci-fi, rom-com",
+      "help_keywords": "Comma separated",
+      "label_season": "Season",
+      "label_episode": "Episode",
+      "label_cast": "Cast / Main Actors",
+      "label_director": "Director",
+      "label_writer": "Writer",
+      "technical_data": "Technical Data",
+      "label_resolution": "Resolution",
+      "help_resolution": "Detected automatically",
+      "label_fps": "FPS",
+      "label_vcodec": "Video Codec",
+      "label_acodec": "Audio Codec",
+      "label_poster": "Poster URL",
+      "help_poster": "Path to cover image (loaded from Wizard)",
+      "label_subtitles": "Subtitles / Languages",
+      "help_subtitles": "Available languages separated by comma"
+    },
+    "uploads_manager": {
+      "title": "Uploads Manager",
+      "status_pending": "PENDING",
+      "status_uploading": "UPLOADING",
+      "status_completed": "COMPLETED",
+      "all_processed": "All uploads processed. This window will close soon.",
+      "cancel_all": "CANCEL ALL",
+      "close_window": "Close Window"
+    },
+    "audit_dialog": {
+      "title": "Web Proxies Audit",
+      "optimized": "All videos in the library have Web Proxies generated! The system is optimized.",
+      "missing_alert": "Detected <b>{{count}} videos</b> without a Web Proxy version. This requires extra server processing during streaming and browsing.",
+      "videos_no_proxy": "VIDEOS WITHOUT PROXY",
+      "estimated_space": "ESTIMATED SPACE",
+      "batch_generate": "Batch Generate ({{count}})"
+    }
+  },
+  "playlist": {
+    "title": "PLAYLIST EDITOR",
+    "subtitle": "AUTOMATIC & SCHEDULED BROADCAST GENERATOR",
+    "delete_selected": "DELETE ({{count}})",
+    "automation": "AUTOMATION",
+    "new_playlist": "NEW PLAYLIST",
+    "save": "SAVE",
+    "saving": "SAVING...",
+    "tabs": {
+      "media": "MEDIA",
+      "playlists": "PLAYLISTS"
+    },
+    "sidebar": {
+      "root_all": "ROOT (ALL)",
+      "filter_all": "A",
+      "filter_filler": "F",
+      "filter_no_filler": "-F",
+      "add_all_folder": "Add all from this folder",
+      "duration": "DURATION: {{duration}}"
+    },
+    "editor": {
+      "name_label": "PLAYLIST NAME",
+      "date_label": "BROADCAST DATE",
+      "total_duration": "TOTAL DURATION: {{duration}}",
+      "target_meta": "GOAL: 24:00:00",
+      "missing_time": "⚠️ MISSING {{duration}} TO COMPLETE 24H",
+      "ready_msg": "✅ PLAYLIST READY FOR BROADCAST (24H COMPLETE)",
+      "sequence_grid": "SEQUENCE GRID ({{count}} CLIPS)",
+      "add_clip": "ADD CLIP",
+      "empty_title": "EMPTY PLAYLIST",
+      "empty_msg": "ADD MEDIA FROM LIBRARY TO START",
+      "undo": "Undo",
+      "redo": "Redo"
+    },
+    "dialogs": {
+      "media_selector": {
+        "title": "MEDIA LIBRARY",
+        "filter_all": "ALL",
+        "filter_filler": "FILLER ONLY",
+        "filter_no_filler": "EXCLUDE FILLER",
+        "add_all": "ADD ALL FROM THIS FOLDER",
+        "select_all": "SELECT ALL",
+        "all_folders": "ALL FOLDERS",
+        "selected_count": "{{count}} FILE(S) SELECTED",
+        "add_selected": "ADD SELECTED ({{count}})"
+      },
+      "create": {
+        "title": "NEW PLAYLIST",
+        "name_label": "PLAYLIST NAME",
+        "placeholder": "ex: MONDAY PLAYLIST",
+        "btn_create": "CREATE"
+      },
+      "automation": {
+        "title": "FILL AUTOMATION",
+        "msg": "CHOOSE THE FILL METHOD TO REACH THE 24H GOAL.",
+        "mode_random": "RANDOM BY FOLDER",
+        "mode_random_desc": "Selects random media from the selected source.",
+        "mode_sequential": "SEQUENTIAL BY FOLDER",
+        "mode_sequential_desc": "Follows alphabetical order of files.",
+        "mode_loop": "LOOP CURRENT SELECTION",
+        "mode_loop_desc": "Repeats clips already present in the grid.",
+        "source_folder": "Source Folder",
+        "fillers_only": "Use only clips marked as FILLER",
+        "run_now": "Run Now"
+      }
+    },
+    "notifications": {
+      "bulk_delete_confirm": "Are you sure you want to delete the {{count}} selected clips?",
+      "removed_count": "{{count}} clips removed",
+      "no_files_found": "No files found in this folder with the current filters",
+      "added_count": "{{count}} clips added",
+      "enter_name": "Please enter a name for the playlist",
+      "update_success": "Playlist updated successfully!",
+      "create_success": "Playlist created successfully!",
+      "save_error": "Error saving playlist",
+      "delete_confirm": "Are you sure you want to delete the playlist \"{{name}}\"?",
+      "delete_success": "Playlist deleted successfully",
+      "delete_conflict": "This playlist is being used in the calendar and cannot be deleted.",
+      "delete_error": "Error deleting playlist",
+      "automation_success": "{{count}} clips added via automation ({{type}}).",
+      "automation_error": "Error running automation",
+      "automation_fail_time": "The playlist has already reached or exceeded 24 hours.",
+      "automation_no_clips_loop": "Add at least one clip as a base for the loop.",
+      "automation_no_files_folder": "No files found in the selected folder{{filler}}.",
+      "automation_no_suitable": "Could not find suitable files to fill the time.",
+      "filler_flag": " with filler flag"
+    }
+  },
+  "calendar": {
+    "title": "SCHEDULING CENTER",
+    "subtitle": "PROGRAMMING & RECURRENCE MANAGER",
+    "default_playlist_name": "Playlist",
+    "on_air_now": "ON-AIR NOW",
+    "active_playlist": "ACTIVE PLAYLIST",
+    "bulk_delete": "BULK CLEAR",
+    "tv_guide": "TV GUIDE",
+    "shortcuts": "CLEANUP SHORTCUTS",
+    "clear_today": "CLEAR TODAY",
+    "clear_week": "THIS WEEK",
+    "clear_month": "THIS MONTH",
+    "clear_year": "THIS YEAR",
+    "legend": "LEGEND",
+    "single_event": "SINGLE SCHEDULE",
+    "recurring_series": "RECURRING SERIES",
+    "playing_now": "PLAYING NOW",
+    "dialogs": {
+      "manage": {
+        "title": "MANAGE SCHEDULE",
+        "date": "DATE",
+        "recurs": "RECURS",
+        "edit_btn": "EDIT SERIES / EVENT",
+        "ignore_today": "IGNORE TODAY ONLY",
+        "confirm_ignore": "Remove only the occurrence on {{date}}?",
+        "stop_series": "STOP RECURRING SERIES",
+        "delete_event": "DELETE SCHEDULE",
+        "confirm_stop_series": "Do you want to stop the entire series of \"{{title}}\" permanently?",
+        "confirm_delete_event": "Permanently remove \"{{title}}\"?"
+      },
+      "create": {
+        "title_edit": "EDIT SCHEDULE",
+        "title_new": "SCHEDULE FOR {{date}}",
+        "playlist_label": "PLAYLIST",
+        "time_label": "TIME",
+        "repeat_label": "REPEAT PATTERN",
+        "no_repeat": "NO REPEAT",
+        "daily": "DAILY",
+        "weekly": "WEEKLY",
+        "monthly": "MONTHLY"
+      },
+      "bulk": {
+        "title": "CUSTOM CLEANUP",
+        "msg": "CHOOSE A PERIOD TO REMOVE ALL PROGRAMMING.",
+        "start_label": "START",
+        "end_label": "END",
+        "btn_delete": "DELETE PERIOD"
+      }
+    },
+    "tooltips": {
+      "open_browser": "Open EPG in browser",
+      "export_xml": "Export and save EPG to disk (.xml)",
+      "url_not_configured": "EPG URL not configured",
+      "open_xml": "Open EPG XML in browser",
+      "download_xml": "Download EPG XML to disk",
+      "playing": "PLAYING",
+      "recurrent": "RECURRENT",
+      "occurrence": "OCCURRENCE",
+      "time": "TIME"
+    },
+    "notifications": {
+      "fetch_error": "Error loading schedule",
+      "playlist_required": "Please select a playlist",
+      "update_success": "Schedule updated",
+      "create_success": "Schedule created",
+      "save_error": "Error saving schedule",
+      "export_failed": "Export failed",
+      "id_not_found": "Error: Schedule ID not found",
+      "delete_success": "Schedule removed",
+      "delete_error": "Error deleting schedule",
+      "missing_data_occurrence": "Error: Insufficient data to remove occurrence",
+      "occurrence_removed": "Today's occurrence removed",
+      "occurrence_error": "Error removing occurrence",
+      "bulk_error": "Error in bulk cleanup",
+      "select_dates": "Please select dates"
+    }
+  },
+  "epg": {
+    "title": "TV GUIDE",
+    "subtitle": "ONEPA PLAYOUT • ALPHA INTELLIGENCE",
+    "no_name": "No Name",
+    "prev": "PREVIOUS",
+    "today": "TODAY",
+    "next": "NEXT",
+    "empty_playlist": "EMPTY PLAYLIST",
+    "duration_label": "DURATION",
+    "no_schedule": "No programming found for this day.",
+    "dialog": {
+      "title": "DETAILED PROGRAMMING",
+      "emission_time": "BROADCAST TIME",
+      "description": "SYNOPSIS / DESCRIPTION",
+      "no_description": "This content has no detailed synopsis registered in the system.",
+      "director": "DIRECTOR",
+      "category": "CATEGORY / GENRE",
+      "source_data": "DATA SOURCE",
+      "visit_source": "VISIT SOURCE",
+      "close": "CLOSE DETAILS",
+      "unknown": "Unknown",
+      "general": "General"
+    },
+    "tooltip": {
+      "click_view": "Click to view all"
+    }
+  },
+  "settings": {
+    "header": {
+      "title": "Settings",
+      "subtitle": "System Control Panel",
+      "refresh_btn": "REFRESH",
+      "refresh_tooltip": "Reload server settings",
+      "history_btn": "VERSION NOTES",
+      "history_tooltip": "View what's new in this version",
+      "save_btn": "SAVE CHANGES",
+      "save_btn_loading": "SAVING..."
+    },
+    "navigation": {
+      "title": "CONFIGURATION",
+      "output": "EMISSION & OUTPUT",
+      "paths": "PATHS & MEDIA",
+      "playout": "PLAYOUT & PRESETS",
+      "users": "USERS",
+      "system": "TEMPLATES",
+      "about": "ABOUT SYSTEM",
+      "monitor": "BACKEND MONITOR",
+      "support": "TECHNICAL SUPPORT",
+      "explore_tooltip": "Explore {{tab}}"
+    },
+    "tabs": {
+      "system": "TEMPLATES"
+    },
+    "about": {
+      "header": {
+        "title": "SYSTEM INFORMATION",
+        "subtitle": "CORE STATUS & OPERATIONAL LOGS"
+      },
+      "fields": {
+        "version": "VERSION",
+        "last_update": "LAST UPDATE",
+        "deployment": "ENVIRONMENT",
+        "env_value": "Docker Container (Linux)"
+      },
+      "roadmap": {
+        "title": "PRODUCT ROADMAP",
+        "subtitle": "FEATURE PLANNING & FUTURE EXPLORATION",
+        "highlight_title": "VERSION HIGHLIGHTS",
+        "github_btn": "VIEW REPOSITORY",
+        "highlights": {
+          "i18n_label": "MULTI-LANGUAGE (IMPLEMENTED)",
+          "i18n_value": "Implemented",
+          "multichannel_label": "MULTI-CHANNEL (IMPLEMENTED)",
+          "multichannel_value": "Active",
+          "lowlatency_label": "LOW-LATENCY (IMPLEMENTED)",
+          "lowlatency_value": "SRT / HLS (stable)",
+          "ai_label": "AI & HA (IMPLEMENTED)",
+          "ai_value": "Active"
+        },
+        "phases": {
+          "p25_connectivity": {
+            "title": "LIVE INPUTS & ADVANCED PROTOCOLS (IMPLEMENTED)",
+            "focus": "Expanding beyond file playback",
+            "items": [
+              "Live Inputs Support: WebRTC, NDI and SDI integration for live switching",
+              "Social Streaming: Native API integration for YouTube Live and Facebook Live",
+              "Advanced SRT: Multi-caller and bonding"
+            ]
+          },
+          "p26_ux": {
+            "title": "GRAPHICS & VISUAL EXPERIENCE",
+            "focus": "Advanced on-air branding",
+            "items": [
+              "Drag-and-Drop Editor: WYSIWYG editor for active templates",
+              "HTML5 Graphics Engine: Dynamic overlays with web technologies",
+              "Mobile Responsive Layout: Full mobile support for the dashboard",
+              "Theme Customization: Advanced per-user theme engine"
+            ]
+          },
+          "p27_enterprise": {
+            "title": "ENTERPRISE & COMPLIANCE",
+            "focus": "Scalability and professional requirements",
+            "items": [
+              "Multi-User System: Profile-based access control (RBAC)",
+              "Audit Logs: Complete tracking of user actions",
+              "As-Run Logs: Proof-of-Play display logs",
+              "SCTE-35 Support: Triggers for ad insertion",
+              "Analytics Dashboard: Viewing statistics and system health metrics"
+            ]
+          },
+          "p28_future": {
+            "title": "AI & HIGH AVAILABILITY (IMPLEMENTED)",
+            "focus": "Innovation and high availability",
+            "items": [
+              "AI Integration: Auto-tagging and intelligent playlist generation",
+              "Multi-Channel Core: One instance managing multiple channels",
+              "High Availability: Redundancy and automatic failover"
+            ]
+          }
+        },
+        "idioma": {
+          "title": "MULTI-LANGUAGE",
+          "value": "Implemented"
+        },
+        "canal": {
+          "title": "MULTI-CHANNEL",
+          "value": "Planned"
+        },
+        "latency": {
+          "title": "LOW-LATENCY",
+          "value": "SRT / HLS (stable)"
+        }
+      },
+      "history": {
+        "title": "VERSION HISTORY",
+        "subtitle": "CRITICAL NOTES & PROJECT EVOLUTION",
+        "dialog_title": "VERSION HISTORY",
+        "version_label": "Version",
+        "close_btn": "GOT IT",
+        "empty": "NO HISTORY AVAILABLE",
+        "releases": [
+          {
+            "version": "v2.6.0-ALPHA.47-PRO",
+            "date": "2026-03-12",
+            "changes": [
+              "Phase 32 — UI Refinements & Navigation: Sidebar reordered for a more intuitive workflow.",
+              "Logout button moved to the topbar AppBar for consistent access across all pages.",
+              "Logoff button permanently uses red alpha badge color (#cc0000) with hover brightening to #ff2222.",
+              "Sidebar order: Dashboard → Live Inputs → EPG → Library → Playlists → Multi-Channel → Calendar → Graphics → Templates → Health → Settings.",
+              "Migration 081: system_version → v2.6.0-ALPHA.47-PRO."
+            ]
+          },
+          {
+            "version": "v2.6.0-ALPHA.45-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Phase 30 & 31 — Live Inputs & Multi-Channel UI: New live broadcasting features.",
+              "Live Input Ingestion: Support for RTMP, SRT, WebRTC, NDI and SDI.",
+              "Live Switching Engine: Cut/fade transitions, audio mixing, graphics overlays.",
+              "Social Streaming: Multi-destination to YouTube Live and Facebook Live.",
+              "Multi Channel Visual UI: Grid dashboard with real-time previews.",
+              "AI Playlist Generation: Content analysis, scene detection, speech-to-text.",
+              "High Availability: Active-active nodes, automatic failover.",
+              "Edge CDN: Origin server, edge nodes, cache layer.",
+              "Monitoring: Integration with Prometheus, Grafana and Alertmanager.",
+              "Migration 079/080: system_version → v2.6.0-ALPHA.45-PRO."
+            ]
+          },
+          {
+            "version": "v2.5.0-ALPHA.44-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Phase 5 — Kubernetes + MinIO + CI/CD: Cloud-native deployment infrastructure.",
+              "Helm Charts: Full deployment/helm/ manifests for all 9 services with HPA and Ingress.",
+              "MinIO S3-Compatible Storage: Docker Compose + Helm StatefulSet. STORAGE_BACKEND=local|s3.",
+              "Storage Service: Trait-based backend/src/services/storage.rs — LocalStorage vs S3Storage.",
+              "Migration 077: media.s3_path TEXT column for S3-stored assets.",
+              "GitHub Actions CI/CD: On PR → cargo test + clippy + Playwright E2E. On merge → GHCR push.",
+              "Migration 078: system_version → v2.5.0-ALPHA.44-PRO."
+            ]
+          },
+          {
+            "version": "v2.4.0-ALPHA.43-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Phase 4 — SCTE-35 + LL-HLS: Ad-insertion cue markers per playlist item.",
+              "API: GET/POST/DELETE /api/v2/scte35 for splice_insert marker management.",
+              "FFmpeg: inject_scte35_markers() integrates SCTE-35 cues into stream pipeline.",
+              "Frontend: Ad Cue button in Playlist Editor with PTS offset and duration fields.",
+              "LL-HLS: mediamtx updated to lowLatency variant — 1s segments, 100ms parts.",
+              "Migration 076: system_version → v2.4.0-ALPHA.43-PRO."
+            ]
+          },
+          {
+            "version": "v2.4.0-ALPHA.42-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Phase 3 — Microservices: service-analytics, service-graphics, service-ai.",
+              "service-analytics (Node.js): Redis playout:* subscriber → as_run_logs + audit_logs. Port 4001.",
+              "service-graphics (Node.js + Puppeteer): HTML5 Compositor, 1920×1080 transparent PNG. Port 3002.",
+              "service-ai (Python 3.12): Whisper ASR captions + ffmpeg silence detection worker.",
+              "Docker Compose: Three new services with health checks and Redis/Postgres dependencies.",
+              "Migration 074: media_tasks AI job queue columns. Migration 075: version bump."
+            ]
+          },
+          {
+            "version": "v2.3.0-ALPHA.41-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Phase 2.1 — UI Consolidation: Analytics tab merged into Playout Health (/health).",
+              "Graphics Integration: Template Editor embedded as 4th tab in Graphics Editor (/graphics).",
+              "Sidebar reduced from 11 to 9 entries — cleaner, focused navigation.",
+              "Embedded component pattern: GraphicsTemplateEditor adapts height/padding via prop.",
+              "Migration 073: system_version → v2.3.0-ALPHA.41-PRO."
+            ]
+          },
+          {
+            "version": "v2.3.0-ALPHA.40-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Phase 2 — Frontend Transformation: Theme Personalization Engine via ThemeContext.",
+              "Mobile Responsive Layout: MUI Drawer with permanent/temporary modes per breakpoint.",
+              "Real-Time Analytics Dashboard: WebSocket-driven Recharts LineChart + BarChart.",
+              "Drag-and-Drop Template Editor: 16:9 canvas with @dnd-kit palette and property inspector.",
+              "Recharts: Added recharts@^2.12.0 to frontend dependencies."
+            ]
+          },
+          {
+            "version": "v2.3.0-ALPHA.39-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Phase 1 — Enterprise Foundation: channels table with multi-tenant scoping on all core tables.",
+              "Redis Event Bus: Real-time clip_start/clip_end events via Redis Pub/Sub.",
+              "As-Run Logs: as_run_logs table for compliance proof-of-play.",
+              "Audit Trail: audit_logs table for immutable user action history.",
+              "SCTE-35 Schema: scte_35_markers table for ad-insertion cues.",
+              "WebSocket Endpoint: GET /api/v2/events?token=<JWT> streams live telemetry.",
+              "v2 API: /api/v2/channels, /api/v2/analytics, /api/v2/analytics/preferences."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.38-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Automated Release: Version bump to ALPHA.38-PRO.",
+              "Documentation: Synced README.md, RELEASE_NOTES.md and frontend constants.",
+              "Improved Transcription: Optimized engine settings for better accuracy."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.35-PRO",
+            "date": "2026-03-08",
+            "changes": [
+              "Automated Release: Version bump and statistics update.",
+              "Documentation: Synced README.md and version history.",
+              "i18n Health: Added system health dashboard translations."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.34-PRO",
+            "date": "2026-03-05",
+            "changes": [
+              "Automated Release: Version bump and statistics update.",
+              "Documentation: Synced README.md and version history."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.32-PRO",
+            "date": "2026-03-03",
+            "changes": [
+              "UDP Stability: Corrected Unicast PUSH mode for \"Address already in use\" errors.",
+              "Audit Ports 3.0: Intelligent receiver detection (VLC).",
+              "Log Management: Log rotation (10MB/3-files) and persistence.",
+              "Script Versioning: Standardized script version output.",
+              "Process Guard: Protection against port collisions.",
+              "System Sync: Version synchronized across DB/Backend/Frontend."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.31-PRO",
+            "date": "2026-03-01",
+            "changes": [
+              "Dynamic EPG Hydration: Real-time metadata sync from Media Library.",
+              "Improved Duplication Support: Duplicates hydrated correctly.",
+              "EPG XML Enhancements: Rich descriptions and categories.",
+              "Automation: Versioning synchronized across Frontend/Backend/DB."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.30-PRO",
+            "date": "2026-02-28",
+            "changes": [
+              "Automated Release: Version bump and statistics update.",
+              "Documentation: Synced README.md and version history."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.29-PRO",
+            "date": "2026-02-27",
+            "changes": [
+              "Automated Release: Version bump and statistics update.",
+              "Documentation: Synced README.md and version history."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.28-PRO",
+            "date": "2026-02-24",
+            "changes": [
+              "High-Density Help System: Help menu redesign.",
+              "Protocol Stability: RTMP fallback fix.",
+              "Backend Recovery: VersionMismatch resolved.",
+              "Automation Integrity: Fixed version suffix logic."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.27-PRO",
+            "date": "2026-02-23",
+            "changes": [
+              "Surgical Compact Redesign: Reduced paddings/margins.",
+              "EPG & Calendar Optimization: More events without scrolling.",
+              "Dashboard Protocol Focus: Telemetry-first layout.",
+              "Bug Fix: EditIcon ReferenceError resolved."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.26-PRO",
+            "date": "2026-02-23",
+            "changes": [
+              "Automated Release: Version bump and statistics update.",
+              "Documentation: Synced README.md and version history."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.25-PRO",
+            "date": "2026-02-22",
+            "changes": [
+              "ALPHA.25 Consolidation: Version synchronized across DB/Backend/Frontend.",
+              "Reality Sync Engine: Robust file detection across paths.",
+              "Storage Transparency: Real-time MB/GB diagnostics.",
+              "Professional Filter: Protected assets hidden in Media Library.",
+              "Performance Streaming: Native Range Request support.",
+              "Data Hygiene: Automatic cleanup of system residues."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.24-PRO",
+            "date": "2026-02-20",
+            "changes": [
+              "Pending details: This release needs consolidated notes."
+            ]
+          }
+        ]
+      }
+    },
+    "warnings": {
+      "udp_config": "UDP protocol ready for activation upon saving."
+    },
+    "output": {
+      "header": {
+        "title": "OUTPUT CONFIGURATION",
+        "subtitle": "PROTOCOL & DISTRIBUTION MANAGEMENT",
+        "status_ready": "ENGINE ONLINE"
+      },
+      "main": {
+        "title": "PRIMARY PROTOCOL",
+        "url_label": "PRIMARY OUTPUT URL",
+        "udp_tip": "TIP: The udp://@:1234 format forces Push to the local machine (VERY STABLE). In VLC open: udp://@:1234",
+        "resolution": "RESOLUTION",
+        "resolutions": {
+          "4k": "4K (Ultra HD)",
+          "1080p": "1080p (Full HD)",
+          "720p": "720p (HD)",
+          "360p": "360p (SD)"
+        },
+        "bitrate": "VIDEO BITRATE (ex: 5000k)"
+      },
+      "multi": {
+        "title": "MULTI-STREAMING",
+        "subtitle": "ADDITIONAL PROTOCOL ACTIVATION",
+        "soon": "COMING SOON"
+      },
+      "links": {
+        "title": "DIRECT CONNECTION LINKS (VLC, OBS)",
+        "rtmp_label": "RTMP (Local Distribution Master)",
+        "rtmp_copied": "RTMP link copied!",
+        "srt_label": "SRT - Secure Reliable Transport (UDP)",
+        "srt_warning": "Warning: Port must be open in UDP. Clients must explicitly request 'read:'",
+        "srt_copied": "SRT link copied!",
+        "udp_label": "UDP Stream (VLC Direct)",
+        "udp_tip": "To view in VLC: Media > Open Network Stream > enter the address above.",
+        "udp_copied": "UDP link copied!",
+        "hls_label": "HLS Playlist (Nginx Proxy 3011)",
+        "hls_copied": "HLS link copied!",
+        "no_protocols": "Activate at least one protocol above (RTMP, SRT, HLS) to reveal dedicated ports and links.",
+        "copied": "Link copied!"
+      }
+    },
+    "paths": {
+      "header": {
+        "title": "STORAGE PATHS",
+        "subtitle": "DIRECTORY & VOLUME CONFIGURATION"
+      },
+      "fields": {
+        "media": "MEDIA & VIDEO",
+        "thumbnails": "THUMBNAILS",
+        "playlists": "PLAYLISTS DB",
+        "fillers": "FILLERS & LOOPS",
+        "logs": "PLAYOUT LOGS",
+        "protected": "BRANDING & PROTECTED ASSETS"
+      },
+      "helpers": {
+        "media": "Main content storage",
+        "thumbnails": "Cache of generated thumbnails",
+        "playlists": "Scheduling database",
+        "fillers": "Automatic fill content",
+        "logs": "System logs file location",
+        "protected": "Logos and institutional videos location"
+      }
+    },
+    "storage": {
+      "header": {
+        "title": "SPACE MANAGEMENT (WEB PROXIES)",
+        "subtitle": "Cache monitoring and physical directory synchronization.",
+        "sync_needed_label": "new files on disk. Click the Sync icon."
+      },
+      "stats": {
+        "db": "DB",
+        "physical": "Disk",
+        "proxies": "Proxies"
+      },
+      "toolbar": {
+        "explore": "Explore Space Manager",
+        "sync": "Sync files from disk to Database",
+        "purge": "Purge all Proxies (Free Space)"
+      },
+      "explorer": {
+        "title": "STORAGE SPACE MANAGER",
+        "subtitle": "INDIVIDUAL MANAGEMENT OF OPTIMIZED PREVIEW FILES",
+        "selected_count": "SELECTED",
+        "mb_to_free": "MB TO BE FREED",
+        "proxy_missing": "MISSING PROXY (Identified on Disk, needs optimization)",
+        "generate_btn": "GENERATE NOW",
+        "generate_success": "Proxy generation started in background",
+        "empty": "NO PROXIES FOUND ON DISK",
+        "delete_btn": "DELETE SELECTED"
+      },
+      "dialogs": {
+        "delete_proxies": {
+          "title": "CONFIRM DELETION",
+          "warning1": "Are you sure you want to delete {{count}} proxy files?",
+          "space_label": "Total space to free:",
+          "warning2": "⚠️ THIS OPERATION CANNOT BE UNDONE. PORTAL PREVIEWS WILL BE SLOW AGAIN FOR THESE VIDEOS.",
+          "confirm_btn": "CONFIRM AND DELETE"
+        }
+      }
+    },
+    "api": {
+      "header": {
+        "title": "METADATA APIS",
+        "subtitle": "INTELLIGENT INDEXING (TMDB / OMDB)",
+        "auto_config_btn": "AUTO-CONFIG"
+      },
+      "fields": {
+        "key_placeholder": "Enter API Key..."
+      },
+      "toolbar": {
+        "test": "Test Connection",
+        "save": "Save"
+      },
+      "dialogs": {
+        "auto_config": {
+          "title": "Automatic Configuration",
+          "desc": "This action will automatically configure the recommended API keys for:",
+          "warning": "Your current keys will be overwritten. Do you want to continue?"
+        },
+        "overlay_optimizer": {
+          "title": "Overlay Optimizer Pro",
+          "select_btn": "Select Original Image",
+          "width_label": "Width",
+          "height_label": "Height",
+          "aspect_label": "Maintain Aspect",
+          "trim_label": "Auto-Trim",
+          "change_btn": "Change Image",
+          "processing": "Processing...",
+          "apply_btn": "Apply and Save"
+        }
+      }
+    },
+    "branding": {
+      "header": {
+        "title": "Branding & Assets",
+        "subtitle": "VISUAL IDENTITY & FALLBACKS"
+      },
+      "assets": {
+        "title": "BRANDING ASSETS",
+        "subtitle": "LOGOS & FALLBACK MEDIA",
+        "logo_label": "APP LOGO",
+        "fallback_img_label": "FALLBACK IMAGE",
+        "image_fallback_label": "FALLBACK IMAGE",
+        "change_btn": "CHANGE",
+        "reset_btn": "RESTORE DEFAULTS",
+        "restore_defaults_btn": "RESTORE DEFAULTS",
+        "restore_tooltip": "Restore branding and assets to system default values",
+        "restore_defaults_tooltip": "Restore branding and assets to system default values",
+        "defined_label": "DEFINED",
+        "defined": "DEFINED",
+        "missing_label": "MISSING",
+        "missing": "MISSING",
+        "reset_success": "Assets reset successfully!",
+        "reset_error": "Error resetting assets",
+        "restore_success": "Defaults restored successfully!",
+        "restore_error": "Error restoring defaults",
+        "type_img": "IMG",
+        "type_vid": "VID"
+      },
+      "dialogs": {
+        "preview": {
+          "set_default_btn": "Set as Default"
+        }
+      },
+      "upload_success": "Logo uploaded successfully!",
+      "upload_error": "Error uploading logo",
+      "overlay": {
+        "fallback_label": "VIDEO FALLBACK"
+      }
+    },
+    "playout": {
+      "header": {
+        "title": "PLAYOUT ENGINE",
+        "subtitle": "PERFORMANCE & REAL-TIME SYNC",
+        "wizard_btn": "ASSISTANT",
+        "reset_btn": "RESET"
+      },
+      "fields": {
+        "day_start": "DAY START",
+        "channel_name": "CHANNEL NAME",
+        "fps": "FRAME RATE (FPS)",
+        "encoding_preset": "ENCODING PRESET"
+      },
+      "tooltips": {
+        "day_start": "Daily grid reset time",
+        "channel_name": "Public stream identifier",
+        "fps": "Base frames per second",
+        "encoding_preset": "CPU compression efficiency"
+      },
+      "epg": {
+        "title": "PROGRAMMING & EPG",
+        "subtitle": "EPG DISTRIBUTION (XMLTV)",
+        "url_label": "FINAL EPG URL",
+        "copy_tooltip": "Copy Endpoint",
+        "refresh_label": "INTERNAL REFRESH",
+        "system_generated": "(AUTO-GENERATED BY SYSTEM)",
+        "days_label": "DAYS",
+        "status_live": "LIVE",
+        "copied": "EPG Endpoint copied!"
+      },
+      "overlay": {
+        "title": "CHANNEL OVERLAY",
+        "subtitle": "REAL-TIME WATERMARK MANAGEMENT",
+        "preview": "PREVIEW",
+        "disabled": "DISABLED",
+        "dpad_label": "POSITION CONTROL (D-PAD)",
+        "opacity": "OPACITY",
+        "scale": "SCALE",
+        "path_label": "OVERLAY LOGO (LOCAL)",
+        "change_btn": "CHANGE",
+        "magic_tooltip": "Logo Processor (Remove Background)"
+      },
+      "presets": {
+        "title": "QUALITY PRESETS",
+        "subtitle": "QUICK STREAMING CONFIGURATION",
+        "advanced_mode": "ADVANCED MODE",
+        "list": {
+          "720p": {
+            "desc": "Balanced (Normal Streaming)"
+          },
+          "1080p": {
+            "desc": "High Fidelity (Broadcast)"
+          },
+          "4k": {
+            "desc": "Maximum Quality (UHD)"
+          }
+        }
+      },
+      "dialogs": {
+        "reset": {
+          "title": "Confirm Factory Reset",
+          "warning1": "Are you sure you want to delete ALL data for this channel?",
+          "warning2": "This action will permanently delete all playlists, calendar events and restore default settings. There is no going back!",
+          "confirm_btn": "Yes, Delete Everything",
+          "success": "Channel reset successfully!",
+          "error": "Error performing channel reset"
+        },
+        "presets": {
+          "title": "CHANGE QUALITY PRESET",
+          "desc": "Applying preset",
+          "resolution_label": "Resolution",
+          "bitrate_label": "Bitrate",
+          "fps_label": "FPS",
+          "restart_warning": "This change requires a playout engine restart to take effect. Save settings and restart the engine after confirming.",
+          "apply_btn": "APPLY PRESET"
+        }
+      },
+      "save_error": "Error saving settings",
+      "restart_warning": "Changes requiring restart detected.",
+      "restart_success": "Broadcasting restarted successfully!",
+      "restart_error": "Error restarting engine"
+    },
+    "users": {
+      "header": {
+        "title": "ACCESS MANAGEMENT",
+        "subtitle": "USERS AND ACCESS PROFILES",
+        "add_user_btn": "ADD USER",
+        "add_profile_btn": "CREATE PROFILE"
+      },
+      "tabs": {
+        "users": "USERS",
+        "profiles": "PROFILES"
+      },
+      "table": {
+        "username": "USER",
+        "description": "DESCRIPTION",
+        "profile": "PROFILE / ROLE",
+        "status": "STATUS",
+        "actions": "ACTIONS",
+        "active": "ACTIVE",
+        "permissions": "PERMISSIONS"
+      },
+      "tooltips": {
+        "change_password": "Change Password",
+        "delete_user": "Delete User",
+        "edit_profile": "Edit Profile",
+        "delete_profile": "Delete Profile"
+      },
+      "messages": {
+        "delete_success": "User removed",
+        "delete_error": "Error deleting user",
+        "password_changed": "Password changed successfully!",
+        "password_change_error": "Error changing password",
+        "password_min_length": "Password must be at least 8 characters long",
+        "profile_updated": "Profile updated!",
+        "profile_created": "Profile created!",
+        "save_profile_error": "Error saving profile",
+        "profile_name_required": "Profile name is required",
+        "profile_deleted": "Profile removed",
+        "delete_profile_error": "Error removing profile"
+      },
+      "dialogs": {
+        "add_user": {
+          "title": "ADD USER",
+          "subtitle": "CREATE NEW SYSTEM ACCESS",
+          "username_label": "USERNAME",
+          "password_label": "PASSWORD",
+          "profile_label": "ACCESS PROFILE"
+        },
+        "change_password": {
+          "title": "CHANGE PASSWORD: {{username}}",
+          "new_password_label": "NEW PASSWORD",
+          "update_btn": "UPDATE"
+        },
+        "profile": {
+          "new_title": "NEW PROFILE",
+          "edit_title": "EDIT PROFILE",
+          "subtitle": "MANAGE PERMISSION LEVELS",
+          "name_label": "PROFILE NAME",
+          "system_rename_warning": "System profiles cannot be renamed.",
+          "permissions_label": "ACTIVE PERMISSIONS",
+          "permissions_help": "Define the view, edit and execution scope for users with this profile.",
+          "create_btn": "CREATE",
+          "update_btn": "UPDATE"
+        },
+        "udp_verify": {
+          "title": "Important Information: UDP Output",
+          "intro": "The UDP (User Datagram Protocol) protocol is recommended for local networks due to its low latency, but has specific characteristics:",
+          "stability_title": "1. Stability vs SRT:",
+          "stability_desc": "UDP has no packet retransmission. If the network fluctuates, there will be visible \"drops\". SRT is preferred for remote access.",
+          "network_title": "2. Network Configuration:",
+          "network_external": "External Access:",
+          "network_desc": "Not recommended for UDP (use SRT). If necessary, it requires Port Forwarding on the router (Port 1234 UDP).",
+          "sync_title": "3. Sync & Buffer:",
+          "sync_desc": "Our PUSH manageable system starts and continuously feeds the firewall natively, eliminating handshake latencies and common initial broadcast errors.",
+          "firewall_warning": "* Make sure the server firewall allows traffic on the chosen port.",
+          "confirm_btn": "I Understand and Wish to Activate"
+        },
+        "delete_confirm": "Are you sure you want to delete this user?",
+        "profile_delete_warning": "Are you sure? Users associated with this profile may lose access."
+      }
+    },
+    "logs": {
+      "dialog": {
+        "title": "LOG VIEWER"
+      },
+      "rotation": {
+        "btn": "ROTATION",
+        "tooltip": "Log rotation configuration",
+        "header": "LOG ROTATION CONFIGURATION",
+        "fields": {
+          "max_size": "MAX SIZE (MB)",
+          "max_files": "MAX FILES",
+          "retention": "RETENTION (DAYS)",
+          "compress": "COMPRESS OLD LOGS"
+        },
+        "save_btn": "SAVE CONFIGURATION",
+        "save_success": "Rotation configuration saved!",
+        "save_error": "Error saving rotation configuration",
+        "force_btn": "FORCE ROTATE NOW",
+        "force_confirm": "Force rotation now? Current log will be archived.",
+        "force_success": "Rotation executed! Log restarted.",
+        "force_error": "Error executing rotation"
+      },
+      "export": {
+        "btn": "EXPORT TXT",
+        "tooltip": "Export visible logs as TXT"
+      },
+      "tabs": {
+        "playout": "PLAYOUT LOGS",
+        "system": "VM / DOCKER LOGS"
+      },
+      "search_placeholder": "Search logs...",
+      "lines_count": "lines",
+      "empty_filters": "NO RESULTS FOR APPLIED FILTERS",
+      "waiting": "WAITING FOR LOGS...",
+      "system": {
+        "source_label": "SOURCE",
+        "empty_source": "No recent logs from this source.",
+        "none_detected": "NO SYSTEM LOGS DETECTED INSIDE THE CONTAINER."
+      },
+      "footer": {
+        "files": "files",
+        "compress_on": "Compression ON",
+        "compress_off": "Compression OFF",
+        "days": "days",
+        "restart_btn": "RESTART ENGINE"
+      }
+    }
+  },
+  "notifications": {
+    "save_success": "Settings for tab {{tab}} saved!",
+    "restart_success": "Stream restarted successfully!",
+    "save_error": "Error saving settings",
+    "media": "Media",
+    "playlists": "Playlists",
+    "calendar": "Calendar",
+    "graphics": "Graphics",
+    "settings": "Settings",
+    "troubleshooting": "Issues"
+  },
+  "udp_ready": "UDP Protocol ready for activation on save.",
+  "help": {
+    "title": "Help Center",
+    "subtitle": "CLOUD ONEPA PLAYOUT — OPERATIONS GUIDE",
+    "deactivate_btn": "Deactivate Help Mode",
+    "close_btn": "Close",
+    "tabs": {
+      "dashboard": "Dashboard",
+      "media": "Media",
+      "playlists": "Playlists",
+      "calendar": "Calendar",
+      "graphics": "Graphics",
+      "settings": "Settings",
+      "troubleshooting": "Issues"
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "intro": "The Dashboard is the main operational page of the playout. From here you control everything happening in real-time.",
+      "status_indicator": {
+        "title": "ON AIR / OFF AIR Indicator",
+        "prefix": "At the top of the Dashboard there is a broadcast status indicator:",
+        "on_air": "FFmpeg engine active and broadcasting",
+        "off_air": "Engine stopped or no playlist"
+      },
+      "controls": {
+        "title": "Start / Stop Playout",
+        "step1": "Verify you have a playlist scheduled for the current time in the Calendar.",
+        "step2": "Click START — the system automatically validates the schedule before starting.",
+        "step3": "Choose protocols to activate (RTMP, SRT, UDP) and click 'Start Engine'.",
+        "step4": "The LIVE PREVIEW monitor shows the broadcast after 6-10 seconds (HLS time).",
+        "step5": "To stop, click STOP. All protocols are automatically disconnected.",
+        "warning": "If there is no scheduled playlist, the playout won't start. Configure the calendar first."
+      },
+      "protocols": {
+        "title": "Broadcast Protocols",
+        "intro": "The system supports multiple simultaneous protocols:",
+        "master": "Principal internal streaming for Playout.",
+        "rtmp": "Ideal for social media (YouTube/FB) and CDNs.",
+        "srt": "High-reliability streaming over unstable networks.",
+        "udp": "Protocol for local networks and IP encoders.",
+        "others": "Adaptive HTTP formats and Web streaming.",
+        "legend": "Status: 🟢 Active | ⚪ Inactive | 🔴 Socket Error"
+      },
+      "clips": {
+        "title": "Clip Visualization",
+        "intro": "In the Playlist tab you can see the status of each clip:",
+        "playing": "Clip being broadcasted now.",
+        "next": "Next clip in playback queue.",
+        "skip": "Skip current clip and move to next."
+      },
+      "logs": {
+        "title": "Monitoring (Engine Logs)",
+        "intro": "Technical info extracted directly from the playout engine:",
+        "engine": "Encoding process status.",
+        "uptime": "Total broadcast time without interruption.",
+        "schedule_validity": "Cross-validation with calendar.",
+        "active_protocols": "List of running encoders.",
+        "last_logs": "Real-time visualization of engine messages."
+      }
+    },
+    "library": {
+      "title": "Media Library",
+      "intro": "Central repository for all videos, audios and other content.",
+      "upload": {
+        "title": "Upload Videos",
+        "step1": "Click UPLOAD or drag files to the drop area.",
+        "step2": "Supported formats: MP4, MOV, MKV, AVI, TS, MXF (H.264/H.265).",
+        "step3": "The system automatically extracts metadata (duration, resolution, codec).",
+        "step4": "A thumbnail is automatically generated from the center frame.",
+        "nfs_hint": "Tip: Network folders (NFS/SMB) are automatically detected if configured."
+      },
+      "metadata": {
+        "intro": "Every uploaded file is analyzed to extract technical and editorial details.",
+        "auto_review_title": "Metadata Review",
+        "auto_review": "The system automatically reviews metadata of uploaded clips.",
+        "field_title": "Title",
+        "field_title_desc": "Program or clip name.",
+        "field_synopsis": "Synopsis",
+        "field_synopsis_desc": "Short content description.",
+        "field_genre": "Genre",
+        "field_genre_desc": "Content category.",
+        "field_rating": "Rating",
+        "field_rating_desc": "Recommended age.",
+        "field_type": "Type",
+        "field_type_desc": "Series, Movie, Documentary, etc."
+      },
+      "fillers": {
+        "title": "Filler Clips",
+        "desc": "Fillers are used automatically to fill empty gaps in the schedule."
+      }
+    },
+    "playlists": {
+      "title": "Playlist Editor",
+      "intro": "Playlists are sequences of content that the playout engine reproduces in order.",
+      "create": {
+        "title": "Create a Playlist",
+        "step1": "Go to the Playlists menu and click 'New Playlist'.",
+        "step2": "Assign an identifying name (e.g., Morning Movies).",
+        "step3": "Drag clips from the Media Library to the right list.",
+        "step4": "Reorder clips by dragging them up or down.",
+        "step5": "Click SAVE to register the playlist."
+      },
+      "management": {
+        "title": "Playlist Management",
+        "sorting": "Sorting",
+        "sorting_desc": "Click arrow icons or drag to change order.",
+        "remove_clip": "Remove Clip",
+        "remove_clip_desc": "Click the trash icon to remove a single clip.",
+        "duplicate": "Duplicate",
+        "duplicate_desc": "Create copies of existing playlists for quick variations.",
+        "total_duration": "Total Time",
+        "total_duration_desc": "The system calculates total duration in real-time.",
+        "fillers": "Auto-Fillers",
+        "fillers_desc": "Clips identified as fillers are ignored in base calculation but used in broadcast."
+      },
+      "best_practices": {
+        "title": "Best Practices",
+        "bullets": "• Avoid playlists longer than 24 hours.\n• Validate if all clips have thumbnails.\n• Use descriptive names for easier scheduling."
+      }
+    },
+    "calendar": {
+      "title": "Calendar",
+      "intro": "The calendar is where you schedule your broadcast.",
+      "schedule": {
+        "title": "Schedule a Playlist",
+        "step1": "Click on a day in the calendar to open the scheduling dialog.",
+        "step2": "Select the desired playlist.",
+        "step3": "Define the start time (e.g., 06:00).",
+        "step4": "Choose the repetition pattern: None, Daily, Weekly, or Monthly.",
+        "step5": "Click SAVE. The event appears on the calendar with the corresponding color."
+      }
+    },
+    "graphics": {
+      "title": "Graphics Engine",
+      "intro": "The Graphics Engine allows you to position the station logo and animated layers."
+    },
+    "settings": {
+      "title": "System Settings",
+      "intro": "The Settings menu has 5 main areas."
+    },
+    "troubleshooting": {
+      "title": "Troubleshooting",
+      "intro": "Solutions for the most common issues."
+    }
+  },
+  "graphics": {
+    "header": {
+      "title": "GRAPHICS ENGINE — ON-AIR BRANDING EDITOR WYSIWYG",
+      "subtitle": "REAL-TIME VISUAL EDITOR"
+    },
+    "tabs": {
+      "position": "POSITION",
+      "style": "STYLE",
+      "layer": "LAYER"
+    },
+    "preview": {
+      "title": "REAL-TIME PREVIEW (16:9)",
+      "positioning": "POSITIONING...",
+      "ready": "READY"
+    },
+    "position": {
+      "anchor_title": "ANCHOR POINT",
+      "main_logo": "MAIN LOGO",
+      "layer_prefix": "LAYER: ",
+      "offset_title": "FINE ADJUSTMENT (OFFSET)",
+      "axis_x": "X AXIS",
+      "axis_y": "Y AXIS",
+      "select_active_layer": "OR SELECT AN ACTIVE LAYER"
+    },
+    "style": {
+      "scale_title": "SCALE & DIMENSION",
+      "magnitude": "MAGNITUDE",
+      "opacity_title": "LAYER OPACITY",
+      "alpha": "ALPHA"
+    },
+    "buttons": {
+      "reset": "RESET",
+      "save": "SAVE CHANGES"
+    },
+    "tooltips": {
+      "reset": "Restore saved settings",
+      "save": "Save positioning and style settings",
+      "anchor": "Anchor to {{pos}} corner"
+    },
+    "messages": {
+      "update_success": "Graphics updated successfully!",
+      "load_settings_error": "Failed to load graphics settings",
+      "load_layers_error": "Failed to load graphics layers",
+      "save_success": "Graphics updated successfully!",
+      "save_error": "Error saving graphics settings"
+    },
+    "hint": {
+      "title": "ALPHA TIP",
+      "logo_desc": "Drag the logo directly in the preview for intuitive positioning. Use sliders for millimeter precision.",
+      "layer_desc": "Editing layer \"{{name}}\". Click background to return to Logo."
+    }
+  },
+  "wizard": {
+    "steps": {
+      "welcome": "Welcome",
+      "identity": "Identity",
+      "media": "Media",
+      "transmission": "Transmission",
+      "summary": "Summary",
+      "finish": "Finish"
+    },
+    "welcome": {
+      "title": "Welcome to Cloud Onepa Playout",
+      "description": "Let's configure your professional TV channel in just a few steps."
+    },
+    "identity": {
+      "title": "Channel Identity",
+      "label_name": "Channel Name",
+      "label_logo": "Station Logo",
+      "select_logo_btn": "Select Logo",
+      "file_label": "File: {{name}}",
+      "success_msg": "Identity configured!",
+      "error_save": "Error saving identity"
+    },
+    "media": {
+      "title": "Initial Content",
+      "alert_info": "Add videos from your library or external streams (RTMP/HLS) to your initial playlist.",
+      "add_library_btn": "Add from Library",
+      "add_external_btn": "Add Stream/URL",
+      "empty_msg": "Playlist is empty. Add content above.",
+      "duration_label": "Duration: {{duration}} | Type: {{type}}",
+      "type_stream": "Stream",
+      "type_file": "File",
+      "error_library": "Error loading Media Library",
+      "error_playlist_empty": "Add at least one item to the playlist",
+      "dialog_library": {
+        "title": "Select Media (Multi-selection)",
+        "files_selected": "{{count}} file(s) selected",
+        "no_media": "No media found in the library.",
+        "add_btn": "Add ({{count}})"
+      },
+      "dialog_external": {
+        "title": "Add External Stream",
+        "label_url": "Stream URL (RTMP/HLS/HTTP)",
+        "label_duration": "Estimated Duration (seconds)",
+        "helper_duration": "For 24/7 streams, enter a high value (ex: 86400)"
+      }
+    },
+    "transmission": {
+      "title": "Transmission Configuration",
+      "label_output_type": "Output Type",
+      "item_hls": "HLS (Web/Mobile)",
+      "item_rtmp": "RTMP (Social Media/Youtube)",
+      "label_url": "URL / Stream Key",
+      "success_msg": "Output configured!",
+      "error_save": "Error saving output"
+    },
+    "summary": {
+      "title": "Settings Summary",
+      "alert_info": "Confirm the data below before finalizing your channel creation.",
+      "field_name": "Channel Name",
+      "field_output": "Video Output",
+      "field_playlist": "Initial Playlist",
+      "playlist_desc": "{{count}} items scheduled for 24/7"
+    },
+    "final": {
+      "title": "All Set!",
+      "description": "Your channel is configured and ready to broadcast.",
+      "hint": "Click FINISH to apply all changes.",
+      "success_start": "Broadcast started successfully!",
+      "error_start": "Channel was configured but broadcast could not be started automatically. Check files on Dashboard.",
+      "success_setup": "Setup complete! Redirecting..."
+    },
+    "controls": {
+      "cancel": "Cancel",
+      "back": "Back",
+      "next": "Next",
+      "finish": "Finish",
+      "confirm_finish": "Confirm and Finish"
+    },
+    "dialog_cancel": {
+      "title": "Cancel Configuration?",
+      "message": "Are you sure you want to cancel? All unsaved progress will be lost.",
+      "btn_no": "NO, CONTINUE",
+      "btn_yes": "YES, EXIT"
+    }
+  },
+  "templates": {
+    "header": {
+      "title": "TEMPLATE GENERATOR",
+      "subtitle": "CREATE & MANAGE REUSABLE CONTENT STRUCTURES"
+    },
+    "controls": {
+      "create_btn": "CREATE TEMPLATE"
+    },
+    "grid": {
+      "no_name": "No Name",
+      "blocks": "BLOCKS",
+      "structure_title": "SEQUENCE STRUCTURE",
+      "use_btn": "USE"
+    },
+    "dialog_edit": {
+      "title_edit": "EDIT TEMPLATE",
+      "title_create": "CREATE NEW TEMPLATE",
+      "label_name": "TEMPLATE NAME",
+      "label_description": "DESCRIPTION",
+      "label_duration": "TOTAL DURATION (SECONDS)",
+      "save_btn": "SAVE TEMPLATE"
+    },
+    "dialog_use": {
+      "title": "GENERATE PLAYLIST FROM TEMPLATE",
+      "selected_template": "SELECTED TEMPLATE",
+      "label_playlist_name": "PLAYLIST NAME",
+      "label_emission_date": "BROADCAST DATE",
+      "generate_now_btn": "GENERATE NOW"
+    },
+    "notifications": {
+      "create_success": "Template created successfully!",
+      "update_success": "Template updated successfully!",
+      "delete_success": "Template deleted!",
+      "playlist_success": "Playlist created from template \"{{name}}\"!",
+      "error_fetch": "Error loading templates",
+      "error_save": "Error saving template",
+      "error_delete": "Error deleting template",
+      "error_playlist": "Error creating playlist from template",
+      "error_name_required": "Name is required"
+    },
+    "confirm_delete": "Are you sure you want to delete this template?",
+    "presets": {
+      "morning_show": {
+        "name": "MORNING SHOW",
+        "description": "Morning show template (06:00 - 12:00)"
+      },
+      "full_day": {
+        "name": "24H PLAYLIST",
+        "description": "Full 24-hour playlist"
+      },
+      "loop_content": {
+        "name": "LOOP CONTENT",
+        "description": "Content loop with commercial breaks"
+      }
+    },
+    "block_types": {
+      "intro": "INTRO",
+      "content": "CONTENT",
+      "commercial": "COMMERCIAL",
+      "outro": "OUTRO",
+      "filler": "FILLER"
+    }
+  },
+  "health": {
+    "title": "System Health",
+    "lastUpdate": "Last update",
+    "manualRefresh": "Force Refresh",
+    "systemScore": "System Score",
+    "integrityIndex": "Playout Integrity Index",
+    "scoreDescription": "Based on CasparCG connection, database health, storage availability and timeline sync.",
+    "coreComponents": "Core Components",
+    "initializingDiagnostics": "Initializing Diagnostics Engine...",
+    "waitingTelemetry": "Waiting for telemetry data...",
+    "liveDiagnosticsStream": "Live Diagnostics Stream",
+    "kpis": {
+      "deviceName": "Playout Host",
+      "clipsPlayed": "Clips Today",
+      "activeStreams": "Active Streams",
+      "lastError": "Last Error"
+    },
+    "checks": {
+      "casparEngine": "CasparCG Playout Engine",
+      "database": "System Database",
+      "mediaStorage": "Media Assets Storage",
+      "watchfolder": "Watchfolder Service",
+      "initializingComm": "Initializing communication...",
+      "awaitingMetrics": "Awaiting metrics...",
+      "calculatingSpace": "Calculating free space...",
+      "monitoringWatchfolders": "Monitoring watchfolders...",
+      "contentAvailability": "Content Availability",
+      "timeSync": "Time Synchronization",
+      "allMediaVerified": "All media files for the next 24h are verified and present.",
+      "ntpSync": "NTP sync active. Offset: < 2ms (Perfect)"
+    },
+    "score": {
+      "perfect": "Perfect",
+      "health": "Health"
+    }
+  },
+  "liveInputs": {
+    "title": "Live Inputs",
+    "liveInputs": "Live Inputs",
+    "socialStreaming": "Social Streaming",
+    "addInput": "Add Input",
+    "addStream": "Add Stream",
+    "editInput": "Edit Input",
+    "inputName": "Input Name",
+    "protocol": "Protocol",
+    "noInputs": "No live inputs configured",
+    "noStreams": "No social streams configured",
+    "confirmDelete": "Are you sure you want to delete?",
+    "status": "Status",
+    "name": "Name",
+    "platform": "Platform",
+    "streamUrl": "Stream URL",
+    "actions": "Actions",
+    "start": "Start",
+    "stop": "Stop",
+    "url": "URL",
+    "port": "Port",
+    "previewUrl": "Preview URL",
+    "editStream": "Edit Stream",
+    "streamName": "Stream Name",
+    "streamKey": "Stream Key"
+  },
+  "multiChannel": {
+    "title": "Multi-Channel",
+    "noDescription": "No description",
+    "noPreview": "Preview not available",
+    "currentClip": "Current Clip",
+    "nextUp": "Next Up",
+    "bitrate": "Bitrate",
+    "stop": "Stop",
+    "play": "Play",
+    "skip": "Skip",
+    "noChannels": "No channels configured",
+    "noChannelsHint": "Configure channels in settings to use multi-channel mode"
+  }
+}

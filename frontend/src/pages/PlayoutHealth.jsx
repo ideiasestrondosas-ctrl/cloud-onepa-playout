@@ -402,7 +402,7 @@ export default function PlayoutHealth() {
                   {wsStatus !== 'connected' && streamHealth.length === 0 ? (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 6, justifyContent: 'center', color: 'text.secondary' }}>
                       <CircularProgress size={16} />
-                      <Typography variant="body2">Waiting for WebSocket data…</Typography>
+                       <Typography variant="body2">{t('analytics.waitingWsData')}</Typography>
                     </Box>
                   ) : (
                     <ResponsiveContainer width="100%" height={220}>
@@ -424,7 +424,7 @@ export default function PlayoutHealth() {
               <Card>
                 <CardContent>
                   <Typography variant="subtitle2" sx={{ mb: 2, textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.72rem', fontWeight: 800 }}>
-                    Clips / Day (Last 7 Days)
+                    {t('analytics.charts.clipsPerDay')}
                   </Typography>
 {analyticsLoading ? (
                      <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}><CircularProgress size={24} /></Box>

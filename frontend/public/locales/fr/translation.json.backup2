@@ -1,0 +1,1714 @@
+{
+  "common": {
+    "save": "ENREGISTRER",
+    "saving": "ENREGISTREMENT...",
+    "cancel": "ANNULER",
+    "close": "FERMER",
+    "edit": "MODIFIER",
+    "delete": "SUPPRIMER",
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès",
+    "warning": "Avertissement",
+    "search": "Rechercher...",
+    "confirm": "Confirmer",
+    "select_all": "Tout Sélectionner",
+    "deselect_all": "Tout Désélectionner",
+    "back": "RETOUR",
+    "next": "SUIVANT",
+    "previous": "PRÉCÉDENT",
+    "today": "AUJOURD'HUI",
+    "no_data": "Aucune donnée trouvée",
+    "backend_offline": "⚠️ BACKEND HORS LIGNE - Vérifiez la connexion au serveur ou si le conteneur est en cours d'exécution.",
+    "unknown": "Inconnu",
+    "error_details": "Erreur : {{error}}",
+    "exit": "QUITTER",
+    "refresh": "ACTUALISER"
+  },
+  "navigation": {
+    "dashboard": "Tableau de Bord",
+    "media": "Bibliothèque",
+    "playlists": "Listes de Lecture",
+    "calendar": "Calendrier",
+    "graphics": "Graphiques",
+    "settings": "Paramètres",
+    "templates": "Modèles",
+    "epg": "GUIDE TV",
+    "logout": "Déconnexion",
+    "help": "Aide et Documentation",
+    "health": "Santé du Système",
+    "analytics": "Analyses",
+    "templateEditor": "Éditeur de Modèles",
+    "liveInputs": "Entrées en Direct",
+    "multiChannel": "Multi-Canal"
+  },
+  "login": {
+    "user": "NOM D'UTILISATEUR",
+    "password": "MOT DE PASSE",
+    "enter": "CONNEXION",
+    "restricted_area": "ZONE RESTREINTE",
+    "welcome": "Bienvenue sur ALPHA",
+    "logging_in": "Connexion en cours...",
+    "username": "Nom d'utilisateur",
+    "submit": "SE CONNECTER",
+    "monitoring": "Surveillance et Contrôle en Temps Réel",
+    "test_mode": "MODE TEST ALPHA"
+  },
+  "dashboard": {
+    "monitoring": "Surveillance et Contrôle",
+    "uptime": "Temps de Fonctionnement",
+    "clips_today": "Clips du Jour",
+    "playing": "EN COURS",
+    "offline": "HORS LIGNE",
+    "on_air": "À L'ANTENNE",
+    "off_air": "HORS ANTENNE",
+    "standby": "VEILLE",
+    "start_engine": "DÉMARRER L'ÉMISSION",
+    "stop_engine": "ARRÊTER L'ÉMISSION",
+    "skip_clip": "PASSER LE CLIP",
+    "distribution": "Distribution Mondiale",
+    "protocols": "Protocoles de Transmission",
+    "logs": "JOURNAUX (Diagnostics)",
+    "live_preview": "Aperçu en Direct",
+    "active": "ACTIF",
+    "starting": "DÉMARRAGE",
+    "error_status": "ERREUR",
+    "click_to_enable": "Cliquer pour activer",
+    "click_to_disable": "Cliquer pour désactiver",
+    "readonly_protocol": "Protocole primaire (lecture seule)",
+    "check_schedule": "Vérifiez votre programme dans le Calendrier.",
+    "vlc_launcher": "Lanceur Intelligent VLC",
+    "vlc_manual": "Commande Manuelle",
+    "vlc_hint": "Conseil : Si VLC ne s'ouvre pas, utilisez la Commande Manuelle ci-dessous.",
+    "diagnosing": "Diagnostic en cours...",
+    "vlc": {
+      "title": "Lanceur Intelligent VLC et Diagnostics Réseau",
+      "how_to": "Comment voir votre chaîne de l'extérieur :",
+      "real_time": "Le playout diffuse en temps réel. Utilisez les options ci-dessous pour surveiller avec un détail total.",
+      "playback_link": "Lien de Lecture (VLC) :",
+      "no_url": "URL de sortie non définie dans les paramètres.",
+      "open_vlc": "Ouvrir dans VLC",
+      "browser_note": "Note : Le navigateur ne peut pas confirmer si VLC s'est ouvert avec succès. Si rien ne se passe, installez VLC ou copiez le lien ci-dessus manuellement.",
+      "configure_output": "Configurer l'URL de Sortie →",
+      "diag_steps": "Étapes de Diagnostic :",
+      "realtime_logs": "Logs de Connexion en Temps Réel :",
+      "waiting_conns": "> En attente de connexions...",
+      "clear_logs": "Effacer les Logs",
+      "common_errors": "Erreurs Courantes (Erreur I/O) :",
+      "error_1935": "Port 1935 BLOQUÉ : Vérifiez si le port 1935 (RTMP) ou 9000 (SRT) est ouvert sur le Firewall/Routeur.",
+      "error_not_started": "Flux non démarré : Le lecteur a besoin que le Playout soit en état START pour recevoir des données.",
+      "error_latency": "Latence : Dans Safari, il peut y avoir un délai de 2 à 5 secondes en HLS. Utilisez SRT pour une latence inférieure à la seconde.",
+      "connecting": "Ouverture : {{url}}",
+      "command_sent": "Commande envoyée. Vérifiez si VLC s'est ouvert.",
+      "open_success": "Commande envoyée à VLC !",
+      "configuring": "Démarrage du lanceur intelligent VLC...",
+      "trying_protocol": "Essayer via le protocole vlc://..."
+    },
+    "restart": {
+      "title": "Options de démarrage",
+      "msg": "Sélectionnez les protocoles qui doivent être automatiquement démarrés lors de la mise sous tension du Backend.",
+      "master_switch": "Protocoles de démarrage automatique (interrupteur principal)"
+    },
+    "schedule_error": {
+      "title": "AVERTISSEMENT : ERREUR DE PLANIFICATION",
+      "msg": "Il n'y a aucune playlist active ou programmée pour aujourd'hui.",
+      "hint": "Le moteur de diffusion ne peut pas démarrer sans contenu. Veuillez utiliser l'assistant de configuration ou accéder au calendrier pour planifier une liste de lecture.",
+      "open_wizard": "ASSISTANT OUVERT"
+    },
+    "follow": "SUIVRE",
+    "empty_list": "Liste vide",
+    "current_clip_title": "MAINTENANT JOUER",
+    "source_label": "Source:",
+    "no_active_clip": "Aucun clip actif",
+    "hls_copied": "Lien HLS copié!",
+    "validate_error": "Erreur lors de la validation du planning",
+    "toggle_dist_error": "Erreur lors du basculement de la distribution",
+    "skip_success": "Clip ignoré avec succès !",
+    "skip_error": "Erreur lors du saut du clip",
+    "protocol_enabled": "Protocole {{protocol}} activé !",
+    "protocol_disabled": "Protocole {{protocol}} désactivé !",
+    "protocol_error": "Erreur de basculement du protocole",
+    "safari": {
+      "audio_paused": "Analyse audio en pause (Safari)",
+      "enable_meter": "Activer l'audiomètre"
+    },
+    "ops": {
+      "checking_db": "Vérification de la base de données...",
+      "ffmpeg_loaded": "Paramètres FFmpeg chargés",
+      "starting_encoder": "Démarrage de l'encodeur matériel...",
+      "playing_rtmp": "Lecture exécutée via RTMP/HLS"
+    },
+    "diag": {
+      "title": "Diagnostic du système",
+      "updated_at": "Mise à jour : {{time}} · Actualisation automatique 5 s",
+      "engine_status": "État du moteur",
+      "ffmpeg_engine": "Moteur FFmpeg",
+      "ffmpeg_running": "▶ Courir",
+      "ffmpeg_stopped": "◼ Arrêté",
+      "no_schedule_now": "Aucun détecté pour l'instant",
+      "loaded": "Chargé",
+      "no_playlist": "Aucune playlist associée",
+      "clips_available": "{{count}} clips disponibles",
+      "playlist_media": "Médias de liste de lecture",
+      "overlay_status": "Superposition / Logo",
+      "configured_ready": "Configuré et prêt",
+      "disabled": "Désactivé",
+      "clips_played": "joué",
+      "current_clip": "Extrait actuel",
+      "active_protocols": "Protocoles actifs",
+      "no_active_protocols": "Aucun protocole actif",
+      "last_error_label": "Dernière erreur : {{error}}",
+      "missing_files": "Fichiers manquants :",
+      "last_logs": "Dernières entrées de journal",
+      "no_logs": "Aucun journal disponible",
+      "diag_failed": "Impossible de récupérer le rapport.",
+      "refresh_now": "Actualiser maintenant"
+    }
+  },
+  "media": {
+    "title": "Médiathèque",
+    "subtitle": "Gestion de contenu intelligente",
+    "sync": "SYNCHRONISATION",
+    "syncing": "SYNCHRONISATION...",
+    "audit": "AUDIT",
+    "bulk_select": "Sélection multiple",
+    "cancel_selection": "Annuler la sélection",
+    "new_folder": "Nouveau dossier",
+    "items_selected": "{{count}} sélectionné",
+    "select_all": "Sélectionner tout",
+    "mark_filler": "Marquer comme remplissage",
+    "mark_prog": "Marquer comme Prog",
+    "structure": "STRUCTURE",
+    "root": "Racine",
+    "hint_title": "CONSEIL",
+    "hint_msg": "Faites glisser les fichiers directement vers des dossiers pour organiser votre bibliothèque.",
+    "drop_to_upload": "LIBÉRÉ À TÉLÉCHARGER",
+    "upload_media": "TÉLÉCHARGER DES MÉDIAS",
+    "upload_hint": "Faites glisser les fichiers ou cliquez pour explorer (Destination : {{folder}})",
+    "search_placeholder": "Rechercher dans la bibliothèque...",
+    "files": "Fichiers",
+    "type": "Taper",
+    "category": "Catégorie",
+    "all": "Tous",
+    "video": "Vidéo",
+    "image": "Image",
+    "audio": "Audio",
+    "both": "Les deux",
+    "fillers_general": "Remplisseurs (Général)",
+    "programming": "Programmation",
+    "preview": "Aperçu",
+    "optimize_streaming": "Optimiser pour le streaming",
+    "optimized_streaming": "Vidéo optimisée pour le streaming",
+    "generate_proxy": "Générer un proxy Web (zéro latence)",
+    "proxy_available": "Proxy Web disponible",
+    "metadata_wizard": "Assistant de métadonnées",
+    "edit": "Modifier",
+    "file": "Déposer",
+    "delete_folder_confirm": "Êtes-vous sûr de vouloir supprimer le dossier \"{{name}}\" et tous les fichiers qu'il contient ?",
+    "folder_created": "Dossier créé",
+    "sync_success": "Synchronisation terminée : {{added}} nouveaux fichiers identifiés.",
+    "sync_partial": "Synchronisation partielle : {{added}} ajouté, {{errors}} erreurs.",
+    "upload_cancelled": "Tous les téléchargements annulés",
+    "bulk_success": "Action terminée avec succès",
+    "batch_proxy_success": "Fichiers ajoutés à la file d'attente proxy avec succès !",
+    "batch_optimize_success": "Fichiers ajoutés à la file d'attente d'optimisation avec succès !",
+    "delete_confirm_title": "🗑️ Confirmer la suppression",
+    "delete_confirm_msg": "Êtes-vous sûr de vouloir supprimer \"{{filename}}\" ?",
+    "delete_permanent_alert": "Cette action ne peut pas être annulée.",
+    "delete_in_use_title": "⚠️ Fichier utilisé dans le calendrier",
+    "delete_in_use_alert": "\"{{filename}}\" est programmé dans {{count}} événement(s).",
+    "delete_choose_option": "Choisissez une option :",
+    "delete_anyway": "Supprimer quand même",
+    "delete_anyway_hint": "⚠️ Les plannings deviendront invalides et pourront provoquer des erreurs de diffusion",
+    "delete_replace_filler": "Remplacer par Filler et Supprimer",
+    "delete_replace_filler_hint": "✓ Sûr - Remplace automatiquement dans les plannings avant de supprimer",
+    "move_title": "Organiser \"{{filename}}\"",
+    "move_dest": "Choisissez le dossier de destination :",
+    "move_to_root": "Déplacer vers la racine",
+    "copy_to_root": "Copier à la racine",
+    "copy_hint": "Crée un doublon",
+    "move_to_folder": "Déplacer vers \"{{name}}\"",
+    "copy_to_folder": "Copier vers \"{{name}}\"",
+    "metadata": {
+      "edit_title": "Modifier les métadonnées EPG",
+      "review_title": "🪄 Examiner les métadonnées automatiques",
+      "info_from": "Informations extraites de :",
+      "view_source": "🔗 Voir la source originale sur {{service}} ↗",
+      "review_alert": "Ces données ont été trouvées automatiquement. Vous pouvez les modifier ci-dessous avant de les enregistrer.",
+      "label_title": "Titre (EPG)",
+      "help_title": "Laisser vide pour utiliser le nom de fichier",
+      "label_description": "Description / Synopsis",
+      "label_genre": "Genre",
+      "genre_none": "Aucun",
+      "genre_comedy": "Comédie",
+      "genre_drama": "Drame",
+      "genre_news": "Nouvelles",
+      "genre_sports": "Sportif",
+      "genre_documentary": "Documentaire",
+      "genre_action": "Action",
+      "genre_animation": "Animation",
+      "genre_music": "Musique",
+      "genre_other": "Autre",
+      "label_rating": "Notation",
+      "rating_none": "Aucun",
+      "rating_general": "Général",
+      "label_keywords": "Mots-clés / Balises",
+      "keywords_placeholder": "science-fiction, comédie romantique",
+      "help_keywords": "Séparés par des virgules",
+      "label_season": "Saison",
+      "label_episode": "Épisode",
+      "label_cast": "Casting / Acteurs principaux",
+      "label_director": "Directeur",
+      "label_writer": "Écrivain",
+      "technical_data": "Données techniques",
+      "label_resolution": "Résolution",
+      "help_resolution": "Détecté automatiquement",
+      "label_fps": "FPS",
+      "label_vcodec": "Codec vidéo",
+      "label_acodec": "Codec audio",
+      "label_poster": "URL de l'affiche",
+      "help_poster": "Chemin vers l'image de couverture (chargé depuis l'assistant)",
+      "label_subtitles": "Sous-titres / Langues",
+      "help_subtitles": "Langues disponibles séparées par une virgule"
+    },
+    "uploads_manager": {
+      "title": "Gestionnaire de téléchargements",
+      "status_pending": "EN ATTENTE",
+      "status_uploading": "TÉLÉCHARGEMENT",
+      "status_completed": "COMPLÉTÉ",
+      "all_processed": "Tous les téléchargements ont été traités. Cette fenêtre se fermera bientôt.",
+      "cancel_all": "TOUT ANNULER",
+      "close_window": "Fermer la fenêtre"
+    },
+    "audit_dialog": {
+      "title": "Audit des proxys Web",
+      "optimized": "Toutes les vidéos de la bibliothèque ont des proxys Web générés ! Le système est optimisé.",
+      "missing_alert": "<b>{{count}} vidéos</b> détectées sans version de proxy Web. Cela nécessite un traitement supplémentaire du serveur pendant le streaming et la navigation.",
+      "videos_no_proxy": "VIDÉOS SANS PROXY",
+      "estimated_space": "ESPACE ESTIMÉ",
+      "batch_generate": "Génération par lots ({{count}})"
+    }
+  },
+  "playlist": {
+    "title": "ÉDITEUR DE LISTE DE LECTURE",
+    "subtitle": "GÉNÉRATEUR DE DIFFUSION AUTOMATIQUE ET PROGRAMMÉ",
+    "delete_selected": "SUPPRIMER ({{count}})",
+    "automation": "AUTOMATION",
+    "new_playlist": "NOUVELLE LISTE DE LECTURE",
+    "save": "SAUVEGARDER",
+    "saving": "ÉCONOMIE...",
+    "tabs": {
+      "media": "MÉDIAS",
+      "playlists": "LISTES DE LECTURE"
+    },
+    "sidebar": {
+      "root_all": "RACINE (TOUS)",
+      "filter_all": "UN",
+      "filter_filler": "F",
+      "filter_no_filler": "-F",
+      "add_all_folder": "Ajouter tout ce qui se trouve dans ce dossier",
+      "duration": "DURÉE : {{duration}}"
+    },
+    "editor": {
+      "name_label": "NOM DE LA LISTE DE LECTURE",
+      "date_label": "DATE DE DIFFUSION",
+      "total_duration": "DURÉE TOTALE : {{duration}}",
+      "target_meta": "OBJECTIF : 24:00:00",
+      "missing_time": "⚠️ MANQUANT {{duration}} POUR COMPLÉTER 24H",
+      "ready_msg": "✅ PLAYLIST PRÊTE POUR LA DIFFUSION (24H COMPLÈTE)",
+      "sequence_grid": "GRILLE DE SÉQUENCE ({{count}} CLIPS)",
+      "add_clip": "AJOUTER UN CLIP",
+      "empty_title": "LISTE DE LECTURE VIDE",
+      "empty_msg": "AJOUTER UN MÉDIA DE LA BIBLIOTHÈQUE POUR COMMENCER",
+      "undo": "Défaire",
+      "redo": "Refaire"
+    },
+    "dialogs": {
+      "media_selector": {
+        "title": "MÉDIABIBLIOTHÈQUE",
+        "filter_all": "TOUS",
+        "filter_filler": "REMPLISSAGE SEULEMENT",
+        "filter_no_filler": "EXCLUER LE REMPLISSAGE",
+        "add_all": "AJOUTER TOUT DE CE DOSSIER",
+        "select_all": "TOUT SÉLECTIONNER",
+        "all_folders": "TOUS LES DOSSIERS",
+        "selected_count": "{{count}} FICHIER(S) SÉLECTIONNÉ",
+        "add_selected": "AJOUTER LA SÉLECTION ({{count}})"
+      },
+      "create": {
+        "title": "NOUVELLE LISTE DE LECTURE",
+        "name_label": "NOM DE LA LISTE DE LECTURE",
+        "placeholder": "ex : PLAYLIST DU LUNDI",
+        "btn_create": "CRÉER"
+      },
+      "automation": {
+        "title": "AUTOMATISATION DU REMPLISSAGE",
+        "msg": "CHOISISSEZ LA MÉTHODE DE REMPLISSAGE POUR ATTEINDRE L'OBJECTIF 24H.",
+        "mode_random": "ALÉATOIRE PAR DOSSIER",
+        "mode_random_desc": "Sélectionne un média aléatoire à partir de la source sélectionnée.",
+        "mode_sequential": "SÉQUENTIEL PAR DOSSIER",
+        "mode_sequential_desc": "Suit l’ordre alphabétique des fichiers.",
+        "mode_loop": "SÉLECTION DU COURANT DE BOUCLE",
+        "mode_loop_desc": "Répète les clips déjà présents dans la grille.",
+        "source_folder": "Dossier source",
+        "fillers_only": "Utilisez uniquement les clips marqués FILLER",
+        "run_now": "Courez maintenant"
+      }
+    },
+    "notifications": {
+      "bulk_delete_confirm": "Êtes-vous sûr de vouloir supprimer les {{count}} clips sélectionnés ?",
+      "removed_count": "{{count}} clips supprimés",
+      "no_files_found": "Aucun fichier trouvé dans ce dossier avec les filtres actuels",
+      "added_count": "{{count}} clips ajoutés",
+      "enter_name": "Veuillez saisir un nom pour la playlist",
+      "update_success": "Playlist mise à jour avec succès !",
+      "create_success": "Playlist créée avec succès !",
+      "save_error": "Erreur lors de l'enregistrement de la liste de lecture",
+      "delete_confirm": "Êtes-vous sûr de vouloir supprimer la playlist \"{{name}}\" ?",
+      "delete_success": "Playlist supprimée avec succès",
+      "delete_conflict": "Cette playlist est utilisée dans le calendrier et ne peut pas être supprimée.",
+      "delete_error": "Erreur lors de la suppression de la playlist",
+      "automation_success": "{{count}} clips ajoutés via l'automatisation ({{type}}).",
+      "automation_error": "Erreur lors de l'exécution de l'automatisation",
+      "automation_fail_time": "La playlist a déjà atteint ou dépassé 24 heures.",
+      "automation_no_clips_loop": "Ajoutez au moins un clip comme base pour la boucle.",
+      "automation_no_files_folder": "Aucun fichier trouvé dans le dossier sélectionné{{filler}}.",
+      "automation_no_suitable": "Impossible de trouver des fichiers appropriés pour occuper le temps.",
+      "filler_flag": "avec drapeau de remplissage"
+    }
+  },
+  "calendar": {
+    "title": "CENTRE DE PLANIFICATION",
+    "subtitle": "RESPONSABLE DE LA PROGRAMMATION ET DE LA RÉCURRENCE",
+    "default_playlist_name": "Liste de lecture",
+    "on_air_now": "À L'AIR MAINTENANT",
+    "active_playlist": "LISTE DE LECTURE ACTIVE",
+    "bulk_delete": "CLAIR EN VRAC",
+    "tv_guide": "GUIDE TÉLÉVISÉ",
+    "shortcuts": "RACCOURCIS DE NETTOYAGE",
+    "clear_today": "CLAIR AUJOURD'HUI",
+    "clear_week": "CETTE SEMAINE",
+    "clear_month": "CE MOIS",
+    "clear_year": "CETTE ANNÉE",
+    "legend": "LÉGENDE",
+    "single_event": "HORAIRE UNIQUE",
+    "recurring_series": "SÉRIE RÉCURRENTE",
+    "playing_now": "JOUER MAINTENANT",
+    "dialogs": {
+      "manage": {
+        "title": "GÉRER LE CALENDRIER",
+        "date": "DATE",
+        "recurs": "RECURS",
+        "edit_btn": "MODIFIER SÉRIE / ÉVÉNEMENT",
+        "ignore_today": "IGNORER AUJOURD'HUI SEULEMENT",
+        "confirm_ignore": "Supprimer uniquement l'occurrence sur {{date}} ?",
+        "stop_series": "ARRÊTER LES SÉRIES RÉCURRENTES",
+        "delete_event": "SUPPRIMER LE HORAIRE",
+        "confirm_stop_series": "Voulez-vous arrêter définitivement toute la série de \"{{title}}\" ?",
+        "confirm_delete_event": "Supprimer définitivement \"{{title}}\" ?"
+      },
+      "create": {
+        "title_edit": "MODIFIER LE CALENDRIER",
+        "title_new": "HORAIRE POUR {{date}}",
+        "playlist_label": "LISTE DE LECTURE",
+        "time_label": "TEMPS",
+        "repeat_label": "RÉPÉTER LE MOTIF",
+        "no_repeat": "PAS DE RÉPÉTITION",
+        "daily": "TOUS LES JOURS",
+        "weekly": "HEBDOMADAIRE",
+        "monthly": "MENSUEL"
+      },
+      "bulk": {
+        "title": "NETTOYAGE PERSONNALISÉ",
+        "msg": "CHOISISSEZ UNE PÉRIODE POUR SUPPRIMER TOUTE LA PROGRAMMATION.",
+        "start_label": "COMMENCER",
+        "end_label": "FIN",
+        "btn_delete": "SUPPRIMER LA PÉRIODE"
+      }
+    },
+    "tooltips": {
+      "open_browser": "Ouvrir l'EPG dans le navigateur",
+      "export_xml": "Exporter et enregistrer l'EPG sur le disque (.xml)",
+      "url_not_configured": "URL EPG non configurée",
+      "open_xml": "Ouvrir l'EPG XML dans le navigateur",
+      "download_xml": "Télécharger l'EPG XML sur le disque",
+      "playing": "JOUANT",
+      "recurrent": "RÉCURRENT",
+      "occurrence": "OCCURRENCE",
+      "time": "TEMPS"
+    },
+    "notifications": {
+      "fetch_error": "Erreur de chargement du calendrier",
+      "playlist_required": "Veuillez sélectionner une playlist",
+      "update_success": "Calendrier mis à jour",
+      "create_success": "Calendrier créé",
+      "save_error": "Erreur lors de l'enregistrement du planning",
+      "export_failed": "Échec de l'exportation",
+      "id_not_found": "Erreur : ID de planification introuvable",
+      "delete_success": "Calendrier supprimé",
+      "delete_error": "Erreur lors de la suppression du planning",
+      "missing_data_occurrence": "Erreur : Données insuffisantes pour supprimer l'occurrence",
+      "occurrence_removed": "L'occurrence d'aujourd'hui a été supprimée",
+      "occurrence_error": "Erreur lors de la suppression de l'occurrence",
+      "bulk_error": "Erreur lors du nettoyage groupé",
+      "select_dates": "Veuillez sélectionner des dates"
+    }
+  },
+  "epg": {
+    "title": "GUIDE TÉLÉVISÉ",
+    "subtitle": "PLAYOUT ONEPA • INTELLIGENCE ALPHA",
+    "no_name": "Pas de nom",
+    "prev": "PRÉCÉDENT",
+    "today": "AUJOURD'HUI",
+    "next": "SUIVANT",
+    "empty_playlist": "LISTE DE LECTURE VIDE",
+    "duration_label": "DURÉE",
+    "no_schedule": "Aucune programmation trouvée pour cette journée.",
+    "dialog": {
+      "title": "PROGRAMMATION DÉTAILLÉE",
+      "emission_time": "HEURE DE DIFFUSION",
+      "description": "SYNOPSIS / DESCRIPTION",
+      "no_description": "Ce contenu n'a pas de résumé détaillé enregistré dans le système.",
+      "director": "DIRECTEUR",
+      "category": "CATÉGORIE /GENRE",
+      "source_data": "SOURCE DE DONNÉES",
+      "visit_source": "VISITEZ LA SOURCE",
+      "close": "FERMER LES DÉTAILS",
+      "unknown": "Inconnu",
+      "general": "Général"
+    },
+    "tooltip": {
+      "click_view": "Cliquez pour tout voir"
+    }
+  },
+  "settings": {
+    "header": {
+      "title": "Paramètres",
+      "subtitle": "Panneau de configuration du système",
+      "refresh_btn": "RAFRAÎCHIR",
+      "refresh_tooltip": "Recharger les paramètres du serveur",
+      "history_btn": "NOTES DE VERSION",
+      "history_tooltip": "Voir les nouveautés de cette version",
+      "save_btn": "ENREGISTRER LES MODIFICATIONS",
+      "save_btn_loading": "ÉCONOMIE..."
+    },
+    "navigation": {
+      "title": "CONFIGURATION",
+      "output": "ÉMISSION ET SORTIE",
+      "paths": "CHEMINS & MÉDIAS",
+      "playout": "LECTURE ET PRÉRÉGLAGES",
+      "users": "UTILISATEURS",
+      "system": "MODÈLES",
+      "about": "À PROPOS DU SYSTÈME",
+      "monitor": "MONITEUR BACK-END",
+      "support": "ASSISTANCE TECHNIQUE",
+      "explore_tooltip": "Explorer {{tab}}"
+    },
+    "tabs": {
+      "system": "MODÈLES"
+    },
+    "about": {
+      "header": {
+        "title": "INFORMATIONS SUR LE SYSTÈME",
+        "subtitle": "ÉTAT DE BASE ET JOURNAUX OPÉRATIONNELS"
+      },
+      "fields": {
+        "version": "VERSION",
+        "last_update": "DERNIÈRE MISE À JOUR",
+        "deployment": "ENVIRONNEMENT",
+        "env_value": "Conteneur Docker (Linux)"
+      },
+      "roadmap": {
+        "title": "FEUILLE DE ROUTE PRODUIT",
+        "subtitle": "PLANIFICATION DES FONCTIONS ET EXPLORATION FUTURE",
+        "highlight_title": "POINTS FORTS DE LA VERSION",
+        "github_btn": "VOIR LE RÉFÉRENTIEL",
+        "highlights": {
+          "i18n_label": "MULTILANGUE (MISE EN ŒUVRE)",
+          "i18n_value": "Mis en œuvre",
+          "multichannel_label": "MULTICANAL (MISE EN ŒUVRE)",
+          "multichannel_value": "Actif",
+          "lowlatency_label": "FAIBLE LATENCE (MISE EN ŒUVRE)",
+          "lowlatency_value": "SRT/HLS (stable)",
+          "ai_label": "IA et HA (MISE EN ŒUVRE)",
+          "ai_value": "Actif"
+        },
+        "phases": {
+          "p25_connectivity": {
+            "title": "ENTRÉES EN DIRECT ET PROTOCOLES AVANCÉS (MISE EN ŒUVRE)",
+            "focus": "Extension au-delà de la lecture de fichiers",
+            "items": [
+              "Prise en charge des entrées en direct : intégration WebRTC, NDI et SDI pour la commutation en direct",
+              "Social Streaming : intégration API native pour YouTube Live et Facebook Live",
+              "SRT avancé : multi-appelant et liaison"
+            ]
+          },
+          "p26_ux": {
+            "title": "EXPÉRIENCE GRAPHIQUE ET VISUELLE",
+            "focus": "Image de marque avancée à l'antenne",
+            "items": [
+              "Éditeur glisser-déposer : éditeur WYSIWYG pour les modèles actifs",
+              "Moteur graphique HTML5 : superpositions dynamiques avec les technologies Web",
+              "Mise en page adaptée aux mobiles : prise en charge mobile complète du tableau de bord",
+              "Personnalisation du thème : moteur de thème avancé par utilisateur"
+            ]
+          },
+          "p27_enterprise": {
+            "title": "ENTREPRISE & CONFORMITÉ",
+            "focus": "Évolutivité et exigences professionnelles",
+            "items": [
+              "Système multi-utilisateur : contrôle d'accès basé sur le profil (RBAC)",
+              "Journaux d'audit : suivi complet des actions des utilisateurs",
+              "Journaux d'exécution : journaux d'affichage de preuve de jeu",
+              "Prise en charge SCTE-35 : déclencheurs pour l'insertion d'annonces",
+              "Tableau de bord d'analyse : affichage des statistiques et des mesures de santé du système"
+            ]
+          },
+          "p28_future": {
+            "title": "IA ET HAUTE DISPONIBILITÉ (MISE EN ŒUVRE)",
+            "focus": "Innovation et haute disponibilité",
+            "items": [
+              "Intégration de l'IA : marquage automatique et génération intelligente de listes de lecture",
+              "Noyau multicanal : une instance gérant plusieurs canaux",
+              "Haute disponibilité : redondance et basculement automatique"
+            ]
+          }
+        },
+        "idioma": {
+          "title": "MULTI-LANGUES",
+          "value": "Mis en œuvre"
+        },
+        "canal": {
+          "title": "À CANAUX MULTIPLES",
+          "value": "Prévu"
+        },
+        "latency": {
+          "title": "FAIBLE LATENCE",
+          "value": "SRT/HLS (stable)"
+        }
+      },
+      "history": {
+        "title": "HISTORIQUE DES VERSIONS",
+        "subtitle": "NOTES CRITIQUES ET ÉVOLUTION DU PROJET",
+        "dialog_title": "HISTORIQUE DES VERSIONS",
+        "version_label": "Version",
+        "close_btn": "J'AI COMPRIS",
+        "empty": "AUCUN HISTORIQUE DISPONIBLE",
+        "releases": [
+          {
+            "version": "v2.6.0-ALPHA.50-PRO",
+            "date": "2026-03-17",
+            "changes": [
+              "Mise à jour automatique : Version mise à jour vers v2.6.0-ALPHA.50-PRO.",
+              "Synchronisation du projet : Backend, frontend et documentation mis à jour.",
+              "i18n : Fichiers de traduction synchronisés avec les métadonnées de la nouvelle version."
+            ]
+          },
+          {
+            "version": "v2.6.0-ALPHA.50-PRO",
+            "date": "2026-03-14",
+            "changes": [
+              "Correction de Bug: Composant HelpSystem — composants manquants ajoutés : HelpTemplates, HelpLiveInputs, HelpHealth, HelpMultiChannel.",
+              "Correction de Bug: Ajout d'icônes Material-UI manquantes (FavoriteIcon, TableChartIcon) dans les importations.",
+              "Sélecteur de Langue: Bug de persistance i18n et détection du changement de langue corrigés.",
+              "Aperçu Graphique: Optimisation des performances de chargement et de la mise en mémoire cache du rendu.",
+              "Aperçu Multi-Canaux: Révision de la synchronisation et des états WebSockets.",
+              "Historique des Versions: Ajout de 'À propos du système' avec notes de version ALPHA.49-PRO.",
+              "i18n: Les 4 traductions (PT, EN, ES, FR) sont correctement synchronisées et corrigées."
+            ]
+          },
+          {
+            "version": "v2.6.0-ALPHA.48-PRO",
+            "date": "2026-03-13",
+            "changes": [
+              "Menu System Health : sous-menus Health & Analytics dédupliqués, suppression des widgets redondants.",
+              "Interface utilisateur compressée pour s'adapter à l'écran sans défilement.",
+              "Ajout des traductions PT, EN, FR, ES pour toute l'interface utilisateur de System Health.",
+              "Version mise à jour sur le backend, le frontend et la base de données.",
+              "L'aperçu du canal par défaut démarre désormais en mode silencieux (l'utilisateur peut réactiver le son)."
+            ]
+          },
+          {
+            "version": "v2.6.0-ALPHA.47-PRO",
+            "date": "2026-03-12",
+            "changes": [
+              "Phase 32 — Affinements et navigation de l'interface utilisateur : barre latérale réorganisée pour un flux de travail plus intuitif.",
+              "Le bouton de déconnexion a été déplacé vers la barre supérieure AppBar pour un accès cohérent sur toutes les pages.",
+              "Le bouton de déconnexion utilise en permanence la couleur du badge alpha rouge (#cc0000) avec un survol éclaircissant à #ff2222.",
+              "Ordre de la barre latérale : Tableau de bord → Entrées en direct → EPG → Bibliothèque → Listes de lecture → Multicanal → Calendrier → Graphiques → Modèles → Santé → Paramètres.",
+              "Migration 081 : version_système → v2.6.0-ALPHA.47-PRO."
+            ]
+          },
+          {
+            "version": "v2.6.0-ALPHA.45-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Phases 30 et 31 — Entrées en direct et interface utilisateur multicanal : nouvelles fonctionnalités de diffusion en direct.",
+              "Ingestion d'entrée en direct : prise en charge de RTMP, SRT, WebRTC, NDI et SDI.",
+              "Moteur de commutation en direct : transitions cut/fade, mixage audio, superpositions graphiques.",
+              "Streaming social : multi-destination vers YouTube Live et Facebook Live.",
+              "Interface utilisateur visuelle multicanal : tableau de bord en grille avec aperçus en temps réel.",
+              "Génération de listes de lecture AI : analyse de contenu, détection de scènes, synthèse vocale.",
+              "Haute disponibilité : nœuds actifs-actifs, basculement automatique.",
+              "Edge CDN : serveur d'origine, nœuds Edge, couche de cache.",
+              "Surveillance : Intégration avec Prometheus, Grafana et Alertmanager.",
+              "Migration 079/080 : version_système → v2.6.0-ALPHA.45-PRO."
+            ]
+          },
+          {
+            "version": "v2.5.0-ALPHA.44-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Phase 5 — Kubernetes + MinIO + CI/CD : infrastructure de déploiement cloud native.",
+              "Graphiques Helm : déploiement complet/helm/manifestes pour les 9 services avec HPA et Ingress.",
+              "Stockage compatible MinIO S3 : Docker Compose + Helm StatefulSet. STORAGE_BACKEND=local|s3.",
+              "Service de stockage : backend/src/services/storage.rs basé sur les traits — LocalStorage vs S3Storage.",
+              "Migration 077 : colonne TEXT media.s3_path pour les actifs stockés dans S3.",
+              "GitHub Actions CI/CD : Sur PR → cargo test + clippy + Playwright E2E. Lors de la fusion → push GHCR.",
+              "Migration 078 : version_système → v2.5.0-ALPHA.44-PRO."
+            ]
+          },
+          {
+            "version": "v2.4.0-ALPHA.43-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Phase 4 — SCTE-35 + LL-HLS : marqueurs de repère d'insertion publicitaire par élément de liste de lecture.",
+              "API : GET/POST/DELETE /api/v2/scte35 pour la gestion des marqueurs splice_insert.",
+              "FFmpeg : inject_scte35_markers() intègre les signaux SCTE-35 dans le pipeline de flux.",
+              "Frontend : bouton Ad Cue dans l'éditeur de playlist avec champs de décalage et de durée PTS.",
+              "LL-HLS : mediamtx mis à jour vers la variante lowLatency – segments de 1 s, parties de 100 ms.",
+              "Migration 076 : version_système → v2.4.0-ALPHA.43-PRO."
+            ]
+          },
+          {
+            "version": "v2.4.0-ALPHA.42-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Phase 3 — Microservices : service-analytics, service-graphics, service-ai.",
+              "service-analytics (Node.js) : diffusion Redis :* abonné → as_run_logs + audit_logs. Port 4001.",
+              "service-graphics (Node.js + Puppeteer) : compositeur HTML5, PNG transparent 1920 × 1080. Port 3002.",
+              "service-ai (Python 3.12) : légendes Whisper ASR + agent de détection de silence ffmpeg.",
+              "Docker Compose : Trois nouveaux services avec contrôles de santé et dépendances Redis/Postgres.",
+              "Migration 074 : colonnes de file d'attente de tâches media_tasks AI. Migration 075 : changement de version."
+            ]
+          },
+          {
+            "version": "v2.3.0-ALPHA.41-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Phase 2.1 — Consolidation de l'interface utilisateur : onglet Analytics fusionné avec Playout Health (/health).",
+              "Intégration graphique : éditeur de modèles intégré en tant que 4ème onglet dans l'éditeur graphique (/graphics).",
+              "Barre latérale réduite de 11 à 9 entrées — navigation plus propre et ciblée.",
+              "Modèle de composant intégré : GraphicsTemplateEditor adapte la hauteur/le remplissage via prop.",
+              "Migration 073 : version_système → v2.3.0-ALPHA.41-PRO."
+            ]
+          },
+          {
+            "version": "v2.3.0-ALPHA.40-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Phase 2 — Transformation frontend : moteur de personnalisation de thème via ThemeContext.",
+              "Disposition réactive mobile : tiroir MUI avec modes permanents/temporaires par point d'arrêt.",
+              "Tableau de bord d'analyse en temps réel : Recharts LineChart + BarChart pilotés par WebSocket.",
+              "Éditeur de modèles par glisser-déposer : canevas 16:9 avec palette @dnd-kit et inspecteur de propriétés.",
+              "Recharts : ajout de recharts@^2.12.0 aux dépendances frontales."
+            ]
+          },
+          {
+            "version": "v2.3.0-ALPHA.39-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Phase 1 — Enterprise Foundation : table de canaux avec portée multi-tenant sur toutes les tables principales.",
+              "Redis Event Bus : événements clip_start/clip_end en temps réel via Redis Pub/Sub.",
+              "Journaux d'exécution : table as_run_logs pour la preuve de conformité.",
+              "Piste d'audit : table audit_logs pour l'historique des actions utilisateur immuable.",
+              "Schéma SCTE-35 : table scte_35_markers pour les signaux d'insertion publicitaire.",
+              "WebSocket Endpoint : GET /api/v2/events?token=<JWT> diffuse la télémétrie en direct.",
+              "API v2 : /api/v2/channels, /api/v2/analytics, /api/v2/analytics/preferences."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.38-PRO",
+            "date": "2026-03-10",
+            "changes": [
+              "Sortie automatisée : passage de la version à ALPHA.38-PRO.",
+              "Documentation : README.md synchronisé, RELEASE_NOTES.md et constantes frontales.",
+              "Transcription améliorée : paramètres du moteur optimisés pour une meilleure précision."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.35-PRO",
+            "date": "2026-03-08",
+            "changes": [
+              "Publication automatisée : changement de version et mise à jour des statistiques.",
+              "Documentation : README.md synchronisé et historique des versions.",
+              "i18n Health : ajout de traductions du tableau de bord de santé du système."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.34-PRO",
+            "date": "2026-03-05",
+            "changes": [
+              "Publication automatisée : changement de version et mise à jour des statistiques.",
+              "Documentation : README.md synchronisé et historique des versions."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.32-PRO",
+            "date": "2026-03-03",
+            "changes": [
+              "Stabilité UDP : correction du mode Unicast PUSH pour les erreurs \"Adresse déjà utilisée\".",
+              "Audit Ports 3.0 : Détection intelligente du récepteur (VLC).",
+              "Gestion des journaux : rotation des journaux (10 Mo/3 fichiers) et persistance.",
+              "Gestion des versions de script : sortie de version de script standardisée.",
+              "Process Guard : Protection contre les collisions portuaires.",
+              "Synchronisation du système : version synchronisée sur DB/Backend/Frontend."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.31-PRO",
+            "date": "2026-03-01",
+            "changes": [
+              "Hydratation EPG dynamique : synchronisation des métadonnées en temps réel à partir de la médiathèque.",
+              "Prise en charge améliorée de la duplication : les doublons sont correctement hydratés.",
+              "Améliorations EPG XML : descriptions et catégories riches.",
+              "Automatisation : gestion des versions synchronisée sur Frontend/Backend/DB."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.30-PRO",
+            "date": "2026-02-28",
+            "changes": [
+              "Publication automatisée : changement de version et mise à jour des statistiques.",
+              "Documentation : README.md synchronisé et historique des versions."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.29-PRO",
+            "date": "2026-02-27",
+            "changes": [
+              "Publication automatisée : changement de version et mise à jour des statistiques.",
+              "Documentation : README.md synchronisé et historique des versions."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.28-PRO",
+            "date": "2026-02-24",
+            "changes": [
+              "Système d'aide haute densité : refonte du menu d'aide.",
+              "Stabilité du protocole : correctif de secours RTMP.",
+              "Récupération backend : VersionMismatch résolue.",
+              "Intégrité de l'automatisation : correction de la logique du suffixe de version."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.27-PRO",
+            "date": "2026-02-23",
+            "changes": [
+              "Refonte du compact chirurgical : rembourrages/marges réduits.",
+              "Optimisation EPG et calendrier : plus d'événements sans défilement.",
+              "Focus sur le protocole du tableau de bord : mise en page axée sur la télémétrie.",
+              "Correction de bug : EditIcon ReferenceError résolu."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.26-PRO",
+            "date": "2026-02-23",
+            "changes": [
+              "Publication automatisée : changement de version et mise à jour des statistiques.",
+              "Documentation : README.md synchronisé et historique des versions."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.25-PRO",
+            "date": "2026-02-22",
+            "changes": [
+              "Consolidation ALPHA.25 : version synchronisée sur DB/Backend/Frontend.",
+              "Reality Sync Engine : détection robuste des fichiers sur tous les chemins.",
+              "Transparence du stockage : diagnostics Mo/Go en temps réel.",
+              "Filtre professionnel : actifs protégés cachés dans la médiathèque.",
+              "Streaming de performances : prise en charge des requêtes de plage native.",
+              "Hygiène des données : nettoyage automatique des résidus du système."
+            ]
+          },
+          {
+            "version": "v2.2.0-ALPHA.24-PRO",
+            "date": "2026-02-20",
+            "changes": [
+              "Détails en attente : cette version nécessite des notes consolidées."
+            ]
+          }
+        ]
+      }
+    },
+    "warnings": {
+      "udp_config": "Protocole UDP prêt à être activé lors de la sauvegarde."
+    },
+    "output": {
+      "header": {
+        "title": "CONFIGURATION DE SORTIE",
+        "subtitle": "GESTION DU PROTOCOLE ET DE LA DISTRIBUTION",
+        "status_ready": "MOTEUR EN LIGNE"
+      },
+      "main": {
+        "title": "PROTOCOLE PRIMAIRE",
+        "url_label": "URL DE SORTIE PRINCIPALE",
+        "udp_tip": "CONSEIL : Le format udp://@:1234 force le Push vers la machine locale (TRÈS STABLE). Dans VLC ouvert : udp://@:1234",
+        "resolution": "RÉSOLUTION",
+        "resolutions": {
+          "4k": "4K (UltraHD)",
+          "1080p": "1080p (Full HD)",
+          "720p": "720p (HD)",
+          "360p": "360p (SD)"
+        },
+        "bitrate": "DÉBIT VIDÉO (ex: 5000k)"
+      },
+      "multi": {
+        "title": "MULTI-Streaming",
+        "subtitle": "ACTIVATION DU PROTOCOLE SUPPLÉMENTAIRE",
+        "soon": "À VENIR"
+      },
+      "links": {
+        "title": "LIENS DE CONNEXION DIRECTE (VLC, OBS)",
+        "rtmp_label": "RTMP (Maître de distribution locale)",
+        "rtmp_copied": "Lien RTMP copié !",
+        "srt_label": "SRT - Transport fiable et sécurisé (UDP)",
+        "srt_warning": "Attention : le port doit être ouvert en UDP. Les clients doivent demander explicitement « lire : »",
+        "srt_copied": "Lien SRT copié !",
+        "udp_label": "Flux UDP (VLC Direct)",
+        "udp_tip": "Pour afficher dans VLC : Médias > Ouvrir un flux réseau > saisissez l'adresse ci-dessus.",
+        "udp_copied": "Lien UDP copié !",
+        "hls_label": "Liste de lecture HLS (Proxy Nginx 3011)",
+        "hls_copied": "Lien HLS copié!",
+        "no_protocols": "Activez au moins un protocole ci-dessus (RTMP, SRT, HLS) pour révéler les ports et liens dédiés.",
+        "copied": "Lien copié !"
+      }
+    },
+    "paths": {
+      "header": {
+        "title": "CHEMINS DE STOCKAGE",
+        "subtitle": "CONFIGURATION DU RÉPERTOIRE ET DU VOLUME"
+      },
+      "fields": {
+        "media": "MÉDIAS ET VIDÉO",
+        "thumbnails": "VIGNETTES",
+        "playlists": "BD LISTES DE LECTURE",
+        "fillers": "REMPLISSEURS ET BOUCLES",
+        "logs": "JOURNAUX DE DIFFUSION",
+        "protected": "MARQUE ET ACTIFS PROTÉGÉS"
+      },
+      "helpers": {
+        "media": "Stockage du contenu principal",
+        "thumbnails": "Cache des vignettes générées",
+        "playlists": "Base de données de planification",
+        "fillers": "Contenu de remplissage automatique",
+        "logs": "Emplacement du fichier des journaux système",
+        "protected": "Localisation des logos et vidéos institutionnelles"
+      }
+    },
+    "storage": {
+      "header": {
+        "title": "GESTION DE L'ESPACE (PROXIES WEB)",
+        "subtitle": "Surveillance du cache et synchronisation des répertoires physiques.",
+        "sync_needed_label": "nouveaux fichiers sur le disque. Cliquez sur l'icône Synchroniser."
+      },
+      "stats": {
+        "db": "Base de données",
+        "physical": "Disque",
+        "proxies": "Procurations"
+      },
+      "toolbar": {
+        "explore": "Explorer le gestionnaire d'espace",
+        "sync": "Synchroniser les fichiers du disque vers la base de données",
+        "purge": "Purger tous les proxys (espace libre)"
+      },
+      "explorer": {
+        "title": "GESTIONNAIRE D'ESPACE DE STOCKAGE",
+        "subtitle": "GESTION INDIVIDUELLE DES FICHIERS D'APERÇU OPTIMISÉS",
+        "selected_count": "CHOISI",
+        "mb_to_free": "MB À LIBÉRER",
+        "proxy_missing": "PROXY MANQUANT (Identifié sur le disque, nécessite une optimisation)",
+        "generate_btn": "GÉNÉRER MAINTENANT",
+        "generate_success": "La génération du proxy a démarré en arrière-plan",
+        "empty": "AUCUN PROXIES TROUVÉ SUR LE DISQUE",
+        "delete_btn": "SUPPRIMER LA SÉLECTION"
+      },
+      "dialogs": {
+        "delete_proxies": {
+          "title": "CONFIRMER LA SUPPRESSION",
+          "warning1": "Êtes-vous sûr de vouloir supprimer {{count}} fichiers proxy ?",
+          "space_label": "Espace total à libérer :",
+          "warning2": "⚠️ CETTE OPÉRATION NE PEUT ÊTRE DÉFAITEE. LES APERÇUS DU PORTAIL SERONT ENCORE LENTS POUR CES VIDÉOS.",
+          "confirm_btn": "CONFIRMER ET SUPPRIMER"
+        }
+      }
+    },
+    "api": {
+      "header": {
+        "title": "API DE MÉTADONNÉES",
+        "subtitle": "INDEXATION INTELLIGENTE (TMDB / OMDB)",
+        "auto_config_btn": "AUTO-CONFIG"
+      },
+      "fields": {
+        "key_placeholder": "Entrez la clé API..."
+      },
+      "toolbar": {
+        "test": "Tester la connexion",
+        "save": "Sauvegarder"
+      },
+      "dialogs": {
+        "auto_config": {
+          "title": "Configuration automatique",
+          "desc": "Cette action configurera automatiquement les clés API recommandées pour :",
+          "warning": "Vos clés actuelles seront écrasées. Voulez-vous continuer ?"
+        },
+        "overlay_optimizer": {
+          "title": "Optimiseur de superposition Pro",
+          "select_btn": "Sélectionner l'image originale",
+          "width_label": "Largeur",
+          "height_label": "Hauteur",
+          "aspect_label": "Conserver l'aspect",
+          "trim_label": "Découpage automatique",
+          "change_btn": "Changer l'image",
+          "processing": "Traitement...",
+          "apply_btn": "Postulez et économisez"
+        }
+      }
+    },
+    "branding": {
+      "header": {
+        "title": "Image de marque et actifs",
+        "subtitle": "IDENTITÉ VISUELLE & RETOURS"
+      },
+      "assets": {
+        "title": "ACTIFS DE MARQUE",
+        "subtitle": "LOGOS & MÉDIAS DE REPLI",
+        "logo_label": "LOGO DE L'APPLICATION",
+        "fallback_img_label": "IMAGE DE REPLI",
+        "image_fallback_label": "IMAGE DE REPLI",
+        "change_btn": "CHANGEMENT",
+        "reset_btn": "RESTAURER LES DÉFAUTS",
+        "restore_defaults_btn": "RESTAURER LES DÉFAUTS",
+        "restore_tooltip": "Restaurer la marque et les actifs aux valeurs par défaut du système",
+        "restore_defaults_tooltip": "Restaurer la marque et les actifs aux valeurs par défaut du système",
+        "defined_label": "DÉFINI",
+        "defined": "DÉFINI",
+        "missing_label": "MANQUANT",
+        "missing": "MANQUANT",
+        "reset_success": "Les actifs ont été réinitialisés avec succès !",
+        "reset_error": "Erreur lors de la réinitialisation des éléments",
+        "restore_success": "Paramètres par défaut restaurés avec succès !",
+        "restore_error": "Erreur lors de la restauration des paramètres par défaut",
+        "type_img": "IMG",
+        "type_vid": "VIDÉO"
+      },
+      "dialogs": {
+        "preview": {
+          "set_default_btn": "Définir par défaut"
+        }
+      },
+      "upload_success": "Logo téléchargé avec succès !",
+      "upload_error": "Erreur lors du téléchargement du logo",
+      "overlay": {
+        "fallback_label": "VIDÉO DE REPLI"
+      }
+    },
+    "playout": {
+      "header": {
+        "title": "MOTEUR DE JEU",
+        "subtitle": "PERFORMANCES ET SYNCHRONISATION EN TEMPS RÉEL",
+        "wizard_btn": "ASSISTANT",
+        "reset_btn": "RÉINITIALISER"
+      },
+      "fields": {
+        "day_start": "DÉBUT DE LA JOURNÉE",
+        "channel_name": "NOM DE LA CANAL",
+        "fps": "FRÉQUENCE D'IMAGES (FPS)",
+        "encoding_preset": "PRÉRÉGLAGE DE CODAGE"
+      },
+      "tooltips": {
+        "day_start": "Heure de réinitialisation quotidienne du réseau",
+        "channel_name": "Identificateur de flux public",
+        "fps": "Images de base par seconde",
+        "encoding_preset": "Efficacité de la compression du processeur"
+      },
+      "epg": {
+        "title": "PROGRAMMATION ET EPG",
+        "subtitle": "DISTRIBUTION EPG (XMLTV)",
+        "url_label": "URL FINALE de l'EPG",
+        "copy_tooltip": "Copier le point de terminaison",
+        "refresh_label": "RAFRAÎCHISSEMENT INTERNE",
+        "system_generated": "(AUTO-GÉNÉRÉ PAR LE SYSTÈME)",
+        "days_label": "JOURS",
+        "status_live": "EN DIRECT",
+        "copied": "EPG Endpoint copié!"
+      },
+      "overlay": {
+        "title": "SUPERPOSITION DE CANAUX",
+        "subtitle": "GESTION DES FILIGRANES EN TEMPS RÉEL",
+        "preview": "APERÇU",
+        "disabled": "DÉSACTIVÉ",
+        "dpad_label": "CONTRÔLE DE POSITION (D-PAD)",
+        "opacity": "OPACITÉ",
+        "scale": "ÉCHELLE",
+        "path_label": "LOGO SUPERPOSÉ (LOCAL)",
+        "change_btn": "CHANGEMENT",
+        "magic_tooltip": "Processeur de logo (supprimer l'arrière-plan)"
+      },
+      "presets": {
+        "title": "PRÉRÉGLAGES DE QUALITÉ",
+        "subtitle": "CONFIGURATION DE DIFFUSION RAPIDE",
+        "advanced_mode": "MODE AVANCÉ",
+        "list": {
+          "720p": {
+            "desc": "Équilibré (diffusion normale)"
+          },
+          "1080p": {
+            "desc": "Haute fidélité (diffusion)"
+          },
+          "4k": {
+            "desc": "Qualité maximale (UHD)"
+          }
+        }
+      },
+      "dialogs": {
+        "reset": {
+          "title": "Confirmer la réinitialisation d'usine",
+          "warning1": "Êtes-vous sûr de vouloir supprimer TOUTES les données de cette chaîne ?",
+          "warning2": "Cette action supprimera définitivement toutes les listes de lecture, les événements du calendrier et restaurera les paramètres par défaut. Il n'y a pas de retour possible !",
+          "confirm_btn": "Oui, tout supprimer",
+          "success": "La chaîne a été réinitialisée avec succès !",
+          "error": "Erreur lors de la réinitialisation du canal"
+        },
+        "presets": {
+          "title": "CHANGER LE PRÉRÉGLAGE DE LA QUALITÉ",
+          "desc": "Application du préréglage",
+          "resolution_label": "Résolution",
+          "bitrate_label": "Débit",
+          "fps_label": "FPS",
+          "restart_warning": "Cette modification nécessite un redémarrage du moteur de diffusion pour prendre effet. Enregistrez les paramètres et redémarrez le moteur après confirmation.",
+          "apply_btn": "APPLIQUER LE PRÉRÉGLAGE"
+        }
+      },
+      "save_error": "Erreur lors de l'enregistrement des paramètres",
+      "restart_warning": "Modifications nécessitant un redémarrage détectées.",
+      "restart_success": "La diffusion a redémarré avec succès !",
+      "restart_error": "Erreur lors du redémarrage du moteur"
+    },
+    "users": {
+      "header": {
+        "title": "GESTION DES ACCÈS",
+        "subtitle": "UTILISATEURS ET PROFILS D'ACCÈS",
+        "add_user_btn": "AJOUTER UN UTILISATEUR",
+        "add_profile_btn": "CRÉER UN PROFIL"
+      },
+      "tabs": {
+        "users": "UTILISATEURS",
+        "profiles": "PROFILS"
+      },
+      "table": {
+        "username": "UTILISATEUR",
+        "description": "DESCRIPTION",
+        "profile": "PROFIL / RÔLE",
+        "status": "STATUT",
+        "actions": "ACTES",
+        "active": "ACTIF",
+        "permissions": "AUTORISATIONS"
+      },
+      "tooltips": {
+        "change_password": "Changer le mot de passe",
+        "delete_user": "Supprimer un utilisateur",
+        "edit_profile": "Modifier le profil",
+        "delete_profile": "Supprimer le profil"
+      },
+      "messages": {
+        "delete_success": "Utilisateur supprimé",
+        "delete_error": "Erreur lors de la suppression de l'utilisateur",
+        "password_changed": "Mot de passe modifié avec succès !",
+        "password_change_error": "Erreur lors du changement de mot de passe",
+        "password_min_length": "Le mot de passe doit comporter au moins 8 caractères",
+        "profile_updated": "Profil mis à jour !",
+        "profile_created": "Profil créé !",
+        "save_profile_error": "Erreur lors de l'enregistrement du profil",
+        "profile_name_required": "Le nom du profil est requis",
+        "profile_deleted": "Profil supprimé",
+        "delete_profile_error": "Erreur lors de la suppression du profil"
+      },
+      "dialogs": {
+        "add_user": {
+          "title": "AJOUTER UN UTILISATEUR",
+          "subtitle": "CRÉER UN NOUVEL ACCÈS AU SYSTÈME",
+          "username_label": "NOM D'UTILISATEUR",
+          "password_label": "MOT DE PASSE",
+          "profile_label": "PROFIL D'ACCÈS"
+        },
+        "change_password": {
+          "title": "CHANGER LE MOT DE PASSE : {{username}}",
+          "new_password_label": "NOUVEAU MOT DE PASSE",
+          "update_btn": "MISE À JOUR"
+        },
+        "profile": {
+          "new_title": "NOUVEAU PROFIL",
+          "edit_title": "MODIFIER LE PROFIL",
+          "subtitle": "GÉRER LES NIVEAUX D'AUTORISATION",
+          "name_label": "NOM DU PROFIL",
+          "system_rename_warning": "Les profils système ne peuvent pas être renommés.",
+          "permissions_label": "AUTORISATIONS ACTIVES",
+          "permissions_help": "Définissez la portée d'affichage, de modification et d'exécution pour les utilisateurs avec ce profil.",
+          "create_btn": "CRÉER",
+          "update_btn": "MISE À JOUR"
+        },
+        "udp_verify": {
+          "title": "Informations importantes : sortie UDP",
+          "intro": "Le protocole UDP (User Datagram Protocol) est recommandé pour les réseaux locaux en raison de sa faible latence, mais présente des caractéristiques spécifiques :",
+          "stability_title": "1. Stabilité vs SRT :",
+          "stability_desc": "UDP n'a pas de retransmission de paquets. Si le réseau fluctue, il y aura des « baisses » visibles. SRT est préféré pour l’accès à distance.",
+          "network_title": "2. Configuration réseau :",
+          "network_external": "Accès externe :",
+          "network_desc": "Non recommandé pour UDP (utilisez SRT). Si nécessaire, cela nécessite une redirection de port sur le routeur (Port 1234 UDP).",
+          "sync_title": "3. Synchronisation et tampon :",
+          "sync_desc": "Notre système gérable PUSH démarre et alimente en continu le pare-feu de manière native, éliminant ainsi les latences de prise de contact et les erreurs de diffusion initiales courantes.",
+          "firewall_warning": "* Assurez-vous que le pare-feu du serveur autorise le trafic sur le port choisi.",
+          "confirm_btn": "Je comprends et souhaite activer"
+        },
+        "delete_confirm": "Êtes-vous sûr de vouloir supprimer cet utilisateur ?",
+        "profile_delete_warning": "Es-tu sûr? Les utilisateurs associés à ce profil peuvent perdre l'accès."
+      }
+    },
+    "logs": {
+      "dialog": {
+        "title": "VISIONNEUR DE JOURNAUX"
+      },
+      "rotation": {
+        "btn": "ROTATION",
+        "tooltip": "Configuration de la rotation des journaux",
+        "header": "CONFIGURATION DE LA ROTATION DES BÛCHES",
+        "fields": {
+          "max_size": "TAILLE MAXIMALE (Mo)",
+          "max_files": "MAXIMUM DE FICHIERS",
+          "retention": "RÉTENTION (JOURS)",
+          "compress": "COMPRESSER LES VIEUX BÛCHES"
+        },
+        "save_btn": "ENREGISTRER LA CONFIGURATION",
+        "save_success": "Configuration de rotation enregistrée !",
+        "save_error": "Erreur lors de l'enregistrement de la configuration de rotation",
+        "force_btn": "FORCER LA ROTATION MAINTENANT",
+        "force_confirm": "Forcer la rotation maintenant ? Le journal actuel sera archivé.",
+        "force_success": "Rotation exécutée ! Journal redémarré.",
+        "force_error": "Erreur lors de l'exécution de la rotation"
+      },
+      "export": {
+        "btn": "EXPORTER TXT",
+        "tooltip": "Exporter les journaux visibles au format TXT"
+      },
+      "tabs": {
+        "playout": "JOURNAUX DE DIFFUSION",
+        "system": "JOURNAUX DE VM / DOCKER"
+      },
+      "search_placeholder": "Rechercher des journaux...",
+      "lines_count": "lignes",
+      "empty_filters": "AUCUN RÉSULTAT POUR LES FILTRES APPLIQUÉS",
+      "waiting": "EN ATTENTE DES JOURNAUX...",
+      "system": {
+        "source_label": "SOURCE",
+        "empty_source": "Aucun journal récent de cette source.",
+        "none_detected": "AUCUN JOURNAL SYSTÈME DÉTECTÉ À L'INTÉRIEUR DU CONTENEUR."
+      },
+      "footer": {
+        "files": "fichiers",
+        "compress_on": "Compression activée",
+        "compress_off": "Compression désactivée",
+        "days": "jours",
+        "restart_btn": "REDÉMARRER LE MOTEUR"
+      }
+    }
+     },
+     "help": {
+       "graphics": {
+         "title": "Éditeur Graphique",
+         "intro": "L'Éditeur Graphique permet de créer et gérer des surimpressions visuelles, des logos et des couches animées pour vos diffusions en temps réel.",
+         "features_title": "Fonctionnalités principales",
+         "features_intro": "L'Éditeur Graphique offre des outils professionnels pour la production de graphismes de diffusion :",
+         "feature1": "Positionnement précis du logo et des graphiques avec support pour plusieurs points d'ancrage",
+         "feature2": "Contrôle total de l'échelle, de l'opacité et de la rotation pour chaque élément graphique",
+         "feature3": "Système de couches pour organiser des surimpressions complexes avec contrôle individuel",
+         "feature4": "Intégration avec la bibliothèque de modèles pour réutilisation rapide des designs",
+         "how_to_title": "Comment utiliser",
+         "how_to_intro": "Suivez ces étapes pour utiliser l'Éditeur Graphique efficacement :",
+         "step1": "Accédez à l'Éditeur Graphique via le menu Graphiques dans la barre latérale",
+         "step2": "Utilisez l'onglet « Position » pour définir l'emplacement exact de votre logo à l'écran",
+         "step3": "Ajustez l'échelle et l'opacité dans l'onglet « Style » pour obtenir l'apparence désirée",
+         "step4": "Dans l'onglet « Couches », ajoutez, supprimez ou modifiez des éléments graphiques supplémentaires",
+         "step5": "Prévisualisez vos modifications en temps réel sur le moniteur de prévisualisation 16:9",
+         "step6": "Cliquez sur « Enregistrer les modifications » pour appliquer les paramètres à votre playout",
+         "tips_title": "Conseils et bonnes pratiques",
+         "tips_content": "• Utilisez les points d'ancrage pour maintenir le positionnement relatif lors du redimensionnement de l'écran\n• Maintenez l'opacité en dessous de 80 % pour des surimpressions non intrusives\n• Organisez les couches par ordre d'importance (arrière-plan → surimpressions → texte)\n• Enregistrez les configurations fréquentes sous forme de modèles pour une réutilisation rapide\n• Prévisualisez toujours en plein écran pour vérifier l'apparence finale\n• Utilisez des couleurs contrastées pour garantir la lisibilité dans différentes conditions d'éclairage"
+       },
+     "notifications": {
+    "save_success": "Paramètres de l'onglet {{tab}} enregistrés !",
+    "restart_success": "Le flux a redémarré avec succès !",
+    "save_error": "Erreur lors de l'enregistrement des paramètres",
+    "media": "Médias",
+    "playlists": "Listes de lecture",
+    "calendar": "Calendrier",
+    "graphics": "Graphique",
+    "settings": "Paramètres",
+    "troubleshooting": "Problèmes"
+  },
+  "udp_ready": "Protocole UDP prêt à être activé lors de la sauvegarde.",
+  "help": {
+    "title": "Centre d'aide",
+    "subtitle": "PLAYOUT CLOUD ONEPA — GUIDE DES OPÉRATIONS",
+    "deactivate_btn": "Désactiver le mode aide",
+    "close_btn": "Fermer",
+    "tabs": {
+      "dashboard": "Tableau de bord",
+      "media": "Médias",
+      "playlists": "Listes de lecture",
+      "calendar": "Calendrier",
+      "graphics": "Graphique",
+      "settings": "Paramètres",
+      "troubleshooting": "Problèmes"
+    },
+    "dashboard": {
+      "title": "Tableau de bord",
+      "intro": "Le tableau de bord est la principale page opérationnelle de la diffusion. De là, vous contrôlez tout ce qui se passe en temps réel.",
+      "status_indicator": {
+        "title": "Indicateur ON AIR / OFF AIR",
+        "prefix": "En haut du tableau de bord se trouve un indicateur d'état de diffusion :",
+        "on_air": "Moteur FFmpeg actif et diffusion",
+        "off_air": "Moteur arrêté ou pas de playlist"
+      },
+      "controls": {
+        "title": "Démarrer/arrêter la lecture",
+        "step1": "Vérifiez qu'une liste de lecture est programmée pour l'heure actuelle dans le calendrier.",
+        "step2": "Cliquez sur DÉMARRER — le système valide automatiquement le planning avant de démarrer.",
+        "step3": "Choisissez les protocoles à activer (RTMP, SRT, UDP) et cliquez sur « Démarrer le moteur ».",
+        "step4": "Le moniteur LIVE PREVIEW affiche la diffusion après 6 à 10 secondes (heure HLS).",
+        "step5": "Pour arrêter, cliquez sur STOP. Tous les protocoles sont automatiquement déconnectés.",
+        "warning": "S'il n'y a pas de liste de lecture programmée, la diffusion ne démarrera pas. Configurez d'abord le calendrier."
+      },
+      "protocols": {
+        "title": "Protocoles de diffusion",
+        "intro": "Le système prend en charge plusieurs protocoles simultanés :",
+        "master": "Principal streaming interne pour Playout.",
+        "rtmp": "Idéal pour les réseaux sociaux (YouTube/FB) et les CDN.",
+        "srt": "Streaming haute fiabilité sur des réseaux instables.",
+        "udp": "Protocole pour réseaux locaux et encodeurs IP.",
+        "others": "Formats HTTP adaptatifs et streaming Web.",
+        "legend": "Statut : 🟢 Actif | ⚪ Inactif | 🔴 Erreur de prise"
+      },
+      "clips": {
+        "title": "Visualisation des clips",
+        "intro": "Dans l'onglet Playlist, vous pouvez voir l'état de chaque clip :",
+        "playing": "Clip en cours de diffusion actuellement.",
+        "next": "Clip suivant dans la file d'attente de lecture.",
+        "skip": "Sauter le clip actuel et passer au suivant."
+      },
+      "logs": {
+        "title": "Surveillance (journaux moteur)",
+        "intro": "Informations techniques extraites directement du moteur de diffusion :",
+        "engine": "État du processus d’encodage.",
+        "uptime": "Durée totale de diffusion sans interruption.",
+        "schedule_validity": "Validation croisée avec le calendrier.",
+        "active_protocols": "Liste des encodeurs en cours d'exécution.",
+        "last_logs": "Visualisation en temps réel des messages du moteur."
+      }
+    },
+    "library": {
+      "title": "Médiathèque",
+      "intro": "Référentiel central pour toutes les vidéos, audios et autres contenus.",
+      "upload": {
+        "title": "Télécharger des vidéos",
+        "step1": "Cliquez sur TÉLÉCHARGER ou faites glisser les fichiers vers la zone de dépôt.",
+        "step2": "Formats pris en charge : MP4, MOV, MKV, AVI, TS, MXF (H.264/H.265).",
+        "step3": "Le système extrait automatiquement les métadonnées (durée, résolution, codec).",
+        "step4": "Une vignette est automatiquement générée à partir du cadre central.",
+        "nfs_hint": "Astuce : Les dossiers réseau (NFS/SMB) sont automatiquement détectés s'ils sont configurés."
+      },
+      "metadata": {
+        "intro": "Chaque fichier téléchargé est analysé pour en extraire les détails techniques et éditoriaux.",
+        "auto_review_title": "Examen des métadonnées",
+        "auto_review": "Le système examine automatiquement les métadonnées des clips téléchargés.",
+        "field_title": "Titre",
+        "field_title_desc": "Nom du programme ou du plan.",
+        "field_synopsis": "Synopsis",
+        "field_synopsis_desc": "Brève description du contenu.",
+        "field_genre": "Genre",
+        "field_genre_desc": "Catégorie de contenu.",
+        "field_rating": "Notation",
+        "field_rating_desc": "Âge recommandé.",
+        "field_type": "Taper",
+        "field_type_desc": "Série, film, documentaire, etc."
+      },
+      "fillers": {
+        "title": "Clips de remplissage",
+        "desc": "Les remplisseurs sont utilisés automatiquement pour combler les espaces vides dans le planning."
+      }
+    },
+    "playlists": {
+      "title": "Éditeur de liste de lecture",
+      "intro": "Les listes de lecture sont des séquences de contenu que le moteur de diffusion reproduit dans l'ordre.",
+      "create": {
+        "title": "Créer une liste de lecture",
+        "step1": "Allez dans le menu Playlists et cliquez sur « Nouvelle Playlist ».",
+        "step2": "Attribuez un nom d'identification (par exemple, Morning Movies).",
+        "step3": "Faites glisser les clips de la bibliothèque multimédia vers la liste de droite.",
+        "step4": "Réorganisez les clips en les faisant glisser vers le haut ou vers le bas.",
+        "step5": "Cliquez sur ENREGISTRER pour enregistrer la liste de lecture."
+      },
+      "management": {
+        "title": "Gestion des listes de lecture",
+        "sorting": "Tri",
+        "sorting_desc": "Cliquez sur les icônes fléchées ou faites-les glisser pour modifier l'ordre.",
+        "remove_clip": "Supprimer le clip",
+        "remove_clip_desc": "Cliquez sur l'icône de la corbeille pour supprimer un seul clip.",
+        "duplicate": "Double",
+        "duplicate_desc": "Créez des copies de listes de lecture existantes pour des variations rapides.",
+        "total_duration": "Durée totale",
+        "total_duration_desc": "Le système calcule la durée totale en temps réel.",
+        "fillers": "Remplisseurs automatiques",
+        "fillers_desc": "Les clips identifiés comme éléments de remplissage sont ignorés dans le calcul de base mais utilisés dans la diffusion."
+      },
+      "best_practices": {
+        "title": "Meilleures pratiques",
+        "bullets": "• Évitez les listes de lecture de plus de 24 heures.\n• Vérifiez si tous les clips ont des vignettes.\n• Utilisez des noms descriptifs pour faciliter la planification."
+      }
+    },
+    "calendar": {
+      "title": "Calendrier",
+      "intro": "Le calendrier est l'endroit où vous planifiez votre diffusion.",
+      "schedule": {
+        "title": "Programmer une liste de lecture",
+        "step1": "Cliquez sur un jour dans le calendrier pour ouvrir la boîte de dialogue de planification.",
+        "step2": "Sélectionnez la liste de lecture souhaitée.",
+        "step3": "Définissez l'heure de début (par exemple, 06h00).",
+        "step4": "Choisissez le modèle de répétition : Aucun, Quotidien, Hebdomadaire ou Mensuel.",
+        "step5": "Cliquez sur ENREGISTRER. L'événement apparaît sur le calendrier avec la couleur correspondante."
+      }
+    },
+    "graphics": {
+      "title": "Moteur graphique",
+      "intro": "Le moteur graphique vous permet de positionner le logo de la station et les calques animés."
+    },
+    "settings": {
+      "title": "Paramètres système",
+      "intro": "Le menu Paramètres comporte 5 zones principales."
+    },
+    "troubleshooting": {
+      "title": "Dépannage",
+      "intro": "Solutions aux problèmes les plus courants."
+    },
+    "liveInputs": {
+      "title": "Entrées en direct",
+      "intro": "Le module Live Inputs vous permet de configurer les flux vidéo et audio entrants pour la diffusion en direct.",
+      "howToUse": {
+        "title": "Comment utiliser",
+        "intro": "Suivez ces étapes pour configurer une entrée en direct :",
+        "step1": "Cliquez sur le bouton \"+ Ajouter une entrée\" pour créer une nouvelle entrée.",
+        "step2": "Remplissez le nom d'entrée, sélectionnez un protocole (RTMP, SRT, UDP, WebRTC, NDI) et entrez l'URL/le port du flux.",
+        "step3": "Si nécessaire, fournissez une clé de flux (par exemple, pour RTMP).",
+        "step4": "Vous pouvez éventuellement définir une URL d'aperçu pour la lecture HLS.",
+        "step5": "Enregistrez l'entrée ; il apparaîtra dans la liste avec son statut actuel.",
+        "step6": "Pour démarrer le flux, cliquez sur l'icône Lecture ; pour arrêter, cliquez sur l'icône Arrêter."
+      },
+      "tips": {
+        "title": "Conseils et bonnes pratiques",
+        "content": "• Utilisez SRT pour les réseaux peu fiables ; il offre une récupération d’erreur et une faible latence.\n• Pour les réseaux locaux, UDP offre la latence la plus faible mais manque de retransmission.\n• Assurez-vous que le pare-feu du serveur autorise les connexions entrantes sur les ports configurés.\n• Surveillez l'état de la puce : vert (actif), orange (connexion), rouge (erreur).\n• Vous pouvez modifier ou supprimer une entrée à tout moment via les icônes de la carte."
+      }
+    }
+  },
+  "graphics": {
+    "header": {
+      "title": "MOTEUR GRAPHIQUE — ÉDITEUR DE MARQUE À L'AIR WYSIWYG",
+      "subtitle": "ÉDITEUR VISUEL EN TEMPS RÉEL"
+    },
+    "tabs": {
+      "position": "POSITION",
+      "style": "STYLE",
+      "layer": "COUCHE"
+    },
+    "preview": {
+      "title": "APERÇU EN TEMPS RÉEL (16:9)",
+      "positioning": "POSITIONNEMENT...",
+      "ready": "PRÊT"
+    },
+    "position": {
+      "anchor_title": "POINT D'ANCRAGE",
+      "main_logo": "LOGO PRINCIPAL",
+      "layer_prefix": "COUCHE:",
+      "offset_title": "RÉGLAGE FIN (OFFSET)",
+      "axis_x": "AXE X",
+      "axis_y": "AXE Y",
+      "select_active_layer": "OU SÉLECTIONNEZ UN CALQUE ACTIF"
+    },
+    "style": {
+      "scale_title": "ÉCHELLE ET DIMENSIONS",
+      "magnitude": "AMPLEUR",
+      "opacity_title": "OPACITÉ DE LA COUCHE",
+      "alpha": "ALPHA"
+    },
+    "buttons": {
+      "reset": "RÉINITIALISER",
+      "save": "ENREGISTRER LES MODIFICATIONS"
+    },
+    "tooltips": {
+      "reset": "Restaurer les paramètres enregistrés",
+      "save": "Enregistrer les paramètres de positionnement et de style",
+      "anchor": "Ancrer au coin {{pos}}"
+    },
+    "messages": {
+      "update_success": "Graphiques mis à jour avec succès !",
+      "load_settings_error": "Échec du chargement des paramètres graphiques",
+      "load_layers_error": "Échec du chargement des couches graphiques",
+      "save_success": "Graphiques mis à jour avec succès !",
+      "save_error": "Erreur lors de l'enregistrement des paramètres graphiques"
+    },
+    "hint": {
+      "title": "CONSEIL ALPHA",
+      "logo_desc": "Faites glisser le logo directement dans l'aperçu pour un positionnement intuitif. Utilisez des curseurs pour une précision millimétrique.",
+      "layer_desc": "Couche d'édition \"{{name}}\". Cliquez sur l'arrière-plan pour revenir au logo."
+    }
+  },
+  "wizard": {
+    "steps": {
+      "welcome": "Accueillir",
+      "identity": "Identité",
+      "media": "Médias",
+      "transmission": "Transmission",
+      "summary": "Résumé",
+      "finish": "Finition"
+    },
+    "welcome": {
+      "title": "Bienvenue sur Cloud Onepa Playout",
+      "description": "Configurons votre chaîne TV professionnelle en quelques étapes seulement."
+    },
+    "identity": {
+      "title": "Identité du canal",
+      "label_name": "Nom de la chaîne",
+      "label_logo": "Logo de la gare",
+      "select_logo_btn": "Sélectionnez le logo",
+      "file_label": "Fichier : {{name}}",
+      "success_msg": "Identité configurée !",
+      "error_save": "Erreur lors de l'enregistrement de l'identité"
+    },
+    "media": {
+      "title": "Contenu initial",
+      "alert_info": "Ajoutez des vidéos de votre bibliothèque ou de flux externes (RTMP/HLS) à votre playlist initiale.",
+      "add_library_btn": "Ajouter depuis la bibliothèque",
+      "add_external_btn": "Ajouter un flux/une URL",
+      "empty_msg": "La liste de lecture est vide. Ajoutez du contenu ci-dessus.",
+      "duration_label": "Durée : {{duration}} | Tapez : {{type}}",
+      "type_stream": "Flux",
+      "type_file": "Déposer",
+      "error_library": "Erreur lors du chargement de la bibliothèque multimédia",
+      "error_playlist_empty": "Ajouter au moins un élément à la playlist",
+      "dialog_library": {
+        "title": "Sélectionner un média (sélection multiple)",
+        "files_selected": "{{count}} fichier(s) sélectionné(s)",
+        "no_media": "Aucun média trouvé dans la bibliothèque.",
+        "add_btn": "Ajouter ({{count}})"
+      },
+      "dialog_external": {
+        "title": "Ajouter un flux externe",
+        "label_url": "URL du flux (RTMP/HLS/HTTP)",
+        "label_duration": "Durée estimée (secondes)",
+        "helper_duration": "Pour les flux 24h/24 et 7j/7, saisissez une valeur élevée (ex : 86400)"
+      }
+    },
+    "transmission": {
+      "title": "Configuration de transmission",
+      "label_output_type": "Type de sortie",
+      "item_hls": "HLS (Web/Mobile)",
+      "item_rtmp": "RTMP (médias sociaux/YouTube)",
+      "label_url": "URL/clé de flux",
+      "success_msg": "Sortie configurée !",
+      "error_save": "Erreur lors de l'enregistrement du résultat"
+    },
+    "summary": {
+      "title": "Résumé des paramètres",
+      "alert_info": "Confirmez les données ci-dessous avant de finaliser la création de votre chaîne.",
+      "field_name": "Nom de la chaîne",
+      "field_output": "Sortie vidéo",
+      "field_playlist": "Liste de lecture initiale",
+      "playlist_desc": "{{count}} éléments prévus 24h/24 et 7j/7"
+    },
+    "final": {
+      "title": "Tout est prêt !",
+      "description": "Votre chaîne est configurée et prête à diffuser.",
+      "hint": "Cliquez sur TERMINER pour appliquer toutes les modifications.",
+      "success_start": "La diffusion a démarré avec succès !",
+      "error_start": "La chaîne a été configurée mais la diffusion n'a pas pu démarrer automatiquement. Vérifiez les fichiers sur le tableau de bord.",
+      "success_setup": "Configuration terminée ! Redirection..."
+    },
+    "controls": {
+      "cancel": "Annuler",
+      "back": "Dos",
+      "next": "Suivant",
+      "finish": "Finition",
+      "confirm_finish": "Confirmer et terminer"
+    },
+    "dialog_cancel": {
+      "title": "Annuler la configuration ?",
+      "message": "Êtes-vous sûr de vouloir annuler ? Toute progression non enregistrée sera perdue.",
+      "btn_no": "NON, CONTINUER",
+      "btn_yes": "OUI, QUITTER"
+    }
+  },
+  "templates": {
+    "header": {
+      "title": "GÉNÉRATEUR DE MODÈLES",
+      "subtitle": "CRÉER ET GÉRER DES STRUCTURES DE CONTENU RÉUTILISABLES"
+    },
+    "controls": {
+      "create_btn": "CRÉER UN MODÈLE"
+    },
+    "grid": {
+      "no_name": "Pas de nom",
+      "blocks": "BLOCS",
+      "structure_title": "STRUCTURE DE SÉQUENCE",
+      "use_btn": "UTILISER"
+    },
+    "dialog_edit": {
+      "title_edit": "MODIFIER LE MODÈLE",
+      "title_create": "CRÉER UN NOUVEAU MODÈLE",
+      "label_name": "NOM DU MODÈLE",
+      "label_description": "DESCRIPTION",
+      "label_duration": "DURÉE TOTALE (SECONDES)",
+      "save_btn": "ENREGISTRER LE MODÈLE"
+    },
+    "dialog_use": {
+      "title": "GÉNÉRER UNE LISTE DE LECTURE À PARTIR DU MODÈLE",
+      "selected_template": "MODÈLE SÉLECTIONNÉ",
+      "label_playlist_name": "NOM DE LA LISTE DE LECTURE",
+      "label_emission_date": "DATE DE DIFFUSION",
+      "generate_now_btn": "GÉNÉRER MAINTENANT"
+    },
+    "notifications": {
+      "create_success": "Modèle créé avec succès !",
+      "update_success": "Modèle mis à jour avec succès !",
+      "delete_success": "Modèle supprimé !",
+      "playlist_success": "Playlist créée à partir du modèle \"{{name}}\" !",
+      "error_fetch": "Erreur de chargement des modèles",
+      "error_save": "Erreur lors de l'enregistrement du modèle",
+      "error_delete": "Erreur lors de la suppression du modèle",
+      "error_playlist": "Erreur lors de la création d'une playlist à partir d'un modèle",
+      "error_name_required": "Le nom est requis"
+    },
+    "confirm_delete": "Êtes-vous sûr de vouloir supprimer ce modèle ?",
+    "presets": {
+      "morning_show": {
+        "name": "SPECTACLE DU MATIN",
+        "description": "Modèle d'émission du matin (06h00 - 12h00)"
+      },
+      "full_day": {
+        "name": "LISTE DE LECTURE 24H",
+        "description": "Playlist complète de 24 heures"
+      },
+      "loop_content": {
+        "name": "CONTENU DE LA BOUCLE",
+        "description": "Boucle de contenu avec pauses publicitaires"
+      }
+    },
+    "block_types": {
+      "intro": "INTRO",
+      "content": "CONTENU",
+      "commercial": "COMMERCIAL",
+      "outro": "SORTIE",
+      "filler": "REMPLISSAGE"
+    }
+  },
+  "health": {
+    "title": "Santé du système",
+    "lastUpdate": "Dernière mise à jour",
+    "manualRefresh": "Forcer l'actualisation",
+    "systemScore": "Score du système",
+    "integrityIndex": "Indice d'intégrité de la diffusion",
+    "scoreDescription": "Basé sur la connexion CasparCG, l’état de la base de données, la disponibilité du stockage et la synchronisation de la chronologie.",
+    "coreComponents": "Composants de base",
+    "initializingDiagnostics": "Initialisation du moteur de diagnostics...",
+    "waitingTelemetry": "En attente des données de télémétrie...",
+    "liveDiagnosticsStream": "Flux de diagnostics en direct",
+    "kpis": {
+      "deviceName": "Hôte de diffusion",
+      "clipsPlayed": "Clips aujourd'hui",
+      "activeStreams": "Flux actifs",
+      "lastError": "Dernière erreur"
+    },
+    "checks": {
+      "casparEngine": "Moteur de diffusion CasparCG",
+      "database": "Base de données système",
+      "mediaStorage": "Stockage des ressources multimédias",
+      "watchfolder": "Service de dossier de surveillance",
+      "initializingComm": "Initialisation de la communication...",
+      "awaitingMetrics": "En attente des métriques...",
+      "calculatingSpace": "Calcul de l'espace libre...",
+      "monitoringWatchfolders": "Surveillance des dossiers de surveillance...",
+      "contentAvailability": "Disponibilité du contenu",
+      "timeSync": "Synchronisation du temps",
+      "allMediaVerified": "Tous les fichiers multimédias des prochaines 24h sont vérifiés et présents.",
+      "ntpSync": "Synchronisation NTP active. Décalage : < 2 ms (parfait)"
+    },
+    "score": {
+      "perfect": "Parfait",
+      "health": "Santé"
+    }
+  },
+  "liveInputs": {
+    "title": "Entrées en direct",
+    "liveInputs": "Entrées en direct",
+    "socialStreaming": "Diffusion sociale",
+    "addInput": "Ajouter une entrée",
+    "addStream": "Ajouter un flux",
+    "editInput": "Modifier l'entrée",
+    "inputName": "Nom d'entrée",
+    "protocol": "Protocole",
+    "noInputs": "Aucune entrée en direct configurée",
+    "noStreams": "Aucun flux social configuré",
+    "confirmDelete": "Êtes-vous sûr de vouloir supprimer ?",
+    "status": "Statut",
+    "name": "Nom",
+    "platform": "Plate-forme",
+    "streamUrl": "URL du flux",
+    "actions": "Actes",
+    "start": "Commencer",
+    "stop": "Arrêt",
+    "url": "URL",
+    "port": "Port",
+    "previewUrl": "URL d'aperçu",
+    "editStream": "Modifier le flux",
+    "streamName": "Nom du flux",
+    "streamKey": "Clé de flux"
+  },
+  "multiChannel": {
+    "title": "À canaux multiples",
+    "noDescription": "Pas de description",
+    "noPreview": "Aperçu non disponible",
+    "currentClip": "Extrait actuel",
+    "nextUp": "Suivant",
+    "bitrate": "Débit",
+    "stop": "Arrêt",
+    "play": "Jouer",
+    "skip": "Sauter",
+    "noChannels": "Aucun canal configuré",
+    "noChannelsHint": "Configurez les canaux dans les paramètres pour utiliser le mode multicanal"
+  },
+  "analytics": {
+    "title": "Analytique",
+    "kpis": {
+      "wsStatus": "Statut WS",
+      "dataPoints": "Points de données",
+      "clips7Days": "Extraits (7 jours)",
+      "errorRate": "Taux d'erreur"
+    },
+    "charts": {
+      "liveBitrate": "Débit binaire en direct (en direct)"
+    },
+    "noAsRunData": "Aucune donnée de journal d'exécution n'est encore disponible."
+  },
+  "websocket": {
+    "connected": "En direct",
+    "connecting": "De liaison...",
+    "offline": "Hors ligne"
+  }
+}

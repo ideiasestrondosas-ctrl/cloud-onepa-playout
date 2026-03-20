@@ -596,6 +596,17 @@
         "empty": "NO HISTORY AVAILABLE",
         "releases": [
           {
+            "version": "v2.6.0-ALPHA.51-PRO",
+            "date": "2026-03-20",
+            "changes": [
+              "Documentation: Added Multi-Channel menu documentation (PT/EN/FR/ES)",
+              "Documentation: Added Live Inputs menu documentation (PT/EN/FR/ES)",
+              "Documentation: Added System Health menu documentation (PT/EN/FR/ES)",
+              "Bug Fix: HelpSystem components (HelpTemplates, HelpLiveInputs, HelpHealth, HelpMultiChannel)",
+              "i18n: Synchronized all 4 translation files (PT, EN, FR, ES)"
+            ]
+          },
+          {
             "version": "v2.6.0-ALPHA.50-PRO",
             "date": "2026-03-17",
             "changes": [
@@ -1247,7 +1258,73 @@
       "calendar": "Calendar",
       "graphics": "Graphics",
       "settings": "Settings",
-      "troubleshooting": "Issues"
+      "templates": "Templates",
+      "troubleshooting": "Troubleshooting",
+      "live-inputs": "Live Inputs",
+      "multi-channel": "Multi-Channel",
+      "health": "System Health"
+    },
+    "multi_channel": {
+      "title": "Multi-Channel",
+      "intro": "Manage multiple playout channels simultaneously from a single interface. Each channel operates independently with its own playback engine.",
+      "management": {
+        "title": "Channel Management",
+        "intro": "Create and delete channels according to your broadcast needs.",
+        "create": "Create New Channel",
+        "create_desc": "Click the '+' button to add a new channel. Each channel requires a unique name and will be initialized with the system's default settings.",
+        "delete": "Delete Channel",
+        "delete_desc": "Select the channel you want to remove and click the delete icon. The channel must be stopped before it can be deleted.",
+        "default": "Main Channel",
+        "default_desc": "The main channel (main) is always preserved and cannot be deleted. This channel is used as the main reference for the system."
+      },
+      "status": {
+        "title": "Channel States",
+        "intro": "Each channel can be in one of the following states:",
+        "playing": "Playing (ON AIR)",
+        "playing_desc": "The channel is currently broadcasting content. The current clip is playing and the uptime counter is active.",
+        "paused": "Paused",
+        "paused_desc": "Playback has been temporarily paused. The content remains visible but does not advance. Uptime continues to count.",
+        "stopped": "Stopped",
+        "stopped_desc": "The channel is inactive and not broadcasting. The uptime is reset and no content is playing.",
+        "error": "Error",
+        "error_desc": "A problem occurred with the channel playback. Check the system logs for more details on the error."
+      },
+      "preview": {
+        "title": "Preview",
+        "intro": "View each channel's content in real-time through HLS streams.",
+        "hls": "HLS Stream",
+        "hls_desc": "Each channel generates an HLS stream that can be viewed directly in the browser. The URL is automatically generated for each channel.",
+        "safari": "Safari (native)",
+        "safari_desc": "Safari has native HLS support. Simply click the preview icon to open the native player.",
+        "chrome": "Chrome/Edge/Firefox",
+        "chrome_desc": "These browsers require the hls.js library to play HLS streams. The system automatically loads it when needed."
+      },
+      "info": {
+        "title": "Channel Information",
+        "intro": "Details displayed for each channel:",
+        "currentClip": "Current Clip",
+        "currentClip_desc": "Name of the media clip currently playing on this channel.",
+        "nextUp": "Next Clip",
+        "nextUp_desc": "Name of the next clip in the playlist that will play after the current clip.",
+        "uptime": "Uptime",
+        "uptime_desc": "Time elapsed since the channel entered 'Playing' state (HH:MM:SS format).",
+        "bitrate": "Bitrate",
+        "bitrate_desc": "Current bitrate of the output stream in Mbps (megabits per second)."
+      },
+      "controls": {
+        "title": "Channel Controls",
+        "intro": "Control buttons available for each channel:",
+        "play": "Play",
+        "play_desc": "Starts or resumes channel playback. The channel changes to 'Playing' state.",
+        "stop": "Stop",
+        "stop_desc": "Stops playback immediately. The channel changes to 'Stopped' state.",
+        "skip": "Skip",
+        "skip_desc": "Advances immediately to the next clip in the playlist, regardless of the current clip's progress."
+      },
+      "tips": {
+        "title": "Tips and Recommendations",
+        "content": "• Each additional channel requires system resources (CPU, memory). On systems with limited resources, it is recommended to limit to 2-3 simultaneous channels.\n• The main channel is always automatically created at system startup.\n• Use the preview function to check broadcast quality before making it available to the public.\n• In case of persistent errors, check the network connection and system logs in the Diagnostics section."
+      }
     },
     "dashboard": {
       "title": "Dashboard",
@@ -1367,12 +1444,154 @@
       }
     },
     "graphics": {
-      "title": "Graphics Engine",
-      "intro": "The Graphics Engine allows you to position the station logo and animated layers."
+      "title": "Graphic Editor",
+      "intro": "The Graphic Editor allows you to create and manage visual overlays, logos and animated layers for your live broadcasts.",
+      "features_title": "Main Features",
+      "features_intro": "The Graphic Editor offers professional tools for broadcast graphics production:",
+      "feature1": "Precise logo and graphics positioning with multiple anchor point support",
+      "feature2": "Full control of scale, opacity and rotation for each graphic element",
+      "feature3": "Layer system to organize complex overlays with individual control",
+      "feature4": "Integration with template library for quick design reuse",
+      "feature5": "Support for multiple layers of text, images, shapes and animations",
+      "feature6": "Real-time preview with 16:9 output preview",
+      "position_tab_title": "Position Tab",
+      "position_tab_intro": "Control the exact position of graphic elements on the broadcast screen.",
+      "anchor_point": "Anchor Point",
+      "anchor_point_desc": "Select one of 4 corners (top-left, top-right, bottom-left, bottom-right) as positioning reference.",
+      "offset_x": "Offset X (Horizontal)",
+      "offset_x_desc": "Fine-tune horizontal position in pixels (0-1920). Use the slider or drag the logo in the preview.",
+      "offset_y": "Offset Y (Vertical)",
+      "offset_y_desc": "Fine-tune vertical position in pixels (0-1080). Use the slider or drag the logo in the preview.",
+      "drag_drop": "Drag and Drop",
+      "drag_drop_desc": "Drag the logo directly in the preview area for intuitive real-time positioning.",
+      "style_tab_title": "Style Tab",
+      "style_tab_intro": "Adjust visual properties like size and transparency of graphic elements.",
+      "scale": "Scale",
+      "scale_desc": "Controls the logo size (10%-300%). The value represents the percentage of the output screen width.",
+      "opacity": "Opacity",
+      "opacity_desc": "Controls the element transparency (10%-100%). Values below 80% are recommended for non-intrusive overlays.",
+      "layer_tab_title": "Layer Tab",
+      "layer_tab_intro": "Create and manage multiple overlapping graphic layers. Each layer can be of a different type.",
+      "layer_clock": "Clock",
+      "layer_clock_desc": "Displays a real-time digital clock with customizable format, timezone and style.",
+      "layer_lower_third": "Lower Third",
+      "layer_lower_third_desc": "Text banner with title and subtitle, ideal for presenter identification or information.",
+      "layer_marquee": "Marquee / Crawler",
+      "layer_marquee_desc": "Horizontal scrolling text with configurable speed and direction, ideal for breaking news.",
+      "clock_config_title": "Clock Configuration",
+      "clock_config_intro": "Customize the appearance and behavior of the clock layer.",
+      "clock_format": "Time Format",
+      "clock_format_desc": "Choose between 24h (HH:mm:ss) or 12h (hh:mm:ss AM/PM), with or without seconds.",
+      "clock_timezone": "Timezone",
+      "clock_timezone_desc": "Select the timezone for display. Includes all world regions organized by continent.",
+      "clock_font": "Font Family",
+      "clock_font_desc": "Choose the typography: Roboto Mono, Inter, Courier New or Arial.",
+      "clock_size": "Font Size",
+      "clock_size_desc": "Set the font size in pixels. Recommended: 48px for large screens.",
+      "clock_color": "Text Color",
+      "clock_color_desc": "Select the clock text color using the color picker.",
+      "clock_bg": "Background Color",
+      "clock_bg_desc": "Set the background color in RGBA format. Ex: rgba(0,0,0,0.7) for semi-transparent background.",
+      "lower_third_config_title": "Lower Third Configuration",
+      "lower_third_config_intro": "Customize the text banner that appears at the bottom of the screen.",
+      "lt_primary": "Primary Text",
+      "lt_primary_desc": "Main name or title that appears highlighted in the banner.",
+      "lt_secondary": "Secondary Text",
+      "lt_secondary_desc": "Subtitle or complementary description that appears below the primary text.",
+      "lt_animation": "Animation",
+      "lt_animation_desc": "Choose the entry effect: Slide In Left, Slide In Right, Fade In or None.",
+      "lt_duration": "Duration (ms)",
+      "lt_duration_desc": "Time in milliseconds that the lower third remains visible before disappearing.",
+      "marquee_config_title": "Marquee Configuration",
+      "marquee_config_intro": "Customize the scrolling text that appears on the broadcast screen.",
+      "marquee_text": "Marquee Text",
+      "marquee_text_desc": "Enter the text to be displayed as a scrolling crawler. Supports multiple lines.",
+      "marquee_speed": "Speed (px/s)",
+      "marquee_speed_desc": "Controls the scrolling speed in pixels per second. Higher values = faster scrolling.",
+      "marquee_direction": "Direction",
+      "marquee_direction_desc": "Choose the scrolling direction: Left to Right or Right to Left.",
+      "templates_tab_title": "Templates Tab",
+      "templates_tab_intro": "Access and manage saved templates for quick reuse of predefined graphic configurations.",
+      "how_to_title": "How to Use",
+      "how_to_intro": "Follow these steps to use the Graphic Editor effectively:",
+      "step1": "Access the Graphic Editor through the Graphics menu in the sidebar",
+      "step2": "Use the \"Positioning\" tab to define the exact location of your logo on screen",
+      "step3": "Adjust scale and opacity in the \"Style\" tab to achieve the desired appearance",
+      "step4": "In the \"Layers\" tab, click \"Add Layer\" and choose the type (Clock, Lower Third or Marquee)",
+      "step5": "Configure each layer individually by clicking the edit icon",
+      "step6": "Reorder layers by dragging them to define the overlay order",
+      "step7": "Preview your changes in real-time on the 16:9 preview monitor",
+      "step8": "Click \"Save Changes\" to apply the settings to your playout",
+      "tips_title": "Tips and Best Practices",
+      "tips_content": "• Use anchor points to maintain relative positioning when resizing the screen\n• Keep opacity below 80% for non-intrusive overlays\n• Organize layers by importance (background → overlays → text)\n• Save frequent configurations as templates for quick reuse\n• Always preview in full screen to verify the final appearance\n• Use contrasting colors to ensure readability in different lighting conditions\n• Enable/disable layers individually to test different compositions\n• Use the clock with correct timezone for international broadcasts"
     },
     "settings": {
       "title": "System Settings",
-      "intro": "The Settings menu has 5 main areas."
+      "intro": "The Settings menu allows you to configure all aspects of the playout system, from transmission protocols to user management.",
+      "features_title": "Main Features",
+      "features_intro": "The Settings menu offers complete tools for system management:",
+      "feature1": "Transmission protocol configuration (RTMP, SRT, UDP, HLS)",
+      "feature2": "Storage paths and metadata APIs management",
+      "feature3": "Playout engine configuration and quality presets",
+      "feature4": "User and access profile management",
+      "feature5": "System information and version history",
+      "output_tab_title": "Output Tab",
+      "output_tab_intro": "Configure transmission protocols and video output parameters.",
+      "primary_protocol": "Primary Protocol",
+      "primary_protocol_desc": "Select the main protocol: RTMP, SRT, UDP or HLS.",
+      "resolution": "Resolution",
+      "resolution_desc": "Set the output resolution: 4K, 1080p, 720p or 360p.",
+      "bitrate": "Video Bitrate",
+      "bitrate_desc": "Configure the output video bitrate (e.g., 5000k).",
+      "multi_streaming": "Multi-Streaming",
+      "multi_streaming_desc": "Enable additional protocols for simultaneous transmission.",
+      "connection_links": "Connection Links",
+      "connection_links_desc": "Direct links for VLC, OBS and other players.",
+      "paths_tab_title": "Paths & Media Tab",
+      "paths_tab_intro": "Configure storage paths and metadata APIs.",
+      "storage_paths": "Storage Paths",
+      "storage_paths_desc": "Define directories for media, thumbnails, playlists and logs.",
+      "space_management": "Space Management",
+      "space_management_desc": "Monitor and clean web proxies to free up disk space.",
+      "metadata_apis": "Metadata APIs",
+      "metadata_apis_desc": "Configure API keys for TMDB, OMDB and TVMaze.",
+      "branding_assets": "Branding Assets",
+      "branding_assets_desc": "Upload logos, fallback images and videos.",
+      "playout_tab_title": "Playout & Presets Tab",
+      "playout_tab_intro": "Configure the playout engine and quality presets.",
+      "basic_config": "Basic Configuration",
+      "basic_config_desc": "Set day start, channel name, FPS and encoding.",
+      "epg_config": "EPG Configuration",
+      "epg_config_desc": "Configure EPG distribution and number of days.",
+      "overlay_config": "Channel Overlay",
+      "overlay_config_desc": "Configure logo, position, opacity and overlay scale.",
+      "quality_presets": "Quality Presets",
+      "quality_presets_desc": "Quickly select 720p, 1080p or 4K with optimized settings.",
+      "users_tab_title": "Users Tab",
+      "users_tab_intro": "User and access profile management.",
+      "user_management": "User Management",
+      "user_management_desc": "Add, delete users and change passwords.",
+      "profile_management": "Profile Management",
+      "profile_management_desc": "Create and edit profiles with custom permissions.",
+      "about_tab_title": "About System Tab",
+      "about_tab_intro": "System information, version history and product roadmap.",
+      "system_info": "System Information",
+      "system_info_desc": "Version, last update and deployment environment.",
+      "version_history": "Version History",
+      "version_history_desc": "Release notes and project evolution.",
+      "product_roadmap": "Product Roadmap",
+      "product_roadmap_desc": "Implemented and planned features for the future.",
+      "how_to_title": "How to Use",
+      "how_to_intro": "Follow these steps to configure the system effectively:",
+      "step1": "Access the Settings menu in the sidebar",
+      "step2": "In the \"Output\" tab, select the protocol and configure resolution",
+      "step3": "In the \"Paths & Media\" tab, define storage directories",
+      "step4": "Configure metadata APIs (TMDB, OMDB) for automatic enrichment",
+      "step5": "In the \"Playout\" tab, adjust playout engine settings",
+      "step6": "In the \"Users\" tab, create profiles and users with appropriate permissions",
+      "step7": "Click \"Save Changes\" to apply all settings",
+      "tips_title": "Tips and Best Practices",
+      "tips_content": "• Save settings after each change to avoid data loss\n• Use quality presets for quick and optimized configuration\n• Configure regular backups of storage paths\n• Monitor disk space in the Space Management section\n• Create user profiles with minimum necessary permissions\n• Regularly check version history for updates\n• Test connection links after changing protocol settings"
     },
     "troubleshooting": {
       "title": "Troubleshooting",
@@ -1380,7 +1599,7 @@
     },
     "liveInputs": {
       "title": "Live Inputs",
-      "intro": "The Live Inputs module allows you to configure incoming video and audio streams for live broadcasting.",
+      "intro": "The Live Inputs module allows you to configure incoming video and audio streams for live broadcasting. This feature enables your playout system to accept external live sources and distribute them to your audience.",
       "howToUse": {
         "title": "How to Use",
         "intro": "Follow these steps to set up a live input:",
@@ -1391,10 +1610,196 @@
         "step5": "Save the input; it will appear in the list with its current status.",
         "step6": "To start the stream, click the Play icon; to stop, click the Stop icon."
       },
+      "protocols": {
+        "title": "Supported Protocols",
+        "intro": "The system supports multiple protocols for different use cases:",
+        "rtmp": "RTMP (Real-Time Messaging Protocol) - Ideal for social media platforms like YouTube and Facebook. Requires a stream key. Port: 1935.",
+        "srt": "SRT (Secure Reliable Transport) - High reliability streaming over unstable networks with error recovery and low latency. Port: 9000.",
+        "udp": "UDP (User Datagram Protocol) - Lowest latency for local networks, but no retransmission. Use for IP encoders and local distribution. Port: 1234.",
+        "webrtc": "WebRTC - Browser-based real-time communication, ideal for web-based live sources and low-latency browser streaming.",
+        "ndi": "NDI (Network Device Interface) - Professional IP video workflow, ideal for studio environments and networked video sources.",
+        "sdi": "SDI (Serial Digital Interface) - Traditional broadcast standard for direct video connections via capture cards."
+      },
+      "socialStreaming": {
+        "title": "Social Streaming",
+        "intro": "Stream directly to social media platforms using the Social Streaming tab:",
+        "youtube": "YouTube Live - Requires stream key from YouTube Studio. Use RTMP protocol with rtmp://a.rtmp.youtube.com/live2.",
+        "facebook": "Facebook Live - Requires stream key from Facebook Page. Use RTMP protocol with rtmp://rtmp-api.facebook.com:1935/rtmp/.",
+        "management": "Manage social streams in the Social Streaming tab. Start/Stop streams directly from the interface and monitor status in real-time."
+      },
+      "statusMonitoring": {
+        "title": "Status Monitoring",
+        "intro": "Real-time status indicators help you monitor your streams:",
+        "active": "Green - Active and streaming successfully",
+        "connecting": "Orange - Connecting to the source",
+        "error": "Red - Connection error or stopped",
+        "inactive": "Gray - Inactive or not configured"
+      },
+      "preview": {
+        "title": "Preview Functionality",
+        "intro": "Set a Preview URL to see your stream in the application:",
+        "hls": "HLS preview URLs work best (m3u8 format). The system generates HLS previews automatically for local sources.",
+        "latency": "Note: Preview has inherent latency (6-10 seconds for HLS, sub-second for SRT/WebRTC).",
+        "local": "For local sources, use http://localhost:8080/hls/stream.m3u8 or similar."
+      },
       "tips": {
         "title": "Tips & Best Practices",
-        "content": "• Use SRT for unreliable networks; it provides error recovery and low latency.\n• For local networks, UDP offers the lowest latency but lacks retransmission.\n• Ensure the server firewall allows inbound connections on the configured ports.\n• Monitor the status chip: green (active), orange (connecting), red (error).\n• You can edit or delete an input at any time via the icons in the card."
+        "content": "• Use SRT for unreliable networks; it provides error recovery and low latency.\n• For local networks, UDP offers the lowest latency but lacks retransmission.\n• Ensure the server firewall allows inbound connections on the configured ports (1935 for RTMP, 9000 for SRT, 1234 for UDP).\n• Monitor the status chip: green (active), orange (connecting), red (error).\n• You can edit or delete an input at any time via the icons in the card.\n• For social streaming, use the dedicated Social Streaming tab for better management.\n• Always test your stream before going live.\n• Keep stream keys secure and rotate them regularly.\n• Use descriptive names for easy identification.\n• For NDI sources, ensure all devices are on the same network subnet.\n• WebRTC requires HTTPS in production environments."
+      },
+      "troubleshooting": {
+        "title": "Troubleshooting",
+        "items": [
+          "Connection failed: Check URL, port, and firewall settings",
+          "Stream key invalid: Verify the key from the platform's dashboard",
+          "No preview: Ensure the preview URL is accessible and in HLS format",
+          "High latency: Consider using SRT instead of HLS for lower latency",
+          "Audio issues: Check codec compatibility and audio levels",
+          "Port already in use: Check if another service is using the configured port",
+          "NDI not detected: Verify NDI tools are installed and network allows multicast"
+        ]
       }
+    },
+    "health": {
+      "title": "System Health",
+      "intro": "The System Health module allows you to monitor the health and performance of your playout system in real-time. Includes system score, component checks, and stream analysis.",
+      "healthTab": {
+        "title": "Health Tab",
+        "intro": "The Health tab presents main KPIs and system status checks."
+      },
+      "kpis": {
+        "title": "Key Performance Indicators (KPIs)",
+        "deviceName": "Playout Host",
+        "deviceName_desc": "Name of the server where playout is running",
+        "clipsPlayed": "Clips Today",
+        "clipsPlayed_desc": "Number of clips played since midnight",
+        "activeStreams": "Active Streams",
+        "activeStreams_desc": "Number of active output streams currently",
+        "lastError": "Last Error",
+        "lastError_desc": "Last error recorded in the system (Clean = no errors)"
+      },
+      "systemScore": {
+        "title": "System Score",
+        "intro": "Overall health index from 0-100% based on multiple factors.",
+        "perfect": "Perfect (90-100)",
+        "perfect_desc": "System running perfectly, no issues detected",
+        "healthy": "Healthy (70-89)",
+        "healthy_desc": "Functional system with some minor warnings",
+        "critical": "Critical (<70)",
+        "critical_desc": "Requires immediate attention, significant issues detected"
+      },
+      "components": {
+        "title": "Core Components",
+        "intro": "Status checks of core system components:",
+        "engine": "CasparCG Engine",
+        "engine_desc": "Media playout engine, connection to graphics server",
+        "database": "Database",
+        "database_desc": "Connection status and PostgreSQL database integrity",
+        "mediaStorage": "Media Storage",
+        "mediaStorage_desc": "Available disk space for media and file integrity",
+        "watchfolder": "Watchfolder Service",
+        "watchfolder_desc": "Service that monitors folders for new media files"
+      },
+      "checks": {
+        "title": "Additional Checks",
+        "content": "Content Availability",
+        "content_desc": "Checks if all media files scheduled for the next 24 hours are present",
+        "timeSync": "Time Synchronization",
+        "timeSync_desc": "NTP sync status (should be <2ms for broadcast)"
+      },
+      "analyticsTab": {
+        "title": "Analytics Tab",
+        "intro": "The Analytics tab presents real-time graphs and stream statistics."
+      },
+      "charts": {
+        "title": "Analytics Charts",
+        "bitrate": "Real-Time Bitrate",
+        "bitrate_desc": "Line chart showing bitrate variation over time (updated via WebSocket)",
+        "clipsDay": "Clips per Day",
+        "clipsDay_desc": "Bar chart showing number of clips played in the last 7 days"
+      },
+      "websocket": {
+        "title": "WebSocket Status",
+        "connected": "Connected (LIVE)",
+        "connected_desc": "WebSocket active, receiving real-time telemetry data",
+        "disconnected": "Disconnected (OFFLINE)",
+        "disconnected_desc": "WebSocket inactive, analytics charts will not update"
+      },
+      "status": {
+        "title": "Status Indicators",
+        "intro": "Colors used to indicate component status:",
+        "ok": "Green (OK)",
+        "ok_desc": "Component running correctly",
+        "warning": "Orange (Warning)",
+        "warning_desc": "Attention needed but not critical",
+        "error": "Red (Error)",
+        "error_desc": "Critical issue requiring immediate attention"
+      },
+      "tips": {
+        "title": "Tips & Best Practices",
+        "content": "• Monitor System Score daily\n• Keep at least 20% disk space free\n• Check live diagnostics logs regularly\n• NTP sync must be active for broadcast\n• Manually refresh page if data doesn't update\n• WebSocket must be connected for real-time analytics\n• Check content availability before important broadcasts"
+      },
+      "troubleshooting": {
+        "title": "Troubleshooting",
+        "content": "Low score: Check components with error or warning status.\nWebSocket disconnected: Refresh page or check network connection.\nLow disk space: Delete old media or expand storage.\nDatabase errors: Restart service or contact support."
+      }
+    },
+    "templates": {
+      "title": "Templates",
+      "intro": "The Templates system allows you to create, manage, and reuse playlist structures for efficient broadcast scheduling.",
+      "features_title": "Main Features",
+      "features_intro": "The Template Generator provides powerful tools for content structuring:",
+      "feature1": "Pre-configured templates for common broadcast scenarios (morning shows, 24/7 programming, etc.)",
+      "feature2": "Custom template creation with flexible duration and block composition",
+      "feature3": "Template library with preset structures that can be quickly adapted",
+      "feature4": "One-click playlist generation from any template",
+      "feature5": "Block-based architecture (Intro, Content, Commercial, Outro, Filler)",
+      "feature6": "Template editing and deletion capabilities",
+      "presets_title": "Preset Templates",
+      "presets_intro": "The system includes three ready-to-use preset templates:",
+      "preset_morning": "Morning Show",
+      "preset_morning_desc": "A 6-hour template designed for morning programming (06:00-12:00) with structured content blocks and breaks.",
+      "preset_full_day": "24-Hour Playlist",
+      "preset_full_day_desc": "A complete 24-hour template with continuous content and a 1-hour filler buffer for scheduling flexibility.",
+      "preset_loop": "Content Loop",
+      "preset_loop_desc": "A repeating 24-hour template with content blocks and commercial breaks, ideal for continuous looping programming.",
+      "structure_title": "Template Structure",
+      "structure_intro": "Templates are composed of sequential blocks that define the programming flow:",
+      "block_intro": "Introduction",
+      "block_intro_desc": "Opening segment (typically 30 seconds) used for show introductions, station IDs, or opening credits.",
+      "block_content": "Content",
+      "block_content_desc": "Main programming block containing actual video content. Duration varies based on show format.",
+      "block_commercial": "Commercial",
+      "block_commercial_desc": "Advertising or break segment. Used for commercial spots, station identification, or public service announcements.",
+      "block_outro": "Outro",
+      "block_outro_desc": "Closing segment (typically 30 seconds) for show endings, credits, or station sign-offs.",
+      "block_filler": "Filler",
+      "block_filler_desc": "Emergency or buffer content used to fill gaps in the schedule. Automatically inserted when needed.",
+      "create_title": "Creating a Template",
+      "create_intro": "Follow these steps to create a custom template:",
+      "create_name": "Template Name",
+      "create_name_desc": "Enter a descriptive name that identifies the template's purpose (e.g., \"Monday Morning News\").",
+      "create_description": "Description",
+      "create_description_desc": "Add a brief explanation of when and how to use this template.",
+      "create_duration": "Total Duration",
+      "create_duration_desc": "Set the total length in seconds. For 24-hour templates, enter 86400 seconds.",
+      "use_title": "Using Templates",
+      "use_intro": "Generate a playlist from any template in a few steps:",
+      "use_select": "Select Template",
+      "use_select_desc": "Choose a template from the Templates page by clicking the \"USE\" button.",
+      "use_name": "Name the Playlist",
+      "use_name_desc": "Enter a unique name for the generated playlist (e.g., \"Morning Show - March 20\").",
+      "use_date": "Set Broadcast Date",
+      "use_date_desc": "Select the date when this playlist will be scheduled in the Calendar.",
+      "how_to_title": "Complete Workflow",
+      "how_to_intro": "Here's the complete process from template creation to broadcast:",
+      "step1": "Access the Templates page from the sidebar menu",
+      "step2": "Browse existing templates or create a new one with \"CREATE TEMPLATE\"",
+      "step3": "Define template structure with appropriate blocks and durations",
+      "step4": "Save the template for future use",
+      "step5": "When needed, click \"USE\" on any template to generate a playlist",
+      "step6": "The generated playlist appears in the Playlists section ready for scheduling",
+      "tips_title": "Tips and Best Practices",
+      "tips_content": "• Create templates for recurring programming patterns (daily shows, weekly specials)\n• Use descriptive names that include duration and purpose\n• Include filler blocks in templates for scheduling flexibility\n• Test templates by generating sample playlists before using them on air\n• Keep template durations realistic (avoid over-scheduling)\n• Update templates periodically based on programming changes\n• Use the 24-hour template as a starting point for custom variations\n• Remember that generated playlists can be further edited in the Playlist Editor"
     }
   },
   "graphics": {
@@ -1599,6 +2004,7 @@
   },
   "health": {
     "title": "System Health",
+    "analyticsTitle": "Analytics",
     "lastUpdate": "Last update",
     "manualRefresh": "Force Refresh",
     "systemScore": "System Score",
@@ -1631,6 +2037,10 @@
     "score": {
       "perfect": "Perfect",
       "health": "Health"
+    },
+    "tab": {
+      "health": "Health",
+      "analytics": "Analytics"
     }
   },
   "liveInputs": {
@@ -1670,7 +2080,10 @@
     "play": "Play",
     "skip": "Skip",
     "noChannels": "No channels configured",
-    "noChannelsHint": "Configure channels in settings to use multi-channel mode"
+    "noChannelsHint": "Configure channels in settings to use multi-channel mode",
+    "status_paused": "PAUSED",
+    "status_stopped": "STOPPED",
+    "status_error": "ERROR"
   },
   "analytics": {
     "title": "Analytics",
@@ -1681,9 +2094,11 @@
       "errorRate": "Error Rate"
     },
     "charts": {
-      "liveBitrate": "Live Bitrate (Live)"
+      "liveBitrate": "Live Bitrate (Live)",
+      "clipsPerDay": "Clips / Day (Last 7 Days)"
     },
-    "noAsRunData": "No as-run log data available yet."
+    "noAsRunData": "No as-run log data available yet.",
+    "waitingWsData": "Waiting for WebSocket data…"
   },
   "websocket": {
     "connected": "Live",

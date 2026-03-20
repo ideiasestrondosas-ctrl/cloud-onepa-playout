@@ -1,0 +1,87 @@
+import React from 'react';
+import {
+  Box,
+  Typography,
+  Section,
+  Step,
+  Kv,
+  Alert
+} from './HelpSystem';
+import { useTranslation } from 'react-i18next';
+
+export default function HelpGraphics() {
+  const { t } = useTranslation();
+  return (
+    <Box>
+      <Section title={t('help.graphics.title')}>
+        <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
+          {t('help.graphics.intro')}
+        </Typography>
+      </Section>
+
+      <Section title={t('help.graphics.features_title')}>
+        <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
+          {t('help.graphics.features_intro')}
+        </Typography>
+        <Box sx={{ mb: 1 }}>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            • {t('help.graphics.feature1')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            • {t('help.graphics.feature2')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            • {t('help.graphics.feature3')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            • {t('help.graphics.feature4')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            • {t('help.graphics.feature5')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            • {t('help.graphics.feature6')}
+          </Typography>
+        </Box>
+      </Section>
+
+      <Section title={t('help.graphics.how_to_title')}>
+        <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
+          {t('help.graphics.how_to_intro')}
+        </Typography>
+        <Box sx={{ mb: 1 }}>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            1. {t('help.graphics.step1')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            2. {t('help.graphics.step2')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            3. {t('help.graphics.step3')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            4. {t('help.graphics.step4')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            5. {t('help.graphics.step5')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            6. {t('help.graphics.step6')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            7. {t('help.graphics.step7')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            8. {t('help.graphics.step8')}
+          </Typography>
+        </Box>
+      </Section>
+
+      <Section title={t('help.graphics.tips_title')}>
+        <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block', whiteSpace: 'pre-line' }}>
+          {t('help.graphics.tips_content')}
+        </Typography>
+      </Section>
+    </Box>
+  );
+}

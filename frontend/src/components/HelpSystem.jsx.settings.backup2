@@ -1,0 +1,553 @@
+import React from 'react';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Typography,
+  Box,
+  IconButton,
+  Tabs,
+  Tab,
+  Chip,
+  Divider,
+  Paper,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Alert
+} from '@mui/material';
+import {
+  Close as CloseIcon,
+  ExpandMore as ExpandMoreIcon,
+  CheckCircle as CheckIcon,
+  Warning as WarningIcon,
+  Info as InfoIcon,
+  PlayArrow as PlayIcon,
+  Dashboard as DashboardIcon,
+  LibraryMusic as LibraryIcon,
+  QueueMusic as PlaylistIcon,
+  CalendarMonth as CalendarIcon,
+  Brush as GraphicsIcon,
+  Settings as SettingsIcon,
+  Tv as TvIcon,
+  LiveTv as LiveTvIcon,
+  BugReport as BugReport,
+  Description as DescriptionIcon,
+  Favorite as FavoriteIcon,
+  TableChart as TableChartIcon
+} from '@mui/icons-material';
+import { useHelp } from '../context/HelpContext';
+import { useTranslation } from 'react-i18next';
+
+const Section = ({ title, children, severity = null }) => (
+  <Box sx={{ mb: 1.5 }}>
+    {severity ? (
+      <Alert severity={severity} sx={{ mb: 0.75, py: 0.3, '& .MuiAlert-message': { py: 0 } }}><strong>{title}</strong></Alert>
+    ) : (
+      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.main', mb: 0.5, borderBottom: '1px solid rgba(0,229,255,0.15)', pb: 0.3, fontSize: '0.8rem' }}>{title}</Typography>
+    )}
+    {children}
+  </Box>
+);
+
+const Step = ({ n, text }) => (
+  <Box sx={{ display: 'flex', gap: 1, mb: 0.5 }}>
+    <Box sx={{ minWidth: 20, height: 20, borderRadius: '50%', bgcolor: 'primary.main', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.6rem', flexShrink: 0 }}>{n}</Box>
+    <Typography variant="caption" sx={{ pt: 0.2, lineHeight: 1.5 }}>{text}</Typography>
+  </Box>
+);
+
+const Kv = ({ k, v }) => (
+  <Box sx={{ display: 'flex', gap: 1, mb: 0.4 }}>
+    <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', minWidth: 130, flexShrink: 0, fontSize: '0.65rem' }}>{k}</Typography>
+    <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.65rem' }}>{v}</Typography>
+  </Box>
+);
+
+// ─── TAB CONTENT ──────────────────────────────────────────────────────────────
+
+const HelpDashboard = () => {
+  const { t } = useTranslation();
+  return (
+    <Box>
+      <Section title={t('help.dashboard.title')}>
+        <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
+          {t('help.dashboard.intro')}
+        </Typography>
+      </Section>
+
+      <Section title={t('help.dashboard.status_indicator.title')}>
+        <Typography variant="caption" sx={{ mb: 0.5, display: 'block' }}>
+          {t('help.dashboard.status_indicator.prefix')}
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2, mb: 0.5 }}>
+          <Chip label="● ON AIR" sx={{ bgcolor: 'rgba(211,47,47,0.15)', color: '#f44336', fontWeight: 800, fontFamily: 'monospace' }} size="small" />
+          <Typography variant="caption" sx={{ pt: 0.5, color: 'text.secondary' }}>{t('help.dashboard.status_indicator.on_air')}</Typography>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 2, mb: 1 }}>
+          <Chip label="◯ OFF AIR" sx={{ bgcolor: 'rgba(255,255,255,0.05)', color: '#555', fontWeight: 800, fontFamily: 'monospace' }} size="small" />
+          <Typography variant="caption" sx={{ pt: 0.5, color: 'text.secondary' }}>{t('help.dashboard.status_indicator.off_air')}</Typography>
+        </Box>
+      </Section>
+
+      <Section title={t('help.dashboard.controls.title')}>
+        <Step n="1" text={t('help.dashboard.controls.step1')} />
+        <Step n="2" text={t('help.dashboard.controls.step2')} />
+        <Step n="3" text={t('help.dashboard.controls.step3')} />
+        <Step n="4" text={t('help.dashboard.controls.step4')} />
+        <Step n="5" text={t('help.dashboard.controls.step5')} />
+        <Alert severity="warning" sx={{ mt: 0.75, py: 0.3, '& .MuiAlert-message': { py: 0 } }}>
+          <Typography variant="caption">{t('help.dashboard.controls.warning')}</Typography>
+        </Alert>
+      </Section>
+
+      <Section title={t('help.dashboard.protocols.title')}>
+        <Typography variant="caption" sx={{ mb: 0.75, color: 'text.secondary', display: 'block' }}>
+          {t('help.dashboard.protocols.intro')}
+        </Typography>
+        <Kv k="MASTER / HLS" v={t('help.dashboard.protocols.master')} />
+        <Kv k="RTMP" v={t('help.dashboard.protocols.rtmp')} />
+        <Kv k="SRT" v={t('help.dashboard.protocols.srt')} />
+        <Kv k="UDP" v={t('help.dashboard.protocols.udp')} />
+        <Kv k="DASH / MSS / RTSP / WebRTC" v={t('help.dashboard.protocols.others')} />
+        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}>{t('help.dashboard.protocols.legend')}</Typography>
+      </Section>
+
+      <Section title={t('help.dashboard.clips.title')}>
+        <Typography variant="caption" sx={{ mb: 0.75, color: 'text.secondary', display: 'block' }}>
+          {t('help.dashboard.clips.intro')}
+        </Typography>
+        <Kv k={t('dashboard.playing')} v={t('help.dashboard.clips.playing')} />
+        <Kv k={t('help.dashboard.clips.title')} v={t('help.dashboard.clips.next')} />
+        <Kv k="SKIP" v={t('help.dashboard.clips.skip')} />
+      </Section>
+
+      <Section title={t('help.dashboard.logs.title')}>
+        <Typography variant="caption" sx={{ mb: 0.75, color: 'text.secondary', display: 'block' }}>
+          {t('help.dashboard.logs.intro')}
+        </Typography>
+        <Kv k="Motor FFmpeg" v={t('help.dashboard.logs.engine')} />
+        <Kv k="Tempo de Emissão" v={t('help.dashboard.logs.uptime')} />
+        <Kv k="Agendamento / Playlist" v={t('help.dashboard.logs.schedule_validity')} />
+        <Kv k="Protocolos Activos" v={t('help.dashboard.logs.active_protocols')} />
+        <Kv k="Últimas Entradas de Log" v={t('help.dashboard.logs.last_logs')} />
+      </Section>
+    </Box>
+  );
+};
+
+const HelpLibrary = () => {
+  const { t } = useTranslation();
+  return (
+    <Box>
+      <Section title={t('help.library.title')}>
+        <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
+          {t('help.library.intro')}
+        </Typography>
+      </Section>
+
+      <Section title={t('help.library.upload.title')}>
+        <Step n="1" text={t('help.library.upload.step1')} />
+        <Step n="2" text={t('help.library.upload.step2')} />
+        <Step n="3" text={t('help.library.upload.step3')} />
+        <Step n="4" text={t('help.library.upload.step4')} />
+        <Alert severity="info" sx={{ mt: 0.75, py: 0.3, '& .MuiAlert-message': { py: 0 } }}>
+          <Typography variant="caption">{t('help.library.upload.nfs_hint')}</Typography>
+        </Alert>
+      </Section>
+
+      <Section title={t('help.library.metadata.title')}>
+        <Typography variant="caption" sx={{ mb: 0.75, color: 'text.secondary', display: 'block' }}>
+          {t('help.library.metadata.intro')}
+        </Typography>
+        <Kv k={t('help.library.metadata.field_title')} v={t('help.library.metadata.field_title_desc')} />
+        <Kv k={t('help.library.metadata.field_synopsis')} v={t('help.library.metadata.field_synopsis_desc')} />
+        <Kv k={t('help.library.metadata.field_genre')} v={t('help.library.metadata.field_genre_desc')} />
+        <Kv k={t('help.library.metadata.field_rating')} v={t('help.library.metadata.field_rating_desc')} />
+        <Kv k={t('help.library.metadata.field_type')} v={t('help.library.metadata.field_type_desc')} />
+      </Section>
+
+      <Section title={t('help.library.metadata.auto_review_title') || "Revisão de Metadados"}>
+        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+          {t('help.library.metadata.auto_review')}
+        </Typography>
+      </Section>
+
+      <Section title={t('help.library.fillers.title')}>
+        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+          {t('help.library.fillers.desc')}
+        </Typography>
+      </Section>
+    </Box>
+  );
+};
+
+const HelpPlaylists = () => {
+  const { t } = useTranslation();
+  return (
+    <Box>
+      <Section title={t('help.playlists.title')}>
+        <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
+          {t('help.playlists.intro')}
+        </Typography>
+      </Section>
+
+      <Section title={t('help.playlists.create.title') || "Criar uma Playlist"}>
+        <Step n="1" text={t('help.playlists.create.step1')} />
+        <Step n="2" text={t('help.playlists.create.step2')} />
+        <Step n="3" text={t('help.playlists.create.step3')} />
+        <Step n="4" text={t('help.playlists.create.step4')} />
+        <Step n="5" text={t('help.playlists.create.step5')} />
+      </Section>
+
+      <Section title={t('help.playlists.management.title') || "Gestão da Playlist"}>
+        <Kv k={t('help.playlists.management.sorting')} v={t('help.playlists.management.sorting_desc')} />
+        <Kv k={t('help.playlists.management.remove_clip')} v={t('help.playlists.management.remove_clip_desc')} />
+        <Kv k={t('help.playlists.management.duplicate')} v={t('help.playlists.management.duplicate_desc')} />
+        <Kv k={t('help.playlists.management.total_duration')} v={t('help.playlists.management.total_duration_desc')} />
+        <Kv k={t('help.playlists.management.fillers')} v={t('help.playlists.management.fillers_desc')} />
+      </Section>
+
+      <Section title={t('help.playlists.best_practices.title') || "Boas Práticas"}>
+        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', whiteSpace: 'pre-line' }}>
+          {t('help.playlists.best_practices.bullets')}
+        </Typography>
+      </Section>
+    </Box>
+  );
+};
+
+const HelpCalendar = () => {
+  const { t } = useTranslation();
+  return (
+    <Box>
+      <Section title={t('help.calendar.title')}>
+        <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
+          {t('help.calendar.intro')}
+        </Typography>
+      </Section>
+
+      <Section title={t('help.calendar.schedule.title') || "Agendar uma Playlist"}>
+        <Step n="1" text={t('help.calendar.schedule.step1') || "Clique num dia no calendário para abrir o diálogo de agendamento."} />
+        <Step n="2" text={t('help.calendar.schedule.step2') || "Seleccione a playlist pretendida."} />
+        <Step n="3" text={t('help.calendar.schedule.step3') || "Defina o horário de início (ex: 06:00)."} />
+        <Step n="4" text={t('help.calendar.schedule.step4') || "Escolha o padrão de repetição: Nenhum, Diário, Semanal ou Mensal."} />
+        <Step n="5" text={t('help.calendar.schedule.step5') || "Clique em GUARDAR. O evento aparece no calendário com a cor correspondente."} />
+      </Section>
+    </Box>
+  );
+};
+
+const HelpGraphics = () => {
+  const { t } = useTranslation();
+  return (
+    <Box>
+      <Section title={t('help.graphics.title')}>
+        <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
+          {t('help.graphics.intro')}
+        </Typography>
+      </Section>
+
+      <Section title={t('help.graphics.features_title')}>
+        <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
+          {t('help.graphics.features_intro')}
+        </Typography>
+        <Box sx={{ mb: 1 }}>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            • {t('help.graphics.feature1')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            • {t('help.graphics.feature2')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            • {t('help.graphics.feature3')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            • {t('help.graphics.feature4')}
+          </Typography>
+        </Box>
+      </Section>
+
+      <Section title={t('help.graphics.how_to_title')}>
+        <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
+          {t('help.graphics.how_to_intro')}
+        </Typography>
+        <Box sx={{ mb: 1 }}>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            1. {t('help.graphics.step1')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            2. {t('help.graphics.step2')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            3. {t('help.graphics.step3')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            4. {t('help.graphics.step4')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            5. {t('help.graphics.step5')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            6. {t('help.graphics.step6')}
+          </Typography>
+        </Box>
+      </Section>
+
+      <Section title={t('help.graphics.tips_title')}>
+        <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block', whiteSpace: 'pre-line' }}>
+          {t('help.graphics.tips_content')}
+        </Typography>
+      </Section>
+    </Box>
+  );
+};
+
+const HelpSettings = () => {
+  const { t } = useTranslation();
+  return (
+    <Box>
+      <Section title={t('help.settings.title')}>
+        <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
+          {t('help.settings.intro')}
+        </Typography>
+      </Section>
+
+      <Section title={t('help.settings.features_title')}>
+        <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
+          {t('help.settings.features_intro')}
+        </Typography>
+        <Box sx={{ mb: 1 }}>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            • {t('help.settings.feature1')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            • {t('help.settings.feature2')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            • {t('help.settings.feature3')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            • {t('help.settings.feature4')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            • {t('help.settings.feature5')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            • {t('help.settings.feature6')}
+          </Typography>
+        </Box>
+      </Section>
+
+      <Section title={t('help.settings.how_to_title')}>
+        <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
+          {t('help.settings.how_to_intro')}
+        </Typography>
+        <Box sx={{ mb: 1 }}>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            1. {t('help.settings.step1')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            2. {t('help.settings.step2')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            3. {t('help.settings.step3')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            4. {t('help.settings.step4')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            5. {t('help.settings.step5')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            6. {t('help.settings.step6')}
+          </Typography>
+        </Box>
+      </Section>
+
+      <Section title={t('help.settings.tabs_title')}>
+        <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
+          {t('help.settings.tabs_intro')}
+        </Typography>
+        <Box sx={{ mb: 1 }}>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            • {t('help.settings.output_tab')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            • {t('help.settings.paths_tab')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            • {t('help.settings.playout_tab')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            • {t('help.settings.users_tab')}
+          </Typography>
+          <Typography variant="caption" sx={{ mb: 0.5, fontWeight: 800 }}>
+            • {t('help.settings.about_tab')}
+          </Typography>
+        </Box>
+      </Section>
+
+      <Section title={t('help.settings.tips_title')}>
+        <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block', whiteSpace: 'pre-line' }}>
+          {t('help.settings.tips_content')}
+        </Typography>
+      </Section>
+    </Box>
+  );
+};
+
+const HelpTroubleshooting = () => {
+  const { t } = useTranslation();
+  return (
+    <Box>
+      <Section title={t('help.troubleshooting.title')} severity="warning">
+        <Typography variant="caption">{t('help.troubleshooting.intro')}</Typography>
+      </Section>
+    </Box>
+  );
+};
+
+const HelpTemplates = () => {
+  const { t } = useTranslation();
+  return (
+    <Box>
+      <Section title={t('help.templates.title') || "Templates"}>
+        <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
+          {t('help.templates.intro') || "Gerencie templates de gráficos e overlays."}
+        </Typography>
+      </Section>
+    </Box>
+  );
+};
+
+const HelpLiveInputs = () => {
+  const { t } = useTranslation();
+  return (
+    <Box>
+      <Section title={t('help.live_inputs.title') || "Live Inputs"}>
+        <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
+          {t('help.live_inputs.intro') || "Configure e gerencie entradas de vídeo ao vivo."}
+        </Typography>
+      </Section>
+    </Box>
+  );
+};
+
+const HelpHealth = () => {
+  const { t } = useTranslation();
+  return (
+    <Box>
+      <Section title={t('help.health.title') || "Saúde do Sistema"}>
+        <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
+          {t('help.health.intro') || "Monitore a saúde e o desempenho do sistema."}
+        </Typography>
+      </Section>
+    </Box>
+  );
+};
+
+const HelpMultiChannel = () => {
+  const { t } = useTranslation();
+  return (
+    <Box>
+      <Section title={t('help.multi_channel.title') || "Multi-Canal"}>
+        <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
+          {t('help.multi_channel.intro') || "Gerencie múltiplos canais de playout simultaneamente."}
+        </Typography>
+      </Section>
+    </Box>
+  );
+};
+
+// ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
+
+const TABS = [
+    { id: 'dashboard', icon: <DashboardIcon sx={{ fontSize: 14 }} />, content: <HelpDashboard /> },
+    { id: 'media', icon: <LibraryIcon sx={{ fontSize: 14 }} />, content: <HelpLibrary /> },
+    { id: 'playlists', icon: <PlaylistIcon sx={{ fontSize: 14 }} />, content: <HelpPlaylists /> },
+    { id: 'calendar', icon: <CalendarIcon sx={{ fontSize: 14 }} />, content: <HelpCalendar /> },
+    { id: 'graphics', icon: <GraphicsIcon sx={{ fontSize: 14 }} />, content: <HelpGraphics /> },
+    { id: 'settings', icon: <SettingsIcon sx={{ fontSize: 14 }} />, content: <HelpSettings /> },
+    { id: 'templates', icon: <DescriptionIcon sx={{ fontSize: 14 }} />, content: <HelpTemplates /> },
+    { id: 'live-inputs', icon: <LiveTvIcon sx={{ fontSize: 14 }} />, content: <HelpLiveInputs /> },
+    { id: 'health', icon: <FavoriteIcon sx={{ fontSize: 14 }} />, content: <HelpHealth /> },
+    { id: 'multi-channel', icon: <TableChartIcon sx={{ fontSize: 14 }} />, content: <HelpMultiChannel /> },
+];
+
+
+export default function HelpSystem() {
+  const { t } = useTranslation();
+  const { helpMode, helpContent, closeHelp, toggleHelpMode } = useHelp();
+  const [tabIndex, setTabIndex] = React.useState(0);
+
+  return (
+    <Dialog
+      open={!!helpContent}
+      onClose={closeHelp}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        className: 'glass-panel',
+        sx: { backgroundImage: 'none', border: '1px solid rgba(0,229,255,0.15)', maxHeight: '80vh' }
+      }}
+    >
+      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', py: 0.75, px: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <TvIcon color="primary" sx={{ fontSize: 20 }} />
+          <Box>
+            <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1, fontSize: '1rem' }}>
+              {helpContent?.title || t('help.title')}
+            </Typography>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: 0.5, fontSize: '0.6rem' }}>
+              {t('help.subtitle')}
+            </Typography>
+          </Box>
+        </Box>
+        <IconButton onClick={closeHelp} size="small">
+          <CloseIcon sx={{ fontSize: 18 }} />
+        </IconButton>
+      </DialogTitle>
+
+      <Box sx={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <Tabs
+          value={tabIndex}
+          onChange={(e, v) => setTabIndex(v)}
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{
+            '& .MuiTab-root': { minHeight: 36, fontSize: '0.65rem', fontWeight: 700, py: 0.5, px: 1.5 },
+            '& .Mui-selected': { color: 'primary.main !important' }
+          }}
+        >
+          {TABS.map((tab, i) => (
+            <Tab key={i} label={t(`help.tabs.${tab.id}`)} icon={tab.icon} iconPosition="start" sx={{ gap: 0.4 }} />
+          ))}
+        </Tabs>
+      </Box>
+
+      <DialogContent sx={{ p: 2, overflowY: 'auto', minHeight: '60vh' }}>
+        {helpContent?.content ? (
+          <Typography variant="caption">{helpContent.content}</Typography>
+        ) : (
+          TABS[tabIndex]?.content
+        )}
+      </DialogContent>
+
+      <DialogActions sx={{ justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.05)', px: 2, py: 0.75 }}>
+        {helpMode && toggleHelpMode && (
+          <Button variant="outlined" color="warning" size="small" onClick={() => { toggleHelpMode(); closeHelp(); }}>
+            {t('help.deactivate_btn')}
+          </Button>
+        )}
+        <Button onClick={closeHelp} variant="contained" size="small" sx={{ ml: 'auto' }}>{t('help.close_btn')}</Button>
+      </DialogActions>
+    </Dialog>
+  );
+}

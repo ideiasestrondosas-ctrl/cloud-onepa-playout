@@ -214,7 +214,11 @@ async fn update_position(
 
     match result {
         Ok(layer) => {
-            touch_graphics_timestamp(pool.get_ref()).await;
+            // NOTE: We intentionally do NOT call touch_graphics_timestamp here.
+            // Position changes are saved to DB immediately, but do NOT trigger an FFmpeg
+            // restart. This prevents the dashboard from flickering to "starting" on every
+            // pixel moved during drag-and-drop. The new position will take effect on the
+            // next natural FFmpeg restart (layer toggle, settings change, or manual restart).
             HttpResponse::Ok().json(layer)
         },
         Err(e) => {

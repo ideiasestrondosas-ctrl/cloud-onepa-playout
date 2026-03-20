@@ -48,7 +48,10 @@ RUN apk add --no-cache \
     ca-certificates \
     curl \
     iproute2 \
-    net-tools
+    net-tools \
+    ttf-freefont \
+    font-noto \
+    font-noto-cjk
 
 # Create storage directories
 RUN mkdir -p /var/lib/onepa-playout/media /var/lib/onepa-playout/thumbnails /var/lib/onepa-playout/playlists

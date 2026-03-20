@@ -331,6 +331,8 @@ export default function Dashboard() {
       setTimeout(() => {
         addStep(t('dashboard.ops.playing_rtmp'), 'success');
         fetchStatus();
+        // Force video player refresh after starting
+        setPlayerKey(prev => prev + 1);
       }, 1500);
 
       showSuccess(t('common.success'));
@@ -908,6 +910,7 @@ export default function Dashboard() {
           {isPlaying ? (
             <Box sx={{ width: '100%', height: '100%', position: 'relative' }}>
               <VideoPreview
+                key={playerKey}
                 ref={playerRef}
                 src="/hls-live/default/index.m3u8"
                 playing={!previewPaused}

@@ -123,12 +123,8 @@ function PauseIcon() {
     );
 }
 
-const statusConfig = {
-    playing: { color: 'success', icon: <LiveTvIcon />, label: 'ON AIR' },
-    paused:  { color: 'warning', icon: <PauseIcon />, label: 'PAUSED' },
-    stopped: { color: 'default', icon: <StopIcon />,  label: 'STOPPED' },
-    error:   { color: 'error',   icon: <ErrorIcon />, label: 'ERROR' },
-};
+// statusConfig is built inside MultiChannelPanel so it has access to t()
+// The default fallback strings are English for safety
 
 function CreateChannelDialog({ open, onClose, onCreated }) {
     const { t } = useTranslation();
@@ -266,6 +262,14 @@ function DeleteChannelDialog({ channel, open, onClose, onDeleted }) {
 
 export default function MultiChannelPanel() {
     const { t } = useTranslation();
+
+    const statusConfig = {
+        playing: { color: 'success', icon: <LiveTvIcon />, label: t('dashboard.on_air', 'ON AIR') },
+        paused:  { color: 'warning', icon: <PauseIcon />,  label: t('multiChannel.status_paused', 'PAUSED') },
+        stopped: { color: 'default', icon: <StopIcon />,   label: t('multiChannel.status_stopped', 'STOPPED') },
+        error:   { color: 'error',   icon: <ErrorIcon />,  label: t('multiChannel.status_error', 'ERROR') },
+    };
+
     const [channels, setChannels] = useState([]);
     const [playoutStatus, setPlayoutStatus] = useState({});
     const [loading, setLoading] = useState(true);
