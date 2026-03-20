@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
-export const APP_VERSION_FALLBACK = 'v2.6.0-ALPHA.50-PRO';
+export const APP_VERSION_FALLBACK = 'v2.6.0-ALPHA.51-PRO';
 
 
 const api = axios.create({
@@ -133,9 +133,9 @@ export const playoutAPI = {
 // Per-channel playout endpoints — used by MultiChannelPanel
 export const channelPlayoutAPI = {
   status: (channelId) => api.get(`/v2/channels/${channelId}/playout/status`),
-  start:  (channelId) => api.post(`/v2/channels/${channelId}/playout/start`),
-  stop:   (channelId) => api.post(`/v2/channels/${channelId}/playout/stop`),
-  skip:   (channelId) => api.post(`/v2/channels/${channelId}/playout/skip`),
+  start: (channelId) => api.post(`/v2/channels/${channelId}/playout/start`),
+  stop: (channelId) => api.post(`/v2/channels/${channelId}/playout/stop`),
+  skip: (channelId) => api.post(`/v2/channels/${channelId}/playout/skip`),
 };
 
 // Settings endpoints

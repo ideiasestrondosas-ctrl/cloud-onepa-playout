@@ -97,7 +97,7 @@ class GlobalErrorBoundary extends React.Component {
   }
 }
 
-console.log('🚀 Cloud Onepa Playout — v2.6.0-ALPHA.50-PRO booting...')
+console.log('🚀 Cloud Onepa Playout — v2.6.0-ALPHA.51-PRO booting...')
 const rootElement = document.getElementById('root')
 console.log('Root element:', rootElement)
 if (!rootElement) {
