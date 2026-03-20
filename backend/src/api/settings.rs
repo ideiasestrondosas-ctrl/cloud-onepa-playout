@@ -899,12 +899,12 @@ async fn get_diagnostics(pool: web::Data<PgPool>) -> impl Responder {
     if db_ok {
         checks.insert("database".into(), json!({
             "status": "ok",
-            "details": "PostgreSQL connected. Latency: < 5ms"
+            "details": { "key": "health.details.db.ok" }
         }));
     } else {
         checks.insert("database".into(), json!({
             "status": "critical",
-            "details": "PostgreSQL connection failed"
+            "details": { "key": "health.details.db.critical" }
         }));
         score -= 40;
     }
@@ -929,7 +929,7 @@ async fn get_diagnostics(pool: web::Data<PgPool>) -> impl Responder {
     }));
     if wf_check.0 != "ok" { score -= 10; }
 
-    // ── 4. Engine Connection check (CasparCG / FFmpeg playout engine) ──────
+    // ── 4. Engine Connection check (FFmpeg playout engine) ──────────────────
     let engine_check = check_engine_connection(pool.get_ref()).await;
     checks.insert("engine_connection".into(), json!({
         "status": engine_check.0,
@@ -977,7 +977,7 @@ async fn get_diagnostics(pool: web::Data<PgPool>) -> impl Responder {
     }))
 }
 
-fn check_disk_space(path: &str) -> (&'static str, String) {
+fn check_disk_space(path: &str) -> (&'static str, serde_json::Value) {
     use std::process::Command;
     let output = Command::new("df")
         .args(["-BG", path])
@@ -992,47 +992,71 @@ fn check_disk_space(path: &str) -> (&'static str, String) {
                     let avail = parts[3].trim_end_matches('G');
                     let use_pct = parts[4].trim_end_matches('%');
                     if let (Ok(t), Ok(a), Ok(p)) = (total.parse::<u64>(), avail.parse::<u64>(), use_pct.parse::<u64>()) {
-                        let msg = format!("{} GB total, {} GB available ({}% used)", t, a, p);
-                        return if p > 95 { ("critical", msg) }
-                        else if p > 85 { ("warning", msg) }
-                        else { ("ok", msg) };
+                        let detail = serde_json::json!({
+                            "key": "health.details.storage.ok",
+                            "total_gb": t,
+                            "avail_gb": a,
+                            "pct": p
+                        });
+                        return if p > 95 { ("critical", detail) }
+                        else if p > 85 { ("warning", detail) }
+                        else { ("ok", detail) };
                     }
                 }
             }
-            ("ok", "Storage check completed".into())
+            ("ok", serde_json::json!({ "key": "health.details.storage.unknown" }))
         }
-        _ => ("warning", "Unable to check disk space".into()),
+        _ => ("warning", serde_json::json!({ "key": "health.details.storage.error" })),
     }
 }
 
-fn check_directory_accessible(path: &str) -> (&'static str, String) {
+fn check_directory_accessible(path: &str) -> (&'static str, serde_json::Value) {
     let p = std::path::Path::new(path);
     if !p.exists() {
-        return ("warning", format!("Watchfolder not found: {}", path));
+        if let Err(e) = std::fs::create_dir_all(path) {
+            return ("warning", serde_json::json!({
+                "key": "health.details.watchfolder.create_failed",
+                "path": path,
+                "error": e.to_string()
+            }));
+        }
+        return ("ok", serde_json::json!({
+            "key": "health.details.watchfolder.created",
+            "path": path
+        }));
     }
     match std::fs::read_dir(path) {
         Ok(entries) => {
             let count = entries.count();
-            ("ok", format!("Watching {} — {} items detected", path, count))
+            ("ok", serde_json::json!({
+                "key": "health.details.watchfolder.ok",
+                "path": path,
+                "count": count
+            }))
         }
-        Err(e) => ("warning", format!("Watchfolder inaccessible: {}", e)),
+        Err(e) => ("warning", serde_json::json!({
+            "key": "health.details.watchfolder.inaccessible",
+            "error": e.to_string()
+        })),
     }
 }
 
-async fn check_engine_connection(pool: &PgPool) -> (&'static str, String) {
-    // Check if playout is_running flag is set in settings
+async fn check_engine_connection(pool: &PgPool) -> (&'static str, serde_json::Value) {
     let running = sqlx::query_scalar::<_, bool>("SELECT is_running FROM settings WHERE id = TRUE")
         .fetch_optional(pool)
         .await;
     match running {
-        Ok(Some(true)) => ("ok", "Playout engine is running and active".into()),
-        Ok(Some(false)) => ("warning", "Playout engine is stopped".into()),
-        Ok(None) => ("warning", "Settings not configured".into()),
-        Err(e) => ("critical", format!("Cannot read engine state: {}", e)),
+        Ok(Some(true)) => ("ok", serde_json::json!({ "key": "health.details.engine.ok" })),
+        Ok(Some(false)) => ("warning", serde_json::json!({ "key": "health.details.engine.stopped" })),
+        Ok(None) => ("warning", serde_json::json!({ "key": "health.details.engine.not_configured" })),
+        Err(e) => ("critical", serde_json::json!({
+            "key": "health.details.engine.error",
+            "error": e.to_string()
+        })),
     }
 }
 
-async fn check_missing_media(pool: &PgPool) -> (&'static str, String) {
+async fn check_missing_media(pool: &PgPool) -> (&'static str, serde_json::Value) {
     let today = chrono::Utc::now().date_naive();
     let tomorrow = today + chrono::Duration::days(1);
 
@@ -1067,41 +1091,58 @@ async fn check_missing_media(pool: &PgPool) -> (&'static str, String) {
                 }
             }
             if missing.is_empty() {
-                ("ok", format!("All {} media files for today verified and present", total_clips))
+                ("ok", serde_json::json!({
+                    "key": "health.details.media.ok",
+                    "count": total_clips
+                }))
             } else if missing.len() <= 2 {
-                ("warning", format!("{} of {} media files missing: {}", missing.len(), total_clips, missing.join(", ")))
+                ("warning", serde_json::json!({
+                    "key": "health.details.media.missing",
+                    "missing": missing.len(),
+                    "total": total_clips,
+                    "files": missing.join(", ")
+                }))
             } else {
-                ("critical", format!("{} of {} media files missing (too many to list)", missing.len(), total_clips))
+                ("critical", serde_json::json!({
+                    "key": "health.details.media.missing_many",
+                    "missing": missing.len(),
+                    "total": total_clips
+                }))
             }
         }
-        Err(e) => ("warning", format!("Could not verify media: {}", e)),
+        Err(e) => ("warning", serde_json::json!({
+            "key": "health.details.media.error",
+            "error": e.to_string()
+        })),
     }
 }
 
-fn check_time_sync() -> (&'static str, String) {
+fn check_time_sync() -> (&'static str, serde_json::Value) {
     use std::process::Command;
-    // Try chronyc first, then fall back to timedatectl
     if let Ok(out) = Command::new("chronyc").args(["tracking"]).output() {
         if out.status.success() {
             let stdout = String::from_utf8_lossy(&out.stdout);
             for line in stdout.lines() {
                 if line.contains("System time") {
-                    return ("ok", format!("NTP active — {}", line.trim()));
+                    return ("ok", serde_json::json!({
+                        "key": "health.details.time.chrony",
+                        "offset": line.trim()
+                    }));
                 }
             }
-            return ("ok", "NTP synchronization active".into());
+            return ("ok", serde_json::json!({ "key": "health.details.time.ok" }));
         }
     }
     if let Ok(out) = Command::new("timedatectl").output() {
         if out.status.success() {
             let stdout = String::from_utf8_lossy(&out.stdout);
             if stdout.contains("synchronized: yes") || stdout.contains("NTP enabled: yes") {
-                return ("ok", "System clock synchronized via systemd-timesyncd".into());
+                return ("ok", serde_json::json!({ "key": "health.details.time.systemd" }));
             }
-            return ("warning", "Time synchronization status uncertain".into());
+            return ("warning", serde_json::json!({ "key": "health.details.time.uncertain" }));
         }
     }
-    ("ok", "Time sync check — NTP assumed active".into())
+    ("ok", serde_json::json!({ "key": "health.details.time.assumed" }))
 }
 
 fn get_hostname() -> String {

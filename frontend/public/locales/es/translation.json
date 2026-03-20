@@ -1700,8 +1700,8 @@
       "components": {
         "title": "Componentes Principales",
         "intro": "Verificaciones de estado de los componentes principales del sistema:",
-        "engine": "Motor CasparCG",
-        "engine_desc": "Motor de reproducción de medios, conexión al servidor de gráficos",
+        "engine": "Motor FFmpeg",
+        "engine_desc": "Motor FFmpeg de reproducción de medios, estado de la conexión y salud del stream",
         "database": "Base de Datos",
         "database_desc": "Estado de la conexión e integridad de la base de datos PostgreSQL",
         "mediaStorage": "Almacenamiento de Medios",
@@ -2019,11 +2019,15 @@
     "manualRefresh": "Forzar actualización",
     "systemScore": "Puntuación del sistema",
     "integrityIndex": "Índice de integridad de reproducción",
-    "scoreDescription": "Basado en la conexión CasparCG, el estado de la base de datos, la disponibilidad de almacenamiento y la sincronización de la línea de tiempo.",
+    "scoreDescription": "Basado en la conexión del motor de playout, el estado de la base de datos, la disponibilidad de almacenamiento y la sincronización del reloj.",
     "coreComponents": "Componentes principales",
     "initializingDiagnostics": "Inicializando el motor de diagnóstico...",
     "waitingTelemetry": "Esperando datos de telemetría...",
     "liveDiagnosticsStream": "Transmisión de diagnóstico en vivo",
+    "logs": {
+      "checkCompleted": "Verificación completada. Puntuación: {{score}}%",
+      "serviceError": "Error en el servicio de diagnóstico: {{error}}"
+    },
     "kpis": {
       "deviceName": "Anfitrión de la reproducción",
       "clipsPlayed": "Vídeos de hoy",
@@ -2031,7 +2035,7 @@
       "lastError": "Último error"
     },
     "checks": {
-      "casparEngine": "Motor de reproducción CasparCG",
+      "casparEngine": "Motor de Playout FFmpeg",
       "database": "Base de datos del sistema",
       "mediaStorage": "Almacenamiento de recursos multimedia",
       "watchfolder": "Servicio de carpeta de seguimiento",
@@ -2051,6 +2055,42 @@
     "tab": {
       "health": "Salud",
       "analytics": "Análisis"
+    },
+    "details": {
+      "db": {
+        "ok": "PostgreSQL conectado. Latencia: < 5ms",
+        "critical": "Conexión a la base de datos falló"
+      },
+      "storage": {
+        "ok": "{{total_gb}} GB total, {{avail_gb}} GB disponibles ({{pct}}% usado)",
+        "unknown": "Verificación de almacenamiento completada",
+        "error": "No se pudo verificar el espacio en disco"
+      },
+      "watchfolder": {
+        "ok": "Monitorizando — {{count}} elementos detectados",
+        "created": "Carpeta de monitorización creada",
+        "create_failed": "Carpeta no encontrada y no se pudo crear: {{error}}",
+        "inaccessible": "Carpeta de monitorización inaccesible: {{error}}"
+      },
+      "engine": {
+        "ok": "Motor de playout activo y funcionando",
+        "stopped": "Motor de playout detenido",
+        "not_configured": "Configuración no establecida",
+        "error": "No se pudo leer el estado del motor: {{error}}"
+      },
+      "media": {
+        "ok": "Todos los {{count}} archivos verificados y presentes",
+        "missing": "{{missing}} de {{total}} archivos en falta: {{files}}",
+        "missing_many": "{{missing}} de {{total}} archivos en falta (demasiados para listar)",
+        "error": "No se pudo verificar la media: {{error}}"
+      },
+      "time": {
+        "ok": "Sincronización NTP activa",
+        "chrony": "NTP activo — {{offset}}",
+        "systemd": "Reloj del sistema sincronizado via systemd-timesyncd",
+        "uncertain": "Estado de sincronización de hora incierto",
+        "assumed": "Sincronización de hora — NTP asumido activo"
+      }
     }
   },
   "liveInputs": {

@@ -94,6 +94,14 @@ const KPICard = ({ label, value, icon: Icon, color }) => (
   </Card>
 );
 
+// ─── Resolve translated details from backend ─────────────────────────────
+const resolveDetail = (details, t, fallbackKey) => {
+  if (!details) return t(fallbackKey);
+  if (typeof details === 'string') return details;
+  if (details.key) return t(details.key, details);
+  return t(fallbackKey);
+};
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function PlayoutHealth() {
   const { t } = useTranslation();
@@ -120,18 +128,18 @@ export default function PlayoutHealth() {
   const fetchData = useCallback(async (isManual = false) => {
     try {
       if (isManual) setRefreshing(true);
-      const res = await api.get('/api/settings/diagnostics');
+      const res = await api.get('/settings/diagnostics');
       setData(res.data);
       setLastUpdated(new Date());
       setLiveLogs(prev => [{
         id: Date.now(), time: new Date().toLocaleTimeString(),
         level: res.data.score === 100 ? 'info' : 'warn',
-        msg: `Health check completed. Score: ${res.data.score}%`
+        msg: t('health.logs.checkCompleted', { score: res.data.score })
       }, ...prev].slice(0, 50));
     } catch (err) {
       setLiveLogs(prev => [{
         id: Date.now(), time: new Date().toLocaleTimeString(),
-        level: 'error', msg: `Diagnostic service error: ${err.message}`
+        level: 'error', msg: t('health.logs.serviceError', { error: err.message })
       }, ...prev].slice(0, 50));
     } finally {
       setLoading(false);
@@ -182,7 +190,7 @@ export default function PlayoutHealth() {
         const end = new Date();
         const start = new Date();
         start.setDate(start.getDate() - 7);
-        const { data: logs } = await api.get('/api/v2/analytics/as-run', {
+        const { data: logs } = await api.get('/v2/analytics/as-run', {
           params: { start: start.toISOString(), end: end.toISOString(), limit: 1000 },
         });
         const byDay = {};
@@ -299,16 +307,16 @@ export default function PlayoutHealth() {
                   </Typography>
                   <Grid container spacing={2}>
                     <Grid item xs={12}>
-                      <StatusCard title={t('health.checks.casparEngine')} status={checks.engine_connection?.status || 'warning'} message={checks.engine_connection?.details || t('health.checks.initializingComm')} icon={DnsIcon} />
+                      <StatusCard title={t('health.checks.casparEngine')} status={checks.engine_connection?.status || 'warning'} message={resolveDetail(checks.engine_connection?.details, t, 'health.checks.initializingComm')} icon={DnsIcon} />
                     </Grid>
                     <Grid item xs={12}>
-                      <StatusCard title={t('health.checks.database')} status={checks.database?.status || 'ok'} message={checks.database?.details || t('health.checks.awaitingMetrics')} icon={StorageIcon} />
+                      <StatusCard title={t('health.checks.database')} status={checks.database?.status || 'ok'} message={resolveDetail(checks.database?.details, t, 'health.checks.awaitingMetrics')} icon={StorageIcon} />
                     </Grid>
                     <Grid item xs={12}>
-                      <StatusCard title={t('health.checks.mediaStorage')} status={checks.media_storage?.status || 'ok'} message={checks.media_storage?.details || t('health.checks.calculatingSpace')} icon={StorageIcon} />
+                      <StatusCard title={t('health.checks.mediaStorage')} status={checks.media_storage?.status || 'ok'} message={resolveDetail(checks.media_storage?.details, t, 'health.checks.calculatingSpace')} icon={StorageIcon} />
                     </Grid>
                     <Grid item xs={12}>
-                      <StatusCard title={t('health.checks.watchfolder')} status={checks.watchfolder?.status || 'ok'} message={checks.watchfolder?.details || t('health.checks.monitoringWatchfolders')} icon={WifiIcon} />
+                      <StatusCard title={t('health.checks.watchfolder')} status={checks.watchfolder?.status || 'ok'} message={resolveDetail(checks.watchfolder?.details, t, 'health.checks.monitoringWatchfolders')} icon={WifiIcon} />
                     </Grid>
                   </Grid>
                 </Box>
@@ -352,7 +360,7 @@ export default function PlayoutHealth() {
                     <Card variant="outlined" sx={{ borderRadius: 3 }}>
                       <CardHeader avatar={<ReportProblemIcon sx={{ color: 'warning.main' }} />} title={t('health.checks.contentAvailability')} titleTypographyProps={{ variant: 'subtitle2', fontWeight: 700 }} sx={{ pb: 1 }} />
                       <CardContent sx={{ pt: 0 }}>
-                        <Typography variant="body2" color="text.secondary">{checks.missing_media?.details || t('health.checks.allMediaVerified')}</Typography>
+                        <Typography variant="body2" color="text.secondary">{resolveDetail(checks.missing_media?.details, t, 'health.checks.allMediaVerified')}</Typography>
                       </CardContent>
                     </Card>
                   </Grid>
@@ -360,7 +368,7 @@ export default function PlayoutHealth() {
                     <Card variant="outlined" sx={{ borderRadius: 3 }}>
                       <CardHeader avatar={<AccessTimeIcon sx={{ color: 'info.main' }} />} title={t('health.checks.timeSync')} titleTypographyProps={{ variant: 'subtitle2', fontWeight: 700 }} sx={{ pb: 1 }} />
                       <CardContent sx={{ pt: 0 }}>
-                        <Typography variant="body2" color="text.secondary">{checks.time_sync?.details || t('health.checks.ntpSync')}</Typography>
+                        <Typography variant="body2" color="text.secondary">{resolveDetail(checks.time_sync?.details, t, 'health.checks.ntpSync')}</Typography>
                       </CardContent>
                     </Card>
                   </Grid>

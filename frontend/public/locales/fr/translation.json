@@ -1700,8 +1700,8 @@
       "components": {
         "title": "Composants Principaux",
         "intro": "Vérifications d'état des composants principaux du système:",
-        "engine": "Moteur CasparCG",
-        "engine_desc": "Moteur de lecture multimédia, connexion au serveur graphics",
+        "engine": "Moteur FFmpeg",
+        "engine_desc": "Moteur FFmpeg de diffusion, état de la connexion et santé du stream",
         "database": "Base de Données",
         "database_desc": "État de la connexion et intégrité de la base de données PostgreSQL",
         "mediaStorage": "Stockage Média",
@@ -2019,7 +2019,7 @@
     "manualRefresh": "Forcer l'actualisation",
     "systemScore": "Score du système",
     "integrityIndex": "Indice d'intégrité de la diffusion",
-    "scoreDescription": "Basé sur la connexion CasparCG, l’état de la base de données, la disponibilité du stockage et la synchronisation de la chronologie.",
+    "scoreDescription": "Basé sur la connexion du moteur de diffusion, l'état de la base de données, la disponibilité du stockage et la synchronisation de l'horloge.",
     "coreComponents": "Composants de base",
     "initializingDiagnostics": "Initialisation du moteur de diagnostics...",
     "waitingTelemetry": "En attente des données de télémétrie...",
@@ -2031,7 +2031,7 @@
       "lastError": "Dernière erreur"
     },
     "checks": {
-      "casparEngine": "Moteur de diffusion CasparCG",
+      "casparEngine": "Moteur de diffusion FFmpeg",
       "database": "Base de données système",
       "mediaStorage": "Stockage des ressources multimédias",
       "watchfolder": "Service de dossier de surveillance",
@@ -2051,6 +2051,46 @@
     "tab": {
       "health": "Santé",
       "analytics": "Analyse"
+    },
+    "logs": {
+      "checkCompleted": "Vérification terminée. Score : {{score}}%",
+      "serviceError": "Erreur du service de diagnostic : {{error}}"
+    },
+    "details": {
+      "db": {
+        "ok": "PostgreSQL connecté. Latence : < 5ms",
+        "critical": "Connexion à la base de données échouée"
+      },
+      "storage": {
+        "ok": "{{total_gb}} Go total, {{avail_gb}} Go disponibles ({{pct}}% utilisé)",
+        "unknown": "Vérification du stockage terminée",
+        "error": "Impossible de vérifier l'espace disque"
+      },
+      "watchfolder": {
+        "ok": "Surveillance — {{count}} éléments détectés",
+        "created": "Dossier de surveillance créé",
+        "create_failed": "Dossier de surveillance introuvable et impossible à créer : {{error}}",
+        "inaccessible": "Dossier de surveillance inaccessible : {{error}}"
+      },
+      "engine": {
+        "ok": "Moteur de diffusion actif et fonctionnel",
+        "stopped": "Moteur de diffusion arrêté",
+        "not_configured": "Paramètres non configurés",
+        "error": "Impossible de lire l'état du moteur : {{error}}"
+      },
+      "media": {
+        "ok": "Tous les {{count}} fichiers vérifiés et présents",
+        "missing": "{{missing}} sur {{total}} fichiers manquants : {{files}}",
+        "missing_many": "{{missing}} sur {{total}} fichiers manquants (trop nombreux à lister)",
+        "error": "Impossible de vérifier les médias : {{error}}"
+      },
+      "time": {
+        "ok": "Synchronisation NTP active",
+        "chrony": "NTP actif — {{offset}}",
+        "systemd": "Horloge système synchronisée via systemd-timesyncd",
+        "uncertain": "État de synchronisation horaire incertain",
+        "assumed": "Synchronisation horaire — NTP supposé actif"
+      }
     }
   },
   "liveInputs": {

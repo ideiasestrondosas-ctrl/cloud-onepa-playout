@@ -156,6 +156,7 @@ export const settingsAPI = {
   resetAll: () => api.post('/settings/reset-all'),
   getSystemLogs: () => api.get('/settings/system-logs'),
   getVMLogs: () => api.get('/settings/vm-logs'),
+  getDiagnostics: () => api.get('/settings/diagnostics'),
 };
 
 // Template endpoints
@@ -203,6 +204,11 @@ export const channelsAPI = {
   create: (data) => api.post('/v2/channels', data),
   update: (id, data) => api.put(`/v2/channels/${id}`, data),
   delete: (id) => api.delete(`/v2/channels/${id}`),
+};
+
+// Analytics endpoints (v2)
+export const analyticsAPI = {
+  getAsRun: (params) => api.get('/v2/analytics/as-run', { params }),
 };
 
 export default api;

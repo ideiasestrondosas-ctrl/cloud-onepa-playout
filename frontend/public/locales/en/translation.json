@@ -1700,8 +1700,8 @@
       "components": {
         "title": "Core Components",
         "intro": "Status checks of core system components:",
-        "engine": "CasparCG Engine",
-        "engine_desc": "Media playout engine, connection to graphics server",
+        "engine": "FFmpeg Engine",
+        "engine_desc": "FFmpeg media playout engine, connection status and stream health",
         "database": "Database",
         "database_desc": "Connection status and PostgreSQL database integrity",
         "mediaStorage": "Media Storage",
@@ -2019,11 +2019,15 @@
     "manualRefresh": "Force Refresh",
     "systemScore": "System Score",
     "integrityIndex": "Playout Integrity Index",
-    "scoreDescription": "Based on CasparCG connection, database health, storage availability and timeline sync.",
+    "scoreDescription": "Based on playout engine connection, database health, storage availability and clock synchronization.",
     "coreComponents": "Core Components",
     "initializingDiagnostics": "Initializing Diagnostics Engine...",
     "waitingTelemetry": "Waiting for telemetry data...",
     "liveDiagnosticsStream": "Live Diagnostics Stream",
+    "logs": {
+      "checkCompleted": "Health check completed. Score: {{score}}%",
+      "serviceError": "Diagnostic service error: {{error}}"
+    },
     "kpis": {
       "deviceName": "Playout Host",
       "clipsPlayed": "Clips Today",
@@ -2031,7 +2035,7 @@
       "lastError": "Last Error"
     },
     "checks": {
-      "casparEngine": "CasparCG Playout Engine",
+      "casparEngine": "FFmpeg Playout Engine",
       "database": "System Database",
       "mediaStorage": "Media Assets Storage",
       "watchfolder": "Watchfolder Service",
@@ -2051,6 +2055,42 @@
     "tab": {
       "health": "Health",
       "analytics": "Analytics"
+    },
+    "details": {
+      "db": {
+        "ok": "PostgreSQL connected. Latency: < 5ms",
+        "critical": "Database connection failed"
+      },
+      "storage": {
+        "ok": "{{total_gb}} GB total, {{avail_gb}} GB available ({{pct}}% used)",
+        "unknown": "Storage check completed",
+        "error": "Unable to check disk space"
+      },
+      "watchfolder": {
+        "ok": "Watching — {{count}} items detected",
+        "created": "Watchfolder created",
+        "create_failed": "Watchfolder not found and could not be created: {{error}}",
+        "inaccessible": "Watchfolder inaccessible: {{error}}"
+      },
+      "engine": {
+        "ok": "Playout engine running and active",
+        "stopped": "Playout engine stopped",
+        "not_configured": "Settings not configured",
+        "error": "Cannot read engine state: {{error}}"
+      },
+      "media": {
+        "ok": "All {{count}} media files verified and present",
+        "missing": "{{missing}} of {{total}} media files missing: {{files}}",
+        "missing_many": "{{missing}} of {{total}} media files missing (too many to list)",
+        "error": "Could not verify media: {{error}}"
+      },
+      "time": {
+        "ok": "NTP synchronization active",
+        "chrony": "NTP active — {{offset}}",
+        "systemd": "System clock synchronized via systemd-timesyncd",
+        "uncertain": "Time synchronization status uncertain",
+        "assumed": "Time sync — NTP assumed active"
+      }
     }
   },
   "liveInputs": {
