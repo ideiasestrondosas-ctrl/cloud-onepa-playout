@@ -1,5 +1,15 @@
 [
   {
+    "version": "2.6.0-ALPHA.52-PRO",
+    "date": "2026-03-20",
+    "changes": [
+      "Graphics Editor: Integrated full Templates page functionality into Graphics > Templates tab",
+      "Graphics Editor: Added preset templates (Morning Show, Full Day, Loop Content) to Templates tab",
+      "Graphics Editor: Added create/edit/delete template functionality to Templates tab",
+      "Graphics Editor: Added generate playlist from template feature to Templates tab"
+    ]
+  },
+  {
     "version": "2.6.0-ALPHA.51-PRO",
     "date": "2026-03-20",
     "changes": [

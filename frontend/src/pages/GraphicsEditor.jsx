@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -13,7 +14,12 @@ import {
   Chip,
   Tabs,
   Tab,
-  CircularProgress
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField
 } from '@mui/material';
 import {
   LogoDev as LogoIcon,
@@ -26,9 +32,13 @@ import {
   Replay as ResetIcon,
   Delete as DeleteIcon,
   Refresh as RefreshIcon,
-  ViewModule as TemplatesIcon
+  ViewModule as TemplatesIcon,
+  Add as AddIcon,
+  PlayArrow as PlayIcon,
+  Edit as EditIcon,
+  History as HistoryIcon
 } from '@mui/icons-material';
-import { settingsAPI, playoutAPI, templateAPI } from '../services/api';
+import { settingsAPI, playoutAPI, templateAPI, playlistAPI } from '../services/api';
 import graphicsService from '../services/graphicsLayersAPI';
 import { useNotification } from '../contexts/NotificationContext';
 import { useTranslation } from 'react-i18next';
@@ -36,7 +46,45 @@ import LayerManager from '../components/GraphicsLayers/LayerManager';
 import LayerPreview from '../components/GraphicsLayers/LayerPreview';
 import Hls from 'hls.js';
 
+// Preset templates definition
+const getPresetTemplates = (t) => [
+  {
+    id: 'morning-show',
+    name: t('templates.presets.morning_show.name'),
+    description: t('templates.presets.morning_show.description'),
+    duration: 21600, // 6 hours
+    structure: [
+      { type: 'intro', duration: 30 },
+      { type: 'content', duration: 3600 },
+      { type: 'commercial', duration: 180 },
+      { type: 'content', duration: 3600 },
+      { type: 'outro', duration: 30 },
+    ],
+  },
+  {
+    id: 'full-day',
+    name: t('templates.presets.full_day.name'),
+    description: t('templates.presets.full_day.description'),
+    duration: 86400,
+    structure: [
+      { type: 'content', duration: 82800 },
+      { type: 'filler', duration: 3600 },
+    ],
+  },
+  {
+    id: 'loop-content',
+    name: t('templates.presets.loop_content.name'),
+    description: t('templates.presets.loop_content.description'),
+    duration: 86400,
+    structure: [
+      { type: 'content', duration: 3600 },
+      { type: 'commercial', duration: 300 },
+    ],
+  },
+];
+
 export default function GraphicsEditor() {
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const { showSuccess, showError } = useNotification();
   const [settings, setSettings] = useState(null);
@@ -63,6 +111,17 @@ export default function GraphicsEditor() {
   const [templates, setTemplates] = useState([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
 
+  // Preset templates
+  const presetTemplates = useMemo(() => getPresetTemplates(t), [t]);
+  const allTemplates = useMemo(() => [...presetTemplates, ...templates], [presetTemplates, templates]);
+
+  // Template dialogs state
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [useDialogOpen, setUseDialogOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState(null);
+  const [selectedTemplateForUse, setSelectedTemplateForUse] = useState(null);
+  const [newTemplate, setNewTemplate] = useState({ name: '', description: '', duration: 3600, structure: [] });
+
   const fetchTemplates = async () => {
     setTemplatesLoading(true);
     try {
@@ -76,12 +135,92 @@ export default function GraphicsEditor() {
   };
 
   const handleDeleteTemplate = async (id) => {
+    if (!window.confirm(t('templates.confirm_delete') || 'Are you sure you want to delete this template?')) return;
     try {
       await templateAPI.delete(id);
       setTemplates(prev => prev.filter(t => t.id !== id));
       showSuccess('Template deleted');
     } catch (_) {
       showError('Failed to delete template');
+    }
+  };
+
+  const handleEditTemplate = (template) => {
+    setEditingTemplate(template);
+    setNewTemplate({
+      id: template.id,
+      name: template.name,
+      description: template.description || '',
+      duration: template.duration,
+      structure: template.structure || []
+    });
+    setCreateDialogOpen(true);
+  };
+
+  const handleCreateTemplate = () => {
+    setEditingTemplate(null);
+    setNewTemplate({ name: '', description: '', duration: 3600, structure: [] });
+    setCreateDialogOpen(true);
+  };
+
+  const handleSaveTemplate = async () => {
+    if (!newTemplate.name) {
+      showError(t('templates.notifications.error_name_required') || 'Template name is required');
+      return;
+    }
+    try {
+      const templateToAdd = {
+        name: newTemplate.name,
+        description: newTemplate.description,
+        duration: newTemplate.duration,
+        structure: newTemplate.structure.length > 0 ? newTemplate.structure : [
+          { type: 'content', duration: newTemplate.duration }
+        ]
+      };
+      if (newTemplate.id) {
+        await templateAPI.update(newTemplate.id, templateToAdd);
+        showSuccess('Template updated');
+      } else {
+        await templateAPI.create(templateToAdd);
+        showSuccess('Template created');
+      }
+      setCreateDialogOpen(false);
+      fetchTemplates();
+    } catch (error) {
+      console.error('Failed to save template:', error);
+      showError('Failed to save template');
+    }
+  };
+
+  const handleUseTemplate = (template) => {
+    setSelectedTemplateForUse(template);
+    setUseDialogOpen(true);
+  };
+
+  const handleGeneratePlaylist = async () => {
+    try {
+      const content = {
+        channel: 'Cloud Onepa',
+        date: new Date().toISOString().split('T')[0],
+        program: selectedTemplateForUse.structure.map(item => ({
+          in: 0,
+          out: item.duration,
+          duration: item.duration,
+          source: `placeholder://${item.type}`,
+          type: item.type
+        }))
+      };
+      await playlistAPI.create({
+        name: `Playlist ${selectedTemplateForUse.name} - ${new Date().toLocaleDateString()}`,
+        date: new Date().toISOString().split('T')[0],
+        content
+      });
+      showSuccess('Playlist created successfully');
+      setUseDialogOpen(false);
+      navigate('/playlists');
+    } catch (error) {
+      console.error('Failed to create playlist:', error);
+      showError('Failed to create playlist');
     }
   };
 
@@ -712,30 +851,37 @@ export default function GraphicsEditor() {
                     <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
                       {t('graphics.tabs.templates', 'Templates')}
                     </Typography>
-                    <Chip label={templates.length} size="small" sx={{ height: 18, fontSize: '0.6rem', fontWeight: 800 }} />
+                    <Chip label={allTemplates.length} size="small" sx={{ height: 18, fontSize: '0.6rem', fontWeight: 800 }} />
                   </Box>
-                  <Tooltip title="Refresh list" arrow>
-                    <IconButton size="small" onClick={fetchTemplates} disabled={templatesLoading}>
-                      {templatesLoading ? <CircularProgress size={14} /> : <RefreshIcon sx={{ fontSize: 16 }} />}
-                    </IconButton>
-                  </Tooltip>
+                  <Box sx={{ display: 'flex', gap: 0.5 }}>
+                    <Tooltip title="Create new template" arrow>
+                      <IconButton size="small" onClick={handleCreateTemplate} sx={{ bgcolor: 'rgba(0,229,255,0.1)', '&:hover': { bgcolor: 'rgba(0,229,255,0.2)' } }}>
+                        <AddIcon sx={{ fontSize: 16 }} />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Refresh list" arrow>
+                      <IconButton size="small" onClick={fetchTemplates} disabled={templatesLoading}>
+                        {templatesLoading ? <CircularProgress size={14} /> : <RefreshIcon sx={{ fontSize: 16 }} />}
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
                 </Box>
 
                 <Divider sx={{ opacity: 0.1 }} />
 
-                {templates.length === 0 && !templatesLoading && (
+                {allTemplates.length === 0 && !templatesLoading && (
                   <Box sx={{ py: 4, textAlign: 'center', opacity: 0.4 }}>
                     <TemplatesIcon sx={{ fontSize: 40, mb: 1 }} />
                     <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
-                      No saved templates yet.
+                      No templates available.
                     </Typography>
-                    <Typography variant="caption" sx={{ opacity: 0.7 }}>
-                      Create templates in the full editor.
-                    </Typography>
+                    <Button size="small" startIcon={<AddIcon />} onClick={handleCreateTemplate} sx={{ mt: 1 }}>
+                      Create Template
+                    </Button>
                   </Box>
                 )}
 
-                {templates.map(tpl => (
+                {allTemplates.map(tpl => (
                   <Paper key={tpl.id} sx={{
                     p: 1.5, borderRadius: 2,
                     bgcolor: 'rgba(0,229,255,0.04)',
@@ -743,7 +889,7 @@ export default function GraphicsEditor() {
                     '&:hover': { borderColor: 'rgba(0,229,255,0.25)' },
                     transition: 'border-color 0.2s'
                   }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                       <TemplatesIcon sx={{ fontSize: 16, color: 'primary.main', flexShrink: 0 }} />
                       <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.78rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -755,12 +901,52 @@ export default function GraphicsEditor() {
                           </Typography>
                         )}
                       </Box>
-                      <Tooltip title="Delete template" arrow>
-                        <IconButton size="small" color="error" onClick={() => handleDeleteTemplate(tpl.id)}
-                          sx={{ flexShrink: 0, '&:hover': { bgcolor: 'rgba(244,67,54,0.1)' } }}>
-                          <DeleteIcon sx={{ fontSize: 14 }} />
-                        </IconButton>
+                      <Chip
+                        label={`${Math.floor(tpl.duration / 3600)}H`}
+                        size="small"
+                        sx={{ height: 18, fontSize: '0.55rem', fontWeight: 800 }}
+                      />
+                    </Box>
+
+                    {/* Structure preview */}
+                    {tpl.structure && tpl.structure.length > 0 && (
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
+                        {tpl.structure.slice(0, 4).map((block, idx) => (
+                          <Chip
+                            key={idx}
+                            label={block.type}
+                            size="small"
+                            sx={{ height: 16, fontSize: '0.5rem', fontWeight: 700, opacity: 0.7 }}
+                          />
+                        ))}
+                        {tpl.structure.length > 4 && (
+                          <Typography variant="caption" sx={{ fontSize: '0.5rem', opacity: 0.5 }}>+{tpl.structure.length - 4}</Typography>
+                        )}
+                      </Box>
+                    )}
+
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      <Tooltip title="Use template" arrow>
+                        <Button size="small" variant="contained" startIcon={<PlayIcon sx={{ fontSize: 14 }} />} onClick={() => handleUseTemplate(tpl)}
+                          sx={{ flex: 1, fontSize: '0.65rem', py: 0.25, borderRadius: 1 }}>
+                          Use
+                        </Button>
                       </Tooltip>
+                      {!presetTemplates.find(p => p.id === tpl.id) && (
+                        <>
+                          <Tooltip title="Edit template" arrow>
+                            <IconButton size="small" onClick={() => handleEditTemplate(tpl)} sx={{ bgcolor: 'rgba(0,229,255,0.05)', borderRadius: 1, '&:hover': { bgcolor: 'rgba(0,229,255,0.1)' } }}>
+                              <EditIcon sx={{ fontSize: 14 }} />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete template" arrow>
+                            <IconButton size="small" color="error" onClick={() => handleDeleteTemplate(tpl.id)}
+                              sx={{ flexShrink: 0, '&:hover': { bgcolor: 'rgba(244,67,54,0.1)' } }}>
+                              <DeleteIcon sx={{ fontSize: 14 }} />
+                            </IconButton>
+                          </Tooltip>
+                        </>
+                      )}
                     </Box>
                   </Paper>
                 ))}
@@ -784,6 +970,87 @@ export default function GraphicsEditor() {
           </Paper>
         </Grid>
       </Grid>}
+
+      {/* Create/Edit Template Dialog */}
+      <Dialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: 'primary.main' }}>
+          {editingTemplate ? 'Edit Template' : 'Create New Template'}
+        </DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            label="Template Name"
+            variant="standard"
+            sx={{ mt: 2 }}
+            value={newTemplate.name}
+            onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
+            InputLabelProps={{ shrink: true }}
+          />
+          <TextField
+            fullWidth
+            label="Description"
+            variant="standard"
+            sx={{ mt: 2 }}
+            multiline
+            rows={2}
+            value={newTemplate.description}
+            onChange={(e) => setNewTemplate({ ...newTemplate, description: e.target.value })}
+            InputLabelProps={{ shrink: true }}
+          />
+          <TextField
+            fullWidth
+            label="Duration (seconds)"
+            variant="standard"
+            type="number"
+            sx={{ mt: 2 }}
+            value={newTemplate.duration}
+            onChange={(e) => setNewTemplate({ ...newTemplate, duration: parseInt(e.target.value) || 0 })}
+            InputLabelProps={{ shrink: true }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
+          <Button variant="contained" onClick={handleSaveTemplate}>
+            {editingTemplate ? 'Update' : 'Create'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Use Template Dialog */}
+      <Dialog
+        open={useDialogOpen}
+        onClose={() => setUseDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: 'primary.main' }}>
+          Use Template
+        </DialogTitle>
+        <DialogContent>
+          {selectedTemplateForUse && (
+            <Box>
+              <Typography variant="caption" sx={{ opacity: 0.6 }}>Selected Template:</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 800, color: 'primary.main', mb: 2 }}>
+                {selectedTemplateForUse.name}
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.7 }}>
+                This will create a playlist based on the template structure.
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setUseDialogOpen(false)}>Cancel</Button>
+          <Button variant="contained" onClick={handleGeneratePlaylist}>
+            Generate Playlist
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
