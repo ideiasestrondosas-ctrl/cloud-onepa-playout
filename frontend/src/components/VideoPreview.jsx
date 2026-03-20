@@ -27,6 +27,7 @@ const VideoPreview = React.forwardRef(({
   const videoRef = ref || localVideoRef;
   const hlsRef = useRef(null);
   const [isBuffering, setIsBuffering] = useState(false);
+  const bufferingTimerRef = useRef(null);
   const [hasError, setHasError] = useState(false);
   const [isReady, setIsReady] = useState(false);
 
@@ -41,14 +42,17 @@ const VideoPreview = React.forwardRef(({
         hlsRef.current.destroy();
       }
 
+      // LL-HLS optimised config: stay at live edge, minimal back-buffer for a preview
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: true,
-        backBufferLength: 60,
-        liveSyncDurationCount: 3,
-        liveMaxLatencyDurationCount: 10,
+        backBufferLength: 5,               // 5s is plenty for a monitoring preview
+        liveSyncDurationCount: 1,          // stay 1 segment (~1s) behind live edge
+        liveMaxLatencyDurationCount: 4,    // jump to live edge if >4 segments behind
         manifestLoadingMaxRetry: 10,
         levelLoadingMaxRetry: 10,
+        highBufferWatchdogPeriod: 2,       // stall watchdog every 2s
+        nudgeMaxRetry: 5,
       });
 
       hls.loadSource(src);
@@ -75,8 +79,17 @@ const VideoPreview = React.forwardRef(({
         }
       });
 
-      hls.on(Hls.Events.BUFFER_APPENDING, () => setIsBuffering(true));
-      hls.on(Hls.Events.BUFFER_APPENDED, () => setIsBuffering(false));
+      // Debounced buffering indicator — only show overlay if a fragment load takes
+      // longer than 300ms. BUFFER_APPENDING fired on every LL-HLS part (100ms cadence)
+      // causing constant flickering, so we use FRAG_LOADING/FRAG_BUFFERED instead.
+      hls.on(Hls.Events.FRAG_LOADING, () => {
+        clearTimeout(bufferingTimerRef.current);
+        bufferingTimerRef.current = setTimeout(() => setIsBuffering(true), 300);
+      });
+      hls.on(Hls.Events.FRAG_BUFFERED, () => {
+        clearTimeout(bufferingTimerRef.current);
+        setIsBuffering(false);
+      });
 
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
       // Native HLS support (Safari)
@@ -97,6 +110,7 @@ const VideoPreview = React.forwardRef(({
     }
 
     return () => {
+      clearTimeout(bufferingTimerRef.current);
       if (hlsRef.current) {
         hlsRef.current.destroy();
         hlsRef.current = null;

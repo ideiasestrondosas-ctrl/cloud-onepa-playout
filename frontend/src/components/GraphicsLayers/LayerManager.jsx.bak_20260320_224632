@@ -37,8 +37,6 @@ import { useNotification } from '../../contexts/NotificationContext';
 import ClockLayerConfig from './ClockLayerConfig';
 import LowerThirdLayerConfig from './LowerThirdLayerConfig';
 import MarqueeLayerConfig from './MarqueeLayerConfig';
-import DataLayerConfig from './DataLayerConfig';
-import DateLayerConfig from './DateLayerConfig';
 import {
     DndContext,
     closestCenter,
@@ -266,9 +264,7 @@ export default function LayerManager({
         const labels = {
             clock: 'Clock',
             lower_third: 'Lower Third',
-            marquee: 'Marquee',
-            data: 'Data',
-            date: 'Date',
+            marquee: 'Marquee'
         };
         return labels[type] || type;
     };
@@ -283,10 +279,6 @@ export default function LayerManager({
                 return <LowerThirdLayerConfig config={config} onSave={handleSaveLayer} />;
             case 'marquee':
                 return <MarqueeLayerConfig config={config} onSave={handleSaveLayer} />;
-            case 'data':
-                return <DataLayerConfig config={config} onSave={handleSaveLayer} />;
-            case 'date':
-                return <DateLayerConfig config={config} onSave={handleSaveLayer} />;
             default:
                 return null;
         }
@@ -363,8 +355,6 @@ export default function LayerManager({
                                     <MenuItem value="clock">Clock</MenuItem>
                                     <MenuItem value="lower_third">Lower Third</MenuItem>
                                     <MenuItem value="marquee">Marquee / Crawler</MenuItem>
-                                    <MenuItem value="data">Data Panel</MenuItem>
-                                    <MenuItem value="date">Date</MenuItem>
                                 </Select>
                             </FormControl>
                         )}

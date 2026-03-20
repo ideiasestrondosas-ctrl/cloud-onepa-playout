@@ -88,7 +88,7 @@ pub fn build_graphics_filters(
     // Pre-filter to only known, renderable layer types and sort by z_index.
     let mut renderable: Vec<&GraphicsLayer> = layers.iter()
         .filter(|l| l.enabled)
-        .filter(|l| matches!(l.layer_type.as_str(), "clock" | "lower_third" | "marquee"))
+        .filter(|l| matches!(l.layer_type.as_str(), "clock" | "lower_third" | "marquee" | "data" | "date"))
         .collect();
     renderable.sort_by_key(|l| l.z_index);
 
@@ -242,6 +242,106 @@ pub fn build_graphics_filters(
                     text, font_size, text_color, x_expr, y_pos, bg_color_hex, box_alpha
                 );
                 log::info!("[Graphics-F1] Marquee '{}': speed={} dir={}", layer.name, speed, direction);
+                vec![seg]
+            },
+
+            "data" => {
+                let label_raw = layer.config.get("label")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let value_raw = layer.config.get("value")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let label_escaped = escape_drawtext(label_raw);
+                let value_escaped = escape_drawtext(value_raw);
+                let value_size = font_size;
+                let label_size = ((font_size as f64) * 0.55).round() as i32;
+                let text_color = layer.config.get("text_color")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("white");
+                let label_color = layer.config.get("label_color")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("#00e5ff");
+                let (label_color_hex, _) = normalize_color_for_ffmpeg(label_color);
+                let padding = layer.config.get("padding")
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(8) as i32;
+
+                let mut segs: Vec<String> = Vec::new();
+
+                // Label row (small, uppercase-styled text above value)
+                if !label_raw.is_empty() {
+                    let seg = format!(
+                        "drawtext=text={}:fontsize={}:fontcolor={}:x={}:y={}:box=1:boxcolor={}@{}:boxborderw={}",
+                        label_escaped, label_size, label_color_hex,
+                        x_pos + padding, y_pos + padding,
+                        bg_color_hex, box_alpha, padding
+                    );
+                    segs.push(seg);
+                }
+
+                // Value row (large text — below label if present, otherwise at top)
+                let y_value = if label_raw.is_empty() {
+                    y_pos + padding
+                } else {
+                    y_pos + padding + label_size + 4
+                };
+                let seg = format!(
+                    "drawtext=text={}:fontsize={}:fontcolor={}:x={}:y={}:box=1:boxcolor={}@{}:boxborderw={}",
+                    value_escaped, value_size, text_color,
+                    x_pos + padding, y_value,
+                    bg_color_hex, box_alpha, padding
+                );
+                segs.push(seg);
+
+                log::info!("[Graphics-F1] Data '{}': label='{}' value='{}'", layer.name, label_raw, value_raw);
+                segs
+            },
+
+            "date" => {
+                // Map config format to an FFmpeg strftime expression
+                let fmt_key = layer.config.get("format")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("YYYY-MM-DD");
+                let strftime_str = match fmt_key {
+                    "YYYY-MM-DD"    => "%Y-%m-%d",
+                    "DD/MM/YYYY"    => "%d/%m/%Y",
+                    "MM/DD/YYYY"    => "%m/%d/%Y",
+                    "DD MMM YYYY"   => "%d %b %Y",
+                    "MMMM DD, YYYY" => "%B %d\\, %Y",
+                    "ddd, DD MMM"   => "%a\\, %d %b",
+                    _               => "%Y-%m-%d",
+                };
+                let prefix_raw = layer.config.get("prefix")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let prefix_escaped = escape_drawtext(prefix_raw);
+                // drawtext with timecode expansion: text uses strftime sequences
+                let text_expr = if prefix_raw.is_empty() {
+                    format!("{}:{}", "%{pts", strftime_str)  // use localtime via strftime
+                } else {
+                    format!("{}{}:{}", prefix_escaped, "%{pts", strftime_str)
+                };
+                // Correct syntax: text='%{localtime\:%Y-%m-%d}'
+                let text_color = layer.config.get("font_color")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("white");
+
+                let drawtext_text = if prefix_raw.is_empty() {
+                    format!("'%{{localtime\\:{}}}'" , strftime_str)
+                } else {
+                    format!("'{}%{{localtime\\:{}}}'" , prefix_escaped, strftime_str)
+                };
+
+                let seg = format!(
+                    "drawtext=text={}:fontsize={}:fontcolor={}:x={}:y={}:box=1:boxcolor={}@{}:boxborderw={}",
+                    drawtext_text, font_size, text_color,
+                    x_pos, y_pos,
+                    bg_color_hex, box_alpha, 8
+                );
+
+                log::info!("[Graphics-F1] Date '{}': fmt={} strftime={}", layer.name, fmt_key, strftime_str);
+                let _ = text_expr; // suppress unused variable warning
                 vec![seg]
             },
 

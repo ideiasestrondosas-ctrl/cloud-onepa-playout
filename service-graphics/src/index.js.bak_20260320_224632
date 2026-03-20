@@ -87,15 +87,6 @@ function buildHtml(elements = [], data = {}) {
         </div>`;
       }
 
-      case 'data': {
-        const dataLabel = el.label || '';
-        const dataValue  = data[el.id] || el.value || '';
-        return `<div style="${baseStyle};background:${el.bgColor||'rgba(0,0,0,0.75)'};padding:${el.padding||8}px 16px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;">
-          <div style="color:${el.labelColor||'#00e5ff'};font-size:12px;font-weight:700;font-family:sans-serif;text-transform:uppercase;letter-spacing:1px;">${dataLabel}</div>
-          <div style="color:${el.color||'#fff'};font-size:${el.fontSize||36}px;font-weight:800;font-family:${el.fontFamily||'sans-serif'};">${dataValue}</div>
-        </div>`;
-      }
-
       case 'shape':
         return `<div style="${baseStyle};background:${el.fill||'#00e5ff'};border-radius:4px;"></div>`;
 

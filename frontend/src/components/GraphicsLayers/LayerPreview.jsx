@@ -100,6 +100,30 @@ export default function LayerPreview({ layers, onLayerMove, onLayerDoubleClick, 
         return date.toLocaleTimeString('en-US', options);
     };
 
+    const formatDate = (format, timezone) => {
+        const tz = timezone || 'UTC';
+        // Get current date in the target timezone
+        const d = new Date(currentTime.toLocaleString('en-US', { timeZone: tz }));
+        const pad = n => String(n).padStart(2, '0');
+        const year  = d.getFullYear();
+        const month = d.getMonth(); // 0-based
+        const day   = d.getDate();
+        const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const MONTHS_LONG  = ['January','February','March','April','May','June',
+                              'July','August','September','October','November','December'];
+        const DAYS_SHORT   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+        switch (format) {
+            case 'YYYY-MM-DD':    return `${year}-${pad(month+1)}-${pad(day)}`;
+            case 'DD/MM/YYYY':   return `${pad(day)}/${pad(month+1)}/${year}`;
+            case 'MM/DD/YYYY':   return `${pad(month+1)}/${pad(day)}/${year}`;
+            case 'DD MMM YYYY':  return `${pad(day)} ${MONTHS_SHORT[month]} ${year}`;
+            case 'MMMM DD, YYYY': return `${MONTHS_LONG[month]} ${pad(day)}, ${year}`;
+            case 'ddd, DD MMM':  return `${DAYS_SHORT[d.getDay()]}, ${pad(day)} ${MONTHS_SHORT[month]}`;
+            default:             return `${year}-${pad(month+1)}-${pad(day)}`;
+        }
+    };
+
     const getAnchorStyle = (anchor, x, y) => {
         const styles = {
             position: 'absolute',
@@ -278,6 +302,88 @@ export default function LayerPreview({ layers, onLayerMove, onLayerDoubleClick, 
                             }}
                         >
                             {layer.config.text || 'Marquee Text'}
+                        </Typography>
+                    </Box>
+                );
+
+            case 'date': {
+                const dateStr = (layer.config.prefix || '') + formatDate(
+                    layer.config.format || 'YYYY-MM-DD',
+                    layer.config.timezone
+                );
+                return (
+                    <Box
+                        key={layer.id}
+                        onMouseDown={onMouseDown}
+                        onDoubleClick={onDoubleClick}
+                        sx={{
+                            ...baseStyle,
+                            backgroundColor: layer.config.background_color || 'rgba(0,0,0,0.5)',
+                            padding: '6px 12px',
+                            borderRadius: '4px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            '&:hover': {
+                                outline: (isDraggingThis || isSelected) ? '2px solid #00e5ff' : '1px dashed #00e5ff',
+                            }
+                        }}
+                    >
+                        <Typography sx={{
+                            ...typographyStyle,
+                            fontFamily: layer.config.font_family || 'Inter',
+                            fontSize: `${layer.config.font_size || 28}px`,
+                            color: layer.config.font_color || '#FFFFFF',
+                            fontWeight: 700,
+                            lineHeight: 1.2,
+                            whiteSpace: 'nowrap',
+                        }}>
+                            {dateStr}
+                        </Typography>
+                    </Box>
+                );
+            }
+
+            case 'data':
+                return (
+                    <Box
+                        key={layer.id}
+                        onMouseDown={onMouseDown}
+                        onDoubleClick={onDoubleClick}
+                        sx={{
+                            ...baseStyle,
+                            backgroundColor: layer.config.background_color || 'rgba(0,0,0,0.75)',
+                            padding: `${layer.config.padding || 8}px`,
+                            borderRadius: '4px',
+                            display: 'inline-flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            minWidth: 120,
+                            '&:hover': {
+                                outline: (isDraggingThis || isSelected) ? '2px solid #00e5ff' : '1px dashed #00e5ff',
+                            }
+                        }}
+                    >
+                        <Typography sx={{
+                            ...typographyStyle,
+                            fontFamily: layer.config.font_family || 'Inter',
+                            fontSize: `${Math.round((layer.config.font_size || 36) * 0.55)}px`,
+                            color: layer.config.label_color || '#00e5ff',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.08em',
+                            lineHeight: 1.2,
+                        }}>
+                            {layer.config.label || layer.name}
+                        </Typography>
+                        <Typography sx={{
+                            ...typographyStyle,
+                            fontFamily: layer.config.font_family || 'Inter',
+                            fontSize: `${layer.config.font_size || 36}px`,
+                            color: layer.config.text_color || '#FFFFFF',
+                            fontWeight: 800,
+                            lineHeight: 1.1,
+                        }}>
+                            {layer.config.value || 'N/A'}
                         </Typography>
                     </Box>
                 );

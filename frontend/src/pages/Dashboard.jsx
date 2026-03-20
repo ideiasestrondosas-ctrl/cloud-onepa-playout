@@ -179,7 +179,7 @@ export default function Dashboard() {
         console.warn('[HLS-Retry] Max retries reached. Stream may not be available yet.');
         return;
       }
-      const delay = hlsRetryCount === 0 ? 6000 : 8000; // First attempt at 6s, then every 8s
+      const delay = hlsRetryCount === 0 ? 8000 : 12000; // First attempt at 8s, then every 12s
       console.log(`[HLS-Retry] Attempt ${hlsRetryCount + 1}/6 in ${delay / 1000}s...`);
       hlsRetryTimerRef.current = setTimeout(() => {
         setPlayerKey(prev => prev + 1);
@@ -420,10 +420,17 @@ export default function Dashboard() {
     const newPausedState = !previewPaused;
     setPreviewPaused(newPausedState);
 
-    // If we are resuming (pausing is finished), force a sync by incrementing playerKey
+    // If resuming and HLS is already initialised, just play — no need to destroy the
+    // HLS instance (setPlayerKey would cause a full teardown → black screen).
+    // Only force a full reload if HLS is not ready (stream lost while paused).
     if (!newPausedState) {
-      console.log('[LiveSync] Resuming playback, forcing manifest reload to jump to live edge');
-      setPlayerKey(prev => prev + 1);
+      if (hlsReady && playerRef.current) {
+        console.log('[LiveSync] Resuming — HLS ready, calling play() directly (no teardown)');
+        playerRef.current.play().catch(() => {});
+      } else {
+        console.log('[LiveSync] Resuming — HLS not ready, forcing manifest reload');
+        setPlayerKey(prev => prev + 1);
+      }
     }
   };
 
