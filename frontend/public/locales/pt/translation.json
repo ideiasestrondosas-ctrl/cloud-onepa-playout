@@ -596,6 +596,16 @@
         "empty": "NÃO HISTÓRIA DISPONÍVEL",
         "releases": [
           {
+            "version": "v2.6.0-ALPHA.52-PRO",
+            "date": "2026-03-20",
+            "changes": [
+              "Graphics: Integração completa da página Templates na tab do Graphics Editor",
+              "Graphics: Adicionados templates predefinidos (Morning Show, Full Day, Loop) à tab Templates",
+              "Graphics: Adicionada funcionalidade de criar/editar/eliminar templates na tab",
+              "Graphics: Adicionada funcionalidade de gerar playlist a partir do template"
+            ]
+          },
+          {
             "version": "v2.6.0-ALPHA.51-PRO",
             "date": "2026-03-20",
             "changes": [

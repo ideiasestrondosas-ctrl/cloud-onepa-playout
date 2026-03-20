@@ -1,6 +1,6 @@
 {
   "name": "cloud-onepa-playout-frontend",
-  "version": "2.6.0-ALPHA.51-PRO",
+  "version": "2.6.0-ALPHA.52-PRO",
   "private": true,
   "type": "module",
   "scripts": {

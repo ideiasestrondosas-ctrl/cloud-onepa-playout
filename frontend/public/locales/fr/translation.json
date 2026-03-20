@@ -596,6 +596,16 @@
         "empty": "AUCUN HISTORIQUE DISPONIBLE",
         "releases": [
           {
+            "version": "v2.6.0-ALPHA.52-PRO",
+            "date": "2026-03-20",
+            "changes": [
+              "Graphics: Intégration complète de la page Templates dans l'onglet Graphics > Templates",
+              "Graphics: Ajout de modèles prédéfinis (Morning Show, Full Day, Loop) à l'onglet Templates",
+              "Graphics: Ajout de la fonctionnalité créer/modifier/supprimer des modèles dans l'onglet",
+              "Graphics: Ajout de la fonctionnalité générer une playlist à partir du modèle"
+            ]
+          },
+          {
             "version": "v2.6.0-ALPHA.51-PRO",
             "date": "2026-03-20",
             "changes": [
