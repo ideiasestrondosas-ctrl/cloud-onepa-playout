@@ -161,6 +161,50 @@ impl PlayoutEngine {
         slug
     }
 
+    /// Load global settings and overlay any per-channel key-value overrides from `channel_settings`.
+    /// Falls back gracefully: unknown keys are ignored, parse failures keep the global value.
+    async fn get_effective_settings(&self) -> Result<crate::models::settings::Settings, sqlx::Error> {
+        let mut settings = sqlx::query_as::<_, crate::models::settings::Settings>(
+            "SELECT * FROM settings WHERE id = TRUE",
+        )
+        .fetch_one(&self.pool)
+        .await?;
+
+        // Apply channel-specific overrides (key = Settings field name, value = string-encoded value)
+        let overrides: Vec<(String, String)> = sqlx::query_as(
+            "SELECT key, value FROM channel_settings WHERE channel_id = $1",
+        )
+        .bind(self.channel_id)
+        .fetch_all(&self.pool)
+        .await
+        .unwrap_or_default();
+
+        for (key, value) in overrides {
+            match key.as_str() {
+                "output_url"       => settings.output_url       = value,
+                "output_type"      => settings.output_type      = value,
+                "resolution"       => settings.resolution       = value,
+                "fps"              => settings.fps              = value,
+                "video_bitrate"    => settings.video_bitrate    = value,
+                "audio_bitrate"    => settings.audio_bitrate    = value,
+                "video_codec"      => settings.video_codec      = value,
+                "audio_codec"      => settings.audio_codec      = value,
+                "rtmp_output_url"  => settings.rtmp_output_url  = Some(value),
+                "srt_output_url"   => settings.srt_output_url   = Some(value),
+                "udp_output_url"   => settings.udp_output_url   = Some(value),
+                "channel_name"     => settings.channel_name     = Some(value),
+                "overlay_enabled"  => settings.overlay_enabled  = value.eq_ignore_ascii_case("true"),
+                "rtmp_enabled"     => settings.rtmp_enabled     = value.eq_ignore_ascii_case("true"),
+                "srt_enabled"      => settings.srt_enabled      = value.eq_ignore_ascii_case("true"),
+                "udp_enabled"      => settings.udp_enabled      = value.eq_ignore_ascii_case("true"),
+                "hls_enabled"      => settings.hls_enabled      = value.eq_ignore_ascii_case("true"),
+                _ => {}
+            }
+        }
+
+        Ok(settings)
+    }
+
     /// Attach a Redis EventBus after construction (called from main once Redis connects).
     pub async fn set_event_bus(&self, bus: EventBus) {
         let mut eb = self.event_bus.lock().await;
@@ -279,27 +323,19 @@ impl PlayoutEngine {
             logs.push_back("--- Starting Playout Engine ---".to_string());
 
             // Log which protocols will be active
-            let pool = self.pool.clone();
-            tokio::spawn(async move {
-                if let Ok(settings) =
-                    sqlx::query_as::<_, Settings>("SELECT * FROM settings WHERE id = TRUE")
-                        .fetch_one(&pool)
-                        .await
-                {
-                    log::info!(
-                        "Engine started with: RTMP={}, SRT={}, UDP={}",
-                        settings.rtmp_enabled,
-                        settings.srt_enabled,
-                        settings.udp_enabled
-                    );
-
-                    if !settings.auto_start_protocols {
-                        log::info!(
-                            "Auto-start protocols is OFF. Distribution protocols must be enabled manually."
-                        );
-                    }
+            let settings_res = self.get_effective_settings().await;
+            if let Ok(settings) = settings_res {
+                log::info!(
+                    "Engine [{}] started with: RTMP={}, SRT={}, UDP={}",
+                    self.channel_id,
+                    settings.rtmp_enabled,
+                    settings.srt_enabled,
+                    settings.udp_enabled
+                );
+                if !settings.auto_start_protocols {
+                    log::info!("[Channel {}] Auto-start protocols is OFF.", self.channel_id);
                 }
-            });
+            }
         }
     }
 
@@ -311,31 +347,25 @@ impl PlayoutEngine {
     pub async fn start(self: Arc<Self>) {
         log::info!("Playout Engine started");
 
-        // Load initial state from DB
-        if let Ok(settings) =
-            sqlx::query_as::<_, Settings>("SELECT * FROM settings WHERE id = TRUE")
-                .fetch_one(&self.pool)
-                .await
-        {
+        // Load initial state from DB (per-channel effective settings)
+        if let Ok(settings) = self.get_effective_settings().await {
             let is_run = settings.is_running;
             let clips_played = settings.clips_played_today.unwrap_or(0);
             
-            log::info!("DATABASE LOADED: is_running={}, clips_played_today={}", is_run, clips_played);
+            log::info!("[Channel {}] Effective settings loaded (channel overrides applied)", self.channel_id);
 
-            let mut r = self.is_running.lock().await;
-            *r = is_run;
+            // NOTE: is_running is NOT read from global settings.
+            // Each channel engine starts in stopped state and must be explicitly started
+            // via POST /v2/channels/{id}/playout/start to ensure channel isolation.
+            // (Reading global settings.is_running would cause ALL engines to auto-start
+            //  whenever ANY channel was previously running.)
+
             let mut err = self.last_error.lock().await;
             *err = settings.last_error;
 
-            // If running, initialize start time
-            if is_run {
-                let mut start_time = self.engine_start_time.lock().await;
-                *start_time = Some(Local::now());
-            }
-
             // Sync clips counter from DB
             let mut status = self.status.lock().await;
-            status.clips_played_today = clips_played;
+            status.clips_played_today = settings.clips_played_today.unwrap_or(0);
         }
 
         loop {
@@ -404,10 +434,7 @@ impl PlayoutEngine {
     }
     async fn tick(&self) -> Result<(), String> {
         // Update Stream Stats and Distribution (even if engine stopped so protocols show)
-        let settings = sqlx::query_as::<_, Settings>("SELECT * FROM settings WHERE id = TRUE")
-            .fetch_one(&self.pool)
-            .await
-            .map_err(|e| e.to_string())?;
+        let settings = self.get_effective_settings().await.map_err(|e| e.to_string())?;
 
         self.manage_distribution(&settings).await;
         self.update_stream_stats(&settings).await;
@@ -434,25 +461,25 @@ impl PlayoutEngine {
         let current_time = now.time();
 
         // 1. Fetch settings
-        let settings = sqlx::query_as::<_, Settings>("SELECT * FROM settings WHERE id = TRUE")
-            .fetch_one(&self.pool)
-            .await
-            .map_err(|e| e.to_string())?;
+        let settings = self.get_effective_settings().await.map_err(|e| e.to_string())?;
 
-        // 2. Find scheduled playlist (Better logic)
+        // 2. Find scheduled playlist — filtered by this engine's channel_id
+        //    (NULL channel_id rows are treated as legacy/global and included as fallback)
         // a. Today's direct schedule
         let mut schedule = sqlx::query_as::<_, Schedule>(
             "SELECT s.*, p.name as playlist_name, p.content as playlist_content 
              FROM schedule s 
              JOIN playlists p ON s.playlist_id = p.id 
              WHERE s.date = $1 AND s.repeat_pattern IS NULL
+             AND (s.channel_id = $2 OR s.channel_id IS NULL)
              AND NOT EXISTS (
                  SELECT 1 FROM schedule_exceptions se 
                  WHERE se.schedule_id = s.id AND se.exception_date = $1
              )
-             ORDER BY s.start_time ASC LIMIT 1",
+             ORDER BY s.channel_id NULLS LAST, s.start_time ASC LIMIT 1",
         )
         .bind(current_date)
+        .bind(self.channel_id)
         .fetch_all(&self.pool)
         .await
         .map_err(|e| e.to_string())?;
@@ -463,13 +490,15 @@ impl PlayoutEngine {
              FROM schedule s 
              JOIN playlists p ON s.playlist_id = p.id 
              WHERE s.repeat_pattern = 'daily' AND s.date <= $1
+             AND (s.channel_id = $2 OR s.channel_id IS NULL)
              AND NOT EXISTS (
                  SELECT 1 FROM schedule_exceptions se 
                  WHERE se.schedule_id = s.id AND se.exception_date = $1
              )
-             ORDER BY s.date DESC LIMIT 1",
+             ORDER BY s.channel_id NULLS LAST, s.date DESC LIMIT 1",
         )
         .bind(current_date)
+        .bind(self.channel_id)
         .fetch_all(&self.pool)
         .await
         .map_err(|e| e.to_string())?;
@@ -483,14 +512,16 @@ impl PlayoutEngine {
              JOIN playlists p ON s.playlist_id = p.id 
              WHERE s.repeat_pattern = 'weekly' 
              AND EXTRACT(DOW FROM s.date) = $1 AND s.date <= $2
+             AND (s.channel_id = $3 OR s.channel_id IS NULL)
              AND NOT EXISTS (
                  SELECT 1 FROM schedule_exceptions se 
                  WHERE se.schedule_id = s.id AND se.exception_date = $2
              )
-             ORDER BY s.date DESC LIMIT 1",
+             ORDER BY s.channel_id NULLS LAST, s.date DESC LIMIT 1",
         )
         .bind(day_of_week as i32)
         .bind(current_date)
+        .bind(self.channel_id)
         .fetch_all(&self.pool)
         .await
         .map_err(|e| e.to_string())?;

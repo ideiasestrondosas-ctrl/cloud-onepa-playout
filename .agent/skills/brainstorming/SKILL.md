@@ -1,230 +1,163 @@
 ---
 name: brainstorming
-description: >
-  Use this skill before any creative or constructive work
-  (features, components, architecture, behavior changes, or functionality).
-  This skill transforms vague ideas into validated designs through
-  disciplined, incremental reasoning and collaboration.
+description: Socratic questioning protocol + user communication. MANDATORY for complex requests, new features, or unclear requirements. Includes progress reporting and error handling.
+allowed-tools: Read, Glob, Grep
 ---
 
-# Brainstorming Ideas Into Designs
+# Brainstorming & Communication Protocol
 
-## Purpose
-
-Turn raw ideas into **clear, validated designs and specifications**
-through structured dialogue **before any implementation begins**.
-
-This skill exists to prevent:
-- premature implementation
-- hidden assumptions
-- misaligned solutions
-- fragile systems
-
-You are **not allowed** to implement, code, or modify behavior while this skill is active.
+> **MANDATORY:** Use for complex/vague requests, new features, updates.
 
 ---
 
-## Operating Mode
+## 🛑 SOCRATIC GATE (ENFORCEMENT)
 
-You are operating as a **design facilitator and senior reviewer**, not a builder.
+### When to Trigger
 
-- No creative implementation  
-- No speculative features  
-- No silent assumptions  
-- No skipping ahead  
+| Pattern | Action |
+|---------|--------|
+| "Build/Create/Make [thing]" without details | 🛑 ASK 3 questions |
+| Complex feature or architecture | 🛑 Clarify before implementing |
+| Update/change request | 🛑 Confirm scope |
+| Vague requirements | 🛑 Ask purpose, users, constraints |
 
-Your job is to **slow the process down just enough to get it right**.
+### 🚫 MANDATORY: 3 Questions Before Implementation
 
----
-
-## The Process
-
-### 1️⃣ Understand the Current Context (Mandatory First Step)
-
-Before asking any questions:
-
-- Review the current project state (if available):
-  - files
-  - documentation
-  - plans
-  - prior decisions
-- Identify what already exists vs. what is proposed
-- Note constraints that appear implicit but unconfirmed
-
-**Do not design yet.**
+1. **STOP** - Do NOT start coding
+2. **ASK** - Minimum 3 questions:
+   - 🎯 Purpose: What problem are you solving?
+   - 👥 Users: Who will use this?
+   - 📦 Scope: Must-have vs nice-to-have?
+3. **WAIT** - Get response before proceeding
 
 ---
 
-### 2️⃣ Understanding the Idea (One Question at a Time)
+## 🧠 Dynamic Question Generation
 
-Your goal here is **shared clarity**, not speed.
+**⛔ NEVER use static templates.** Read `dynamic-questioning.md` for principles.
 
-**Rules:**
+### Core Principles
 
-- Ask **one question per message**
-- Prefer **multiple-choice questions** when possible
-- Use open-ended questions only when necessary
-- If a topic needs depth, split it into multiple questions
+| Principle | Meaning |
+|-----------|---------|
+| **Questions Reveal Consequences** | Each question connects to an architectural decision |
+| **Context Before Content** | Understand greenfield/feature/refactor/debug context first |
+| **Minimum Viable Questions** | Each question must eliminate implementation paths |
+| **Generate Data, Not Assumptions** | Don't guess—ask with trade-offs |
 
-Focus on understanding:
+### Question Generation Process
 
-- purpose  
-- target users  
-- constraints  
-- success criteria  
-- explicit non-goals  
+```
+1. Parse request → Extract domain, features, scale indicators
+2. Identify decision points → Blocking vs. deferable
+3. Generate questions → Priority: P0 (blocking) > P1 (high-leverage) > P2 (nice-to-have)
+4. Format with trade-offs → What, Why, Options, Default
+```
 
----
+### Question Format (MANDATORY)
 
-### 3️⃣ Non-Functional Requirements (Mandatory)
+```markdown
+### [PRIORITY] **[DECISION POINT]**
 
-You MUST explicitly clarify or propose assumptions for:
+**Question:** [Clear question]
 
-- Performance expectations  
-- Scale (users, data, traffic)  
-- Security or privacy constraints  
-- Reliability / availability needs  
-- Maintenance and ownership expectations  
+**Why This Matters:**
+- [Architectural consequence]
+- [Affects: cost/complexity/timeline/scale]
 
-If the user is unsure:
+**Options:**
+| Option | Pros | Cons | Best For |
+|--------|------|------|----------|
+| A | [+] | [-] | [Use case] |
 
-- Propose reasonable defaults  
-- Clearly mark them as **assumptions**
+**If Not Specified:** [Default + rationale]
+```
 
----
-
-### 4️⃣ Understanding Lock (Hard Gate)
-
-Before proposing **any design**, you MUST pause and do the following:
-
-#### Understanding Summary
-Provide a concise summary (5–7 bullets) covering:
-- What is being built  
-- Why it exists  
-- Who it is for  
-- Key constraints  
-- Explicit non-goals  
-
-#### Assumptions
-List all assumptions explicitly.
-
-#### Open Questions
-List unresolved questions, if any.
-
-Then ask:
-
-> “Does this accurately reflect your intent?  
-> Please confirm or correct anything before we move to design.”
-
-**Do NOT proceed until explicit confirmation is given.**
+**For detailed domain-specific question banks and algorithms**, see: `dynamic-questioning.md`
 
 ---
 
-### 5️⃣ Explore Design Approaches
+## Progress Reporting (PRINCIPLE-BASED)
 
-Once understanding is confirmed:
+**PRINCIPLE:** Transparency builds trust. Status must be visible and actionable.
 
-- Propose **2–3 viable approaches**
-- Lead with your **recommended option**
-- Explain trade-offs clearly:
-  - complexity
-  - extensibility
-  - risk
-  - maintenance
-- Avoid premature optimization (**YAGNI ruthlessly**)
+### Status Board Format
 
-This is still **not** final design.
+| Agent | Status | Current Task | Progress |
+|-------|--------|--------------|----------|
+| [Agent Name] | ✅🔄⏳❌⚠️ | [Task description] | [% or count] |
 
----
+### Status Icons
 
-### 6️⃣ Present the Design (Incrementally)
-
-When presenting the design:
-
-- Break it into sections of **200–300 words max**
-- After each section, ask:
-
-  > “Does this look right so far?”
-
-Cover, as relevant:
-
-- Architecture  
-- Components  
-- Data flow  
-- Error handling  
-- Edge cases  
-- Testing strategy  
+| Icon | Meaning | Usage |
+|------|---------|-------|
+| ✅ | Completed | Task finished successfully |
+| 🔄 | Running | Currently executing |
+| ⏳ | Waiting | Blocked, waiting for dependency |
+| ❌ | Error | Failed, needs attention |
+| ⚠️ | Warning | Potential issue, not blocking |
 
 ---
 
-### 7️⃣ Decision Log (Mandatory)
+## Error Handling (PRINCIPLE-BASED)
 
-Maintain a running **Decision Log** throughout the design discussion.
+**PRINCIPLE:** Errors are opportunities for clear communication.
 
-For each decision:
-- What was decided  
-- Alternatives considered  
-- Why this option was chosen  
+### Error Response Pattern
 
-This log should be preserved for documentation.
+```
+1. Acknowledge the error
+2. Explain what happened (user-friendly)
+3. Offer specific solutions with trade-offs
+4. Ask user to choose or provide alternative
+```
 
----
+### Error Categories
 
-## After the Design
-
-### 📄 Documentation
-
-Once the design is validated:
-
-- Write the final design to a durable, shared format (e.g. Markdown)
-- Include:
-  - Understanding summary
-  - Assumptions
-  - Decision log
-  - Final design
-
-Persist the document according to the project’s standard workflow.
+| Category | Response Strategy |
+|----------|-------------------|
+| **Port Conflict** | Offer alternative port or close existing |
+| **Dependency Missing** | Auto-install or ask permission |
+| **Build Failure** | Show specific error + suggested fix |
+| **Unclear Error** | Ask for specifics: screenshot, console output |
 
 ---
 
-### 🛠️ Implementation Handoff (Optional)
+## Completion Message (PRINCIPLE-BASED)
 
-Only after documentation is complete, ask:
+**PRINCIPLE:** Celebrate success, guide next steps.
 
-> “Ready to set up for implementation?”
+### Completion Structure
 
-If yes:
-- Create an explicit implementation plan
-- Isolate work if the workflow supports it
-- Proceed incrementally
-
----
-
-## Exit Criteria (Hard Stop Conditions)
-
-You may exit brainstorming mode **only when all of the following are true**:
-
-- Understanding Lock has been confirmed  
-- At least one design approach is explicitly accepted  
-- Major assumptions are documented  
-- Key risks are acknowledged  
-- Decision Log is complete  
-
-If any criterion is unmet:
-- Continue refinement  
-- **Do NOT proceed to implementation**
+```
+1. Success confirmation (celebrate briefly)
+2. Summary of what was done (concrete)
+3. How to verify/test (actionable)
+4. Next steps suggestion (proactive)
+```
 
 ---
 
-## Key Principles (Non-Negotiable)
+## Communication Principles
 
-- One question at a time  
-- Assumptions must be explicit  
-- Explore alternatives  
-- Validate incrementally  
-- Prefer clarity over cleverness  
-- Be willing to go back and clarify  
-- **YAGNI ruthlessly**
+| Principle | Implementation |
+|-----------|----------------|
+| **Concise** | No unnecessary details, get to point |
+| **Visual** | Use emojis (✅🔄⏳❌) for quick scanning |
+| **Specific** | "~2 minutes" not "wait a bit" |
+| **Alternatives** | Offer multiple paths when stuck |
+| **Proactive** | Suggest next step after completion |
 
 ---
-If the design is high-impact, high-risk, or requires elevated confidence, you MUST hand off the finalized design and Decision Log to the `multi-agent-brainstorming` skill before implementation.
+
+## Anti-Patterns (AVOID)
+
+| Anti-Pattern | Why |
+|--------------|-----|
+| Jumping to solutions before understanding | Wastes time on wrong problem |
+| Assuming requirements without asking | Creates wrong output |
+| Over-engineering first version | Delays value delivery |
+| Ignoring constraints | Creates unusable solutions |
+| "I think" phrases | Uncertainty → Ask instead |
+
+---

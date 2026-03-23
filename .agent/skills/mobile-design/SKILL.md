@@ -1,284 +1,394 @@
 ---
 name: mobile-design
-description: Mobile-first design and engineering doctrine for iOS and Android apps. Covers touch interaction, performance, platform conventions, offline behavior, and mobile-specific decision-making. Teaches principles and constraints, not fixed layouts. Use for React Native, Flutter, or native mobile apps.
+description: Mobile-first design thinking and decision-making for iOS and Android apps. Touch interaction, performance patterns, platform conventions. Teaches principles, not fixed values. Use when building React Native, Flutter, or native mobile apps.
 allowed-tools: Read, Glob, Grep, Bash
 ---
+
 # Mobile Design System
 
-**(Mobile-First · Touch-First · Platform-Respectful)**
-
 > **Philosophy:** Touch-first. Battery-conscious. Platform-respectful. Offline-capable.
-> **Core Law:** Mobile is NOT a small desktop.
-> **Operating Rule:** Think constraints first, aesthetics second.
-
-This skill exists to **prevent desktop-thinking, AI-defaults, and unsafe assumptions** when designing or building mobile applications.
+> **Core Principle:** Mobile is NOT a small desktop. THINK mobile constraints, ASK platform choice.
 
 ---
 
-## 1. Mobile Feasibility & Risk Index (MFRI)
+## 🔧 Runtime Scripts
 
-Before designing or implementing **any mobile feature or screen**, assess feasibility.
+**Execute these for validation (don't read, just run):**
 
-### MFRI Dimensions (1–5)
+| Script | Purpose | Usage |
+|--------|---------|-------|
+| `scripts/mobile_audit.py` | Mobile UX & Touch Audit | `python scripts/mobile_audit.py <project_path>` |
 
-| Dimension                  | Question                                                          |
-| -------------------------- | ----------------------------------------------------------------- |
-| **Platform Clarity**       | Is the target platform (iOS / Android / both) explicitly defined? |
-| **Interaction Complexity** | How complex are gestures, flows, or navigation?                   |
-| **Performance Risk**       | Does this involve lists, animations, heavy state, or media?       |
-| **Offline Dependence**     | Does the feature break or degrade without network?                |
-| **Accessibility Risk**     | Does this impact motor, visual, or cognitive accessibility?       |
+---
 
-### Score Formula
+## 🔴 MANDATORY: Read Reference Files Before Working!
+
+**⛔ DO NOT start development until you read the relevant files:**
+
+### Universal (Always Read)
+
+| File | Content | Status |
+|------|---------|--------|
+| **[mobile-design-thinking.md](mobile-design-thinking.md)** | **⚠️ ANTI-MEMORIZATION: Forces thinking, prevents AI defaults** | **⬜ CRITICAL FIRST** |
+| **[touch-psychology.md](touch-psychology.md)** | **Fitts' Law, gestures, haptics, thumb zone** | **⬜ CRITICAL** |
+| **[mobile-performance.md](mobile-performance.md)** | **RN/Flutter performance, 60fps, memory** | **⬜ CRITICAL** |
+| **[mobile-backend.md](mobile-backend.md)** | **Push notifications, offline sync, mobile API** | **⬜ CRITICAL** |
+| **[mobile-testing.md](mobile-testing.md)** | **Testing pyramid, E2E, platform-specific** | **⬜ CRITICAL** |
+| **[mobile-debugging.md](mobile-debugging.md)** | **Native vs JS debugging, Flipper, Logcat** | **⬜ CRITICAL** |
+| [mobile-navigation.md](mobile-navigation.md) | Tab/Stack/Drawer, deep linking | ⬜ Read |
+| [mobile-typography.md](mobile-typography.md) | System fonts, Dynamic Type, a11y | ⬜ Read |
+| [mobile-color-system.md](mobile-color-system.md) | OLED, dark mode, battery-aware | ⬜ Read |
+| [decision-trees.md](decision-trees.md) | Framework/state/storage selection | ⬜ Read |
+
+> 🧠 **mobile-design-thinking.md is PRIORITY!** This file ensures AI thinks instead of using memorized patterns.
+
+### Platform-Specific (Read Based on Target)
+
+| Platform | File | Content | When to Read |
+|----------|------|---------|--------------|
+| **iOS** | [platform-ios.md](platform-ios.md) | Human Interface Guidelines, SF Pro, SwiftUI patterns | Building for iPhone/iPad |
+| **Android** | [platform-android.md](platform-android.md) | Material Design 3, Roboto, Compose patterns | Building for Android |
+| **Cross-Platform** | Both above | Platform divergence points | React Native / Flutter |
+
+> 🔴 **If building for iOS → Read platform-ios.md FIRST!**
+> 🔴 **If building for Android → Read platform-android.md FIRST!**
+> 🔴 **If cross-platform → Read BOTH and apply conditional platform logic!**
+
+---
+
+## ⚠️ CRITICAL: ASK BEFORE ASSUMING (MANDATORY)
+
+> **STOP! If the user's request is open-ended, DO NOT default to your favorites.**
+
+### You MUST Ask If Not Specified:
+
+| Aspect | Ask | Why |
+|--------|-----|-----|
+| **Platform** | "iOS, Android, or both?" | Affects EVERY design decision |
+| **Framework** | "React Native, Flutter, or native?" | Determines patterns and tools |
+| **Navigation** | "Tab bar, drawer, or stack-based?" | Core UX decision |
+| **State** | "What state management? (Zustand/Redux/Riverpod/BLoC?)" | Architecture foundation |
+| **Offline** | "Does this need to work offline?" | Affects data strategy |
+| **Target devices** | "Phone only, or tablet support?" | Layout complexity |
+
+### ⛔ AI MOBILE ANTI-PATTERNS (YASAK LİSTESİ)
+
+> 🚫 **These are AI default tendencies that MUST be avoided!**
+
+#### Performance Sins
+
+| ❌ NEVER DO | Why It's Wrong | ✅ ALWAYS DO |
+|-------------|----------------|--------------|
+| **ScrollView for long lists** | Renders ALL items, memory explodes | Use `FlatList` / `FlashList` / `ListView.builder` |
+| **Inline renderItem function** | New function every render, all items re-render | `useCallback` + `React.memo` |
+| **Missing keyExtractor** | Index-based keys cause bugs on reorder | Unique, stable ID from data |
+| **Skip getItemLayout** | Async layout = janky scroll | Provide when items have fixed height |
+| **setState() everywhere** | Unnecessary widget rebuilds | Targeted state, `const` constructors |
+| **Native driver: false** | Animations blocked by JS thread | `useNativeDriver: true` always |
+| **console.log in production** | Blocks JS thread severely | Remove before release build |
+| **Skip React.memo/const** | Every item re-renders on any change | Memoize list items ALWAYS |
+
+#### Touch/UX Sins
+
+| ❌ NEVER DO | Why It's Wrong | ✅ ALWAYS DO |
+|-------------|----------------|--------------|
+| **Touch target < 44px** | Impossible to tap accurately, frustrating | Minimum 44pt (iOS) / 48dp (Android) |
+| **Spacing < 8px between targets** | Accidental taps on neighbors | Minimum 8-12px gap |
+| **Gesture-only interactions** | Motor impaired users excluded | Always provide button alternative |
+| **No loading state** | User thinks app crashed | ALWAYS show loading feedback |
+| **No error state** | User stuck, no recovery path | Show error with retry option |
+| **No offline handling** | Crash/block when network lost | Graceful degradation, cached data |
+| **Ignore platform conventions** | Users confused, muscle memory broken | iOS feels iOS, Android feels Android |
+
+#### Security Sins
+
+| ❌ NEVER DO | Why It's Wrong | ✅ ALWAYS DO |
+|-------------|----------------|--------------|
+| **Token in AsyncStorage** | Easily accessible, stolen on rooted device | `SecureStore` / `Keychain` / `EncryptedSharedPreferences` |
+| **Hardcode API keys** | Reverse engineered from APK/IPA | Environment variables, secure storage |
+| **Skip SSL pinning** | MITM attacks possible | Pin certificates in production |
+| **Log sensitive data** | Logs can be extracted | Never log tokens, passwords, PII |
+
+#### Architecture Sins
+
+| ❌ NEVER DO | Why It's Wrong | ✅ ALWAYS DO |
+|-------------|----------------|--------------|
+| **Business logic in UI** | Untestable, unmaintainable | Service layer separation |
+| **Global state for everything** | Unnecessary re-renders, complexity | Local state default, lift when needed |
+| **Deep linking as afterthought** | Notifications, shares broken | Plan deep links from day one |
+| **Skip dispose/cleanup** | Memory leaks, zombie listeners | Clean up subscriptions, timers |
+
+---
+
+## 📱 Platform Decision Matrix
+
+### When to Unify vs Diverge
 
 ```
-MFRI = (Platform Clarity + Accessibility Readiness)
-       − (Interaction Complexity + Performance Risk + Offline Dependence)
+                    UNIFY (same on both)          DIVERGE (platform-specific)
+                    ───────────────────           ──────────────────────────
+Business Logic      ✅ Always                     -
+Data Layer          ✅ Always                     -
+Core Features       ✅ Always                     -
+                    
+Navigation          -                             ✅ iOS: edge swipe, Android: back button
+Gestures            -                             ✅ Platform-native feel
+Icons               -                             ✅ SF Symbols vs Material Icons
+Date Pickers        -                             ✅ Native pickers feel right
+Modals/Sheets       -                             ✅ iOS: bottom sheet vs Android: dialog
+Typography          -                             ✅ SF Pro vs Roboto (or custom)
+Error Dialogs       -                             ✅ Platform conventions for alerts
 ```
 
-**Range:** `-10 → +10`
+### Quick Reference: Platform Defaults
 
-### Interpretation
-
-| MFRI     | Meaning   | Required Action                       |
-| -------- | --------- | ------------------------------------- |
-| **6–10** | Safe      | Proceed normally                      |
-| **3–5**  | Moderate  | Add performance + UX validation       |
-| **0–2**  | Risky     | Simplify interactions or architecture |
-| **< 0**  | Dangerous | Redesign before implementation        |
-
----
-
-## 2. Mandatory Thinking Before Any Work
-
-### ⛔ STOP: Ask Before Assuming (Required)
-
-If **any of the following are not explicitly stated**, you MUST ask before proceeding:
-
-| Aspect     | Question                                   | Why                                      |
-| ---------- | ------------------------------------------ | ---------------------------------------- |
-| Platform   | iOS, Android, or both?                     | Affects navigation, gestures, typography |
-| Framework  | React Native, Flutter, or native?          | Determines performance and patterns      |
-| Navigation | Tabs, stack, drawer?                       | Core UX architecture                     |
-| Offline    | Must it work offline?                      | Data & sync strategy                     |
-| Devices    | Phone only or tablet too?                  | Layout & density rules                   |
-| Audience   | Consumer, enterprise, accessibility needs? | Touch & readability                      |
-
-🚫 **Never default to your favorite stack or pattern.**
+| Element | iOS | Android |
+|---------|-----|---------|
+| **Primary Font** | SF Pro / SF Compact | Roboto |
+| **Min Touch Target** | 44pt × 44pt | 48dp × 48dp |
+| **Back Navigation** | Edge swipe left | System back button/gesture |
+| **Bottom Tab Icons** | SF Symbols | Material Symbols |
+| **Action Sheet** | UIActionSheet from bottom | Bottom Sheet / Dialog |
+| **Progress** | Spinner | Linear progress (Material) |
+| **Pull to Refresh** | Native UIRefreshControl | SwipeRefreshLayout |
 
 ---
 
-## 3. Mandatory Reference Reading (Enforced)
+## 🧠 Mobile UX Psychology (Quick Reference)
 
-### Universal (Always Read First)
-
-| File                          | Purpose                            | Status            |
-| ----------------------------- | ---------------------------------- | ----------------- |
-| **mobile-design-thinking.md** | Anti-memorization, context-forcing | 🔴 REQUIRED FIRST |
-| **touch-psychology.md**       | Fitts’ Law, thumb zones, gestures  | 🔴 REQUIRED       |
-| **mobile-performance.md**     | 60fps, memory, battery             | 🔴 REQUIRED       |
-| **mobile-backend.md**         | Offline sync, push, APIs           | 🔴 REQUIRED       |
-| **mobile-testing.md**         | Device & E2E testing               | 🔴 REQUIRED       |
-| **mobile-debugging.md**       | Native vs JS debugging             | 🔴 REQUIRED       |
-
-### Platform-Specific (Conditional)
-
-| Platform       | File                |
-| -------------- | ------------------- |
-| iOS            | platform-ios.md     |
-| Android        | platform-android.md |
-| Cross-platform | BOTH above          |
-
-> ❌ If you haven’t read the platform file, you are not allowed to design UI.
-
----
-
-## 4. AI Mobile Anti-Patterns (Hard Bans)
-
-### 🚫 Performance Sins (Non-Negotiable)
-
-| ❌ Never                   | Why                  | ✅ Always                                |
-| ------------------------- | -------------------- | --------------------------------------- |
-| ScrollView for long lists | Memory explosion     | FlatList / FlashList / ListView.builder |
-| Inline renderItem         | Re-renders all rows  | useCallback + memo                      |
-| Index as key              | Reorder bugs         | Stable ID                               |
-| JS-thread animations      | Jank                 | Native driver / GPU                     |
-| console.log in prod       | JS thread block      | Strip logs                              |
-| No memoization            | Battery + perf drain | React.memo / const widgets              |
-
----
-
-### 🚫 Touch & UX Sins
-
-| ❌ Never               | Why                  | ✅ Always          |
-| --------------------- | -------------------- | ----------------- |
-| Touch <44–48px        | Miss taps            | Min touch target  |
-| Gesture-only action   | Excludes users       | Button fallback   |
-| No loading state      | Feels broken         | Explicit feedback |
-| No error recovery     | Dead end             | Retry + message   |
-| Ignore platform norms | Muscle memory broken | iOS ≠ Android     |
-
----
-
-### 🚫 Security Sins
-
-| ❌ Never                | Why                | ✅ Always               |
-| ---------------------- | ------------------ | ---------------------- |
-| Tokens in AsyncStorage | Easily stolen      | SecureStore / Keychain |
-| Hardcoded secrets      | Reverse engineered | Env + secure storage   |
-| No SSL pinning         | MITM risk          | Cert pinning           |
-| Log sensitive data     | PII leakage        | Never log secrets      |
-
----
-
-## 5. Platform Unification vs Divergence Matrix
+### Fitts' Law for Touch
 
 ```
-UNIFY                          DIVERGE
-──────────────────────────     ─────────────────────────
-Business logic                Navigation behavior
-Data models                    Gestures
-API contracts                  Icons
-Validation                     Typography
-Error semantics                Pickers / dialogs
+Desktop: Cursor is precise (1px)
+Mobile:  Finger is imprecise (~7mm contact area)
+
+→ Touch targets MUST be 44-48px minimum
+→ Important actions in THUMB ZONE (bottom of screen)
+→ Destructive actions AWAY from easy reach
 ```
 
-### Platform Defaults
+### Thumb Zone (One-Handed Usage)
 
-| Element   | iOS          | Android        |
-| --------- | ------------ | -------------- |
-| Font      | SF Pro       | Roboto         |
-| Min touch | 44pt         | 48dp           |
-| Back      | Edge swipe   | System back    |
-| Sheets    | Bottom sheet | Dialog / sheet |
-| Icons     | SF Symbols   | Material Icons |
+```
+┌─────────────────────────────┐
+│      HARD TO REACH          │ ← Navigation, menu, back
+│        (stretch)            │
+├─────────────────────────────┤
+│      OK TO REACH            │ ← Secondary actions
+│       (natural)             │
+├─────────────────────────────┤
+│      EASY TO REACH          │ ← PRIMARY CTAs, tab bar
+│    (thumb's natural arc)    │ ← Main content interaction
+└─────────────────────────────┘
+        [  HOME  ]
+```
+
+### Mobile-Specific Cognitive Load
+
+| Desktop | Mobile Difference |
+|---------|-------------------|
+| Multiple windows | ONE task at a time |
+| Keyboard shortcuts | Touch gestures |
+| Hover states | NO hover (tap or nothing) |
+| Large viewport | Limited space, scroll vertical |
+| Stable attention | Interrupted constantly |
+
+For deep dive: [touch-psychology.md](touch-psychology.md)
 
 ---
 
-## 6. Mobile UX Psychology (Non-Optional)
+## ⚡ Performance Principles (Quick Reference)
 
-### Fitts’ Law (Touch Reality)
+### React Native Critical Rules
 
-* Finger ≠ cursor
-* Accuracy is low
-* Reach matters more than precision
-
-**Rules:**
-
-* Primary CTAs live in **thumb zone**
-* Destructive actions pushed away
-* No hover assumptions
-
----
-
-## 7. Performance Doctrine
-
-### React Native (Required Pattern)
-
-```ts
-const Row = React.memo(({ item }) => (
-  <View><Text>{item.title}</Text></View>
+```typescript
+// ✅ CORRECT: Memoized renderItem + React.memo wrapper
+const ListItem = React.memo(({ item }: { item: Item }) => (
+  <View style={styles.item}>
+    <Text>{item.title}</Text>
+  </View>
 ));
 
 const renderItem = useCallback(
-  ({ item }) => <Row item={item} />,
+  ({ item }: { item: Item }) => <ListItem item={item} />,
   []
 );
 
+// ✅ CORRECT: FlatList with all optimizations
 <FlatList
   data={items}
   renderItem={renderItem}
-  keyExtractor={(i) => i.id}
-  getItemLayout={(_, i) => ({
+  keyExtractor={(item) => item.id}  // Stable ID, NOT index
+  getItemLayout={(data, index) => ({
     length: ITEM_HEIGHT,
-    offset: ITEM_HEIGHT * i,
-    index: i,
+    offset: ITEM_HEIGHT * index,
+    index,
   })}
+  removeClippedSubviews={true}
+  maxToRenderPerBatch={10}
+  windowSize={5}
 />
 ```
 
-### Flutter (Required Pattern)
+### Flutter Critical Rules
 
 ```dart
-class Item extends StatelessWidget {
-  const Item({super.key});
+// ✅ CORRECT: const constructors prevent rebuilds
+class MyWidget extends StatelessWidget {
+  const MyWidget({super.key}); // CONST!
 
   @override
   Widget build(BuildContext context) {
-    return const Text('Static');
+    return const Column( // CONST!
+      children: [
+        Text('Static content'),
+        MyConstantWidget(),
+      ],
+    );
   }
 }
+
+// ✅ CORRECT: Targeted state with ValueListenableBuilder
+ValueListenableBuilder<int>(
+  valueListenable: counter,
+  builder: (context, value, child) => Text('$value'),
+  child: const ExpensiveWidget(), // Won't rebuild!
+)
 ```
 
-* `const` everywhere possible
-* Targeted rebuilds only
+### Animation Performance
+
+```
+GPU-accelerated (FAST):     CPU-bound (SLOW):
+├── transform               ├── width, height
+├── opacity                 ├── top, left, right, bottom
+└── (use these ONLY)        ├── margin, padding
+                            └── (AVOID animating these)
+```
+
+For complete guide: [mobile-performance.md](mobile-performance.md)
 
 ---
 
-## 8. Mandatory Mobile Checkpoint
+## 📝 CHECKPOINT (MANDATORY Before Any Mobile Work)
 
-Before writing **any code**, you must complete this:
+> **Before writing ANY mobile code, you MUST complete this checkpoint:**
 
 ```
-🧠 MOBILE CHECKPOINT
+🧠 CHECKPOINT:
 
-Platform:     ___________
-Framework:    ___________
-Files Read:   ___________
+Platform:   [ iOS / Android / Both ]
+Framework:  [ React Native / Flutter / SwiftUI / Kotlin ]
+Files Read: [ List the skill files you've read ]
 
 3 Principles I Will Apply:
-1.
-2.
-3.
+1. _______________
+2. _______________
+3. _______________
 
 Anti-Patterns I Will Avoid:
-1.
-2.
+1. _______________
+2. _______________
 ```
 
-❌ Cannot complete → go back and read.
+**Example:**
+```
+🧠 CHECKPOINT:
+
+Platform:   iOS + Android (Cross-platform)
+Framework:  React Native + Expo
+Files Read: touch-psychology.md, mobile-performance.md, platform-ios.md, platform-android.md
+
+3 Principles I Will Apply:
+1. FlatList with React.memo + useCallback for all lists
+2. 48px touch targets, thumb zone for primary CTAs
+3. Platform-specific navigation (edge swipe iOS, back button Android)
+
+Anti-Patterns I Will Avoid:
+1. ScrollView for lists → FlatList
+2. Inline renderItem → Memoized
+3. AsyncStorage for tokens → SecureStore
+```
+
+> 🔴 **Can't fill the checkpoint? → GO BACK AND READ THE SKILL FILES.**
 
 ---
 
-## 9. Framework Decision Tree (Canonical)
+## 🔧 Framework Decision Tree
 
 ```
-Need OTA + web team → React Native + Expo
-High-perf UI → Flutter
-iOS only → SwiftUI
-Android only → Compose
+WHAT ARE YOU BUILDING?
+        │
+        ├── Need OTA updates + rapid iteration + web team
+        │   └── ✅ React Native + Expo
+        │
+        ├── Need pixel-perfect custom UI + performance critical
+        │   └── ✅ Flutter
+        │
+        ├── Deep native features + single platform focus
+        │   ├── iOS only → SwiftUI
+        │   └── Android only → Kotlin + Jetpack Compose
+        │
+        ├── Existing RN codebase + new features
+        │   └── ✅ React Native (bare workflow)
+        │
+        └── Enterprise + existing Flutter codebase
+            └── ✅ Flutter
 ```
 
-No debate without justification.
+For complete decision trees: [decision-trees.md](decision-trees.md)
 
 ---
 
-## 10. Release Readiness Checklist
+## 📋 Pre-Development Checklist
 
-### Before Shipping
+### Before Starting ANY Mobile Project
 
-* [ ] Touch targets ≥ 44–48px
-* [ ] Offline handled
-* [ ] Secure storage used
-* [ ] Lists optimized
-* [ ] Logs stripped
-* [ ] Tested on low-end devices
-* [ ] Accessibility labels present
-* [ ] MFRI ≥ 3
+- [ ] **Platform confirmed?** (iOS / Android / Both)
+- [ ] **Framework chosen?** (RN / Flutter / Native)
+- [ ] **Navigation pattern decided?** (Tabs / Stack / Drawer)
+- [ ] **State management selected?** (Zustand / Redux / Riverpod / BLoC)
+- [ ] **Offline requirements known?**
+- [ ] **Deep linking planned from day one?**
+- [ ] **Target devices defined?** (Phone / Tablet / Both)
+
+### Before Every Screen
+
+- [ ] **Touch targets ≥ 44-48px?**
+- [ ] **Primary CTA in thumb zone?**
+- [ ] **Loading state exists?**
+- [ ] **Error state with retry exists?**
+- [ ] **Offline handling considered?**
+- [ ] **Platform conventions followed?**
+
+### Before Release
+
+- [ ] **console.log removed?**
+- [ ] **SecureStore for sensitive data?**
+- [ ] **SSL pinning enabled?**
+- [ ] **Lists optimized (memo, keyExtractor)?**
+- [ ] **Memory cleanup on unmount?**
+- [ ] **Tested on low-end devices?**
+- [ ] **Accessibility labels on all interactive elements?**
 
 ---
 
-## 11. Related Skills
+## 📚 Reference Files
 
-* **frontend-design** – Visual systems & components
-* **frontend-dev-guidelines** – RN/TS architecture
-* **backend-dev-guidelines** – Mobile-safe APIs
-* **error-tracking** – Crash & performance telemetry
+For deeper guidance on specific areas:
+
+| File | When to Use |
+|------|-------------|
+| [mobile-design-thinking.md](mobile-design-thinking.md) | **FIRST! Anti-memorization, forces context-based thinking** |
+| [touch-psychology.md](touch-psychology.md) | Understanding touch interaction, Fitts' Law, gesture design |
+| [mobile-performance.md](mobile-performance.md) | Optimizing RN/Flutter, 60fps, memory/battery |
+| [platform-ios.md](platform-ios.md) | iOS-specific design, HIG compliance |
+| [platform-android.md](platform-android.md) | Android-specific design, Material Design 3 |
+| [mobile-navigation.md](mobile-navigation.md) | Navigation patterns, deep linking |
+| [mobile-typography.md](mobile-typography.md) | Type scale, system fonts, accessibility |
+| [mobile-color-system.md](mobile-color-system.md) | OLED optimization, dark mode, battery |
+| [decision-trees.md](decision-trees.md) | Framework, state, storage decisions |
 
 ---
 
-> **Final Law:**
-> Mobile users are distracted, interrupted, and impatient—often using one hand on a bad network with low battery.
-> **Design for that reality, or your app will fail quietly.**
-
----
+> **Remember:** Mobile users are impatient, interrupted, and using imprecise fingers on small screens. Design for the WORST conditions: bad network, one hand, bright sun, low battery. If it works there, it works everywhere.
