@@ -12,6 +12,8 @@ pub struct Template {
     pub duration: i32,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub channel_id: Option<Uuid>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -20,4 +22,5 @@ pub struct CreateTemplateRequest {
     pub description: Option<String>,
     pub structure: serde_json::Value,
     pub duration: i32,
+    pub channel_id: Option<Uuid>,
 }

@@ -7,11 +7,13 @@ const useAuthStore = create((set) => ({
   
   login: (user, token) => {
     localStorage.setItem('token', token);
+    localStorage.setItem('onepa_user', JSON.stringify(user));
     set({ user, token, isAuthenticated: true });
   },
   
   logout: () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('onepa_user');
     set({ user: null, token: null, isAuthenticated: false });
   },
   

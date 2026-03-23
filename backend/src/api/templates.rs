@@ -2,11 +2,26 @@ use crate::models::template::{CreateTemplateRequest, Template};
 use actix_web::{web, HttpResponse, Responder};
 use sqlx::PgPool;
 use uuid::Uuid;
+use serde::Deserialize;
 
-async fn get_templates(pool: web::Data<PgPool>) -> impl Responder {
-    let result = sqlx::query_as::<_, Template>("SELECT * FROM templates ORDER BY created_at DESC")
-        .fetch_all(pool.get_ref())
-        .await;
+#[derive(Deserialize)]
+pub struct TemplateQuery {
+    pub channel_id: Option<Uuid>,
+}
+
+async fn get_templates(
+    pool: web::Data<PgPool>,
+    query: web::Query<TemplateQuery>,
+) -> impl Responder {
+    let default_channel: Uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap();
+    let channel_id = query.channel_id.unwrap_or(default_channel);
+
+    let result = sqlx::query_as::<_, Template>(
+        "SELECT * FROM templates WHERE channel_id = $1 ORDER BY created_at DESC"
+    )
+    .bind(channel_id)
+    .fetch_all(pool.get_ref())
+    .await;
 
     match result {
         Ok(templates) => HttpResponse::Ok().json(templates),
@@ -20,13 +35,17 @@ async fn create_template(
     pool: web::Data<PgPool>,
     req: web::Json<CreateTemplateRequest>,
 ) -> impl Responder {
+    let default_channel: Uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap();
+    let channel_id = req.channel_id.unwrap_or(default_channel);
+
     let result = sqlx::query_as::<_, Template>(
-        "INSERT INTO templates (name, description, structure, duration) VALUES ($1, $2, $3, $4) RETURNING *"
+        "INSERT INTO templates (name, description, structure, duration, channel_id) VALUES ($1, $2, $3, $4, $5) RETURNING *"
     )
     .bind(&req.name)
     .bind(&req.description)
     .bind(&req.structure)
     .bind(req.duration)
+    .bind(channel_id)
     .fetch_one(pool.get_ref())
     .await;
 

@@ -35,12 +35,14 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { scheduleAPI, playlistAPI, playoutAPI, settingsAPI } from '../services/api';
 import { useNotification } from '../contexts/NotificationContext';
+import { useChannel } from '../contexts/ChannelContext';
 import { useTranslation } from 'react-i18next';
 import ALL_LOCALES from '@fullcalendar/core/locales-all';
 
 export default function Calendar() {
   const { t, i18n } = useTranslation();
   const { showSuccess, showError } = useNotification();
+  const { activeChannelId } = useChannel();
   const [events, setEvents] = useState([]);
   const [playoutStatus, setPlayoutStatus] = useState(null);
   const [playlists, setPlaylists] = useState([]);
@@ -64,7 +66,7 @@ export default function Calendar() {
     // Poll status every 10 seconds to keep calendar synced with playout
     const interval = setInterval(fetchPlayoutStatus, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [activeChannelId]);
 
   const fetchSettings = async () => {
     try {
@@ -84,7 +86,7 @@ export default function Calendar() {
 
   const fetchSchedule = async () => {
     try {
-      const response = await scheduleAPI.list();
+      const response = await scheduleAPI.list(activeChannelId);
       const rawSchedules = response.data.schedules;
       const calendarEvents = [];
 
@@ -162,7 +164,7 @@ export default function Calendar() {
 
   const fetchPlaylists = async () => {
     try {
-      const response = await playlistAPI.list();
+      const response = await playlistAPI.list(activeChannelId);
       setPlaylists(response.data.playlists);
     } catch (error) {
       console.error('Failed to fetch playlists:', error);
@@ -195,7 +197,7 @@ export default function Calendar() {
         await scheduleAPI.update(editId, payload);
         showSuccess(t('calendar.notifications.update_success'));
       } else {
-        await scheduleAPI.create(payload);
+        await scheduleAPI.create(payload, activeChannelId);
         showSuccess(t('calendar.notifications.create_success'));
       }
       setDialogOpen(false);

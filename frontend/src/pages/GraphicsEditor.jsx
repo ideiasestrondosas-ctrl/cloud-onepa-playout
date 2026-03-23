@@ -41,6 +41,7 @@ import {
 import { settingsAPI, playoutAPI, templateAPI, playlistAPI } from '../services/api';
 import graphicsService from '../services/graphicsLayersAPI';
 import { useNotification } from '../contexts/NotificationContext';
+import { useChannel } from '../contexts/ChannelContext';
 import { useTranslation } from 'react-i18next';
 import LayerManager from '../components/GraphicsLayers/LayerManager';
 import LayerPreview from '../components/GraphicsLayers/LayerPreview';
@@ -87,6 +88,7 @@ export default function GraphicsEditor() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { showSuccess, showError } = useNotification();
+  const { activeChannelId } = useChannel();
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -125,7 +127,7 @@ export default function GraphicsEditor() {
   const fetchTemplates = async () => {
     setTemplatesLoading(true);
     try {
-      const res = await templateAPI.list();
+      const res = await templateAPI.list(activeChannelId);
       setTemplates(res.data || []);
     } catch (_) {
       showError('Failed to load templates');
@@ -181,7 +183,7 @@ export default function GraphicsEditor() {
         await templateAPI.update(newTemplate.id, templateToAdd);
         showSuccess('Template updated');
       } else {
-        await templateAPI.create(templateToAdd);
+        await templateAPI.create(templateToAdd, activeChannelId);
         showSuccess('Template created');
       }
       setCreateDialogOpen(false);
@@ -214,7 +216,7 @@ export default function GraphicsEditor() {
         name: `Playlist ${selectedTemplateForUse.name} - ${new Date().toLocaleDateString()}`,
         date: new Date().toISOString().split('T')[0],
         content
-      });
+      }, activeChannelId);
       showSuccess('Playlist created successfully');
       setUseDialogOpen(false);
       navigate('/playlists');
@@ -227,7 +229,7 @@ export default function GraphicsEditor() {
   useEffect(() => {
     fetchSettings();
     fetchLayers();
-  }, []);
+  }, [activeChannelId]);
 
   useEffect(() => {
     if (activeTab === 3) fetchTemplates();
@@ -251,7 +253,7 @@ export default function GraphicsEditor() {
 
   const fetchLayers = async () => {
     try {
-      const response = await graphicsService.list();
+      const response = await graphicsService.list(activeChannelId);
       setGraphicsLayers(response.data);
     } catch (error) {
       console.error('Failed to load graphics layers:', error);

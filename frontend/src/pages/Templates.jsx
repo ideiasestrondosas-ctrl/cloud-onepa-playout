@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useNotification } from '../contexts/NotificationContext';
+import { useChannel } from '../contexts/ChannelContext';
 import { playlistAPI, templateAPI } from '../services/api';
 import {
   Box,
@@ -69,6 +70,7 @@ export default function Templates() {
   const navigate = useNavigate();
   const { showSuccess, showError } = useNotification();
   const { t } = useTranslation();
+  const { activeChannelId } = useChannel();
 
   // Preset templates recompute automatically whenever the language changes
   const presetTemplates = useMemo(() => getPresetTemplates(t), [t]);
@@ -85,11 +87,11 @@ export default function Templates() {
 
   useEffect(() => {
     fetchApiTemplates();
-  }, []);
+  }, [activeChannelId]);
 
   const fetchApiTemplates = async () => {
     try {
-      const response = await templateAPI.list();
+      const response = await templateAPI.list(activeChannelId);
       setApiTemplates(response.data);
     } catch (error) {
       console.error('Failed to fetch templates:', error);
@@ -119,7 +121,7 @@ export default function Templates() {
         await templateAPI.update(newTemplate.id, templateToAdd);
         showSuccess(t('templates.notifications.update_success'));
       } else {
-        await templateAPI.create(templateToAdd);
+        await templateAPI.create(templateToAdd, activeChannelId);
         showSuccess(t('templates.notifications.create_success'));
       }
 
@@ -180,7 +182,7 @@ export default function Templates() {
         name: `Playlist ${selectedTemplate.name} - ${new Date().toLocaleDateString()}`,
         date: new Date().toISOString().split('T')[0],
         content
-      });
+      }, activeChannelId);
 
       showSuccess(t('templates.notifications.playlist_success', { name: selectedTemplate.name }));
       setDialogOpen(false);

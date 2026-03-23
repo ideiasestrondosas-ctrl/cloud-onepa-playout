@@ -66,10 +66,11 @@ import {
   Snackbar,
   Alert
 } from '@mui/material';
-import { playoutAPI, settingsAPI } from '../services/api';
+import { playoutAPI, channelPlayoutAPI, settingsAPI } from '../services/api';
 import { useNotification } from '../contexts/NotificationContext';
 import LufsMeter from '../components/LufsMeter';
 import { useTranslation } from 'react-i18next';
+import { useChannel } from '../contexts/ChannelContext';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -78,6 +79,9 @@ export default function Dashboard() {
 
   const { showSuccess, showError, showInfo } = useNotification();
   const { t } = useTranslation();
+  const { activeChannelId, activeChannel } = useChannel();
+  // Dynamic HLS preview URL — derives from channel slug (falls back to 'master' if not loaded yet)
+  const hlsPreviewUrl = `/hls-live/${activeChannel?.slug ?? 'master'}/index.m3u8`;
   const [status, setStatus] = useState({
     status: 'stopped',
     current_clip: null,
@@ -135,14 +139,14 @@ export default function Dashboard() {
 
   const fetchStatus = useCallback(async () => {
     try {
-      const response = await playoutAPI.status();
+      const response = await channelPlayoutAPI.status(activeChannelId);
       setStatus(response.data);
     } catch (error) {
       console.warn('[Dashboard] Status fetch failed:', error.message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [activeChannelId]);
 
   useEffect(() => {
     fetchStatus();
@@ -324,7 +328,7 @@ export default function Dashboard() {
       const addStep = (msg, type = 'info') => setStartSteps(prev => [...prev, { msg, type, time: new Date() }]);
 
       addStep(t('dashboard.ops.checking_db'), 'info');
-      const response = await playoutAPI.start();
+      const response = await channelPlayoutAPI.start(activeChannelId);
       addStep(t('dashboard.ops.ffmpeg_loaded'), 'success');
       addStep(t('dashboard.ops.starting_encoder'), 'info');
 
@@ -368,7 +372,7 @@ export default function Dashboard() {
 
   const handleStop = async () => {
     try {
-      await playoutAPI.stop();
+      await channelPlayoutAPI.stop(activeChannelId);
       // Also deactivate all protocols visually and in settings as per user request
       setSettings(prev => prev ? ({ ...prev, rtmp_enabled: false, srt_enabled: false, udp_enabled: false }) : prev);
       fetchStatus();
@@ -379,7 +383,7 @@ export default function Dashboard() {
 
   const handleSkip = async () => {
     try {
-      await playoutAPI.skipClip();
+      await channelPlayoutAPI.skip(activeChannelId);
       showSuccess(t('dashboard.skip_success'));
       setTimeout(fetchStatus, 1000);
     } catch (error) {
@@ -437,7 +441,7 @@ export default function Dashboard() {
   const handleLaunchVLC = () => {
     setVlcLogs([]);
     setVlcDialogOpen(true);
-    const hlsUrl = `${window.location.origin}/hls-live/master/index.m3u8`;
+    const hlsUrl = `${window.location.origin}${hlsPreviewUrl}`;
     const vlcProtocolUrl = `vlc://${hlsUrl}`;
 
     addVlcLog(t('dashboard.vlc.configuring'), 'info');
@@ -919,7 +923,7 @@ export default function Dashboard() {
               <VideoPreview
                 key={playerKey}
                 ref={playerRef}
-                src="/hls-live/default/index.m3u8"
+                src={hlsPreviewUrl}
                 playing={!previewPaused}
                 muted={previewMuted}
                 onReady={handlePlayerReady}
@@ -937,9 +941,8 @@ export default function Dashboard() {
                   icon={<PlayIcon />}
                   label={t('dashboard.live_preview')}
                   onClick={() => {
-                    // Usa o host atual e proxy do nginx
-                    let hlsOrigin = window.location.origin;
-                    const url = `${hlsOrigin}/hls-live/default/index.m3u8`;
+                    // Use current origin + channel-specific HLS path
+                    const url = `${window.location.origin}${hlsPreviewUrl}`;
 
                     // Fallback for non-HTTPS or Direct IP access where navigator.clipboard might fail
                     const copyFunc = (text) => {

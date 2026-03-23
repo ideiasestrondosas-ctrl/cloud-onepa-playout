@@ -3,11 +3,11 @@ import axios from 'axios';
 const API_BASE = '/api/graphics-layers';
 
 export const graphicsLayersAPI = {
-    // List all graphics layers
-    list: () => axios.get(API_BASE),
+    // List all graphics layers scoped to a channel
+    list: (channelId) => axios.get(API_BASE, { params: channelId ? { channel_id: channelId } : {} }),
 
-    // Create a new graphics layer
-    create: (data) => axios.post(API_BASE, data),
+    // Create a new graphics layer (optionally scoped to a channel)
+    create: (data, channelId) => axios.post(API_BASE, channelId ? { ...data, channel_id: channelId } : data),
 
     // Update an existing graphics layer
     update: (id, data) => axios.put(`${API_BASE}/${id}`, data),

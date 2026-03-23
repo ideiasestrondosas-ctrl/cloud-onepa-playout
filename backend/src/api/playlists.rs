@@ -13,12 +13,14 @@ use uuid::Uuid;
 pub struct PlaylistQuery {
     pub name: Option<String>,
     pub date: Option<String>,
+    pub channel_id: Option<Uuid>,
 }
 
 #[derive(Deserialize)]
 pub struct CreatePlaylistRequest {
     pub name: String,
     pub content: serde_json::Value,
+    pub channel_id: Option<Uuid>,
 }
 
 #[derive(Deserialize)]
@@ -36,11 +38,15 @@ async fn list_playlists(
     pool: web::Data<PgPool>,
     query: web::Query<PlaylistQuery>,
 ) -> impl Responder {
+    let default_channel: Uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap();
+    let channel_id = query.channel_id.unwrap_or(default_channel);
+
     let result = if let Some(name) = &query.name {
         sqlx::query_as::<_, Playlist>(
-            "SELECT * FROM playlists WHERE name ILIKE $1 ORDER BY name ASC",
+            "SELECT * FROM playlists WHERE name ILIKE $1 AND channel_id = $2 ORDER BY name ASC",
         )
         .bind(format!("%{}%", name))
+        .bind(channel_id)
         .fetch_all(pool.get_ref())
         .await
     } else if let Some(date_str) = &query.date {
@@ -58,10 +64,12 @@ async fn list_playlists(
                     (s.repeat_pattern = 'daily' AND s.date <= $1)
                     OR
                     (s.repeat_pattern = 'weekly' AND (EXTRACT(DOW FROM s.date) + 6)::int % 7 = $2 AND s.date <= $1)
+                 AND (p.channel_id = $3 OR p.channel_id IS NULL)
                  ORDER BY s.start_time ASC",
             )
             .bind(date)
             .bind(dow)
+            .bind(channel_id)
             .fetch_all(pool.get_ref())
             .await;
 
@@ -130,6 +138,7 @@ async fn list_playlists(
                                 total_duration,
                                 created_at: Utc::now(),
                                 updated_at: Utc::now(),
+                                channel_id: None,
                             }
                         })
                         .collect();
@@ -154,7 +163,8 @@ async fn list_playlists(
             Ok(vec![])
         }
     } else {
-        sqlx::query_as::<_, Playlist>("SELECT * FROM playlists ORDER BY name ASC")
+        sqlx::query_as::<_, Playlist>("SELECT * FROM playlists WHERE channel_id = $1 ORDER BY name ASC")
+            .bind(channel_id)
             .fetch_all(pool.get_ref())
             .await
     };
@@ -181,11 +191,15 @@ async fn create_playlist(
     pool: web::Data<PgPool>,
     req: web::Json<CreatePlaylistRequest>,
 ) -> impl Responder {
+    let default_channel: Uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap();
+    let channel_id = req.channel_id.unwrap_or(default_channel);
+
     let result = sqlx::query_as::<_, Playlist>(
-        "INSERT INTO playlists (name, content) VALUES ($1, $2) RETURNING *",
+        "INSERT INTO playlists (name, content, channel_id) VALUES ($1, $2, $3) RETURNING *",
     )
     .bind(&req.name)
     .bind(&req.content)
+    .bind(channel_id)
     .fetch_one(pool.get_ref())
     .await;
 

@@ -71,10 +71,22 @@ pub struct CreateSocialStream {
 }
 
 // Live Inputs handlers
-async fn list_live_inputs(pool: web::Data<PgPool>) -> impl Responder {
+#[derive(Deserialize)]
+pub struct LiveInputQuery {
+    pub channel_id: Option<Uuid>,
+}
+
+async fn list_live_inputs(
+    pool: web::Data<PgPool>,
+    query: web::Query<LiveInputQuery>,
+) -> impl Responder {
+    let default_channel: Uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap();
+    let channel_id = query.channel_id.unwrap_or(default_channel);
+
     let result = sqlx::query_as::<_, LiveInput>(
-        "SELECT * FROM live_inputs ORDER BY created_at DESC"
+        "SELECT * FROM live_inputs WHERE channel_id = $1 ORDER BY created_at DESC"
     )
+    .bind(channel_id)
     .fetch_all(pool.get_ref())
     .await;
 
@@ -139,10 +151,17 @@ async fn delete_live_input(pool: web::Data<PgPool>, id: web::Path<Uuid>) -> impl
 }
 
 // Social Streams handlers
-async fn list_social_streams(pool: web::Data<PgPool>) -> impl Responder {
+async fn list_social_streams(
+    pool: web::Data<PgPool>,
+    query: web::Query<LiveInputQuery>,
+) -> impl Responder {
+    let default_channel: Uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap();
+    let channel_id = query.channel_id.unwrap_or(default_channel);
+
     let result = sqlx::query_as::<_, SocialStream>(
-        "SELECT * FROM social_streams ORDER BY created_at DESC"
+        "SELECT * FROM social_streams WHERE channel_id = $1 ORDER BY created_at DESC"
     )
+    .bind(channel_id)
     .fetch_all(pool.get_ref())
     .await;
 

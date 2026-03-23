@@ -13,6 +13,8 @@ pub struct Schedule {
     pub playlist_name: Option<String>,
     pub playlist_content: Option<serde_json::Value>,
     pub created_at: DateTime<Utc>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub channel_id: Option<Uuid>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -21,4 +23,5 @@ pub struct CreateSchedule {
     pub date: NaiveDate,
     pub start_time: Option<chrono::NaiveTime>,
     pub repeat_pattern: Option<String>,
+    pub channel_id: Option<Uuid>,
 }

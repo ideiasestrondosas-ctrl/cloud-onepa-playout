@@ -2,6 +2,7 @@ use crate::models::graphics_layer::{CreateGraphicsLayerRequest, GraphicsLayer, U
 use actix_web::{web, HttpResponse, Responder};
 use sqlx::PgPool;
 use serde::Deserialize;
+use uuid::Uuid;
 
 /// Touch settings.graphics_updated_at so the engine detects the change and
 /// restarts the FFmpeg overlay pipeline on next tick.
@@ -13,11 +14,23 @@ async fn touch_graphics_timestamp(pool: &PgPool) {
     .await;
 }
 
+#[derive(Deserialize)]
+pub struct LayerQuery {
+    pub channel_id: Option<Uuid>,
+}
+
 // List all graphics layers
-async fn list_layers(pool: web::Data<PgPool>) -> impl Responder {
+async fn list_layers(
+    pool: web::Data<PgPool>,
+    query: web::Query<LayerQuery>,
+) -> impl Responder {
+    let default_channel: Uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap();
+    let channel_id = query.channel_id.unwrap_or(default_channel);
+
     let result = sqlx::query_as::<_, GraphicsLayer>(
-        "SELECT * FROM graphics_layers ORDER BY z_index ASC, id ASC"
+        "SELECT * FROM graphics_layers WHERE channel_id = $1 ORDER BY z_index ASC, id ASC"
     )
+    .bind(channel_id)
     .fetch_all(pool.get_ref())
     .await;
 
@@ -36,10 +49,13 @@ async fn create_layer(
     req: web::Json<CreateGraphicsLayerRequest>,
     pool: web::Data<PgPool>,
 ) -> impl Responder {
+    let default_channel: Uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap();
+    let channel_id = req.channel_id.unwrap_or(default_channel);
+
     let result = sqlx::query_as::<_, GraphicsLayer>(
         "INSERT INTO graphics_layers 
-        (layer_type, name, enabled, z_index, position_x, position_y, anchor, width, height, opacity, config)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        (layer_type, name, enabled, z_index, position_x, position_y, anchor, width, height, opacity, config, channel_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *"
     )
     .bind(&req.layer_type)
@@ -53,6 +69,7 @@ async fn create_layer(
     .bind(req.height)
     .bind(req.opacity.unwrap_or(1.0))
     .bind(&req.config)
+    .bind(channel_id)
     .fetch_one(pool.get_ref())
     .await;
 

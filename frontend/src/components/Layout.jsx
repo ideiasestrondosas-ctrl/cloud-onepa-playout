@@ -2,6 +2,7 @@ import { useState, useEffect, memo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import useAuthStore from '../stores/authStore';
 import { settingsAPI, APP_VERSION_FALLBACK } from '../services/api';
+import { useChannel } from '../contexts/ChannelContext';
 import {
   Box,
   Drawer,
@@ -17,6 +18,8 @@ import {
   ListItemText,
   Tooltip,
   CircularProgress,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -168,6 +171,7 @@ export default function Layout({ children }) {
   const logout = useAuthStore((state) => state.logout);
   const { showHelp } = useHelp();
   const { t } = useTranslation();
+  const { channels, loadingChannels, activeChannelId, setActiveChannelId } = useChannel();
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -273,6 +277,38 @@ export default function Layout({ children }) {
             </Box>
 
             <Divider orientation="vertical" flexItem sx={{ borderColor: 'rgba(255,255,255,0.1)', height: 25, mx: 1 }} />
+
+            {/* Channel selector */}
+            {loadingChannels ? (
+              <CircularProgress size={16} sx={{ color: 'primary.main', mx: 1 }} />
+            ) : channels.length > 1 ? (
+              <Select
+                size="small"
+                value={activeChannelId}
+                onChange={(e) => setActiveChannelId(e.target.value)}
+                variant="outlined"
+                sx={{
+                  height: 32,
+                  minWidth: 140,
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  color: 'primary.main',
+                  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,229,255,0.3)' },
+                  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,229,255,0.6)' },
+                  '& .MuiSvgIcon-root': { color: 'primary.main' },
+                }}
+              >
+                {channels.map(ch => (
+                  <MenuItem key={ch.id} value={ch.id} sx={{ fontSize: '0.8rem', fontWeight: 700 }}>
+                    {ch.name || ch.id}
+                  </MenuItem>
+                ))}
+              </Select>
+            ) : channels.length === 1 ? (
+              <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', letterSpacing: 1, opacity: 0.8, mx: 1 }}>
+                {channels[0].name || 'CH 1'}
+              </Typography>
+            ) : null}
           </Box>
 
           <Box sx={{ mr: 2 }}>

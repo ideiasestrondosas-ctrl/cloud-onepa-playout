@@ -10,6 +10,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import useAuthStore from './stores/authStore';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { HelpProvider } from './context/HelpContext';
+import { ChannelProvider } from './contexts/ChannelContext';
 import HelpSystem from './components/HelpSystem';
 import ConnectivityStatus from './components/ConnectivityStatus';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -64,40 +65,43 @@ function App() {
     <ThemeProvider theme={muiTheme}>
       <CssBaseline />
       <NotificationProvider>
-        <HelpProvider>
-          <ThemeContextProvider onThemeChange={handleThemeChange}>
-            <HelpSystem />
-            <ConnectivityStatus />
-            <Router>
-              <Suspense fallback={<PageLoader />}>
-                <Routes>
-                  <Route
-                    path="/login"
-                    element={isAuthenticated ? <Navigate to="/" replace /> : <Login />}
-                  />
-                  {!isAuthenticated && (
-                    <Route path="*" element={<Navigate to="/login" replace />} />
-                  )}
-                  <Route path="/" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />
-                  <Route path="/media" element={<ProtectedLayout><MediaLibrary /></ProtectedLayout>} />
-                  <Route path="/playlists" element={<ProtectedLayout><PlaylistEditor /></ProtectedLayout>} />
-                  <Route path="/calendar" element={<ProtectedLayout><Calendar /></ProtectedLayout>} />
-                  <Route path="/settings" element={<ProtectedLayout><Settings /></ProtectedLayout>} />
-                  <Route path="/epg" element={<ProtectedLayout><EPGView /></ProtectedLayout>} />
-                  <Route path="/setup" element={<ProtectedLayout><SetupWizard /></ProtectedLayout>} />
-                  <Route path="/graphics" element={<ProtectedLayout><GraphicsEditor /></ProtectedLayout>} />
-                  <Route path="/templates" element={<ProtectedLayout><Templates /></ProtectedLayout>} />
-                  <Route path="/health" element={<ProtectedLayout><PlayoutHealth /></ProtectedLayout>} />
-                  <Route path="/live-inputs" element={<ProtectedLayout><LiveInputs /></ProtectedLayout>} />
-                  <Route path="/multi-channel" element={<ProtectedLayout><MultiChannelPanel /></ProtectedLayout>} />
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </Suspense>
-            </Router>
-          </ThemeContextProvider>
-        </HelpProvider>
+        <ChannelProvider>
+          <HelpProvider>
+            <ThemeContextProvider onThemeChange={handleThemeChange}>
+              <HelpSystem />
+              <ConnectivityStatus />
+              <Router>
+                <Suspense fallback={<PageLoader />}>
+                  <Routes>
+                    <Route
+                      path="/login"
+                      element={isAuthenticated ? <Navigate to="/" replace /> : <Login />}
+                    />
+                    {!isAuthenticated && (
+                      <Route path="*" element={<Navigate to="/login" replace />} />
+                    )}
+                    <Route path="/" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />
+                    <Route path="/media" element={<ProtectedLayout><MediaLibrary /></ProtectedLayout>} />
+                    <Route path="/playlists" element={<ProtectedLayout><PlaylistEditor /></ProtectedLayout>} />
+                    <Route path="/calendar" element={<ProtectedLayout><Calendar /></ProtectedLayout>} />
+                    <Route path="/settings" element={<ProtectedLayout><Settings /></ProtectedLayout>} />
+                    <Route path="/epg" element={<ProtectedLayout><EPGView /></ProtectedLayout>} />
+                    <Route path="/setup" element={<ProtectedLayout><SetupWizard /></ProtectedLayout>} />
+                    <Route path="/graphics" element={<ProtectedLayout><GraphicsEditor /></ProtectedLayout>} />
+                    <Route path="/templates" element={<ProtectedLayout><Templates /></ProtectedLayout>} />
+                    <Route path="/health" element={<ProtectedLayout><PlayoutHealth /></ProtectedLayout>} />
+                    <Route path="/live-inputs" element={<ProtectedLayout><LiveInputs /></ProtectedLayout>} />
+                    <Route path="/multi-channel" element={<ProtectedLayout><MultiChannelPanel /></ProtectedLayout>} />
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                </Suspense>
+              </Router>
+            </ThemeContextProvider>
+          </HelpProvider>
+        </ChannelProvider>
       </NotificationProvider>
     </ThemeProvider>
+
   );
 }
 

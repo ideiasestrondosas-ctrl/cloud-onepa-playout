@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../contexts/NotificationContext';
+import { useChannel } from '../contexts/ChannelContext';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
@@ -213,6 +214,7 @@ function formatShortDuration(seconds) {
 export default function PlaylistEditor() {
   const { t } = useTranslation();
   const { showSuccess, showError, showWarning } = useNotification();
+  const { activeChannelId } = useChannel();
   const [playlists, setPlaylists] = useState([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
   const [scte35Dialog, setScte35Dialog] = useState({ open: false, clip: null, markers: [], pts_offset: 0, duration_frames: '', auto_return: true });
@@ -365,7 +367,7 @@ export default function PlaylistEditor() {
     fetchPlaylists();
     fetchAvailableMedia();
     fetchFolders();
-  }, []);
+  }, [activeChannelId]);
 
   const fetchFolders = async () => {
     try {
@@ -384,7 +386,7 @@ export default function PlaylistEditor() {
 
   const fetchPlaylists = async () => {
     try {
-      const response = await playlistAPI.list();
+      const response = await playlistAPI.list(activeChannelId);
       setPlaylists(response.data?.playlists || []);
     } catch (error) {
       console.error('Failed to fetch playlists:', error);
@@ -559,7 +561,7 @@ export default function PlaylistEditor() {
           name: playlistName,
           date: playlistDate,
           content,
-        });
+        }, activeChannelId);
         setSelectedPlaylist(response.data);
         showSuccess(t('playlist.notifications.create_success'));
       }
@@ -716,7 +718,7 @@ export default function PlaylistEditor() {
         name: newPlaylistName,
         date: content.date,
         content,
-      });
+      }, activeChannelId);
 
       await fetchPlaylists();
       // Auto-load and select the newly created playlist

@@ -49,6 +49,7 @@ import {
 } from '@mui/icons-material';
 import { liveInputsAPI, socialStreamsAPI } from '../services/api';
 import { useTranslation } from 'react-i18next';
+import { useChannel } from '../contexts/ChannelContext';
 
 const protocolOptions = [
     { value: 'rtmp', label: 'RTMP' },
@@ -72,6 +73,7 @@ const statusColors = {
 
 export default function LiveInputs() {
     const { t } = useTranslation();
+    const { activeChannelId } = useChannel();
     const [tabValue, setTabValue] = useState(0);
     const [liveInputs, setLiveInputs] = useState([]);
     const [socialStreams, setSocialStreams] = useState([]);
@@ -102,15 +104,15 @@ export default function LiveInputs() {
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [activeChannelId]);
 
     const fetchData = async () => {
         setLoading(true);
         setError(null);
         try {
             const [inputsRes, streamsRes] = await Promise.all([
-                liveInputsAPI.list(),
-                socialStreamsAPI.list()
+                liveInputsAPI.list(activeChannelId),
+                socialStreamsAPI.list(activeChannelId)
             ]);
             setLiveInputs(inputsRes.data);
             setSocialStreams(streamsRes.data);
@@ -131,7 +133,7 @@ export default function LiveInputs() {
             if (editingInput) {
                 await liveInputsAPI.update(editingInput.id, data);
             } else {
-                await liveInputsAPI.create(data);
+                await liveInputsAPI.create(data, activeChannelId);
             }
 
             setInputDialogOpen(false);
@@ -148,7 +150,7 @@ export default function LiveInputs() {
             if (editingStream) {
                 await socialStreamsAPI.update(editingStream.id, streamForm);
             } else {
-                await socialStreamsAPI.create(streamForm);
+                await socialStreamsAPI.create(streamForm, activeChannelId);
             }
 
             setStreamDialogOpen(false);

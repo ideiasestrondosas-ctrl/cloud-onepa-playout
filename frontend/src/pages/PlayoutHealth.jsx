@@ -27,6 +27,7 @@ import {
 } from 'recharts';
 import api from '../services/api';
 import useAuthStore from '../stores/authStore';
+import { useChannel } from '../contexts/ChannelContext';
 
 // ─── HealthScoreGauge ─────────────────────────────────────────────────────────
 const HealthScoreGauge = ({ score, t }) => {
@@ -107,6 +108,7 @@ export default function PlayoutHealth() {
   const { t } = useTranslation();
   const theme = useTheme();
   const { token } = useAuthStore();
+  const { activeChannelId } = useChannel();
 
   const [pageTab, setPageTab] = useState(0); // 0 = Health, 1 = Analytics
 
@@ -128,7 +130,9 @@ export default function PlayoutHealth() {
   const fetchData = useCallback(async (isManual = false) => {
     try {
       if (isManual) setRefreshing(true);
-      const res = await api.get('/settings/diagnostics');
+      const res = await api.get('/settings/diagnostics', {
+        params: { channel_id: activeChannelId },
+      });
       setData(res.data);
       setLastUpdated(new Date());
       setLiveLogs(prev => [{
@@ -145,7 +149,7 @@ export default function PlayoutHealth() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [activeChannelId, t]);
 
   useEffect(() => {
     fetchData();
@@ -157,7 +161,7 @@ export default function PlayoutHealth() {
   const connectWs = useCallback(() => {
     if (!token) return;
     const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const ws = new WebSocket(`${proto}://${window.location.host}/api/v2/events?token=${token}`);
+    const ws = new WebSocket(`${proto}://${window.location.host}/api/v2/events?token=${token}&channel_id=${activeChannelId}`);
     wsRef.current = ws;
     ws.onopen = () => setWsStatus('connected');
     ws.onclose = () => { setWsStatus('disconnected'); setTimeout(connectWs, 5000); };
@@ -178,7 +182,7 @@ export default function PlayoutHealth() {
         }
       } catch { /* ignore */ }
     };
-  }, [token]);
+  }, [token, activeChannelId]);
 
   useEffect(() => { connectWs(); return () => wsRef.current?.close(); }, [connectWs]);
 
@@ -191,7 +195,7 @@ export default function PlayoutHealth() {
         const start = new Date();
         start.setDate(start.getDate() - 7);
         const { data: logs } = await api.get('/v2/analytics/as-run', {
-          params: { start: start.toISOString(), end: end.toISOString(), limit: 1000 },
+          params: { start: start.toISOString(), end: end.toISOString(), limit: 1000, channel_id: activeChannelId },
         });
         const byDay = {};
         (logs || []).forEach((log) => {
@@ -204,7 +208,7 @@ export default function PlayoutHealth() {
       finally { setAnalyticsLoading(false); }
     };
     fetchAsRun();
-  }, [token]);
+  }, [token, activeChannelId]);
 
   // ─────────────────────────────────────────────────────────────────────────────
   if (loading && !data) {

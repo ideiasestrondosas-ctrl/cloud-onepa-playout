@@ -11,6 +11,7 @@ pub struct ScheduleQuery {
     pub start_date: Option<String>,
     pub end_date: Option<String>,
     pub light: Option<bool>,
+    pub channel_id: Option<Uuid>,
 }
 
 #[derive(Debug, Serialize, sqlx::FromRow)]
@@ -21,6 +22,7 @@ struct ScheduleLight {
     pub start_time: Option<chrono::NaiveTime>,
     pub repeat_pattern: Option<String>,
     pub playlist_name: Option<String>,
+    pub channel_id: Option<Uuid>,
 }
 
 async fn list_schedule(
@@ -31,12 +33,18 @@ async fn list_schedule(
         return list_schedule_light(query, pool).await;
     }
 
+    let default_channel: Uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap();
+    let channel_id = query.channel_id.unwrap_or(default_channel);
+
     let mut query_builder: sqlx::QueryBuilder<sqlx::Postgres> = sqlx::QueryBuilder::new(
         "SELECT s.*, p.name as playlist_name, p.content as playlist_content 
          FROM schedule s 
          JOIN playlists p ON s.playlist_id = p.id 
          WHERE 1=1",
     );
+
+    query_builder.push(" AND s.channel_id = ");
+    query_builder.push_bind(channel_id);
 
     if let Some(ref start_date) = query.start_date {
         if let Ok(date) = chrono::NaiveDate::parse_from_str(start_date, "%Y-%m-%d") {
@@ -75,12 +83,18 @@ async fn list_schedule_light(
     query: web::Query<ScheduleQuery>,
     pool: web::Data<PgPool>,
 ) -> HttpResponse {
+    let default_channel: Uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap();
+    let channel_id = query.channel_id.unwrap_or(default_channel);
+
     let mut query_builder: sqlx::QueryBuilder<sqlx::Postgres> = sqlx::QueryBuilder::new(
-        "SELECT s.id, s.playlist_id, s.date, s.start_time, s.repeat_pattern, p.name as playlist_name 
+        "SELECT s.id, s.playlist_id, s.date, s.start_time, s.repeat_pattern, p.name as playlist_name, s.channel_id 
          FROM schedule s 
          JOIN playlists p ON s.playlist_id = p.id 
          WHERE 1=1",
     );
+
+    query_builder.push(" AND s.channel_id = ");
+    query_builder.push_bind(channel_id);
 
     if let Some(ref start_date) = query.start_date {
         if let Ok(date) = chrono::NaiveDate::parse_from_str(start_date, "%Y-%m-%d") {
@@ -121,6 +135,7 @@ pub struct CreateScheduleRequest {
     pub date: String,
     pub start_time: Option<String>,
     pub repeat_pattern: Option<String>,
+    pub channel_id: Option<Uuid>,
 }
 
 async fn create_schedule(
@@ -151,15 +166,19 @@ async fn create_schedule(
             .or_else(|| chrono::NaiveTime::parse_from_str(t, "%H:%M").ok())
     });
 
+    let default_channel: Uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap();
+    let channel_id = req.channel_id.unwrap_or(default_channel);
+
     let result = sqlx::query(
-        "INSERT INTO schedule (playlist_id, date, start_time, repeat_pattern) 
-         VALUES ($1, $2, $3, $4) 
+        "INSERT INTO schedule (playlist_id, date, start_time, repeat_pattern, channel_id) 
+         VALUES ($1, $2, $3, $4, $5) 
          RETURNING id",
     )
     .bind(&req.playlist_id)
     .bind(date)
     .bind(start_time)
     .bind(&req.repeat_pattern)
+    .bind(channel_id)
     .fetch_one(pool.get_ref())
     .await;
 

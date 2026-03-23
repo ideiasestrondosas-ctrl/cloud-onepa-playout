@@ -4,7 +4,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import ReactPlayer from 'react-player';
 import axios from 'axios';
 import { useNotification } from '../contexts/NotificationContext';
-import { authAPI, settingsAPI, protectedAPI, playoutAPI, mediaAPI } from '../services/api';
+import { authAPI, settingsAPI, protectedAPI, playoutAPI, mediaAPI, channelSettingsAPI, userChannelAPI, channelsAPI } from '../services/api';
+import { useChannel } from '../contexts/ChannelContext';
 import {
   OUTPUT_PROTOCOLS,
   OUTPUT_DEFAULTS,
@@ -424,6 +425,11 @@ function Settings() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [profiles, setProfiles] = useState([]);
   const [viewMode, setViewMode] = useState('users'); // 'users' or 'profiles'
+  // Phase 2 — user-channel access
+  const [channelAccessOpen, setChannelAccessOpen] = useState(false);
+  const [channelAccessUser, setChannelAccessUser] = useState(null);
+  const [channelAccessIds, setChannelAccessIds] = useState([]); // selected channel IDs for dialog
+  const [allChannels, setAllChannels] = useState([]);
   const [newUser, setNewUser] = useState({ username: '', password: '', profile_id: '' });
   const [currentProfile, setCurrentProfile] = useState({ name: '', permissions: [] });
   const [saving, setSaving] = useState(false);
@@ -2403,6 +2409,28 @@ function Settings() {
                                   <MagicIcon sx={{ fontSize: 18 }} />
                                 </IconButton>
                               </Tooltip>
+                              <Tooltip title="Channel Access">
+                                <IconButton
+                                  size="small"
+                                  sx={{ color: 'info.main' }}
+                                  onClick={async () => {
+                                    setChannelAccessUser(user);
+                                    // Load all channels
+                                    try {
+                                      const chRes = await channelsAPI.list();
+                                      setAllChannels(chRes.data || []);
+                                    } catch { setAllChannels([]); }
+                                    // Load current user access
+                                    try {
+                                      const accRes = await userChannelAPI.getChannels(user.id);
+                                      setChannelAccessIds(accRes.data || []);
+                                    } catch { setChannelAccessIds([]); }
+                                    setChannelAccessOpen(true);
+                                  }}
+                                >
+                                  <TvIcon sx={{ fontSize: 18 }} />
+                                </IconButton>
+                              </Tooltip>
                               {user.username !== 'admin' && (
                                 <Tooltip title={t('settings.users.tooltips.delete_user')}>
                                   <IconButton size="small" onClick={() => handleDeleteUser(user.id)} color="error">
@@ -2458,6 +2486,59 @@ function Settings() {
               </TableContainer>
             </Paper>
           </TabPanel>
+
+          {/* ─── Channel Access Dialog ───────────────────────────────── */}
+          <Dialog open={channelAccessOpen} onClose={() => setChannelAccessOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { bgcolor: '#1a1a2e', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4 } }}>
+            <DialogTitle sx={{ fontWeight: 900, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <TvIcon sx={{ color: 'info.main', fontSize: 20 }} />
+              Channel Access — {channelAccessUser?.username}
+            </DialogTitle>
+            <DialogContent dividers>
+              <Typography variant="caption" sx={{ color: 'text.secondary', mb: 2, display: 'block' }}>
+                Select which channels this user can access. Leave all unchecked to grant access to all channels.
+              </Typography>
+              {allChannels.length === 0 ? (
+                <Typography variant="body2" sx={{ opacity: 0.5, textAlign: 'center', py: 2 }}>No channels found</Typography>
+              ) : (
+                allChannels.map((ch) => (
+                  <FormControlLabel
+                    key={ch.id}
+                    control={
+                      <Checkbox
+                        size="small"
+                        checked={channelAccessIds.includes(ch.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) setChannelAccessIds((prev) => [...prev, ch.id]);
+                          else setChannelAccessIds((prev) => prev.filter((id) => id !== ch.id));
+                        }}
+                        sx={{ color: 'primary.main' }}
+                      />
+                    }
+                    label={<Typography sx={{ fontSize: '0.85rem', fontWeight: 700 }}>{ch.name}</Typography>}
+                    sx={{ display: 'flex', mb: 0.5 }}
+                  />
+                ))
+              )}
+            </DialogContent>
+            <DialogActions sx={{ p: 2, gap: 1 }}>
+              <Button onClick={() => setChannelAccessOpen(false)} sx={{ fontWeight: 800, color: 'text.secondary' }}>Cancel</Button>
+              <Button
+                variant="contained"
+                onClick={async () => {
+                  try {
+                    await userChannelAPI.setChannels(channelAccessUser.id, channelAccessIds);
+                    showSuccess('Channel access updated');
+                    setChannelAccessOpen(false);
+                  } catch (err) {
+                    showError('Failed to save channel access: ' + (err?.message || err));
+                  }
+                }}
+                sx={{ fontWeight: 800, borderRadius: 2 }}
+              >
+                Save
+              </Button>
+            </DialogActions>
+          </Dialog>
 
           {/* CATEGORY 4: SOBRE O SISTEMA */}
           <TabPanel value={tabValue} index={4}>

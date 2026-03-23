@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
+use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize, FromRow, Clone)]
 pub struct GraphicsLayer {
@@ -17,6 +18,8 @@ pub struct GraphicsLayer {
     pub config: serde_json::Value,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub channel_id: Option<Uuid>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -32,6 +35,7 @@ pub struct CreateGraphicsLayerRequest {
     pub height: Option<i32>,
     pub opacity: Option<f32>,
     pub config: serde_json::Value,
+    pub channel_id: Option<Uuid>,
 }
 
 #[derive(Debug, Deserialize)]

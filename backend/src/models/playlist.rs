@@ -46,6 +46,8 @@ pub struct Playlist {
     pub total_duration: f64,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub channel_id: Option<Uuid>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -54,4 +56,5 @@ pub struct CreatePlaylist {
     pub name: String,
     pub date: Option<chrono::NaiveDate>,
     pub content: serde_json::Value,
+    pub channel_id: Option<Uuid>,
 }

@@ -238,6 +238,114 @@ async fn channel_playout_skip(
     }
 }
 
+// ─── Per-channel settings overrides ─────────────────────────────────────────
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ChannelSetting {
+    key: String,
+    value: serde_json::Value,
+}
+
+async fn get_channel_settings(
+    pool: web::Data<PgPool>,
+    id: web::Path<Uuid>,
+) -> impl Responder {
+    let rows = sqlx::query_as::<_, (String, serde_json::Value)>(
+        "SELECT key, value FROM channel_settings WHERE channel_id = $1 ORDER BY key",
+    )
+    .bind(*id)
+    .fetch_all(pool.get_ref())
+    .await;
+
+    match rows {
+        Ok(pairs) => {
+            let map: serde_json::Map<String, serde_json::Value> =
+                pairs.into_iter().map(|(k, v)| (k, v)).collect();
+            HttpResponse::Ok().json(map)
+        }
+        Err(e) => HttpResponse::InternalServerError()
+            .json(serde_json::json!({"error": e.to_string()})),
+    }
+}
+
+async fn put_channel_settings(
+    pool: web::Data<PgPool>,
+    id: web::Path<Uuid>,
+    body: web::Json<serde_json::Map<String, serde_json::Value>>,
+) -> impl Responder {
+    for (key, value) in body.iter() {
+        let res = sqlx::query(
+            "INSERT INTO channel_settings (channel_id, key, value) VALUES ($1, $2, $3)
+             ON CONFLICT (channel_id, key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()",
+        )
+        .bind(*id)
+        .bind(key)
+        .bind(value)
+        .execute(pool.get_ref())
+        .await;
+        if let Err(e) = res {
+            return HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": e.to_string()}));
+        }
+    }
+    HttpResponse::Ok().json(serde_json::json!({"ok": true}))
+}
+
+// ─── User-channel access ─────────────────────────────────────────────────────
+
+async fn get_user_channel_access(
+    pool: web::Data<PgPool>,
+    user_id: web::Path<Uuid>,
+) -> impl Responder {
+    let rows = sqlx::query_scalar::<_, Uuid>(
+        "SELECT channel_id FROM user_channel_access WHERE user_id = $1",
+    )
+    .bind(*user_id)
+    .fetch_all(pool.get_ref())
+    .await;
+
+    match rows {
+        Ok(ids) => HttpResponse::Ok().json(ids),
+        Err(e) => HttpResponse::InternalServerError()
+            .json(serde_json::json!({"error": e.to_string()})),
+    }
+}
+
+#[derive(Debug, Deserialize)]
+struct SetUserChannels {
+    channel_ids: Vec<Uuid>,
+}
+
+async fn put_user_channel_access(
+    pool: web::Data<PgPool>,
+    user_id: web::Path<Uuid>,
+    body: web::Json<SetUserChannels>,
+) -> impl Responder {
+    // Delete existing and re-insert — simple replace strategy
+    let del = sqlx::query("DELETE FROM user_channel_access WHERE user_id = $1")
+        .bind(*user_id)
+        .execute(pool.get_ref())
+        .await;
+    if let Err(e) = del {
+        return HttpResponse::InternalServerError()
+            .json(serde_json::json!({"error": e.to_string()}));
+    }
+    for cid in &body.channel_ids {
+        let ins = sqlx::query(
+            "INSERT INTO user_channel_access (user_id, channel_id) VALUES ($1, $2)",
+        )
+        .bind(*user_id)
+        .bind(cid)
+        .execute(pool.get_ref())
+        .await;
+        if let Err(e) = ins {
+            return HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": e.to_string()}));
+        }
+    }
+    HttpResponse::Ok().json(serde_json::json!({"ok": true}))
+}
+
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.route("", web::get().to(list_channels))
         .route("", web::post().to(create_channel))
@@ -248,5 +356,11 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         .route("/{id}/playout/status", web::get().to(channel_playout_status))
         .route("/{id}/playout/start", web::post().to(channel_playout_start))
         .route("/{id}/playout/stop", web::post().to(channel_playout_stop))
-        .route("/{id}/playout/skip", web::post().to(channel_playout_skip));
+        .route("/{id}/playout/skip", web::post().to(channel_playout_skip))
+        // Per-channel settings overrides
+        .route("/{id}/settings", web::get().to(get_channel_settings))
+        .route("/{id}/settings", web::put().to(put_channel_settings))
+        // User-channel access (user_id param here is an integer path)
+        .route("/users/{user_id}/channels", web::get().to(get_user_channel_access))
+        .route("/users/{user_id}/channels", web::put().to(put_user_channel_access));
 }

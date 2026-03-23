@@ -98,17 +98,17 @@ export const mediaAPI = {
 
 // Playlist endpoints
 export const playlistAPI = {
-  list: (params) => api.get('/playlists', { params }),
+  list: (channelId, params) => api.get('/playlists', { params: { channel_id: channelId, ...params } }),
   get: (id) => api.get(`/playlists/${id}`),
-  create: (data) => api.post('/playlists', data),
+  create: (data, channelId) => api.post('/playlists', channelId ? { ...data, channel_id: channelId } : data),
   update: (id, data) => api.put(`/playlists/${id}`, data),
   delete: (id) => api.delete(`/playlists/${id}`),
 };
 
 // Schedule endpoints
 export const scheduleAPI = {
-  list: () => api.get('/schedule/light'),
-  create: (data) => api.post('/schedule', data),
+  list: (channelId) => api.get('/schedule/light', { params: channelId ? { channel_id: channelId } : {} }),
+  create: (data, channelId) => api.post('/schedule', channelId ? { ...data, channel_id: channelId } : data),
   update: (id, data) => api.put(`/schedule/${id}`, data),
   delete: (id) => api.delete(`/schedule/${id}`),
   deleteBulk: (startDate, endDate) => api.post('/schedule/bulk', { start_date: startDate, end_date: endDate }),
@@ -161,8 +161,8 @@ export const settingsAPI = {
 
 // Template endpoints
 export const templateAPI = {
-  list: () => api.get('/templates'),
-  create: (data) => api.post('/templates', data),
+  list: (channelId) => api.get('/templates', { params: channelId ? { channel_id: channelId } : {} }),
+  create: (data, channelId) => api.post('/templates', channelId ? { ...data, channel_id: channelId } : data),
   update: (id, data) => api.put(`/templates/${id}`, data),
   delete: (id) => api.delete(`/templates/${id}`),
 };
@@ -175,9 +175,9 @@ export const protectedAPI = {
 
 // Live Inputs endpoints (Phase 30)
 export const liveInputsAPI = {
-  list: (params) => api.get('/inputs', { params }),
+  list: (channelId, params) => api.get('/inputs', { params: { channel_id: channelId, ...params } }),
   get: (id) => api.get(`/inputs/${id}`),
-  create: (data) => api.post('/inputs', data),
+  create: (data, channelId) => api.post('/inputs', channelId ? { ...data, channel_id: channelId } : data),
   update: (id, data) => api.put(`/inputs/${id}`, data),
   delete: (id) => api.delete(`/inputs/${id}`),
   getStatus: (id) => api.get(`/inputs/${id}/status`),
@@ -187,9 +187,9 @@ export const liveInputsAPI = {
 
 // Social Streaming endpoints (Phase 30)
 export const socialStreamsAPI = {
-  list: () => api.get('/streams'),
+  list: (channelId) => api.get('/streams', { params: channelId ? { channel_id: channelId } : {} }),
   get: (id) => api.get(`/streams/${id}`),
-  create: (data) => api.post('/streams', data),
+  create: (data, channelId) => api.post('/streams', channelId ? { ...data, channel_id: channelId } : data),
   update: (id, data) => api.put(`/streams/${id}`, data),
   delete: (id) => api.delete(`/streams/${id}`),
   start: (id) => api.post(`/streams/${id}/start`),
@@ -209,6 +209,19 @@ export const channelsAPI = {
 // Analytics endpoints (v2)
 export const analyticsAPI = {
   getAsRun: (params) => api.get('/v2/analytics/as-run', { params }),
+};
+
+// Per-channel settings overrides
+export const channelSettingsAPI = {
+  get: (channelId) => api.get(`/v2/channels/${channelId}/settings`),
+  put: (channelId, data) => api.put(`/v2/channels/${channelId}/settings`, data),
+};
+
+// User-channel access control
+export const userChannelAPI = {
+  getChannels: (userId) => api.get(`/v2/channels/users/${userId}/channels`),
+  setChannels: (userId, channelIds) =>
+    api.put(`/v2/channels/users/${userId}/channels`, { channel_ids: channelIds }),
 };
 
 export default api;

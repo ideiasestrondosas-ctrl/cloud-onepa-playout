@@ -35,6 +35,7 @@ import { playlistAPI, mediaAPI } from '../services/api';
 import { format, parseISO, addDays, isSameDay, differenceInSeconds } from 'date-fns';
 import { enUS, ptBR, es, fr } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
+import { useChannel } from '../contexts/ChannelContext';
 
 const localeMap = {
     'pt': ptBR,
@@ -47,6 +48,7 @@ export default function EPGView() {
     const { t, i18n } = useTranslation();
     const theme = useTheme();
     const currentLocale = localeMap[i18n.language.split('-')[0]] || enUS;
+    const { activeChannelId } = useChannel();
     const [playlists, setPlaylists] = useState([]);
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [loading, setLoading] = useState(false);
@@ -63,14 +65,14 @@ export default function EPGView() {
 
     useEffect(() => {
         fetchPlaylists();
-    }, [selectedDate]);
+    }, [selectedDate, activeChannelId]);
 
     const fetchPlaylists = async () => {
         setLoading(true);
         try {
             const dateStr = format(selectedDate, 'yyyy-MM-dd');
-            const response = await playlistAPI.list({ date: dateStr });
-            console.log('[EPG] Fetched playlists for', dateStr, ':', response.data.playlists);
+            const response = await playlistAPI.list(activeChannelId, { date: dateStr });
+            console.log('[EPG] Fetched playlists for', dateStr, 'channel', activeChannelId, ':', response.data.playlists);
             response.data.playlists.forEach(p => {
                 console.log(`[EPG] Playlist "${p.name}":`, p.content?.program?.length || 0, 'clips');
             });

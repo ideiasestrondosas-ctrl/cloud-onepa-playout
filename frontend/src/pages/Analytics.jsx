@@ -8,6 +8,7 @@ import {
 } from 'recharts';
 import axios from 'axios';
 import useAuthStore from '../stores/authStore';
+import { useChannel } from '../contexts/ChannelContext';
 
 // ─── KPI Card ────────────────────────────────────────────────────────────────
 function KpiCard({ label, value, unit = '', color = '#00e5ff' }) {
@@ -29,6 +30,7 @@ function KpiCard({ label, value, unit = '', color = '#00e5ff' }) {
 // ─── Analytics Page ──────────────────────────────────────────────────────────
 export default function Analytics() {
   const { token } = useAuthStore();
+  const { activeChannelId } = useChannel();
 
   // WebSocket telemetry (last 60 points)
   const [streamHealth, setStreamHealth] = useState([]);
@@ -45,7 +47,7 @@ export default function Analytics() {
     if (!token) return;
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
     const host = window.location.host;
-    const url = `${protocol}://${host}/api/v2/events?token=${token}`;
+    const url = `${protocol}://${host}/api/v2/events?token=${token}&channel_id=${activeChannelId}`;
 
     try {
       const ws = new WebSocket(url);
@@ -75,7 +77,7 @@ export default function Analytics() {
         } catch { /* ignore malformed */ }
       };
     } catch { setWsStatus('error'); }
-  }, [token]);
+  }, [token, activeChannelId]);
 
   useEffect(() => {
     connectWs();
@@ -97,6 +99,7 @@ export default function Analytics() {
             start: start.toISOString(),
             end: end.toISOString(),
             limit: 1000,
+            channel_id: activeChannelId,
           },
         });
 
