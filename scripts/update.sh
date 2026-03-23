@@ -8,6 +8,7 @@
 #   bash update.sh              # Standard update (preserves data)
 #   bash update.sh --clean      # Clean software update (purges code, preserves data)
 #   bash update.sh --full-reset # Full reset (DELETES ALL DATA)
+#   bash update.sh --no-cache   # Forçar reconstrução sem usar cache do Docker
 #
 # This script updates the application on an existing running VM.
 # It preserves all media, database, thumbnails, and playlists (unless --full-reset).
@@ -39,9 +40,11 @@ log_err() { echo -e "${RED}[ERROR] $1${NC}"; }
 # Parameters
 FULL_RESET=false
 CLEAN_UPDATE=false
+NO_CACHE=false
 for arg in "$@"; do
     if [[ "$arg" == "--full-reset" ]]; then FULL_RESET=true; fi
     if [[ "$arg" == "--clean" ]]; then CLEAN_UPDATE=true; fi
+    if [[ "$arg" == "--no-cache" ]]; then NO_CACHE=true; fi
 done
 
 # Get Version
@@ -261,7 +264,7 @@ fi
 echo -e "\n${YELLOW}[6/7] Reconstruindo containers...${NC}"
 
 BUILD_OPTS="--pull"
-if [ "$FULL_RESET" = true ] || [ "$CLEAN_UPDATE" = true ]; then
+if [ "$FULL_RESET" = true ] || [ "$CLEAN_UPDATE" = true ] || [ "$NO_CACHE" = true ]; then
     echo -e "  ${YELLOW}Usando --no-cache para rebuild limpo...${NC}"
     BUILD_OPTS="--pull --no-cache"
     export CACHE_BUST=$(date +%s)
