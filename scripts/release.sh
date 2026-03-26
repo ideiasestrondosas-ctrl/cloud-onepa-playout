@@ -49,10 +49,12 @@ EXCLUDE_FILE="big_buck_bunny_1080p_h264.mov"
 
 # Get Version
 VERSION=$(grep -m1 "^version =" "$(dirname "$0")/../backend/Cargo.toml" | cut -d'"' -f2 2>/dev/null || echo "Unknown")
+RELEASE_DATE=$(date +"%Y-%m-%d")
 
 echo -e "${GREEN}"
 echo "==================================================="
 echo "🚀 CLOUD ONEPA PLAYOUT - MASTER RELEASE (v$VERSION)"
+echo "📅 DATE: $RELEASE_DATE"
 echo "==================================================="
 echo -e "${NC}"
 
@@ -77,6 +79,17 @@ fi
 
 read -p "Enter new version (Press ENTER for $SUGGESTED_VERSION): " NEW_VERSION
 NEW_VERSION=${NEW_VERSION:-$SUGGESTED_VERSION}
+
+# Extract Highlights from resumes.md (Latest activity block)
+echo -e "Extracting release highlights from ${BLUE}docs/resumes.md${NC}..."
+# This awk command gets the first block of text under the first H2 header
+# We exclude the header line and empty lines
+RELEASE_HIGHLIGHTS=$(awk '/^## / {if (count == 1) exit; count++; next} count == 1 {print}' "$(dirname "$0")/../docs/resumes.md" | sed '/^[[:space:]]*$/d')
+
+if [ -z "$RELEASE_HIGHLIGHTS" ]; then
+    echo -e "${YELLOW}⚠️  Warning: No highlights found in docs/resumes.md. Using default.${NC}"
+    RELEASE_HIGHLIGHTS="- Automated Release: Version bump and documentation sync."
+fi
 
 # Branch Selection
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
@@ -122,36 +135,56 @@ log_success "Statistics calculated successfully."
 
 # 5. Documentation Update
 log_step "Updating Public Documentation"
-echo "Injecting new version and stats into README.md..."
+echo "Injecting new version ($RELEASE_NAME), date ($RELEASE_DATE), and highlights into README.md..."
+
 # 1. Update Development Statistics Header
 sed -i '' "s/Estatísticas de Desenvolvimento (v.*)/Estatísticas de Desenvolvimento ($RELEASE_NAME)/" README.md
 
 # 2. Update Footer Note
 sed -i '' "s/Dados aproximados baseados na versão v.*/Dados aproximados baseados na versão $RELEASE_NAME/" README.md
 
-# 3. Update Current Version Section in README
-# This updates the "Versão Atual" header to the new release
+# 3. Update Current Version Section in README (with full date)
 sed -i '' "s/### Versão Atual: .*/### Versão Atual: $RELEASE_NAME ($RELEASE_DATE)/" README.md
 
-# 4. Update Badge (Handles possible double hyphen or incorrect template)
+# 4. Update Release Highlights in README
+# Note: we use a temporary file to handle multi-line highlights
+# Using printf -- to avoid illegal option error if highlights start with -
+printf "%s\n" "$RELEASE_HIGHLIGHTS" > highlights.tmp
+# We replace the markers: <!-- RELEASE_HIGHLIGHTS_START --> ... <!-- RELEASE_HIGHLIGHTS_END -->
+sed -i '' '/<!-- RELEASE_HIGHLIGHTS_START -->/,/<!-- RELEASE_HIGHLIGHTS_END -->/{ /<!-- RELEASE_HIGHLIGHTS_START -->/!{ /<!-- RELEASE_HIGHLIGHTS_END -->/!d; }; }' README.md
+sed -i '' '/<!-- RELEASE_HIGHLIGHTS_START -->/r highlights.tmp' README.md
+rm highlights.tmp
+
+# 5. Update Badge
 sed -i '' "s/Version-[^)]*-blue/Version-$NEW_VERSION-blue/" README.md
 
-# 4. Prepend New Version to RELEASE_NOTES.md
-# Adds a new header at line 3 (after title)
-cat <<EOF > RELEASE_NOTES.tmp.md
+# 6. Update ROADMAP.md
+echo "Updating docs/ROADMAP.md status and history..."
+sed -i '' "s/_Status atualizado em .* (v.*)/_Status atualizado em $RELEASE_DATE ($RELEASE_NAME)/" docs/ROADMAP.md
+# Append to version history table (assuming it starts with | Version |)
+# Clean newline characters for table Row
+CLEAN_HIGHLIGHTS=$(echo "$RELEASE_HIGHLIGHTS" | tr '\n' '; ' | sed 's/; ; /; /g')
+echo "| $RELEASE_NAME | - | $RELEASE_DATE | $CLEAN_HIGHLIGHTS |" >> docs/ROADMAP.md
+
+# 7. Prepend New Version to RELEASE_NOTES.md (root and docs)
+for notes_file in "RELEASE_NOTES.md" "docs/RELEASE_NOTES.md"; do
+    if [ -f "$notes_file" ]; then
+        echo "Updating $notes_file..."
+        cat <<EOF > notes.tmp.md
 # Release Notes - Cloud Onepa Playout
 
 ## $RELEASE_NAME ($RELEASE_DATE)
 
 ### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
+$RELEASE_HIGHLIGHTS
 
-$(tail -n +3 RELEASE_NOTES.md)
+$(tail -n +3 "$notes_file")
 EOF
-mv RELEASE_NOTES.tmp.md RELEASE_NOTES.md
+        mv notes.tmp.md "$notes_file"
+    fi
+done
 
-log_success "README.md and RELEASE_NOTES.md updated with version v$NEW_VERSION-PRO."
+log_success "All documentation files updated with version $RELEASE_NAME."
 
 # 6. Git Synchronization
 log_step "Synchronizing with GitHub Cloud"

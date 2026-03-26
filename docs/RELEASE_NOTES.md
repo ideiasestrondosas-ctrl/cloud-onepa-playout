@@ -1,5 +1,21 @@
 # Release Notes - Cloud Onepa Playout
 
+## v2.6.0-ALPHA.55-PRO (2026-03-26)
+
+### 🚀 Release Highlights
+### Automação de Lançamento e Documentação Dinâmica
+Nesta sessão, focámos na melhoria do processo de release e na atualização automática da documentação pública:
+1. **Script de Release (`release.sh`)**:
+   - **Data Automática**: Implementada a variável `RELEASE_DATE` para capturar a data real do lançamento.
+   - **Destaques Interativos**: O script agora solicita ao utilizador a introdução das novidades da versão (`RELEASE_HIGHLIGHTS`) durante o processo de release.
+   - **Automação Total**: O script atualiza agora automaticamente o `README.md`, `docs/ROADMAP.md`, `RELEASE_NOTES.md` e `docs/RELEASE_NOTES.md` com a nova versão, data e destaques.
+2. **Documentação Interna (`README.md` & `ROADMAP.md`)**:
+   - **Nova Secção**: Criada a secção `### 🆕 Novidades & Alterações` no `README.md`, localizada estrategicamente após o Roadmap para visibilidade imediata.
+   - **Histórico de Roadmap**: O `docs/ROADMAP.md` agora recebe automaticamente uma nova entrada na tabela de histórico de versões a cada release.
+   - **Formatação de Versão**: Padronizado o formato da "Versão Atual" para incluir a data completa: `vX.X.X (YYYY-MM-DD)`.
+3. **Segurança e Backup**:
+   - Criada uma pasta de backup (`backups/pre-release-update-...`) contendo os estados originais de todos os ficheiros modificados antes da implementação das melhorias.
+
 ## v2.6.0-ALPHA.55-PRO (2026-03-25)
 
 ### 🧩 Mosaic Monitoring & Multi-Channel Isolation

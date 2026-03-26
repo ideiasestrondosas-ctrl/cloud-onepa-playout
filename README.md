@@ -144,7 +144,25 @@ Este sistema foi desenvolvido e validado em ambientes de alta performance e virt
 
 Ver `docs/ROADMAP.md` para o roadmap completo e atualizado.
 
-### Versão Atual: v2.6.0-ALPHA.55-PRO ()
+### 🆕 Novidades & Alterações
+
+- <!-- RELEASE_HIGHLIGHTS_START -->
+### Automação de Lançamento e Documentação Dinâmica
+Nesta sessão, focámos na melhoria do processo de release e na atualização automática da documentação pública:
+1. **Script de Release (`release.sh`)**:
+   - **Data Automática**: Implementada a variável `RELEASE_DATE` para capturar a data real do lançamento.
+   - **Destaques Interativos**: O script agora solicita ao utilizador a introdução das novidades da versão (`RELEASE_HIGHLIGHTS`) durante o processo de release.
+   - **Automação Total**: O script atualiza agora automaticamente o `README.md`, `docs/ROADMAP.md`, `RELEASE_NOTES.md` e `docs/RELEASE_NOTES.md` com a nova versão, data e destaques.
+2. **Documentação Interna (`README.md` & `ROADMAP.md`)**:
+   - **Nova Secção**: Criada a secção `### 🆕 Novidades & Alterações` no `README.md`, localizada estrategicamente após o Roadmap para visibilidade imediata.
+   - **Histórico de Roadmap**: O `docs/ROADMAP.md` agora recebe automaticamente uma nova entrada na tabela de histórico de versões a cada release.
+   - **Formatação de Versão**: Padronizado o formato da "Versão Atual" para incluir a data completa: `vX.X.X (YYYY-MM-DD)`.
+3. **Segurança e Backup**:
+   - Criada uma pasta de backup (`backups/pre-release-update-...`) contendo os estados originais de todos os ficheiros modificados antes da implementação das melhorias.
+- <!-- RELEASE_HIGHLIGHTS_END -->
+
+
+### Versão Atual: v2.6.0-ALPHA.55-PRO (2026-03-26)
 
 Ver `RELEASE_NOTES.md` e `docs/RELEASE_NOTES.md` para o detalhe de novidades e correções.
 
