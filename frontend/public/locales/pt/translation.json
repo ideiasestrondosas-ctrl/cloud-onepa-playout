@@ -41,7 +41,7 @@
     "templateEditor": "Editor de Modelos",
     "liveInputs": "Entradas ao Vivo",
     "multiChannel": "Multi-Canal",
-    "masterDashboard": "Master Dashboard"
+    "masterDashboard": "Painel Mestre"
   },
   "login": {
     "user": "NOME DE USUÁRIO",
@@ -302,7 +302,7 @@
     }
   },
   "masterDashboard": {
-    "title": "Master Dashboard",
+    "title": "Painel Mestre",
     "subtitle": "Monitorização Mosaico Multi-Canal",
     "hint": "Clica num canal para mudar o contexto e abrir o Dashboard principal.",
     "live": "DIRETO"
@@ -613,6 +613,16 @@
         "close_btn": "ENTENDI",
         "empty": "NÃO HISTÓRIA DISPONÍVEL",
         "releases": [
+          {
+            "version": "v2.6.0-ALPHA.55-PRO",
+            "date": "2026-03-26",
+            "changes": [
+              "Internacionalização: Localização completa do 'Painel Mestre' nos idiomas suportados",
+              "TV Guide: Correção de fuga de dados ao alternar entre canais sem programação",
+              "Multi-canal: Adicionado destaque visual pulsante (glow) ao canal ativo",
+              "UI/UX: Remoção da etiqueta redundante 'ON AIR' para uma monitorização mais limpa"
+            ]
+          },
           {
             "version": "v2.6.0-ALPHA.54-PRO",
             "date": "2026-03-25",

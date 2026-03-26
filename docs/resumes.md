@@ -1,8 +1,31 @@
 # Resumes
 
 Here is the tracking context and summaries for the work performed by agents.
+  
+## Resumo de Atividades - ALPHA v2.6.0-ALPHA.55-PRO (2026-03-26)
 
-## Resumo de Atividades - ALPHA v2.6.0-ALPHA.54-PRO (2026-03-25)
+### Melhorias de UI, Internacionalização e Estabilidade
+Nesta versão, focámos no polimento da interface Multi-Canal, correção de bugs de persistência de dados e experiência do utilizador no Guia de TV:
+
+1. **Guia de TV (TV Guide) - UX & Robustez**:
+   - **Estado Vazio (Empty State)**: Implementada uma vista dedicada para canais sem programação ou playlists, exibindo uma mensagem informativa e um botão de "Refresh", em vez de uma grelha vazia confusa.
+   - **Feedback de Carregamento**: Adicionado um indicador de progresso circular (`CircularProgress`) durante o carregamento dos dados do calendário.
+   - **Correção de Data Leak**: Reforçada a limpeza de estado ao trocar de canal para garantir que eventos de um canal não "vazam" para a vista de outro.
+
+2. **Gestão de Versões**:
+   - O sistema foi elevado para a versão **`v2.6.0-ALPHA.55-PRO`**.
+   - Atualizações efetuadas em: `package.json`, `api.js`, `Cargo.toml`, `README.md` e `RELEASE_NOTES.md`.
+   - Criada a migração SQL `095` para persistência da versão na base de dados.
+
+3. **Multi-Channel Panel (UX)**:
+   - **Feedback Visual**: Adicionada uma animação de pulso (glow azul) ao canal selecionado (`activeChannelId`) no painel multi-canal, facilitando a identificação do contexto de trabalho.
+   - **Limpeza de UI**: Removida a etiqueta redundante "ON AIR" dos previews de canais para reduzir o ruído visual na monitorização em mosaico.
+
+4. **Gestão de Versões**:
+   - Atualizado o histórico de versões nas Configurações e as constantes globais do sistema para refletir a nova versão `v2.6.0-ALPHA.55-PRO`.
+
+---
+
 
 ## Lançamento da Versão ALPHA.54-PRO - Estabilização Multi-Canal
 Concluímos o lançamento da versão `v2.6.0-ALPHA.54-PRO`, que consolida os avanços da arquitetura Multi-Canal e resolve problemas críticos de estabilidade:

@@ -41,7 +41,7 @@
     "templateEditor": "Éditeur de Modèles",
     "liveInputs": "Entrées en Direct",
     "multiChannel": "Multi-Canal",
-    "masterDashboard": "Master Dashboard"
+    "masterDashboard": "Panneau Maître"
   },
   "login": {
     "user": "NOM D'UTILISATEUR",
@@ -298,7 +298,7 @@
     }
   },
   "masterDashboard": {
-    "title": "Master Dashboard",
+    "title": "Panneau Maître",
     "subtitle": "Moniteur Mosaïque Multi-Canaux",
     "hint": "Cliquez sur une chaîne pour changer de contexte et ouvrir le Tableau de Bord principal.",
     "live": "EN DIRECT"
@@ -609,6 +609,16 @@
         "close_btn": "J'AI COMPRIS",
         "empty": "AUCUN HISTORIQUE DISPONIBLE",
         "releases": [
+          {
+            "version": "v2.6.0-ALPHA.55-PRO",
+            "date": "2026-03-26",
+            "changes": [
+              "Internationalisation : Localisation complète du 'Panneau Maître' dans les langues supportées",
+              "TV Guide : Correction de la fuite de données lors du basculement entre les chaînes sans programme",
+              "Multi-canal : Ajout d'une mise en évidence visuelle pulsée (glow) à la chaîne active",
+              "UI/UX : Suppression de l'étiquette redondante 'ON AIR' pour une surveillance plus propre"
+            ]
+          },
           {
             "version": "v2.6.0-ALPHA.54-PRO",
             "date": "2026-03-25",

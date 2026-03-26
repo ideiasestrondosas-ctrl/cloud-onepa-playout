@@ -605,6 +605,16 @@
         "empty": "NO HISTORY AVAILABLE",
         "releases": [
           {
+            "version": "v2.6.0-ALPHA.55-PRO",
+            "date": "2026-03-26",
+            "changes": [
+              "Internationalization: Full localization of 'Master Dashboard' across supported languages",
+              "TV Guide: Fixed data leakage when switching between channels without schedule",
+              "Multi-channel: Added visual pulsing glow highlight to the active channel",
+              "UI/UX: Removed redundant 'ON AIR' tag from channel previews for cleaner monitoring"
+            ]
+          },
+          {
             "version": "v2.6.0-ALPHA.54-PRO",
             "date": "2026-03-25",
             "changes": [

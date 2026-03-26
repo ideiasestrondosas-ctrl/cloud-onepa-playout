@@ -58,14 +58,14 @@ async fn list_playlists(
                 "SELECT p.id, p.name, p.content, p.total_duration, s.start_time, s.repeat_pattern
                  FROM playlists p
                  JOIN schedule s ON p.id = s.playlist_id
-                 WHERE 
-                    (s.repeat_pattern = 'none' AND s.date = $1)
+                  WHERE 
+                    ((s.repeat_pattern = 'none' AND s.date = $1)
                     OR
                     (s.repeat_pattern = 'daily' AND s.date <= $1)
                     OR
-                    (s.repeat_pattern = 'weekly' AND (EXTRACT(DOW FROM s.date) + 6)::int % 7 = $2 AND s.date <= $1)
-                 AND (p.channel_id = $3 OR p.channel_id IS NULL)
-                 ORDER BY s.start_time ASC",
+                    (s.repeat_pattern = 'weekly' AND (EXTRACT(DOW FROM s.date) + 6)::int % 7 = $2 AND s.date <= $1))
+                  AND s.channel_id = $3
+                  ORDER BY s.start_time ASC",
             )
             .bind(date)
             .bind(dow)

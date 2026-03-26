@@ -1,6 +1,6 @@
 # Release Notes - Cloud Onepa Playout
 
-## v2.6.0-ALPHA.55-PRO (2026-03-25)
+## v2.6.0-ALPHA.54-PRO (2026-03-25)
 
 ### 🧩 Mosaic Monitoring & Multi-Channel Isolation
 - **Master Dashboard**: Implemented new Mosaic view for passive monitoring of all channels. Designed for master control rooms, providing a low-latency grid of all active HLS streams.

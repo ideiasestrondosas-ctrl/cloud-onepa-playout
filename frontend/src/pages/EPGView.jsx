@@ -64,6 +64,7 @@ export default function EPGView() {
     const DAY_WIDTH = 24 * HOUR_WIDTH;
 
     useEffect(() => {
+        setPlaylists([]); // Clear state to avoid data leakage from previous channel
         fetchPlaylists();
     }, [selectedDate, activeChannelId]);
 

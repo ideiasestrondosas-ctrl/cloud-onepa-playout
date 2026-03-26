@@ -20,8 +20,7 @@ import {
   Divider,
   Alert,
   Tooltip,
-  Paper,
-  CircularProgress
+  Paper
 } from '@mui/material';
 import {
   PlayArrow as PlayIcon,
@@ -58,31 +57,16 @@ export default function Calendar() {
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
   const [settings, setSettings] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const init = async () => {
-      setLoading(true);
-      // Clear previous data before fetching new channel's data
-      setEvents([]);
-      setPlayoutStatus(null);
-      setPlaylists([]);
-
-      try {
-        await Promise.all([
-          fetchSchedule(),
-          fetchPlaylists(),
-          fetchPlayoutStatus(),
-          fetchSettings()
-        ]);
-      } catch (error) {
-        console.error('Initialization failed:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    init();
+    // Clear previous data before fetching new channel's data
+    setEvents([]);
+    setPlayoutStatus(null);
+    
+    fetchSchedule();
+    fetchPlaylists();
+    fetchPlayoutStatus();
+    fetchSettings();
     // Poll status every 10 seconds to keep calendar synced with playout
     const interval = setInterval(fetchPlayoutStatus, 10000);
     return () => clearInterval(interval);
@@ -424,15 +408,10 @@ export default function Calendar() {
         </Box>
       </Box>
 
-      {loading ? (
-        <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <CircularProgress />
-        </Box>
-      ) : (
-        <Grid container spacing={1.5} sx={{ flexGrow: 1, overflow: 'hidden' }}>
-          <Grid item xs={12} md={9} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <Paper className="glass-panel" sx={{ p: 1, flexGrow: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-              <style>{`
+      <Grid container spacing={1.5} sx={{ flexGrow: 1, overflow: 'hidden' }}>
+        <Grid item xs={12} md={9} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <Paper className="glass-panel" sx={{ p: 1, flexGrow: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <style>{`
                     .fc { --fc-border-color: rgba(255,255,255,0.05); font-family: 'Inter', sans-serif; }
                     .fc .fc-toolbar-title { font-weight: 800; text-transform: uppercase; letter-spacing: 1px; font-size: 1.1rem; color: #00e5ff; }
                     .fc .fc-button { background: rgba(255,255,255,0.05) !important; border: 1px solid rgba(255,255,255,0.1) !important; font-weight: 800 !important; text-transform: uppercase !important; font-size: 0.7rem !important; transition: 0.3s !important; }
@@ -443,141 +422,140 @@ export default function Calendar() {
                     .fc-col-header-cell-cushion { font-size: 0.7rem; font-weight: 800; color: rgba(255,255,255,0.5); }
                     .fc-day-today { background: rgba(0, 229, 255, 0.2) !important; box-shadow: inset 0 0 20px rgba(0, 229, 255, 0.1); }
                 `}</style>
-              {/* EPG Export Bar */}
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5, mb: 0.5 }}>
-                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: 1, mr: 'auto', fontSize: '0.65rem' }}>
-                  📺 {t('calendar.tv_guide')} · {new Date().toLocaleDateString(i18n.language, { weekday: 'short', day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase()}
-                </Typography>
-                {settings?.epgUrl && (
-                  <Tooltip title={t('calendar.tooltips.open_browser')} arrow>
-                    <IconButton
-                      size="small"
-                      sx={{ color: 'primary.main', ml: 1 }}
-                      onClick={() => window.open(settings.epgUrl, '_blank', 'noopener,noreferrer')}
-                    >
-                      <OpenInNewIcon sx={{ fontSize: 18 }} />
-                    </IconButton>
-                  </Tooltip>
-                )}
-                <Tooltip title={settings?.epgUrl ? t('calendar.tooltips.export_xml') : t('calendar.tooltips.url_not_configured')} arrow>
-                  <span>
-                    <IconButton
-                      size="small"
-                      disabled={!settings?.epgUrl}
-                      sx={{ color: settings?.epgUrl ? 'success.main' : 'text.disabled', ml: 0.5 }}
-                      onClick={async () => {
-                        try {
-                          const response = await fetch(`/api/playlists/epg.xml?channel_id=${activeChannelId}`);
-                          if (!response.ok) throw new Error(t('calendar.notifications.export_failed'));
-                          const blob = await response.blob();
-                          const url = URL.createObjectURL(blob);
-                          const a = document.createElement('a');
-                          a.href = url;
-                          a.download = `epg_${new Date().toISOString().slice(0, 10)}.xml`;
-                          a.click();
-                          URL.revokeObjectURL(url);
-                        } catch (e) {
-                          console.error('EPG export failed:', e);
-                        }
-                      }}
-                    >
-                      <DownloadIcon sx={{ fontSize: 18 }} />
-                    </IconButton>
-                  </span>
-                </Tooltip>
-                <Tooltip title={t('calendar.tooltips.open_xml')} arrow placement="top">
+            {/* EPG Export Bar */}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5, mb: 0.5 }}>
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: 1, mr: 'auto', fontSize: '0.65rem' }}>
+                📺 {t('calendar.tv_guide')} · {new Date().toLocaleDateString(i18n.language, { weekday: 'short', day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase()}
+              </Typography>
+              {settings?.epgUrl && (
+                <Tooltip title={t('calendar.tooltips.open_browser')} arrow>
                   <IconButton
                     size="small"
-                    onClick={() => window.open(`/api/playlists/epg.xml?channel_id=${activeChannelId}`, '_blank')}
-                    sx={{ color: 'primary.main', border: '1px solid rgba(0,229,255,0.2)', borderRadius: 1.5, width: 32, height: 32, '&:hover': { bgcolor: 'rgba(0,229,255,0.1)' } }}
+                    sx={{ color: 'primary.main', ml: 1 }}
+                    onClick={() => window.open(settings.epgUrl, '_blank', 'noopener,noreferrer')}
                   >
-                    <OpenInNewIcon sx={{ fontSize: 16 }} />
+                    <OpenInNewIcon sx={{ fontSize: 18 }} />
                   </IconButton>
                 </Tooltip>
-                <Tooltip title={t('calendar.tooltips.download_xml')} arrow placement="top">
+              )}
+              <Tooltip title={settings?.epgUrl ? t('calendar.tooltips.export_xml') : t('calendar.tooltips.url_not_configured')} arrow>
+                <span>
                   <IconButton
                     size="small"
-                    onClick={() => {
-                      const a = document.createElement('a');
-                      a.href = `/api/playlists/epg.xml?channel_id=${activeChannelId}`;
-                      a.download = `epg_${new Date().toISOString().split('T')[0]}.xml`;
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
+                    disabled={!settings?.epgUrl}
+                    sx={{ color: settings?.epgUrl ? 'success.main' : 'text.disabled', ml: 0.5 }}
+                    onClick={async () => {
+                      try {
+                        const response = await fetch(`/api/playlists/epg.xml?channel_id=${activeChannelId}`);
+                        if (!response.ok) throw new Error(t('calendar.notifications.export_failed'));
+                        const blob = await response.blob();
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `epg_${new Date().toISOString().slice(0, 10)}.xml`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      } catch (e) {
+                        console.error('EPG export failed:', e);
+                      }
                     }}
-                    sx={{ color: 'primary.main', border: '1px solid rgba(0,229,255,0.2)', borderRadius: 1.5, width: 32, height: 32, '&:hover': { bgcolor: 'rgba(0,229,255,0.1)' } }}
                   >
-                    <DownloadIcon sx={{ fontSize: 16 }} />
+                    <DownloadIcon sx={{ fontSize: 18 }} />
                   </IconButton>
-                </Tooltip>
-              </Box>
+                </span>
+              </Tooltip>
+              <Tooltip title={t('calendar.tooltips.open_xml')} arrow placement="top">
+                <IconButton
+                  size="small"
+                  onClick={() => window.open(`/api/playlists/epg.xml?channel_id=${activeChannelId}`, '_blank')}
+                  sx={{ color: 'primary.main', border: '1px solid rgba(0,229,255,0.2)', borderRadius: 1.5, width: 32, height: 32, '&:hover': { bgcolor: 'rgba(0,229,255,0.1)' } }}
+                >
+                  <OpenInNewIcon sx={{ fontSize: 16 }} />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title={t('calendar.tooltips.download_xml')} arrow placement="top">
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    const a = document.createElement('a');
+                    a.href = `/api/playlists/epg.xml?channel_id=${activeChannelId}`;
+                    a.download = `epg_${new Date().toISOString().split('T')[0]}.xml`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                  }}
+                  sx={{ color: 'primary.main', border: '1px solid rgba(0,229,255,0.2)', borderRadius: 1.5, width: 32, height: 32, '&:hover': { bgcolor: 'rgba(0,229,255,0.1)' } }}
+                >
+                  <DownloadIcon sx={{ fontSize: 16 }} />
+                </IconButton>
+              </Tooltip>
+            </Box>
 
-              <FullCalendar
-                plugins={[dayGridPlugin, interactionPlugin]}
-                initialView="dayGridMonth"
-                events={events}
-                dateClick={handleDateClick}
-                eventClick={handleEventClick}
-                eventContent={renderEventContent}
-                height="100%"
-                locales={ALL_LOCALES}
-                locale={i18n.language.split('-')[0]}
-                headerToolbar={{
-                  left: 'prev,next today',
-                  center: 'title',
-                  right: 'dayGridMonth,dayGridWeek',
-                }}
-              />
-            </Paper>
-          </Grid>
-
-          <Grid item xs={12} md={3} sx={{ height: '100%' }}>
-            <Stack spacing={1.5} sx={{ height: '100%' }}>
-              <Paper className="glass-panel" sx={{ p: 1.5, flexGrow: 1 }}>
-                <Typography variant="overline" sx={{ fontWeight: 800, color: 'primary.main', display: 'block', mb: 1.5 }}>{t('calendar.shortcuts')}</Typography>
-                <Stack spacing={1}>
-                  {[
-                    { label: t('calendar.clear_today'), type: 'today' },
-                    { label: t('calendar.clear_week'), type: 'week' },
-                    { label: t('calendar.clear_month'), type: 'month' },
-                    { label: t('calendar.clear_year'), type: 'year' }
-                  ].map((btn) => (
-                    <Button
-                      key={btn.type}
-                      fullWidth
-                      variant="outlined"
-                      color="error"
-                      size="small"
-                      onClick={() => quickBulkDelete(btn.type)}
-                      sx={{ borderRadius: 2, fontWeight: 800, py: 1, borderColor: 'rgba(244,67,54,0.3)', '&:hover': { bgcolor: 'rgba(244,67,54,0.05)' } }}
-                    >
-                      {btn.label}
-                    </Button>
-                  ))}
-                </Stack>
-
-                <Box sx={{ mt: 2 }}>
-                  <Typography variant="overline" sx={{ fontWeight: 800, color: 'primary.main', display: 'block', mb: 1.5 }}>{t('calendar.legend')}</Typography>
-                  <Stack spacing={1}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', p: 1, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.02)' }}>
-                      <Box sx={{ width: 8, height: 8, bgcolor: '#ff4081', mr: 2, borderRadius: '50%', boxShadow: '0 0 10px #ff4081' }} />
-                      <Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.8 }}>{t('calendar.single_event')}</Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', p: 0.5, borderRadius: 1.5, bgcolor: 'rgba(255,255,255,0.02)' }}>
-                      <Box sx={{ width: 8, height: 8, bgcolor: '#00e5ff', mr: 2, borderRadius: '50%', boxShadow: '0 0 10px #00e5ff' }} />
-                      <Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.8, fontSize: '0.65rem' }}>{t('calendar.recurring_series')}</Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', p: 0.5, borderRadius: 1.5, bgcolor: 'rgba(255,255,255,0.02)' }}>
-                      <Box sx={{ width: 8, height: 8, bgcolor: '#fff', mr: 2, borderRadius: '50%', boxShadow: '0 0 10px #fff' }} />
-                      <Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.8, fontSize: '0.65rem' }}>{t('calendar.playing_now')}</Typography>
-                    </Box>
-                  </Stack>
-                </Box>
-              </Paper>
-            </Stack>
-          </Grid>
+            <FullCalendar
+              plugins={[dayGridPlugin, interactionPlugin]}
+              initialView="dayGridMonth"
+              events={events}
+              dateClick={handleDateClick}
+              eventClick={handleEventClick}
+              eventContent={renderEventContent}
+              height="100%"
+              locales={ALL_LOCALES}
+              locale={i18n.language.split('-')[0]}
+              headerToolbar={{
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,dayGridWeek',
+              }}
+            />
+          </Paper>
         </Grid>
-      )}
+
+        <Grid item xs={12} md={3} sx={{ height: '100%' }}>
+          <Stack spacing={1.5} sx={{ height: '100%' }}>
+            <Paper className="glass-panel" sx={{ p: 1.5, flexGrow: 1 }}>
+              <Typography variant="overline" sx={{ fontWeight: 800, color: 'primary.main', display: 'block', mb: 1.5 }}>{t('calendar.shortcuts')}</Typography>
+              <Stack spacing={1}>
+                {[
+                  { label: t('calendar.clear_today'), type: 'today' },
+                  { label: t('calendar.clear_week'), type: 'week' },
+                  { label: t('calendar.clear_month'), type: 'month' },
+                  { label: t('calendar.clear_year'), type: 'year' }
+                ].map((btn) => (
+                  <Button
+                    key={btn.type}
+                    fullWidth
+                    variant="outlined"
+                    color="error"
+                    size="small"
+                    onClick={() => quickBulkDelete(btn.type)}
+                    sx={{ borderRadius: 2, fontWeight: 800, py: 1, borderColor: 'rgba(244,67,54,0.3)', '&:hover': { bgcolor: 'rgba(244,67,54,0.05)' } }}
+                  >
+                    {btn.label}
+                  </Button>
+                ))}
+              </Stack>
+
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="overline" sx={{ fontWeight: 800, color: 'primary.main', display: 'block', mb: 1.5 }}>{t('calendar.legend')}</Typography>
+                <Stack spacing={1}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', p: 1, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.02)' }}>
+                    <Box sx={{ width: 8, height: 8, bgcolor: '#ff4081', mr: 2, borderRadius: '50%', boxShadow: '0 0 10px #ff4081' }} />
+                    <Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.8 }}>{t('calendar.single_event')}</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', p: 0.5, borderRadius: 1.5, bgcolor: 'rgba(255,255,255,0.02)' }}>
+                    <Box sx={{ width: 8, height: 8, bgcolor: '#00e5ff', mr: 2, borderRadius: '50%', boxShadow: '0 0 10px #00e5ff' }} />
+                    <Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.8, fontSize: '0.65rem' }}>{t('calendar.recurring_series')}</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', p: 0.5, borderRadius: 1.5, bgcolor: 'rgba(255,255,255,0.02)' }}>
+                    <Box sx={{ width: 8, height: 8, bgcolor: '#fff', mr: 2, borderRadius: '50%', boxShadow: '0 0 10px #fff' }} />
+                    <Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.8, fontSize: '0.65rem' }}>{t('calendar.playing_now')}</Typography>
+                  </Box>
+                </Stack>
+              </Box>
+            </Paper>
+          </Stack>
+        </Grid>
+      </Grid>
 
       {/* Action Dialog */}
       <Dialog
