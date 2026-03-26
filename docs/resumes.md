@@ -1,6 +1,29 @@
 # Resumes
 
 Here is the tracking context and summaries for the work performed by agents.
+
+## Resumo de Atividades - ALPHA v2.6.0-ALPHA.56-PRO (2026-03-26)
+
+### Gestão de Canais e Configurações Dinâmicas
+Nesta sessão, otimizámos a flexibilidade da arquitetura Multi-Canal e a precisão da persistência de dados:
+
+1. **Canais (Flexibilidade e Segurança)**:
+   - **Canal Default**: Removido o bloqueio rígido por UUID que impedia a eliminação do canal original.
+   - **Salvaguarda de Operação**: Implementada lógica no backend (`channels.rs`) que impede a eliminação do último canal do sistema. O utilizador pode agora renomear ou eliminar o canal default, desde que tenha criado previamente um substituto.
+   - **Gestão de Processos**: Mantida a integridade do `ChannelRegistry`, garantindo que o fecho de um motor de playout ocorre corretamente antes da remoção da base de dados.
+
+2. **Configurações (Segregação de Dados)**:
+   - **Caminhos e Media**: No separador de configurações, implementámos uma lógica de gravação híbrida.
+   - **Ativos de Marca (Global)**: Logos, vídeos e imagens por defeito (Branding) são agora guardados globalmente na aplicação, garantindo consistência visual.
+   - **Caminhos de Trabalho (Por Canal)**: Pastas de media, thumbnails, playlists e fillers são agora gravadas como `overrides` específicos por canal sempre que um canal está ativo na barra superior.
+   - **UX**: Reforço da limpeza de "trabalho de memória" ao garantir que as definições apresentadas estão estritamente alinhadas com o contexto selecionado.
+
+3. **Manutenção**:
+   - Criados backups preventivos (`.bak`) dos ficheiros críticos antes da implementação.
+   - **Sincronização de Nomes**: O campo "Nome do Canal" nas Configurações (Motor do Jogo) agora altera o nome real do canal na Base de Dados e na barra de navegação, em vez de apenas um parâmetro local.
+   - **Prevenção de Duplicados**: Implementada validação no frontend que impede a gravação de canais com nomes idênticos a outros já existentes.
+   - **Padronização**: Canais existentes renomeados para "Default" e "Test Channel" para limpeza de designação.
+   - **Verificação de integridade de lint no frontend concluída sem erros.
   
 ## Resumo de Atividades - ALPHA v2.6.0-ALPHA.55-PRO (2026-03-26)
 

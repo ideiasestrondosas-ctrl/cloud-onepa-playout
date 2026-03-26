@@ -357,7 +357,7 @@ function Settings() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { showSuccess, showError, showWarning } = useNotification();
-  const { activeChannelId, channels } = useChannel();
+  const { activeChannelId } = useChannel();
   const [tabValue, setTabValue] = useState(0);
   const [settings, setSettings] = useState({
     outputType: 'rtmp',
@@ -1059,16 +1059,7 @@ function Settings() {
           if (match) cleanOmdbKey = match[1];
         }
 
-        // 1. BRAND ASSETS: ALWAYS GLOBAL
-        const brandPayload = {
-          logo_path: settings.logoPath,
-          branding_type: settings.branding_type,
-          default_image_path: settings.defaultImagePath,
-          default_video_path: settings.defaultVideoPath,
-        };
-
-        // 2. PATHS: CHANNEL-SPECIFIC IF ACTIVE
-        const pathPayload = {
+        payload = {
           media_path: settings.mediaPath,
           thumbnails_path: settings.thumbnailsPath,
           playlists_path: settings.playlistsPath,
@@ -1076,53 +1067,15 @@ function Settings() {
           epg_url: settings.epgUrl,
           epg_days: settings.epgDays,
           tmdb_api_key: settings.tmdbApiKey,
-          omdb_api_key: cleanOmdbKey,
+          omdb_api_key: cleanOmdbKey, // Keep existing omdb_api_key
           tvmaze_api_key: settings.tvmazeApiKey,
+          default_image_path: settings.defaultImagePath,
+          default_video_path: settings.defaultVideoPath,
+          logo_path: settings.logoPath,
+          branding_type: settings.branding_type, // ADD: branding type for sidebar logo
           log_path: settings.logPath,
         };
-
-        // Save brand assets globally
-        await settingsAPI.update(brandPayload);
-
-        // Save paths (and other settings) correctly
-        if (activeChannelId) {
-          await channelSettingsAPI.put(activeChannelId, pathPayload);
-          console.log(`[Settings] Saved Tab 1 path overrides to channel:`, activeChannelId);
-        } else {
-          await settingsAPI.update(pathPayload);
-        }
-        
-        // Skip further common payload logic for this tab since we handled it here
-        await fetchSettings();
-        showSuccess(t('settings.notifications.save_success', { tab: t('settings.navigation.tabs.paths') }));
-        setSaving(false);
-        return;
       } else if (tabValue === 2) { // Playout Tab
-        // 1. Validate Channel Name Uniqueness
-        const normalizedName = (settings.channelName || "").trim().toLowerCase();
-        if (normalizedName) {
-           const duplicate = (channels || []).find(c => 
-             c.id !== activeChannelId && 
-             c.name.toLowerCase().trim() === normalizedName
-           );
-           if (duplicate) {
-             showError(t('settings.notifications.channel_name_exists') || "Este nome de canal já está em uso!");
-             setSaving(false);
-             return;
-           }
-        }
-
-        // 2. Persist to Global Channel Object if it changed
-        const activeChannel = (channels || []).find(c => c.id === activeChannelId);
-        if (activeChannel && activeChannel.name !== settings.channelName) {
-           try {
-             await channelsAPI.update(activeChannelId, { name: settings.channelName });
-             console.log(`[Settings] Updated global channel name to: ${settings.channelName}`);
-           } catch (err) {
-             console.error("Failed to update global channel name:", err);
-           }
-        }
-
         payload = {
           resolution: settings.resolution,
           fps: settings.fps,
