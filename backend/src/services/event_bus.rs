@@ -1,6 +1,7 @@
 use redis::{aio::ConnectionManager, AsyncCommands, Client};
 use serde_json::Value;
 use std::env;
+use futures_util::StreamExt;
 
 /// A cloneable Redis event bus for pub/sub messaging between services.
 #[derive(Clone)]
@@ -80,11 +81,51 @@ impl EventBus {
 
         log::info!("EventBus subscribed to '{}'", channel);
 
-        use futures_util::StreamExt;
         let mut stream = pubsub.into_on_message();
         while let Some(msg) = stream.next().await {
             if let Ok(payload) = msg.get_payload::<String>() {
                 handler(payload);
+            }
+        }
+    }
+
+    /// Subscribe to a pattern of Redis channels (PSUBSCRIBE).
+    /// processed each message with a callback (payload, channel).
+    pub async fn psubscribe<F>(redis_url: &str, pattern: &str, mut handler: F)
+    where
+        F: FnMut(String, String) + Send + 'static,
+    {
+        let client = match Client::open(redis_url) {
+            Ok(c) => c,
+            Err(e) => {
+                log::error!("EventBus psubscribe: failed to open client: {}", e);
+                return;
+            }
+        };
+
+        let conn = match client.get_async_connection().await {
+            Ok(c) => c,
+            Err(e) => {
+                log::error!("EventBus psubscribe: failed to get connection: {}", e);
+                return;
+            }
+        };
+
+        let mut pubsub = conn.into_pubsub();
+
+        if let Err(e) = pubsub.psubscribe(pattern).await {
+            log::error!("EventBus psubscribe: failed to psubscribe to '{}': {}", pattern, e);
+            return;
+        }
+
+        log::info!("EventBus psubscribed to '{}'", pattern);
+
+        let mut stream = pubsub.into_on_message();
+        while let Some(msg) = stream.next().await {
+            let msg: redis::Msg = msg;
+            let channel = msg.get_channel_name().to_string();
+            if let Ok(payload) = msg.get_payload::<String>() {
+                handler(payload, channel);
             }
         }
     }

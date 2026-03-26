@@ -66,7 +66,7 @@ import {
   Snackbar,
   Alert
 } from '@mui/material';
-import { playoutAPI, channelPlayoutAPI, settingsAPI } from '../services/api';
+import { playoutAPI, channelPlayoutAPI, settingsAPI, channelSettingsAPI } from '../services/api';
 import { useNotification } from '../contexts/NotificationContext';
 import LufsMeter from '../components/LufsMeter';
 import { useTranslation } from 'react-i18next';
@@ -158,7 +158,7 @@ export default function Dashboard() {
 
   const checkSchedule = async () => {
     try {
-      const response = await playoutAPI.diagnose();
+      const response = await playoutAPI.diagnose(activeChannelId);
       if (!response.data.has_active_schedule) {
         setScheduleAlertOpen(true);
       }
@@ -166,6 +166,27 @@ export default function Dashboard() {
       console.warn('Failed to validate schedule:', error);
     }
   };
+
+  // Reset HLS player and state when the active channel changes (Phase 3)
+  useEffect(() => {
+    setPlayerKey(prev => prev + 1);
+    setHlsReady(false);
+    setHlsRetryCount(0);
+    if (hlsRetryTimerRef.current) clearTimeout(hlsRetryTimerRef.current);
+    // Reset status to avoid stale state from previous channel
+    setStatus({
+      status: 'stopped',
+      current_clip: null,
+      next_clips: [],
+      uptime: 0,
+      clips_played_today: 0,
+      protocol: '',
+      last_error: null,
+      logs: [],
+      active_streams: [],
+    });
+    console.log('[Dashboard] Active channel changed — resetting player and status');
+  }, [activeChannelId]);
 
   // Reset HLS state when engine stops
   useEffect(() => {
@@ -403,8 +424,14 @@ export default function Dashboard() {
       // Set loading state for this protocol
       setToggleLoading(prev => ({ ...prev, [protocol]: true }));
 
-      // Call backend first (no optimistic update to prevent flickering)
-      await playoutAPI.toggleProtocol(protocol.toLowerCase(), enabled);
+      // If we have an active channel, use channelSettingsAPI to toggle the override
+      if (activeChannelId) {
+        const settingKey = `${protocol.toLowerCase()}_enabled`;
+        await channelSettingsAPI.put(activeChannelId, settingKey, enabled);
+      } else {
+        // Fallback to legacy global toggle
+        await playoutAPI.toggleProtocol(protocol.toLowerCase(), enabled);
+      }
 
       // Wait longer for backend to process and update status
       setTimeout(() => {

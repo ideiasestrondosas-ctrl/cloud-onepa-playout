@@ -1,12 +1,38 @@
-## v2.6.0-ALPHA.50-PRO (2026-03-17)
-
-### Fixed
-- Database version mismatch for system_version.
-- Cleaned up duplicated locale stubs in About System.
-
 # Release Notes - Cloud Onepa Playout
 
-## v2.6.0-ALPHA.50-PRO (17/03/2026)
+## v2.6.0-ALPHA.54-PRO (2026-03-25)
+
+### 🧩 Mosaic Monitoring & Multi-Channel Isolation
+- **Master Dashboard**: Implemented new Mosaic view for passive monitoring of all channels. Designed for master control rooms, providing a low-latency grid of all active HLS streams.
+- **Playout Engine**: Fixed critical bug where protocol settings (RTMP/SRT/UDP) were sometimes parsed with extra JSON quotes, causing FFmpeg to crash upon startup.
+- **Watchfolder**: Implemented per-channel isolation. The synchronization service now respects the `activeChannelId`, preventing cross-contamination of media libraries.
+- **System Health**: Complete refactoring of diagnostics and telemetry to be fully channel-aware. Bitrate charts and status indicators now map correctly to each channel instance.
+- **i18n Translation**: Completed full localization for all Multi-Channel features across English, Portuguese, Spanish, and French.
+- **Help System**: Added comprehensive documentation and step-by-step guides for the new Multi-Channel architecture and Mosaic features.
+
+## v2.6.0-ALPHA.53-PRO (2026-03-25)
+
+
+### ✨ Multi-Channel Polish & Diagnostics
+- **Master Dashboard**: Removed redundant "ON AIR" labels from channel mosaics for a cleaner, unified monitor look.
+- **Master Dashboard**: Added a new visual heartbeat animation and glowing azure border for the currently active channel to improve navigation context.
+- **System Health**: Refactored the backend WebSocket bridge (`EventBus`) to support dynamic multi-channel telemetry. Analytics and bitrate monitoring are now correctly isolated by the selected channel.
+- **TV Guide (Calendar)**: Fixed a long-standing issue where EPG data from the default channel would leak into empty channels. Exports and previews now strictly respect the `activeChannelId`.
+- **Global Versioning**: Synchronized all stack components (DB, Backend, Frontend) to the `v2.6.0-ALPHA.53-PRO` release.
+
+## v2.6.0-ALPHA.52-PRO (2026-03-20)
+
+### 🎨 Graphics Templates Integration
+- **Templates Manager**: Migration of standalone Templates page into the Graphics menu as a dedicated tab.
+- **Presets**: Integrated three new production-ready templates (Morning Show, Full Day, Loop Content).
+- **Automation**: Added "Generate Playlist from Template" functionality to streamline daily scheduling.
+
+## v2.6.0-ALPHA.51-PRO (2026-03-20)
+
+### 📚 Documentation & i18n
+- **Help System**: Comprehensive help articles added for Multi-Channel, Live Inputs, and System Health.
+- **Localization**: Full parity between PT, EN, FR, and ES for all new enterprise features.
+
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and synchronization across documentation and translations.

@@ -36,6 +36,7 @@ import {
   MonitorHeart as HealthIcon,
   Input as InputIcon,
   GridView as GridViewIcon,
+  Tv as MasterDashboardIcon,
 } from '@mui/icons-material';
 import { useHelp } from '../context/HelpContext';
 import { useTranslation } from 'react-i18next';
@@ -155,6 +156,7 @@ const menuItems = [
   { key: 'navigation.graphics', icon: <GraphicsIcon />, path: '/graphics' },
   { key: 'epg.title', icon: <LiveTvIcon />, path: '/epg' },
   { key: 'navigation.liveInputs', icon: <InputIcon />, path: '/live-inputs' },
+  { key: 'navigation.masterDashboard', icon: <MasterDashboardIcon />, path: '/master-dashboard' },
   { key: 'navigation.multiChannel', icon: <GridViewIcon />, path: '/multi-channel' },
   { key: 'navigation.templates', icon: <TemplatesIcon />, path: '/templates' },
   { key: 'navigation.health', icon: <HealthIcon />, path: '/health' },

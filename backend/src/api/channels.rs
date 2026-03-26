@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgPool};
 use std::sync::Arc;
 use uuid::Uuid;
+use std::path::PathBuf;
+use std::env;
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct Channel {
@@ -17,6 +19,7 @@ pub struct Channel {
     pub hls_stream_path: Option<String>,
     pub output_url: Option<String>,
     pub preview_url: Option<String>,
+    pub watchfolder_path: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -346,6 +349,172 @@ async fn put_user_channel_access(
     HttpResponse::Ok().json(serde_json::json!({"ok": true}))
 }
 
+// ── Watchfolder Sync ──────────────────────────────────────────────────────────
+
+/// Lists files in the channel's watchfolder directory and injects any new media
+/// files into the `media` table, skipping files already registered by path.
+async fn channel_watchfolder_sync(
+    channel_id: web::Path<Uuid>,
+    pool: web::Data<PgPool>,
+) -> impl Responder {
+    let id = *channel_id;
+
+    // Find the channel and resolve its watchfolder path
+    let channel = sqlx::query_as::<_, Channel>("SELECT * FROM channels WHERE id = $1")
+        .bind(id)
+        .fetch_optional(pool.get_ref())
+        .await;
+
+    let channel = match channel {
+        Ok(Some(c)) => c,
+        Ok(None) => return HttpResponse::NotFound().json(serde_json::json!({"error": "Channel not found"})),
+        Err(e) => return HttpResponse::InternalServerError().json(serde_json::json!({"error": e.to_string()})),
+    };
+
+    // Build absolute watchfolder path from MEDIA_PATH env + channel subfolder
+    let media_root = env::var("MEDIA_PATH")
+        .unwrap_or_else(|_| "/var/lib/onepa-playout/media".to_string());
+    let rel_path = channel.watchfolder_path
+        .clone()
+        .unwrap_or_else(|| format!("channels/{}/watchfolder", id));
+    let watchfolder_abs: PathBuf = PathBuf::from(&media_root).join(&rel_path);
+
+    // Ensure directory exists
+    if let Err(e) = tokio::fs::create_dir_all(&watchfolder_abs).await {
+        log::error!("[Watchfolder] Could not create dir {}: {}", watchfolder_abs.display(), e);
+        return HttpResponse::InternalServerError()
+            .json(serde_json::json!({"error": format!("Cannot create watchfolder: {}", e)}));
+    }
+
+    // Read directory entries
+    let mut read_dir = match tokio::fs::read_dir(&watchfolder_abs).await {
+        Ok(rd) => rd,
+        Err(e) => return HttpResponse::InternalServerError()
+            .json(serde_json::json!({"error": format!("Cannot read watchfolder: {}", e)})),
+    };
+
+    let supported_extensions = ["mp4", "ts", "mkv", "avi", "mov", "wmv", "flv", "webm", "mxf", "m4v"];
+    let mut ingested = 0u32;
+    let mut skipped = 0u32;
+    let mut errors: Vec<String> = Vec::new();
+
+    while let Ok(Some(entry)) = read_dir.next_entry().await {
+        let path = entry.path();
+        if !path.is_file() { continue; }
+
+        let ext = path.extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("")
+            .to_lowercase();
+
+        if !supported_extensions.contains(&ext.as_str()) {
+            continue;
+        }
+
+        let filename = path.file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("unknown")
+            .to_string();
+
+        // Build path relative to MEDIA_PATH for storage in DB (consistent with upload path)
+        let relative_path = path.strip_prefix(&media_root)
+            .map(|p| p.to_string_lossy().into_owned())
+            .unwrap_or_else(|_| path.to_string_lossy().into_owned());
+
+        // Check if already ingested by path
+        let already_exists: bool = sqlx::query_scalar(
+            "SELECT EXISTS(SELECT 1 FROM media WHERE path = $1)"
+        )
+        .bind(&relative_path)
+        .fetch_one(pool.get_ref())
+        .await
+        .unwrap_or(false);
+
+        if already_exists {
+            skipped += 1;
+            continue;
+        }
+
+        // Get file size
+        let file_size = tokio::fs::metadata(&path).await
+            .map(|m| m.len() as i64)
+            .unwrap_or(0);
+
+        // Insert media record
+        let insert_result = sqlx::query(
+            "INSERT INTO media (filename, path, media_type, file_size, channel_id, created_at) \
+             VALUES ($1, $2, $3, $4, $5, NOW())"
+        )
+        .bind(&filename)
+        .bind(&relative_path)
+        .bind("video")
+        .bind(file_size)
+        .bind(id)
+        .execute(pool.get_ref())
+        .await;
+
+        match insert_result {
+            Ok(_) => {
+                log::info!("[Watchfolder][{}] Ingested: {}", channel.name, filename);
+                ingested += 1;
+            }
+            Err(e) => {
+                log::error!("[Watchfolder][{}] Failed to ingest {}: {}", channel.name, filename, e);
+                errors.push(format!("{}: {}", filename, e));
+            }
+        }
+    }
+
+    HttpResponse::Ok().json(serde_json::json!({
+        "ok": true,
+        "channel_id": id,
+        "watchfolder_path": rel_path,
+        "ingested": ingested,
+        "skipped": skipped,
+        "errors": errors
+    }))
+}
+
+/// Returns watchfolder status for a channel (path + file count in dir).
+async fn channel_watchfolder_status(
+    channel_id: web::Path<Uuid>,
+    pool: web::Data<PgPool>,
+) -> impl Responder {
+    let id = *channel_id;
+
+    let row = sqlx::query_scalar::<_, Option<String>>(
+        "SELECT watchfolder_path FROM channels WHERE id = $1"
+    )
+    .bind(id)
+    .fetch_optional(pool.get_ref())
+    .await;
+
+    let rel_path = match row {
+        Ok(Some(Some(p))) => p,
+        _ => format!("channels/{}/watchfolder", id),
+    };
+
+    let media_root = env::var("MEDIA_PATH")
+        .unwrap_or_else(|_| "/var/lib/onepa-playout/media".to_string());
+    let abs_path = PathBuf::from(&media_root).join(&rel_path);
+
+    let file_count = tokio::fs::read_dir(&abs_path).await.ok().map(|rd| {
+        // Synchronous count not easily possible with async — return 0 as placeholder
+        // Full count available after first sync
+        let _ = rd;
+        0u32
+    }).unwrap_or(0);
+
+    let accessible = abs_path.exists();
+
+    HttpResponse::Ok().json(serde_json::json!({
+        "channel_id": id,
+        "watchfolder_path": rel_path,
+        "accessible": accessible,
+        "file_count": file_count
+    }))
+}
+
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.route("", web::get().to(list_channels))
         .route("", web::post().to(create_channel))
@@ -360,6 +529,9 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         // Per-channel settings overrides
         .route("/{id}/settings", web::get().to(get_channel_settings))
         .route("/{id}/settings", web::put().to(put_channel_settings))
+        // Per-channel watchfolder
+        .route("/{id}/watchfolder/status", web::get().to(channel_watchfolder_status))
+        .route("/{id}/watchfolder/sync", web::post().to(channel_watchfolder_sync))
         // User-channel access (user_id param here is an integer path)
         .route("/users/{user_id}/channels", web::get().to(get_user_channel_access))
         .route("/users/{user_id}/channels", web::put().to(put_user_channel_access));

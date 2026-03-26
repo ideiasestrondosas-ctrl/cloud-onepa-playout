@@ -33,7 +33,7 @@ import {
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { scheduleAPI, playlistAPI, playoutAPI, settingsAPI } from '../services/api';
+import { scheduleAPI, playlistAPI, playoutAPI, settingsAPI, channelPlayoutAPI } from '../services/api';
 import { useNotification } from '../contexts/NotificationContext';
 import { useChannel } from '../contexts/ChannelContext';
 import { useTranslation } from 'react-i18next';
@@ -77,7 +77,7 @@ export default function Calendar() {
 
   const fetchPlayoutStatus = async () => {
     try {
-      const response = await playoutAPI.status();
+      const response = await channelPlayoutAPI.status(activeChannelId);
       setPlayoutStatus(response.data);
     } catch (error) {
       console.error('Failed to fetch playout status:', error);
@@ -442,7 +442,7 @@ export default function Calendar() {
                     sx={{ color: settings?.epgUrl ? 'success.main' : 'text.disabled', ml: 0.5 }}
                     onClick={async () => {
                       try {
-                        const response = await fetch('/api/epg/export');
+                        const response = await fetch(`/api/playlists/epg.xml?channel_id=${activeChannelId}`);
                         if (!response.ok) throw new Error(t('calendar.notifications.export_failed'));
                         const blob = await response.blob();
                         const url = URL.createObjectURL(blob);
@@ -463,7 +463,7 @@ export default function Calendar() {
               <Tooltip title={t('calendar.tooltips.open_xml')} arrow placement="top">
                 <IconButton
                   size="small"
-                  onClick={() => window.open('/api/playlists/epg.xml', '_blank')}
+                  onClick={() => window.open(`/api/playlists/epg.xml?channel_id=${activeChannelId}`, '_blank')}
                   sx={{ color: 'primary.main', border: '1px solid rgba(0,229,255,0.2)', borderRadius: 1.5, width: 32, height: 32, '&:hover': { bgcolor: 'rgba(0,229,255,0.1)' } }}
                 >
                   <OpenInNewIcon sx={{ fontSize: 16 }} />
@@ -474,7 +474,7 @@ export default function Calendar() {
                   size="small"
                   onClick={() => {
                     const a = document.createElement('a');
-                    a.href = '/api/playlists/epg.xml';
+                    a.href = `/api/playlists/epg.xml?channel_id=${activeChannelId}`;
                     a.download = `epg_${new Date().toISOString().split('T')[0]}.xml`;
                     document.body.appendChild(a);
                     a.click();

@@ -172,7 +172,7 @@ impl PlayoutEngine {
 
         // Apply channel-specific overrides (key = Settings field name, value = string-encoded value)
         let overrides: Vec<(String, String)> = sqlx::query_as(
-            "SELECT key, value FROM channel_settings WHERE channel_id = $1",
+            "SELECT key, value#>>'{}' FROM channel_settings WHERE channel_id = $1",
         )
         .bind(self.channel_id)
         .fetch_all(&self.pool)
@@ -349,9 +349,6 @@ impl PlayoutEngine {
 
         // Load initial state from DB (per-channel effective settings)
         if let Ok(settings) = self.get_effective_settings().await {
-            let is_run = settings.is_running;
-            let clips_played = settings.clips_played_today.unwrap_or(0);
-            
             log::info!("[Channel {}] Effective settings loaded (channel overrides applied)", self.channel_id);
 
             // NOTE: is_running is NOT read from global settings.

@@ -138,6 +138,12 @@ const HelpDashboard = () => {
         <Kv k="Protocolos Activos" v={t('help.dashboard.logs.active_protocols')} />
         <Kv k="Últimas Entradas de Log" v={t('help.dashboard.logs.last_logs')} />
       </Section>
+      
+      <Section title={t('help.dashboard.active_channel.title')} severity={t('help.dashboard.active_channel.severity')}>
+        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+          {t('help.dashboard.active_channel.desc')}
+        </Typography>
+      </Section>
     </Box>
   );
 };
@@ -182,6 +188,12 @@ const HelpLibrary = () => {
       <Section title={t('help.library.fillers.title')}>
         <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
           {t('help.library.fillers.desc')}
+        </Typography>
+      </Section>
+
+      <Section title={t('help.library.syncFolder.title')}>
+        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+          {t('help.library.syncFolder.desc')}
         </Typography>
       </Section>
     </Box>
@@ -782,6 +794,31 @@ const HelpMultiChannel = () => {
   );
 };
 
+const HelpMasterDashboard = () => {
+  const { t } = useTranslation();
+  return (
+    <Box>
+      <Section title={t('help.masterDashboard.title')}>
+        <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
+          {t('help.masterDashboard.intro')}
+        </Typography>
+      </Section>
+
+      <Section title={t('help.masterDashboard.mosaic.title')}>
+        <Typography variant="caption" sx={{ mb: 0.75, color: 'text.secondary', display: 'block' }}>
+          {t('help.masterDashboard.mosaic.desc')}
+        </Typography>
+      </Section>
+
+      <Section title={t('help.masterDashboard.context.title')}>
+        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+          {t('help.masterDashboard.context.desc')}
+        </Typography>
+      </Section>
+    </Box>
+  );
+};
+
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
 
 const TABS = [
@@ -793,6 +830,7 @@ const TABS = [
   { id: 'settings', icon: <SettingsIcon sx={{ fontSize: 14 }} />, content: <HelpSettings /> },
   { id: 'templates', icon: <DescriptionIcon sx={{ fontSize: 14 }} />, content: <HelpTemplates /> },
   { id: 'live-inputs', icon: <LiveTvIcon sx={{ fontSize: 14 }} />, content: <HelpLiveInputs /> },
+  { id: 'master-dashboard', icon: <TableChartIcon sx={{ fontSize: 14 }} />, content: <HelpMasterDashboard /> },
   { id: 'health', icon: <FavoriteIcon sx={{ fontSize: 14 }} />, content: <HelpHealth /> },
   { id: 'multi-channel', icon: <TableChartIcon sx={{ fontSize: 14 }} />, content: <HelpMultiChannel /> },
 ];

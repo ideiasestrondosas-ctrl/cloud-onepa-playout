@@ -1,5 +1,29 @@
 [
   {
+    "version": "2.6.0-ALPHA.54-PRO",
+    "date": "2026-03-25",
+    "changes": [
+      "Master Dashboard: Implemented new Mosaic view for passive monitoring of all channels",
+      "Playout Engine: Fixed JSON parsing bug in protocol settings that caused FFmpeg crashes",
+      "Watchfolder: Added per-channel isolation and dedicated synchronization functionality",
+      "System Health: Refactored diagnostics and telemetry to be fully channel-aware",
+      "i18n: Completed full localization for all Multi-Channel features (EN, PT, ES, FR)",
+      "Help System: Updated documentation and guides for the new Multi-Channel architecture"
+    ]
+  },
+  {
+    "version": "2.6.0-ALPHA.53-PRO",
+    "date": "2026-03-25",
+    "changes": [
+      "Master Dashboard: Removed 'ON AIR' label from mosaics for cleaner monitoring",
+      "Master Dashboard: Added active channel highlighting with glowing border and heartbeat animation",
+      "System Health: Refactored WebSocket EventBus to support dynamic per-channel telemetry",
+      "TV Guide: Fixed EPG data filtering to correctly isolate programming by active channel",
+      "TV Guide: Added channel_id context to all EPG XML export and preview actions",
+      "System: Global version bump to ALPHA.53-PRO"
+    ]
+  },
+  {
     "version": "2.6.0-ALPHA.52-PRO",
     "date": "2026-03-20",
     "changes": [

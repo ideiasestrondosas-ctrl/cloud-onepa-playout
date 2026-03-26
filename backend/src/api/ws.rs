@@ -16,12 +16,17 @@ pub fn create_broadcaster() -> WsBroadcaster {
 
 /// Spawn a task that forwards Redis pub/sub events to the in-process broadcaster.
 /// Call once at server startup for each Redis channel you want to relay.
-pub async fn bridge_redis_to_broadcaster(redis_channel: &str, tx: WsBroadcaster) {
+pub async fn bridge_redis_to_broadcaster(pattern: &str, tx: WsBroadcaster) {
     let url = env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
-    let channel = redis_channel.to_string();
+    let pattern_str = pattern.to_string();
     tokio::spawn(async move {
-        EventBus::subscribe(&url, &channel, move |msg| {
-            let _ = tx.send(msg);
+        EventBus::psubscribe(&url, &pattern_str, move |msg, channel| {
+            // Encode channel + message into a single JSON for the broadcaster
+            let relay = serde_json::json!({
+                "source": channel,
+                "payload": msg
+            });
+            let _ = tx.send(relay.to_string());
         })
         .await;
     });
@@ -52,20 +57,52 @@ pub async fn ws_handler(
     jwt::validate_token(&token)
         .map_err(|_| actix_web::error::ErrorUnauthorized("Invalid token"))?;
 
-    let (response, mut session, mut stream) = actix_ws::handle(&req, body)?;
+    // Optional channel_id for filtering
+    let channel_id = req.query_string().split('&').find_map(|pair| {
+        let mut parts = pair.splitn(2, '=');
+        let key = parts.next()?;
+        let val = parts.next()?;
+        if key == "channel_id" {
+            Some(val.to_string())
+        } else {
+            None
+        }
+    });
 
+    let (response, mut session, mut stream) = actix_ws::handle(&req, body)?;
     let mut rx = broadcaster.subscribe();
 
     actix_web::rt::spawn(async move {
-        let mut ping_interval =
-            tokio::time::interval(tokio::time::Duration::from_secs(30));
+        let mut ping_interval = tokio::time::interval(tokio::time::Duration::from_secs(30));
 
         loop {
             tokio::select! {
                 // Forward Redis events to the WebSocket client
                 Ok(msg) = rx.recv() => {
-                    if session.text(msg).await.is_err() {
-                        break;
+                    // Try to parse the relay JSON
+                    if let Ok(relay) = serde_json::from_str::<serde_json::Value>(&msg) {
+                        let source = relay["source"].as_str().unwrap_or("");
+                        let payload = relay["payload"].as_str().unwrap_or("");
+
+                        // Filter: if channel_id matches or is default
+                        let mut should_send = false;
+                        if let Some(ref cid) = channel_id {
+                            // Message is for channel cid: playout:{cid} or analytics:{cid}
+                            if source == format!("playout:{}", cid) || source == format!("analytics:{}", cid) {
+                                should_send = true;
+                            }
+                        } else {
+                            // Legacy/default behavior
+                            if source == "playout:default" || source == "analytics:default" {
+                                should_send = true;
+                            }
+                        }
+
+                        if should_send {
+                            if session.text(payload).await.is_err() {
+                                break;
+                            }
+                        }
                     }
                 }
                 // Process incoming frames (pong / close)

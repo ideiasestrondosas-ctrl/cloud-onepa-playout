@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
-export const APP_VERSION_FALLBACK = 'v2.6.0-ALPHA.52-PRO';
+export const APP_VERSION_FALLBACK = 'v2.6.0-ALPHA.54-PRO';
 
 
 const api = axios.create({
@@ -136,6 +136,12 @@ export const channelPlayoutAPI = {
   start: (channelId) => api.post(`/v2/channels/${channelId}/playout/start`),
   stop: (channelId) => api.post(`/v2/channels/${channelId}/playout/stop`),
   skip: (channelId) => api.post(`/v2/channels/${channelId}/playout/skip`),
+};
+
+// Per-channel watchfolder endpoints — Phase 6
+export const channelWatchfolderAPI = {
+  status: (channelId) => api.get(`/v2/channels/${channelId}/watchfolder/status`),
+  sync: (channelId) => api.post(`/v2/channels/${channelId}/watchfolder/sync`),
 };
 
 // Settings endpoints

@@ -40,7 +40,8 @@
     "analytics": "Análise",
     "templateEditor": "Editor de Modelos",
     "liveInputs": "Entradas ao Vivo",
-    "multiChannel": "Multi-Canal"
+    "multiChannel": "Multi-Canal",
+    "masterDashboard": "Master Dashboard"
   },
   "login": {
     "user": "NOME DE USUÁRIO",
@@ -138,6 +139,11 @@
       "starting_encoder": "Iniciando o codificador HW...",
       "playing_rtmp": "Playout em execução via RTMP/HLS"
     },
+    "active_channel": {
+      "title": "Contexto de Canal Ativo",
+      "severity": "info",
+      "desc": "Todas as operações neste dashboard (Start/Stop, Skip, Toggles) aplicam-se APENAS ao canal selecionado na barra lateral."
+    },
     "diag": {
       "title": "Diagnóstico do sistema",
       "updated_at": "Atualizado: {{time}} · Atualização automática 5s",
@@ -170,6 +176,8 @@
     "subtitle": "Gerenciamento Inteligente de Conteúdo",
     "sync": "SINCRONIZAR",
     "syncing": "SINCRONIZANDO...",
+    "sync_watchfolder": "Sincronizar Watchfolder",
+    "syncing_watchfolder": "Sincronizando...",
     "audit": "AUDITORIA",
     "bulk_select": "Seleção Múltipla",
     "cancel_selection": "Cancelar seleção",
@@ -178,6 +186,10 @@
     "select_all": "Selecionar tudo",
     "mark_filler": "Marcar como preenchimento",
     "mark_prog": "Marcar como Prog",
+    "syncFolder": {
+      "title": "Sincronização de Watchfolder",
+      "desc": "O botão 'Sync Watchfolder' percorre o diretório físico associado ao CANAL ATIVO e regista novos ficheiros de media. Não afeta outros canais."
+    },
     "structure": "ESTRUTURA",
     "root": "Raiz",
     "hint_title": "DICA",
@@ -288,6 +300,12 @@
       "estimated_space": "ESPAÇO ESTIMADO",
       "batch_generate": "Geração em lote ({{count}})"
     }
+  },
+  "masterDashboard": {
+    "title": "Master Dashboard",
+    "subtitle": "Monitorização Mosaico Multi-Canal",
+    "hint": "Clica num canal para mudar o contexto e abrir o Dashboard principal.",
+    "live": "DIRETO"
   },
   "playlist": {
     "title": "EDITOR DE PLAYLIST",
@@ -595,6 +613,29 @@
         "close_btn": "ENTENDI",
         "empty": "NÃO HISTÓRIA DISPONÍVEL",
         "releases": [
+          {
+            "version": "v2.6.0-ALPHA.54-PRO",
+            "date": "2026-03-25",
+            "changes": [
+              "Master Dashboard: Implementada nova vista em Mosaico para monitorização passiva de todos os canais",
+              "Playout Engine: Corrigido bug de parsing JSON nas configurações de protocolo que causava crashes no FFmpeg",
+              "Watchfolder: Adicionado isolamento por canal e funcionalidade de sincronização dedicada",
+              "Saúde do Sistema: Refatoração de diagnósticos e telemetria para ser totalmente ciente do canal",
+              "i18n: Concluída a localização total de todas as novas funcionalidades Multi-Canal (EN, PT, ES, FR)",
+              "Help System: Atualização de documentação e guias para a nova arquitetura Multi-Canal"
+            ]
+          },
+          {
+            "version": "v2.6.0-ALPHA.53-PRO",
+            "date": "2026-03-25",
+            "changes": [
+              "Master Dashboard: Removida tag redundante 'ON AIR' para uma interface mais limpa",
+              "Master Dashboard: Adicionado efeito 'glow' azul e animação de escala suave para o canal selecionado",
+              "WebSocket: Refatoração do EventBus backend para suportar subscrições por wildcard (*)",
+              "TV Guide: Corrigida a isolação de dados do EPG garantindo que cada canal vê apenas os seus eventos",
+              "Sistema: Correção de macros SQL no backend para garantir compilação estável em ambientes Docker"
+            ]
+          },
           {
             "version": "v2.6.0-ALPHA.52-PRO",
             "date": "2026-03-20",
@@ -1262,17 +1303,15 @@
     "deactivate_btn": "Desativar modo de ajuda",
     "close_btn": "Fechar",
     "tabs": {
-      "dashboard": "Painel",
-      "media": "Mídia",
-      "playlists": "Listas de reprodução",
-      "calendar": "Calendário",
-      "graphics": "Gráficos",
+      "dashboard": "Dashboard",
+      "library": "Biblioteca",
+      "schedule": "Agenda",
       "settings": "Configurações",
       "templates": "Modelos",
-      "troubleshooting": "Problemas",
-      "live-inputs": "Entradas ao Vivo",
-      "multi-channel": "Multi-Canal",
-      "health": "Saúde do Sistema"
+      "live-inputs": "Entradas ao vivo",
+      "master-dashboard": "Master Dashboard",
+      "health": "Saúde",
+      "multi-channel": "Multi-Canal"
     },
     "multi_channel": {
       "title": "Multi-Canal",
@@ -1410,6 +1449,22 @@
       "fillers": {
         "title": "Clipes de preenchimento",
         "desc": "Os preenchimentos são usados ​​automaticamente para preencher lacunas vazias na programação."
+      },
+      "syncFolder": {
+        "title": "Sincronização de Watchfolder",
+        "desc": "O botão 'Sync Watchfolder' percorre o diretório físico associado ao CANAL ATIVO e regista novos ficheiros de media. Não afeta outros canais."
+      }
+    },
+    "masterDashboard": {
+      "title": "Master Dashboard",
+      "intro": "O Master Dashboard fornece uma monitorização em mosaico em tempo real de todos os canais ativos no sistema.",
+      "mosaic": {
+        "title": "Grelha Mosaico",
+        "desc": "Apresenta previews HLS de baixa latência. Um selo 'DIRETO' vermelho indica que o canal está a transmitir."
+      },
+      "context": {
+        "title": "Mudar de Contexto",
+        "desc": "Clicar em qualquer cartão de canal irá defini-lo como o 'Canal Ativo' e navegá-lo para o Dashboard principal para controlo detalhado."
       }
     },
     "playlists": {

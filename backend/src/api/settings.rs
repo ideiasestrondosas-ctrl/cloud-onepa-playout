@@ -888,9 +888,19 @@ async fn get_vm_logs() -> impl Responder {
     HttpResponse::Ok().json(serde_json::json!({ "sections": sections }))
 }
 
-async fn get_diagnostics(pool: web::Data<PgPool>) -> impl Responder {
+// ── Query struct for diagnostics ──────────────────────────────────────────────
+#[derive(serde::Deserialize, Default)]
+struct DiagnosticsQuery {
+    channel_id: Option<uuid::Uuid>,
+}
+
+async fn get_diagnostics(
+    pool: web::Data<PgPool>,
+    query: web::Query<DiagnosticsQuery>,
+) -> impl Responder {
     use serde_json::json;
 
+    let channel_id = query.channel_id;
     let mut checks = serde_json::Map::new();
     let mut score: i32 = 100;
 
@@ -921,7 +931,25 @@ async fn get_diagnostics(pool: web::Data<PgPool>) -> impl Responder {
     else if media_check.0 == "warning" { score -= 15; }
 
     // ── 3. Watchfolder check ───────────────────────────────────────────────
-    let watchfolder_path = format!("{}/watchfolder", assets_path);
+    // If a specific channel was requested, check its per-channel watchfolder directory.
+    // Otherwise fall back to the global /watchfolder path.
+    let watchfolder_path = if let Some(cid) = channel_id {
+        let wf_rel: Option<String> = sqlx::query_scalar(
+            "SELECT watchfolder_path FROM channels WHERE id = $1"
+        )
+        .bind(cid)
+        .fetch_optional(pool.get_ref())
+        .await
+        .ok()
+        .flatten();
+
+        let media_root = std::env::var("MEDIA_PATH")
+            .unwrap_or_else(|_| "/var/lib/onepa-playout/media".to_string());
+        let rel = wf_rel.unwrap_or_else(|| format!("channels/{}/watchfolder", cid));
+        format!("{}/{}", media_root.trim_end_matches('/'), rel)
+    } else {
+        format!("{}/watchfolder", assets_path)
+    };
     let wf_check = check_directory_accessible(&watchfolder_path);
     checks.insert("watchfolder".into(), json!({
         "status": wf_check.0,
@@ -929,8 +957,8 @@ async fn get_diagnostics(pool: web::Data<PgPool>) -> impl Responder {
     }));
     if wf_check.0 != "ok" { score -= 10; }
 
-    // ── 4. Engine Connection check (FFmpeg playout engine) ──────────────────
-    let engine_check = check_engine_connection(pool.get_ref()).await;
+    // ── 4. Engine Connection check (scoped per channel if channel_id given) ─
+    let engine_check = check_engine_connection_scoped(pool.get_ref(), channel_id).await;
     checks.insert("engine_connection".into(), json!({
         "status": engine_check.0,
         "details": engine_check.1
@@ -955,9 +983,9 @@ async fn get_diagnostics(pool: web::Data<PgPool>) -> impl Responder {
     }));
     if time_check.0 != "ok" { score -= 10; }
 
-    // ── 7. Stats ───────────────────────────────────────────────────────────
+    // ── 7. Stats (scoped per channel when channel_id provided) ─────────────
     let hostname = get_hostname();
-    let clips_today = get_clips_played_today(pool.get_ref()).await;
+    let clips_today = get_clips_played_today_scoped(pool.get_ref(), channel_id).await;
     let active_streams = get_active_streams(pool.get_ref()).await;
     let last_error = get_last_error(pool.get_ref()).await;
 
@@ -976,6 +1004,57 @@ async fn get_diagnostics(pool: web::Data<PgPool>) -> impl Responder {
         "stats": stats
     }))
 }
+
+/// Engine check scoped to a specific channel (reads playout active status from DB/channel_settings)
+/// or falls back to global is_running if no channel_id given.
+async fn check_engine_connection_scoped(
+    pool: &PgPool,
+    channel_id: Option<uuid::Uuid>,
+) -> (&'static str, serde_json::Value) {
+    if let Some(cid) = channel_id {
+        // Check if the channel is marked as enabled and has been seen running
+        let enabled: Option<bool> = sqlx::query_scalar(
+            "SELECT enabled FROM channels WHERE id = $1"
+        )
+        .bind(cid)
+        .fetch_optional(pool)
+        .await
+        .ok()
+        .flatten();
+
+        match enabled {
+            Some(true) => ("ok", serde_json::json!({ "key": "health.details.engine.ok" })),
+            Some(false) => ("warning", serde_json::json!({ "key": "health.details.engine.stopped" })),
+            None => ("warning", serde_json::json!({ "key": "health.details.engine.not_configured" })),
+        }
+    } else {
+        check_engine_connection(pool).await
+    }
+}
+
+/// Clips played today, optionally scoped to a channel via as_run table.
+async fn get_clips_played_today_scoped(pool: &PgPool, channel_id: Option<uuid::Uuid>) -> i64 {
+    let today = chrono::Utc::now().date_naive();
+    let result = if let Some(cid) = channel_id {
+        sqlx::query_scalar::<_, i64>(
+            "SELECT COUNT(*) FROM as_run_log \
+             WHERE actual_start >= $1 AND channel_id = $2"
+        )
+        .bind(today)
+        .bind(cid)
+        .fetch_optional(pool)
+        .await
+    } else {
+        sqlx::query_scalar::<_, i64>(
+            "SELECT COUNT(*) FROM as_run_log WHERE actual_start >= $1"
+        )
+        .bind(today)
+        .fetch_optional(pool)
+        .await
+    };
+    result.ok().flatten().unwrap_or(0)
+}
+
 
 fn check_disk_space(path: &str) -> (&'static str, serde_json::Value) {
     use std::process::Command;

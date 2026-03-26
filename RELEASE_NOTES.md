@@ -1,34 +1,29 @@
 # Release Notes - Cloud Onepa Playout
 
-## v2.6.0-ALPHA.53-PRO ()
+## v2.6.0-ALPHA.54-PRO ()
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.
 - **Documentation**: Synced README.md and version history.
 
-## v2.6.0-ALPHA.53-PRO ()
+## v2.6.0-ALPHA.54-PRO (2026-03-25)
 
 ### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
+- **Master Dashboard**: Implemented new Mosaic view for passive monitoring of all channels.
+- **Playout Engine**: Fixed critical bug where protocol settings were parsed with JSON quotes, causing FFmpeg crashes.
+- **Watchfolder**: Implemented per-channel isolation and dedicated synchronization functionality.
+- **System Health**: Refactored diagnostics and telemetry to be fully channel-aware.
+- **i18n**: Completed full localization for all Multi-Channel features (EN, PT, ES, FR).
+- **Help System**: Comprehensive documentation for the new Multi-Channel architecture.
 
-## v2.6.0-ALPHA.52-PRO ()
-
-### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
-
-## v2.6.0-ALPHA.52-PRO ()
+## v2.6.0-ALPHA.53-PRO (2026-03-25)
 
 ### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
-
-## v2.6.0-ALPHA.52-PRO ()
-
-### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
+- **Master Dashboard**: Removed redundant 'ON AIR' tag for a cleaner interface.
+- **Master Dashboard**: Added blue 'glow' effect and smooth scale animation for selected channel.
+- **WebSocket**: Refactored backend EventBus to support wildcard (*) subscriptions.
+- **TV Guide**: Fixed EPG data isolation ensuring each channel sees only its own events.
+- **System**: Fixed SQL macros in backend to ensure stable build in Docker environments.
 
 ## v2.6.0-ALPHA.51-PRO ()
 

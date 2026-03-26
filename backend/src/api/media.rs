@@ -22,6 +22,7 @@ pub struct MediaQuery {
     pub limit: Option<i64>,
     pub is_filler: Option<bool>,
     pub folder_id: Option<String>,
+    pub channel_id: Option<String>,
 }
 
 #[derive(serde::Deserialize)]
@@ -67,17 +68,30 @@ async fn list_media(query: web::Query<MediaQuery>, pool: web::Data<PgPool>) -> i
     };
     
     let folder_clause = folder_condition.map(|c| format!(" AND {}", c)).unwrap_or_default();
+    
+    let channel_condition = if let Some(ref channel_id) = query.channel_id {
+        if channel_id == "shared" || channel_id.is_empty() {
+             Some("channel_id IS NULL".to_string())
+        } else if let Ok(uid) = Uuid::parse_str(channel_id) {
+             Some(format!("channel_id = '{}'", uid))
+        } else {
+             None
+        }
+    } else { None };
+    let channel_clause = channel_condition.map(|c| format!(" AND {}", c)).unwrap_or_default();
+
     let where_clause = if conditions.is_empty() {
         format!(
-            "WHERE path NOT LIKE '%.proxy.%' AND path NOT LIKE '%.optimized.%' AND (path NOT LIKE '%/assets/protected/%' OR filename = 'big_buck_bunny_1080p_h264.mov'){}",
-            folder_clause
+            "WHERE path NOT LIKE '%.proxy.%' AND path NOT LIKE '%.optimized.%' AND (path NOT LIKE '%/assets/protected/%' OR filename = 'big_buck_bunny_1080p_h264.mov'){}{}",
+            folder_clause, channel_clause
         )
     } else {
         let cond_str = conditions.join(" AND ");
         format!(
-            "WHERE path NOT LIKE '%.proxy.%' AND path NOT LIKE '%.optimized.%' AND (path NOT LIKE '%/assets/protected/%' OR filename = 'big_buck_bunny_1080p_h264.mov') AND {}{}",
+            "WHERE path NOT LIKE '%.proxy.%' AND path NOT LIKE '%.optimized.%' AND (path NOT LIKE '%/assets/protected/%' OR filename = 'big_buck_bunny_1080p_h264.mov') AND {}{}{}",
             cond_str,
-            folder_clause
+            folder_clause,
+            channel_clause
         )
     };
     
@@ -400,7 +414,7 @@ async fn copy_media(
     };
 
     // Insert new record with FRIENDLY filename
-    let result = sqlx::query("INSERT INTO media (id, filename, path, media_type, duration, width, height, codec, bitrate, thumbnail_path, folder_id, is_filler) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)")
+    let result = sqlx::query("INSERT INTO media (id, filename, path, media_type, duration, width, height, codec, bitrate, thumbnail_path, folder_id, is_filler, channel_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)")
         .bind(new_id)
         .bind(&friendly_filename)  // Use friendly name in DB
         .bind(&new_path)
@@ -413,6 +427,7 @@ async fn copy_media(
         .bind(new_thumb_path)
         .bind(req.target_folder_id)
         .bind(original.is_filler)
+        .bind(original.channel_id)
         .execute(pool.get_ref())
         .await;
 
@@ -567,7 +582,7 @@ async fn make_transparent(
                     ),
                 };
 
-            let result = sqlx::query("INSERT INTO media (id, filename, path, media_type, duration, width, height, codec, bitrate, is_filler, folder_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)")
+            let result = sqlx::query("INSERT INTO media (id, filename, path, media_type, duration, width, height, codec, bitrate, is_filler, folder_id, channel_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)")
                 .bind(id)
                 .bind(&output_filename)
                 .bind(&output_path)
@@ -579,6 +594,7 @@ async fn make_transparent(
                 .bind(info.bitrate)
                 .bind(false)
                 .bind(m.folder_id)
+                .bind(m.channel_id)
                 .execute(pool.get_ref())
                 .await;
 
@@ -704,6 +720,7 @@ async fn upload_media(
     std::fs::create_dir_all(&thumbnails_path).ok();
 
     let mut current_folder_id: Option<Uuid> = None;
+    let mut current_channel_id: Option<Uuid> = None;
 
     while let Some(item) = payload.next().await {
         let mut field = item?;
@@ -718,6 +735,19 @@ async fn upload_media(
             if let Ok(id_str) = String::from_utf8(value) {
                 if let Ok(uid) = Uuid::parse_str(&id_str) {
                     current_folder_id = Some(uid);
+                }
+            }
+            continue;
+        }
+
+        if field_name == "channel_id" {
+            let mut value = Vec::new();
+            while let Some(chunk) = field.next().await {
+                value.extend_from_slice(&chunk?);
+            }
+            if let Ok(id_str) = String::from_utf8(value) {
+                if let Ok(uid) = Uuid::parse_str(&id_str) {
+                    current_channel_id = Some(uid);
                 }
             }
             continue;
@@ -764,7 +794,7 @@ async fn upload_media(
 
         let media_type = if info.has_video { "video" } else { "audio" };
 
-        sqlx::query("INSERT INTO media (id, filename, path, media_type, duration, width, height, codec, bitrate, thumbnail_path, folder_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)")
+        sqlx::query("INSERT INTO media (id, filename, path, media_type, duration, width, height, codec, bitrate, thumbnail_path, folder_id, channel_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)")
             .bind(id)
             .bind(&filename)
             .bind(&file_path)
@@ -776,6 +806,7 @@ async fn upload_media(
             .bind(info.bitrate)
             .bind(Some(thumbnail_path))
             .bind(current_folder_id)
+            .bind(current_channel_id)
             .execute(pool.get_ref())
             .await
             .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;

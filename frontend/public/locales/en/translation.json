@@ -40,7 +40,8 @@
     "analytics": "Analytics",
     "templateEditor": "Template Editor",
     "liveInputs": "Live Inputs",
-    "multiChannel": "Multi-Channel"
+    "multiChannel": "Multi-Channel",
+    "masterDashboard": "Master Dashboard"
   },
   "login": {
     "user": "USERNAME",
@@ -170,6 +171,8 @@
     "subtitle": "Intelligent Content Management",
     "sync": "SYNC",
     "syncing": "SYNCING...",
+    "sync_watchfolder": "Sync Watchfolder",
+    "syncing_watchfolder": "Syncing...",
     "audit": "AUDIT",
     "bulk_select": "Multiple Selection",
     "cancel_selection": "Cancel Selection",
@@ -288,6 +291,12 @@
       "estimated_space": "ESTIMATED SPACE",
       "batch_generate": "Batch Generate ({{count}})"
     }
+  },
+  "masterDashboard": {
+    "title": "Master Dashboard",
+    "subtitle": "Multi-Channel Mosaic Monitor",
+    "hint": "Click on a channel to switch context and open the main Dashboard.",
+    "live": "LIVE"
   },
   "playlist": {
     "title": "PLAYLIST EDITOR",
@@ -595,6 +604,29 @@
         "close_btn": "GOT IT",
         "empty": "NO HISTORY AVAILABLE",
         "releases": [
+          {
+            "version": "v2.6.0-ALPHA.54-PRO",
+            "date": "2026-03-25",
+            "changes": [
+              "Master Dashboard: Implemented new Mosaic view for passive monitoring of all channels",
+              "Playout Engine: Fixed JSON parsing bug in protocol settings that caused FFmpeg crashes",
+              "Watchfolder: Added per-channel isolation and dedicated synchronization functionality",
+              "System Health: Refactored diagnostics and telemetry to be fully channel-aware",
+              "i18n: Completed full localization for all Multi-Channel features (EN, PT, ES, FR)",
+              "Help System: Updated documentation and guides for the new Multi-Channel architecture"
+            ]
+          },
+          {
+            "version": "v2.6.0-ALPHA.53-PRO",
+            "date": "2026-03-25",
+            "changes": [
+              "Master Dashboard: Removed redundant 'ON AIR' tag for a cleaner interface",
+              "Master Dashboard: Added blue 'glow' effect and smooth scale animation for selected channel",
+              "WebSocket: Refactored backend EventBus to support wildcard (*) subscriptions",
+              "TV Guide: Fixed EPG data isolation ensuring each channel sees only its own events",
+              "System: Fixed SQL macros in backend to ensure stable build in Docker environments"
+            ]
+          },
           {
             "version": "v2.6.0-ALPHA.52-PRO",
             "date": "2026-03-20",
@@ -1240,7 +1272,21 @@
         "compress_on": "Compression ON",
         "compress_off": "Compression OFF",
         "days": "days",
-        "restart_btn": "RESTART ENGINE"
+        "restart_btn": "RESTART ENGINE",
+        "logs": {
+          "title": "System Diagnostics",
+          "intro": "Real-time monitoring of channel health and playout logs.",
+          "engine": "FFmpeg Engine status and PID.",
+          "uptime": "Continuous broadcast duration.",
+          "schedule_validity": "Checks if the current channel has a valid playlist for the current time.",
+          "active_protocols": "List of enabled distribution protocols (RTMP, SRT, etc.).",
+          "last_logs": "Latest technical output from the encoder."
+        },
+        "active_channel": {
+          "title": "Active Channel Context",
+          "severity": "info",
+          "desc": "All operations in this dashboard (Start/Stop, Skip, Toggles) apply ONLY to the channel selected in the sidebar."
+        }
       }
     }
   },
@@ -1252,10 +1298,8 @@
     "playlists": "Playlists",
     "calendar": "Calendar",
     "graphics": "Graphics",
-    "settings": "Settings",
-    "troubleshooting": "Issues"
+    "settings": "Settings"
   },
-  "udp_ready": "UDP Protocol ready for activation on save.",
   "help": {
     "title": "Help Center",
     "subtitle": "CLOUD ONEPA PLAYOUT — OPERATIONS GUIDE",
@@ -1263,16 +1307,14 @@
     "close_btn": "Close",
     "tabs": {
       "dashboard": "Dashboard",
-      "media": "Media",
-      "playlists": "Playlists",
-      "calendar": "Calendar",
-      "graphics": "Graphics",
+      "library": "Library",
+      "schedule": "Schedule",
       "settings": "Settings",
       "templates": "Templates",
-      "troubleshooting": "Troubleshooting",
       "live-inputs": "Live Inputs",
-      "multi-channel": "Multi-Channel",
-      "health": "System Health"
+      "master-dashboard": "Master Dashboard",
+      "health": "Health",
+      "multi-channel": "Multi-Channel"
     },
     "multi_channel": {
       "title": "Multi-Channel",
@@ -1334,6 +1376,18 @@
       "tips": {
         "title": "Tips and Recommendations",
         "content": "• Each additional channel requires system resources (CPU, memory). On systems with limited resources, it is recommended to limit to 2-3 simultaneous channels.\n• The main channel is always automatically created at system startup.\n• Use the preview function to check broadcast quality before making it available to the public.\n• In case of persistent errors, check the network connection and system logs in the Diagnostics section."
+      }
+    },
+    "masterDashboard": {
+      "title": "Master Dashboard",
+      "intro": "The Master Dashboard provides a real-time mosaic monitoring of all active channels in the system.",
+      "mosaic": {
+        "title": "Mosaic Grid",
+        "desc": "Displays low-latency HLS previews. A red 'LIVE' badge indicates the channel is currently broadcasting."
+      },
+      "context": {
+        "title": "Switching Context",
+        "desc": "Clicking on any channel brick will set it as the 'Active Channel' and navigate you to the main Dashboard for detailed control."
       }
     },
     "dashboard": {
@@ -1408,8 +1462,12 @@
         "field_type_desc": "Series, Movie, Documentary, etc."
       },
       "fillers": {
-        "title": "Filler Clips",
-        "desc": "Fillers are used automatically to fill empty gaps in the schedule."
+        "title": "Fillers",
+        "desc": "Fillers are clips used to fill gaps in the schedule or as emergency content when no playlist is active."
+      },
+      "syncFolder": {
+        "title": "Watchfolder Sync",
+        "desc": "The Sync Watchfolder button scans the physical directory associated with the ACTIVE CHANNEL and registers new media files. It does not affect other channels."
       }
     },
     "playlists": {

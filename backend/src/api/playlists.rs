@@ -425,7 +425,25 @@ async fn hydrate_playlist_content(content: &serde_json::Value, pool: &PgPool) ->
     }
 }
 
-async fn get_epg(pool: web::Data<PgPool>) -> impl Responder {
+#[derive(Deserialize)]
+pub struct EpgQuery {
+    pub channel_id: Option<Uuid>,
+}
+
+async fn get_epg(pool: web::Data<PgPool>, query: web::Query<EpgQuery>) -> impl Responder {
+    let default_id = Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap();
+    let channel_id = query.channel_id.unwrap_or(default_id);
+
+    // Get channel name from channel settings or global settings
+    let channel_name = match sqlx::query_scalar::<_, String>("SELECT name FROM channels WHERE id = $1")
+        .bind(channel_id)
+        .fetch_one(pool.get_ref())
+        .await
+    {
+        Ok(name) => name,
+        Err(_) => "ONEPA TV".to_string(),
+    };
+
     let settings = match sqlx::query_as::<_, Settings>("SELECT * FROM settings WHERE id = TRUE")
         .fetch_one(pool.get_ref())
         .await
@@ -447,7 +465,7 @@ async fn get_epg(pool: web::Data<PgPool>) -> impl Responder {
     xml.push_str("  <channel id=\"onepa.1\">\n");
     xml.push_str(&format!(
         "    <display-name>{}</display-name>\n",
-        escape_xml(settings.channel_name.as_deref().unwrap_or("ONEPA TV"))
+        escape_xml(&channel_name)
     ));
     xml.push_str("  </channel>\n");
 
@@ -459,7 +477,8 @@ async fn get_epg(pool: web::Data<PgPool>) -> impl Responder {
             SELECT s.*, p.name as playlist_name, p.content as playlist_content
             FROM schedule s
             LEFT JOIN playlists p ON s.playlist_id = p.id
-            WHERE (s.date = $1 
+            WHERE s.channel_id = $3
+              AND (s.date = $1 
                OR (s.repeat_pattern = 'daily' AND s.date <= $1)
                OR (s.repeat_pattern = 'weekly' AND (EXTRACT(DOW FROM s.date) + 6)::int % 7 = $2 AND s.date <= $1))
               AND NOT EXISTS (
@@ -477,6 +496,7 @@ async fn get_epg(pool: web::Data<PgPool>) -> impl Responder {
         let schedules_result = sqlx::query_as::<_, Schedule>(query)
             .bind(current_date)
             .bind(dow)
+            .bind(channel_id)
             .fetch_all(pool.get_ref())
             .await;
 

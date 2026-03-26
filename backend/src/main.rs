@@ -175,9 +175,9 @@ async fn main() -> std::io::Result<()> {
     let ws_broadcaster = std::sync::Arc::new(api::ws::create_broadcaster());
     {
         let tx = (*ws_broadcaster).clone();
-        api::ws::bridge_redis_to_broadcaster("playout:default", tx).await;
+        api::ws::bridge_redis_to_broadcaster("playout:*", tx).await;
         let tx2 = (*ws_broadcaster).clone();
-        api::ws::bridge_redis_to_broadcaster("analytics:default", tx2).await;
+        api::ws::bridge_redis_to_broadcaster("analytics:*", tx2).await;
     }
 
     // Start HTTP server

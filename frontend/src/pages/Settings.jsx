@@ -357,6 +357,7 @@ function Settings() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { showSuccess, showError, showWarning } = useNotification();
+  const { activeChannelId } = useChannel();
   const [tabValue, setTabValue] = useState(0);
   const [settings, setSettings] = useState({
     outputType: 'rtmp',
@@ -573,6 +574,17 @@ function Settings() {
       const response = await settingsAPI.get();
       const data = response.data;
 
+      // Phase 4: Merge channel-specific overrides if activeChannelId exists
+      if (activeChannelId) {
+        try {
+          const overridesRes = await channelSettingsAPI.get(activeChannelId);
+          console.log('[Settings] Loaded channel overrides:', overridesRes.data);
+          Object.assign(data, overridesRes.data);
+        } catch (err) {
+          console.warn('[Settings] Failed to fetch channel overrides:', err);
+        }
+      }
+
       // Determine branding type from database field, default to 'video' (ANIMADO)
       const brandingType = data.branding_type || 'video';
       const isVideoBranding = brandingType === 'video';
@@ -643,7 +655,7 @@ function Settings() {
     } finally {
       setLoading(false);
     }
-  }, [showError]);
+  }, [showError, activeChannelId]);
 
   const fetchProtectedAssets = async () => {
     try {
@@ -1083,7 +1095,13 @@ function Settings() {
         payload = { ...settings };
       }
 
-      await settingsAPI.update(payload);
+      // Save to channel_settings overrides if channel is active and editing Output/Playout
+      if (activeChannelId && (tabValue === 0 || tabValue === 2)) {
+        await channelSettingsAPI.put(activeChannelId, payload);
+        console.log(`[Settings] Saved Tab ${tabValue} overrides to channel:`, activeChannelId);
+      } else {
+        await settingsAPI.update(payload);
+      }
       await fetchSettings(); // Re-sync state from DB to prevent stale overwrites
       const tabNames = [t('settings.navigation.tabs.output'), t('settings.navigation.tabs.paths'), t('settings.navigation.tabs.playout')];
       showSuccess(t('settings.notifications.save_success', { tab: tabNames[tabValue] || '' }));
@@ -1091,7 +1109,11 @@ function Settings() {
       // Auto-restart engine with new settings if in Output tab
       if (tabValue === 0) {
         try {
-          await playoutAPI.start();
+          if (activeChannelId) {
+            await channelPlayoutAPI.start(activeChannelId);
+          } else {
+            await playoutAPI.start();
+          }
           showSuccess(t('settings.notifications.restart_success'));
         } catch (startErr) {
           console.warn('Auto-start failed/already running:', startErr);

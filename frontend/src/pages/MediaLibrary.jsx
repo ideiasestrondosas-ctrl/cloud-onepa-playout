@@ -60,13 +60,15 @@ import {
   Analytics as AnalyticsIcon,
 } from '@mui/icons-material';
 import { useDropzone } from 'react-dropzone';
-import { mediaAPI } from '../services/api';
+import { mediaAPI, channelWatchfolderAPI } from '../services/api';
 
 import { useTranslation } from 'react-i18next';
+import { useChannel } from '../contexts/ChannelContext';
 
 export default function MediaLibrary() {
   const { t } = useTranslation();
   const { showSuccess, showError, showWarning, showInfo } = useNotification();
+  const { activeChannelId } = useChannel();
   const [media, setMedia] = useState([]);
   const [folders, setFolders] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -121,6 +123,7 @@ export default function MediaLibrary() {
   const [activeTasks, setActiveTasks] = useState({}); // { mediaId: [task1, task2] }
   const finishedIdsRef = React.useRef([]); // Track IDs that just finished for safe fetchMedia call
   const [syncing, setSyncing] = useState(false);
+  const [syncingWatchfolder, setSyncingWatchfolder] = useState(false);
 
   // Auditing States
   const [auditDialog, setAuditDialog] = useState({ open: false, data: null, loading: false });
@@ -130,7 +133,8 @@ export default function MediaLibrary() {
     try {
       const params = {
         ...filters,
-        folder_id: currentFolder?.id || 'root'
+        folder_id: currentFolder?.id || 'root',
+        channel_id: activeChannelId
       };
       const res = await mediaAPI.list(params);
       setMedia(res.data.media);
@@ -161,6 +165,26 @@ export default function MediaLibrary() {
     }
   };
 
+  const handleSyncWatchfolder = async () => {
+    if (!activeChannelId) return;
+    try {
+      setSyncingWatchfolder(true);
+      const res = await channelWatchfolderAPI.sync(activeChannelId);
+      const { ingested, skipped, errors } = res.data;
+      if (errors && errors.length > 0) {
+        showWarning(`Watchfolder sync: ${ingested} ingested, ${skipped} skipped, ${errors.length} errors`);
+      } else {
+        showSuccess(`Watchfolder sync: ${ingested} new files ingested, ${skipped} already existed`);
+      }
+      fetchMedia();
+    } catch (err) {
+      showError('Erro ao sincronizar watchfolder do canal');
+      console.error(err);
+    } finally {
+      setSyncingWatchfolder(false);
+    }
+  };
+
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -172,7 +196,7 @@ export default function MediaLibrary() {
   useEffect(() => {
     fetchMedia();
     fetchFolders();
-  }, [filters, currentFolder]);
+  }, [filters, currentFolder, activeChannelId]);
 
   // Polling for active tasks
   useEffect(() => {
@@ -437,6 +461,7 @@ export default function MediaLibrary() {
 
           const formData = new FormData();
           if (currentFolder) formData.append('folder_id', currentFolder.id);
+          if (activeChannelId) formData.append('channel_id', activeChannelId);
           formData.append('files', nextFile.file);
 
 
@@ -817,6 +842,20 @@ export default function MediaLibrary() {
           >
             {syncing ? t('media.syncing') : t('media.sync')}
           </Button>
+          {activeChannelId && (
+            <Tooltip title="Scan the channel watchfolder directory and ingest new video files">
+              <Button
+                variant="outlined"
+                color="success"
+                startIcon={syncingWatchfolder ? <CircularProgress size={18} /> : <FolderOpenIcon />}
+                onClick={handleSyncWatchfolder}
+                disabled={syncingWatchfolder}
+                sx={{ fontWeight: 800, border: '1px solid rgba(76, 175, 80, 0.35)' }}
+              >
+                {syncingWatchfolder ? t('media.syncing_watchfolder') : t('media.sync_watchfolder')}
+              </Button>
+            </Tooltip>
+          )}
           <Button
             variant="outlined"
             color="secondary"

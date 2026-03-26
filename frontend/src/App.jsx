@@ -29,6 +29,7 @@ const GraphicsEditor = lazy(() => import('./pages/GraphicsEditor'));
 const PlayoutHealth = lazy(() => import('./pages/PlayoutHealth'));
 const LiveInputs = lazy(() => import('./pages/LiveInputs'));
 const MultiChannelPanel = lazy(() => import('./components/MultiChannelPanel'));
+const MasterDashboard = lazy(() => import('./pages/MasterDashboard'));
 
 // ─── Shared loading fallback ───────────────────────────────────────────────
 const PageLoader = () => (
@@ -92,6 +93,7 @@ function App() {
                     <Route path="/health" element={<ProtectedLayout><PlayoutHealth /></ProtectedLayout>} />
                     <Route path="/live-inputs" element={<ProtectedLayout><LiveInputs /></ProtectedLayout>} />
                     <Route path="/multi-channel" element={<ProtectedLayout><MultiChannelPanel /></ProtectedLayout>} />
+                    <Route path="/master-dashboard" element={<ProtectedLayout><MasterDashboard /></ProtectedLayout>} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 </Suspense>

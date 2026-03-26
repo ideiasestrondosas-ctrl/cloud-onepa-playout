@@ -40,7 +40,8 @@
     "analytics": "Analyses",
     "templateEditor": "Éditeur de Modèles",
     "liveInputs": "Entrées en Direct",
-    "multiChannel": "Multi-Canal"
+    "multiChannel": "Multi-Canal",
+    "masterDashboard": "Master Dashboard"
   },
   "login": {
     "user": "NOM D'UTILISATEUR",
@@ -163,6 +164,11 @@
       "no_logs": "Aucun journal disponible",
       "diag_failed": "Impossible de récupérer le rapport.",
       "refresh_now": "Actualiser maintenant"
+    },
+    "active_channel": {
+      "title": "Contexte de chaîne active",
+      "severity": "info",
+      "desc": "Toutes les opérations de ce tableau de bord (Start/Stop, Skip, Toggles) s'appliquent UNIQUEMENT à la chaîne sélectionnée dans la barre latérale."
     }
   },
   "media": {
@@ -170,6 +176,8 @@
     "subtitle": "Gestion de contenu intelligente",
     "sync": "SYNCHRONISATION",
     "syncing": "SYNCHRONISATION...",
+    "sync_watchfolder": "Synchroniser Watchfolder",
+    "syncing_watchfolder": "Synchronisation...",
     "audit": "AUDIT",
     "bulk_select": "Sélection multiple",
     "cancel_selection": "Annuler la sélection",
@@ -282,12 +290,18 @@
     },
     "audit_dialog": {
       "title": "Audit des proxys Web",
-      "optimized": "Toutes les vidéos de la bibliothèque ont des proxys Web générés ! Le système est optimisé.",
+      "optimized": "Toutes les vidéos de la bibliothèque ont des proxys Web générés ! Le système est optimizado.",
       "missing_alert": "<b>{{count}} vidéos</b> détectées sans version de proxy Web. Cela nécessite un traitement supplémentaire du serveur pendant le streaming et la navigation.",
       "videos_no_proxy": "VIDÉOS SANS PROXY",
       "estimated_space": "ESPACE ESTIMÉ",
       "batch_generate": "Génération par lots ({{count}})"
     }
+  },
+  "masterDashboard": {
+    "title": "Master Dashboard",
+    "subtitle": "Moniteur Mosaïque Multi-Canaux",
+    "hint": "Cliquez sur une chaîne pour changer de contexte et ouvrir le Tableau de Bord principal.",
+    "live": "EN DIRECT"
   },
   "playlist": {
     "title": "ÉDITEUR DE LISTE DE LECTURE",
@@ -595,6 +609,29 @@
         "close_btn": "J'AI COMPRIS",
         "empty": "AUCUN HISTORIQUE DISPONIBLE",
         "releases": [
+          {
+            "version": "v2.6.0-ALPHA.54-PRO",
+            "date": "2026-03-25",
+            "changes": [
+              "Master Dashboard: Implémentation d'une nouvelle vue Mosaïque pour la surveillance passive de tous les canaux",
+              "Moteur de Playout: Correction d'un bug d'analyse JSON dans les paramètres de protocole causant des crashs FFmpeg",
+              "Watchfolder: Ajout de l'isolation par canal et d'une fonctionnalité de synchronisation dédiée",
+              "Santé du Système: Refonte des diagnostics et de la télémétrie pour être totalement conscients du canal",
+              "i18n: Localisation complète terminée pour toutes les fonctionnalités Multi-Canaux (EN, PT, ES, FR)",
+              "Système d'Aide: Mise à jour de la documentation et des guides pour la nouvelle architecture Multi-Canaux"
+            ]
+          },
+          {
+            "version": "v2.6.0-ALPHA.53-PRO",
+            "date": "2026-03-25",
+            "changes": [
+              "Master Dashboard: Suppression de la balise redondante 'EN DIRECT' pour une interface plus épurée",
+              "Master Dashboard: Ajout d'un effet 'glow' bleu et d'une animation d'échelle fluide pour le canal sélectionné",
+              "WebSocket: Refonte de l'EventBus backend pour supporter les abonnements par wildcard (*)",
+              "Guide TV: Correction de l'isolation des données EPG garantissant que chaque canal ne voit que ses propres événements",
+              "Système: Correction des macros SQL dans le backend pour assurer une compilation stable dans Docker"
+            ]
+          },
           {
             "version": "v2.6.0-ALPHA.52-PRO",
             "date": "2026-03-20",
@@ -1263,16 +1300,14 @@
     "close_btn": "Fermer",
     "tabs": {
       "dashboard": "Tableau de bord",
-      "media": "Médias",
-      "playlists": "Listes de lecture",
-      "calendar": "Calendrier",
-      "graphics": "Graphiques",
+      "library": "Médiathèque",
+      "schedule": "Horaire",
       "settings": "Paramètres",
       "templates": "Modèles",
-      "troubleshooting": "Dépannage",
-      "live-inputs": "Entrées en Direct",
-      "multi-channel": "Multi-Canaux",
-      "health": "Santé du Système"
+      "live-inputs": "Entrées en direct",
+      "master-dashboard": "Master Dashboard",
+      "health": "Santé",
+      "multi-channel": "À canaux multiples"
     },
     "multi_channel": {
       "title": "Multi-Canaux",
@@ -1334,6 +1369,18 @@
       "tips": {
         "title": "Conseils et Recommandations",
         "content": "• Chaque canal supplémentaire nécessite des ressources système (CPU, mémoire). Sur les systèmes aux ressources limitées, il est recommandé de limiter à 2-3 canaux simultanés.\n• Le canal principal est toujours créé automatiquement au démarrage du système.\n• Utilisez la fonction d'aperçu pour vérifier la qualité de la diffusion avant de la rendre publique.\n• En cas d'erreurs persistantes, vérifiez la connexion réseau et les journaux du système dans la section Diagnostic."
+      }
+    },
+    "masterDashboard": {
+      "title": "Master Dashboard",
+      "intro": "Le Master Dashboard fornece uma monitorização em mosaico em tempo real de todos os canais ativos no sistema.",
+      "mosaic": {
+        "title": "Grille Mosaïque",
+        "desc": "Apresenta previews HLS de baixa latência. Un selo 'EN DIRECT' vermelho indique que o canal está a transmitir."
+      },
+      "context": {
+        "title": "Changer de Contexte",
+        "desc": "Cliquez sur n'importe que cartão de canal irá defini-lo comme le 'Canal Ativo' et navegá-lo para o Dashboard principal para controlo detalhado."
       }
     },
     "dashboard": {
@@ -1410,8 +1457,13 @@
       "fillers": {
         "title": "Clips de remplissage",
         "desc": "Les remplisseurs sont utilisés automatiquement pour combler les espaces vides dans le planning."
+      },
+      "syncFolder": {
+        "title": "Synchronisation Watchfolder",
+        "desc": "Le bouton 'Sync Watchfolder' parcourt le répertoire physique associé au CANAL ACTIF et enregistre os novos ficheiros de média. N'affecte pas os outros canais."
       }
     },
+
     "playlists": {
       "title": "Éditeur de liste de lecture",
       "intro": "Les listes de lecture sont des séquences de contenu que le moteur de diffusion reproduit dans l'ordre.",
