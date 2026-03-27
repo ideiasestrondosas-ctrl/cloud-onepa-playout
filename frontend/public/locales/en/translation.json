@@ -581,6 +581,81 @@
               "Multi-Channel Core: One instance managing multiple channels",
               "High Availability: Redundancy and automatic failover"
             ]
+          },
+          "p32_categories": {
+            "title": "CATEGORY FOLDERS & BATCH PLAYLIST",
+            "focus": "Smart media organisation with drag-and-drop to playlists",
+            "items": [
+              "Category System: Full CRUD for media categories (Rock, Salsa, Merengue, Jazz, Pop, Reggaeton, Classical, News, Movies, Sports, Filler) + custom categories",
+              "Categories View: Visual grid in Media Library with file count per category",
+              "Drag Category → Playlist: Drag an entire folder to add all files at once",
+              "Category Filter: Sidebar filter in Media Library and Playlist Editor",
+              "i18n: Full translation of category UI in EN, PT, ES, FR"
+            ]
+          },
+          "p33_ndi": {
+            "title": "LIVE SOURCE SWITCHING & NDI",
+            "focus": "Real-time source switching and professional NDI networking",
+            "items": [
+              "NDI Input/Output: FFmpeg integration with NDI SDK for ultra-low-latency broadcast networks",
+              "Live Switcher UI: A/B preview component to switch sources in real-time",
+              "Multi-Source PIP: Picture-in-Picture for sign language, inserts and breaking news"
+            ]
+          },
+          "p34_audio": {
+            "title": "AUDIO COMPLIANCE & MULTI-TRACK",
+            "focus": "Broadcast-grade EBU R128 normalisation and independent audio tracks",
+            "items": [
+              "EBU R128 Loudness: FFmpeg loudnorm filter per channel, compliant with satellite/cable standards",
+              "Multi-Audio Track: Independent tracks (Original + Audio Description + Multilingual)",
+              "Audio Metering UI: Real-time VU Meters and LUFS on the Dashboard via WebSocket"
+            ]
+          },
+          "p35_qc": {
+            "title": "AUTOMATED QC & INGEST VALIDATION",
+            "focus": "Automatic quality control on media import",
+            "items": [
+              "Native Quality Control: Automatic validation (black frames, freeze, silent audio, incompatible codec)",
+              "Smart Thumbnails: Intelligent representative frame extraction",
+              "Auto Proxy Generation: Automatic lightweight proxy creation for instant library preview"
+            ]
+          },
+          "p36_fast": {
+            "title": "FAST CHANNELS & MONETISATION",
+            "focus": "FAST channel delivery and dynamic advertising",
+            "items": [
+              "FAST Channel Delivery: Packaging for Pluto TV, Samsung TV Plus and FAST platforms",
+              "Dynamic Ad Insertion (DAI): SCTE-35 expansion for server-side insertion into LL-HLS",
+              "Viewer Analytics: Per-channel audience estimation and engagement metrics"
+            ]
+          },
+          "p37_enterprise": {
+            "title": "ENTERPRISE HARDENING",
+            "focus": "High availability, BXF compliance and granular access control",
+            "items": [
+              "Active-Active Redundancy: Heartbeat between playout instances with automatic failover",
+              "BXF/Traffic Integration: Import/export in Broadcast eXchange Format",
+              "Granular RBAC: Per-channel and per-feature role-based permissions",
+              "Remote Monitoring Dashboard: Read-only web interface for remote monitoring"
+            ]
+          },
+          "p38_redesign": {
+            "title": "REDESIGN UI/UX (BROADCAST GRADE)",
+            "focus": "New interface and professional master control aesthetics",
+            "items": [
+              "Design Tokens: Neon palette and 'Deep Night' dark mode for 24/7 operations",
+              "Modularization: Lightweight components for instant loading",
+              "Accessibility: Audited contrast and keyboard navigation support"
+            ]
+          },
+          "p39_performance": {
+            "title": "PERFORMANCE HARDENING & VM STABILITY",
+            "focus": "Optimization for limited hardware and extreme stability",
+            "items": [
+              "Memory Management: PWA Caching and active memory purge in virtual components",
+              "Database Optimization: Connection pool reduction and instant queries",
+              "System Guard: Active resource monitoring and adjusted kernel limits"
+            ]
           }
         },
         "idioma": {
@@ -604,6 +679,15 @@
         "close_btn": "GOT IT",
         "empty": "NO HISTORY AVAILABLE",
         "releases": [
+          {
+            "version": "v2.6.0-ALPHA.56-PRO",
+            "date": "2026-03-27",
+            "changes": [
+              "Product Roadmap: Added Phases 38 (Redesign) and 39 (Performance) to the system Roadmap",
+              "Memory Optimization: Refactored Settings component into sub-tabs with Lazy Loading to reduce RAM usage",
+              "Stability: Implementation of Error Boundary and elimination of memory leaks in virtualization components"
+            ]
+          },
           {
             "version": "v2.6.0-ALPHA.55-PRO",
             "date": "2026-03-26",
@@ -1324,7 +1408,8 @@
       "live-inputs": "Live Inputs",
       "master-dashboard": "Master Dashboard",
       "health": "Health",
-      "multi-channel": "Multi-Channel"
+      "multi-channel": "Multi-Channel",
+      "roadmap": "Product Roadmap"
     },
     "multi_channel": {
       "title": "Multi-Channel",
@@ -1878,6 +1963,69 @@
       "step6": "The generated playlist appears in the Playlists section ready for scheduling",
       "tips_title": "Tips and Best Practices",
       "tips_content": "• Create templates for recurring programming patterns (daily shows, weekly specials)\n• Use descriptive names that include duration and purpose\n• Include filler blocks in templates for scheduling flexibility\n• Test templates by generating sample playlists before using them on air\n• Keep template durations realistic (avoid over-scheduling)\n• Update templates periodically based on programming changes\n• Use the 24-hour template as a starting point for custom variations\n• Remember that generated playlists can be further edited in the Playlist Editor"
+    },
+    "roadmap": {
+      "title": "PRODUCT ROADMAP",
+      "intro": "The following phases define the planned evolution of Cloud Onepa Playout beyond its current ALPHA state. No implementation has started — this is the strategic vision.",
+      "note": "These features are planned but not yet implemented. Custom categories (Rock, Salsa, Merengue, Jazz, Pop, etc.) will be available from Phase 32 onwards.",
+      "p32": {
+        "title": "CATEGORY FOLDERS & BATCH PLAYLIST",
+        "desc": "Organise media by genre/category and drag entire folders to playlists at once.",
+        "item1": "Category System: Full CRUD for default categories (Rock, Salsa, Merengue, Jazz, Pop, Reggaeton, Classical, News, Movies, Sports, Filler) + custom categories",
+        "item2": "Categories View: Visual grid in Media Library with file count per category",
+        "item3": "Drag Category → Playlist: Drop an entire folder to add all files at once (sequential or random)",
+        "item4": "Category Filter: Sidebar filter in Media Library and Playlist Editor"
+      },
+      "p33": {
+        "title": "LIVE SOURCE SWITCHING & NDI",
+        "desc": "Switch between live sources in real-time using broadcast-grade NDI networking.",
+        "item1": "NDI Input/Output: FFmpeg integration with NDI SDK for ultra-low-latency broadcast networks",
+        "item2": "Live Switcher UI: A/B preview component to switch sources in real-time with crossfade",
+        "item3": "Multi-Source PIP: Picture-in-Picture for sign language, inserts and breaking news"
+      },
+      "p34": {
+        "title": "AUDIO COMPLIANCE & MULTI-TRACK",
+        "desc": "Broadcast-grade EBU R128 audio normalisation and independent audio tracks.",
+        "item1": "EBU R128 Loudness: FFmpeg loudnorm filter per channel, compliant with satellite/cable standards",
+        "item2": "Multi-Audio Track: Independent tracks (Original + Audio Description + Multilingual)",
+        "item3": "Audio Metering UI: Real-time VU Meters and LUFS on the Dashboard via WebSocket"
+      },
+      "p35": {
+        "title": "AUTOMATED QC & INGEST VALIDATION",
+        "desc": "Automatic quality control on media import to prevent on-air failures.",
+        "item1": "Native QC: Automatic validation (black frames, freeze, silent audio, incompatible codec)",
+        "item2": "Smart Thumbnails: Intelligent representative frame extraction (not first frame)",
+        "item3": "Auto Proxy Generation: Automatic lightweight proxy creation for instant library preview"
+      },
+      "p36": {
+        "title": "FAST CHANNELS & MONETISATION",
+        "desc": "FAST channel delivery and dynamic ad insertion for revenue generation.",
+        "item1": "FAST Channel Delivery: Packaging for Pluto TV, Samsung TV Plus and FAST platforms",
+        "item2": "Dynamic Ad Insertion (DAI): SCTE-35 expansion for server-side insertion into LL-HLS",
+        "item3": "Viewer Analytics: Per-channel audience estimation and engagement metrics"
+      },
+      "p37": {
+        "title": "ENTERPRISE HARDENING",
+        "desc": "High availability, BXF compliance, RBAC and remote monitoring for broadcast operations.",
+        "item1": "Active-Active Redundancy: Heartbeat between playout instances with automatic failover",
+        "item2": "BXF/Traffic Integration: Import/export in Broadcast eXchange Format",
+        "item3": "Granular RBAC: Per-channel and per-feature role-based permissions",
+        "item4": "Remote Monitoring Dashboard: Read-only web interface for remote monitoring"
+      },
+      "p38": {
+        "title": "REDESIGN UI/UX (BROADCAST GRADE)",
+        "desc": "New professional interface focused on extreme productivity and master control aesthetics.",
+        "item1": "Design Tokens: Neon color palette and 'Deep Night' dark mode for 24/7 operating environments",
+        "item2": "Modularization: Lightweight and decoupled components for instant loading",
+        "item3": "Accessibility: Audited contrast and full keyboard navigation support"
+      },
+      "p39": {
+        "title": "PERFORMANCE HARDENING & VM STABILITY",
+        "desc": "Severe optimizations for limited hardware and extreme stability in VM environments.",
+        "item1": "Memory Management: PWA Caching and active memory purge in virtual components",
+        "item2": "Database Optimization: Connection pool reduction and instant queries for limited I/O",
+        "item3": "System Guard: Active resource monitoring and kernel limits adjusted for playout"
+      }
     }
   },
   "graphics": {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNotification } from '../contexts/NotificationContext';
 import {
   Box,
@@ -61,9 +61,229 @@ import {
 } from '@mui/icons-material';
 import { useDropzone } from 'react-dropzone';
 import { mediaAPI, channelWatchfolderAPI } from '../services/api';
+import { FixedSizeList as ListWindow } from 'react-window';
 
 import { useTranslation } from 'react-i18next';
 import { useChannel } from '../contexts/ChannelContext';
+
+// --- Sub-componente MediaCard Memoizado para Performance ---
+const MediaCard = React.memo(({ 
+  item, 
+  t, 
+  selectionMode, 
+  selectedItemIds, 
+  toggleItemSelection, 
+  formatDuration, 
+  handlePreload, 
+  setSelectedMedia, 
+  setVideoLoading, 
+  setPreviewOpen, 
+  activeTasks, 
+  handleOptimize, 
+  handleGenerateProxy, 
+  handleFetchMetadata, 
+  handleEditMetadata, 
+  checkingDelete, 
+  handleSmartDelete, 
+  setMedia, 
+  fetchMedia 
+}) => (
+  <Paper className="glass-panel" sx={{
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    position: 'relative',
+    overflow: 'hidden',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    border: '1px solid rgba(255, 255, 255, 0.05)',
+    '&:hover': {
+      transform: 'translateY(-4px)',
+      borderColor: 'primary.main',
+      boxShadow: '0 8px 24px rgba(0, 229, 255, 0.15)'
+    }
+  }}>
+    <Box sx={{ position: 'relative', height: 140 }}>
+      <CardMedia
+        component="img"
+        height="140"
+        image={item.media_type === 'video' ? `/api/media/${item.id}/thumbnail` : (item.media_type === 'image' ? `/api/media/${item.id}/stream` : `https://via.placeholder.com/300x140?text=${t('media.placeholders.audio')}`)}
+        onError={(e) => {
+          e.target.onerror = null;
+          e.target.src = `https://via.placeholder.com/300x140?text=${t('media.placeholders.no_preview')}`;
+        }}
+        sx={{ filter: 'brightness(0.8)' }}
+      />
+      <Box sx={{
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 0.5
+      }}>
+        <Chip
+          label={item.media_type.toUpperCase()}
+          size="small"
+          sx={{
+            height: 18,
+            fontSize: '0.6rem',
+            fontWeight: 800,
+            bgcolor: 'rgba(0,0,0,0.8)',
+            color: 'primary.main',
+          }}
+        />
+        {item.duration > 0 && (
+          <Chip
+            label={formatDuration(item.duration)}
+            size="small"
+            sx={{
+              height: 18,
+              fontSize: '0.6rem',
+              fontWeight: 800,
+              bgcolor: 'rgba(0,0,0,0.8)',
+              color: '#fff',
+            }}
+          />
+        )}
+      </Box>
+      {item.is_filler && (
+        <Box sx={{
+          position: 'absolute',
+          bottom: 8,
+          left: 8,
+          bgcolor: 'primary.main',
+          color: '#000',
+          px: 1,
+          borderRadius: 1,
+          fontSize: '0.6rem',
+          fontWeight: 800
+        }}>
+          FILLER
+        </Box>
+      )}
+      {selectionMode && (
+        <Box sx={{ position: 'absolute', top: 8, left: 8, zIndex: 2 }}>
+          <Checkbox
+            checked={selectedItemIds.includes(item.id)}
+            onChange={() => toggleItemSelection(item.id)}
+            sx={{
+              color: 'primary.main',
+              bgcolor: 'rgba(0,0,0,0.4)',
+              p: 0.5,
+              '&:hover': { bgcolor: 'rgba(0,0,0,0.6)' },
+              '&.Mui-checked': { color: 'primary.main' }
+            }}
+          />
+        </Box>
+      )}
+    </Box>
+
+    <Box sx={{ p: 2, flexGrow: 1 }}>
+      <Typography variant="body2" sx={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', mb: 2 }} title={item.filename}>
+        {item.filename}
+      </Typography>
+
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Stack direction="row" spacing={0.5}>
+          <Tooltip title={t('media.preview')}>
+            <IconButton
+              size="small"
+              sx={{ color: 'primary.main', bgcolor: 'rgba(0, 229, 255, 0.1)' }}
+              onMouseEnter={() => handlePreload(item)}
+              onClick={() => { setSelectedMedia(item); setVideoLoading(item.media_type === 'video'); setPreviewOpen(true); }}
+            >
+              <PlayIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          {item.media_type === 'video' && (
+            <Tooltip title={item.is_optimized ? t('media.optimized_streaming') : t('media.optimize_streaming')}>
+              <IconButton
+                size="small"
+                sx={{
+                  color: item.is_optimized ? 'success.light' : 'success.main',
+                  bgcolor: item.is_optimized ? 'rgba(76, 175, 80, 0.2)' : 'rgba(76, 175, 80, 0.1)',
+                  border: item.is_optimized ? '1px solid rgba(76, 175, 80, 0.4)' : 'none'
+                }}
+                onClick={() => handleOptimize(item.id)}
+                disabled={item.is_optimized || activeTasks[item.id]?.some(task => task.task_type === 'optimize' && (task.status === 'pending' || task.status === 'processing'))}
+              >
+                {activeTasks[item.id]?.find(task => task.task_type === 'optimize' && task.status === 'failed') ? (
+                  <Tooltip title={t('common.error_details', { error: activeTasks[item.id]?.find(task => task.task_type === 'optimize' && task.status === 'failed')?.error_message || t('common.unknown') })}>
+                    <ErrorIcon fontSize="small" color="error" />
+                  </Tooltip>
+                ) : activeTasks[item.id]?.some(task => task.task_type === 'optimize') ? (
+                  <CircularProgress key={`opt-${item.id}`} size={16} color="success" />
+                ) : item.is_optimized ? (
+                  <CheckCircleIcon fontSize="small" />
+                ) : (
+                  <SpeedIcon fontSize="small" />
+                )}
+              </IconButton>
+            </Tooltip>
+          )}
+          {item.media_type === 'video' && (
+            <Tooltip title={item.has_proxy ? t('media.proxy_available') : t('media.generate_proxy')}>
+              <IconButton
+                size="small"
+                sx={{
+                  color: item.has_proxy ? 'secondary.light' : 'warning.main',
+                  bgcolor: item.has_proxy ? 'rgba(156, 39, 176, 0.2)' : 'rgba(255, 152, 0, 0.1)',
+                  border: item.has_proxy ? '1px solid rgba(156, 39, 176, 0.4)' : 'none'
+                }}
+                onClick={() => handleGenerateProxy(item.id)}
+                disabled={item.has_proxy || activeTasks[item.id]?.some(task => task.task_type === 'proxy' && (task.status === 'pending' || task.status === 'processing'))}
+              >
+                {activeTasks[item.id]?.find(task => task.task_type === 'proxy' && task.status === 'failed') ? (
+                  <Tooltip title={t('common.error_details', { error: activeTasks[item.id]?.find(task => task.task_type === 'proxy' && task.status === 'failed')?.error_message || t('common.unknown') })}>
+                    <ErrorIcon fontSize="small" color="error" />
+                  </Tooltip>
+                ) : activeTasks[item.id]?.some(task => task.task_type === 'proxy') ? (
+                  <CircularProgress key={`proxy-${item.id}`} size={16} color="warning" />
+                ) : item.has_proxy ? (
+                  <CheckCircleIcon fontSize="small" />
+                ) : (
+                  <BoltIcon fontSize="small" />
+                )}
+              </IconButton>
+            </Tooltip>
+          )}
+          <Tooltip title={t('media.metadata_wizard')}>
+            <IconButton size="small" sx={{ color: 'secondary.main', bgcolor: 'rgba(156, 39, 176, 0.1)' }} onClick={() => handleFetchMetadata(item)}><WizardIcon fontSize="small" /></IconButton>
+          </Tooltip>
+          <Tooltip title={t('media.edit')}>
+            <IconButton size="small" sx={{ color: 'text.secondary', bgcolor: 'rgba(255, 255, 255, 0.05)' }} onClick={() => handleEditMetadata(item)}><EditIcon fontSize="small" /></IconButton>
+          </Tooltip>
+          <Tooltip title={t('media.file')}>
+            <IconButton
+              size="small"
+              color="error"
+              sx={{ bgcolor: 'rgba(244, 67, 54, 0.1)' }}
+              disabled={checkingDelete === item.id}
+              onClick={(e) => handleSmartDelete(e, item)}
+            >
+              {checkingDelete === item.id ? <CircularProgress size={16} color="inherit" /> : <DeleteIcon fontSize="small" />}
+            </IconButton>
+          </Tooltip>
+        </Stack>
+        <Button
+          size="small"
+          className={item.is_filler ? 'neon-glow' : ''}
+          sx={{
+            fontSize: '0.65rem',
+            fontWeight: 800,
+            minWidth: 60,
+            height: 24,
+            bgcolor: item.is_filler ? 'primary.main' : 'rgba(255, 255, 255, 0.05)',
+            color: item.is_filler ? '#000' : 'text.secondary'
+          }}
+          onClick={async () => { await mediaAPI.setFiller(item.id, !item.is_filler); fetchMedia(); }}
+        >
+          {item.is_filler ? 'FILLER' : 'PROG'}
+        </Button>
+      </Box>
+    </Box>
+  </Paper>
+));
 
 export default function MediaLibrary() {
   const { t } = useTranslation();
@@ -197,6 +417,7 @@ export default function MediaLibrary() {
     fetchMedia();
     fetchFolders();
   }, [filters, currentFolder, activeChannelId]);
+
 
   // Polling for active tasks
   useEffect(() => {
@@ -589,20 +810,20 @@ export default function MediaLibrary() {
     }
   });
 
-  const formatDuration = (seconds) => {
+  function formatDuration(seconds) {
     if (!seconds) return 'N/A';
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+  }
 
-  const formatBytes = (bytes) => {
+  function formatBytes(bytes) {
     if (bytes === 0) return '0 B';
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
+  }
 
   const handleCancelUpload = (id) => {
     if (uploadControllers[id]) {
@@ -798,6 +1019,56 @@ export default function MediaLibrary() {
     }
   };
 
+  // --- Virtualization Logic for ALPHA VM Optimization ---
+  // Final positioning to ensure ALL handlers and state variables (formatDuration, handlePreload, t, etc.) are fully initialized.
+  const COLUMN_COUNT = 3; 
+  const ROW_HEIGHT = 280; 
+
+  const chunkedMedia = useMemo(() => {
+    const chunks = [];
+    if (!media) return chunks;
+    for (let i = 0; i < media.length; i += COLUMN_COUNT) {
+      chunks.push(media.slice(i, i + COLUMN_COUNT));
+    }
+    return chunks;
+  }, [media]);
+
+  const Row = useCallback(({ index, style }) => {
+    const rowItems = chunkedMedia[index];
+    if (!rowItems) return null;
+    
+    return (
+      <div style={{ ...style, padding: '0 12px' }}>
+        <Grid container spacing={1.5}>
+          {rowItems.map(item => (
+            <Grid item xs={12} sm={6} md={4} key={item.id}>
+              <MediaCard 
+                item={item}
+                t={t}
+                selectionMode={selectionMode}
+                selectedItemIds={selectedItemIds}
+                toggleItemSelection={toggleItemSelection}
+                formatDuration={formatDuration}
+                handlePreload={handlePreload}
+                setSelectedMedia={setSelectedMedia}
+                setVideoLoading={setVideoLoading}
+                setPreviewOpen={setPreviewOpen}
+                activeTasks={activeTasks}
+                handleOptimize={handleOptimize}
+                handleGenerateProxy={handleGenerateProxy}
+                handleFetchMetadata={handleFetchMetadata}
+                handleEditMetadata={handleEditMetadata}
+                checkingDelete={checkingDelete}
+                handleSmartDelete={handleSmartDelete}
+                setMedia={setMedia}
+                fetchMedia={fetchMedia}
+              />
+            </Grid>
+          ))}
+        </Grid>
+      </div>
+    );
+  }, [chunkedMedia, t, selectionMode, selectedItemIds, toggleItemSelection, formatDuration, handlePreload, setSelectedMedia, setVideoLoading, setPreviewOpen, activeTasks, handleOptimize, handleGenerateProxy, handleFetchMetadata, handleEditMetadata, checkingDelete, handleSmartDelete, setMedia, fetchMedia]);
 
   return (
     <Box sx={{ position: 'relative' }}>
@@ -1104,208 +1375,23 @@ export default function MediaLibrary() {
 
           {loading && <LinearProgress sx={{ mb: 2 }} />}
 
-          {/* Media Grid */}
-          <Grid container spacing={1.5}>
-            {media.map(item => (
-              <Grid item xs={12} sm={6} md={4} key={item.id}>
-                <Paper className="glass-panel" sx={{
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  border: '1px solid rgba(255, 255, 255, 0.05)',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    borderColor: 'primary.main',
-                    boxShadow: '0 8px 24px rgba(0, 229, 255, 0.15)'
-                  }
-                }}>
-                  <Box sx={{ position: 'relative', height: 140 }}>
-                    <CardMedia
-                      component="img"
-                      height="140"
-                      image={item.media_type === 'video' ? `/api/media/${item.id}/thumbnail` : (item.media_type === 'image' ? `/api/media/${item.id}/stream` : `https://via.placeholder.com/300x140?text=${t('media.placeholders.audio')}`)}
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = `https://via.placeholder.com/300x140?text=${t('media.placeholders.no_preview')}`;
-                      }}
-                      sx={{ filter: 'brightness(0.8)' }}
-                    />
-                    <Box sx={{
-                      position: 'absolute',
-                      top: 8,
-                      right: 8,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 0.5
-                    }}>
-                      <Chip
-                        label={item.media_type.toUpperCase()}
-                        size="small"
-                        sx={{
-                          height: 18,
-                          fontSize: '0.6rem',
-                          fontWeight: 800,
-                          bgcolor: 'rgba(0,0,0,0.8)',
-                          color: 'primary.main',
-                        }}
-                      />
-                      {item.duration > 0 && (
-                        <Chip
-                          label={formatDuration(item.duration)}
-                          size="small"
-                          sx={{
-                            height: 18,
-                            fontSize: '0.6rem',
-                            fontWeight: 800,
-                            bgcolor: 'rgba(0,0,0,0.8)',
-                            color: '#fff',
-                          }}
-                        />
-                      )}
-                    </Box>
-                    {item.is_filler && (
-                      <Box sx={{
-                        position: 'absolute',
-                        bottom: 8,
-                        left: 8,
-                        bgcolor: 'primary.main',
-                        color: '#000',
-                        px: 1,
-                        borderRadius: 1,
-                        fontSize: '0.6rem',
-                        fontWeight: 800
-                      }}>
-                        FILLER
-                      </Box>
-                    )}
-                    {selectionMode && (
-                      <Box sx={{ position: 'absolute', top: 8, left: 8, zIndex: 2 }}>
-                        <Checkbox
-                          checked={selectedItemIds.includes(item.id)}
-                          onChange={() => toggleItemSelection(item.id)}
-                          sx={{
-                            color: 'primary.main',
-                            bgcolor: 'rgba(0,0,0,0.4)',
-                            p: 0.5,
-                            '&:hover': { bgcolor: 'rgba(0,0,0,0.6)' },
-                            '&.Mui-checked': { color: 'primary.main' }
-                          }}
-                        />
-                      </Box>
-                    )}
-                  </Box>
-
-                  <Box sx={{ p: 2, flexGrow: 1 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', mb: 2 }} title={item.filename}>
-                      {item.filename}
-                    </Typography>
-
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Stack direction="row" spacing={0.5}>
-                        <Tooltip title={t('media.preview')}>
-                          <IconButton
-                            size="small"
-                            sx={{ color: 'primary.main', bgcolor: 'rgba(0, 229, 255, 0.1)' }}
-                            onMouseEnter={() => handlePreload(item)}
-                            onClick={() => { setSelectedMedia(item); setVideoLoading(item.media_type === 'video'); setPreviewOpen(true); }}
-                          >
-                            <PlayIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        {item.media_type === 'video' && (
-                          <Tooltip title={item.is_optimized ? t('media.optimized_streaming') : t('media.optimize_streaming')}>
-                            <IconButton
-                              size="small"
-                              sx={{
-                                color: item.is_optimized ? 'success.light' : 'success.main',
-                                bgcolor: item.is_optimized ? 'rgba(76, 175, 80, 0.2)' : 'rgba(76, 175, 80, 0.1)',
-                                border: item.is_optimized ? '1px solid rgba(76, 175, 80, 0.4)' : 'none'
-                              }}
-                              onClick={() => handleOptimize(item.id)}
-                              disabled={item.is_optimized || activeTasks[item.id]?.some(task => task.task_type === 'optimize' && (task.status === 'pending' || task.status === 'processing'))}
-                            >
-                              {activeTasks[item.id]?.find(task => task.task_type === 'optimize' && task.status === 'failed') ? (
-                                <Tooltip title={t('common.error_details', { error: activeTasks[item.id]?.find(task => task.task_type === 'optimize' && task.status === 'failed')?.error_message || t('common.unknown') })}>
-                                  <ErrorIcon fontSize="small" color="error" />
-                                </Tooltip>
-                              ) : activeTasks[item.id]?.some(task => task.task_type === 'optimize') ? (
-                                <CircularProgress key={`opt-${item.id}`} size={16} color="success" />
-                              ) : item.is_optimized ? (
-                                <CheckCircleIcon fontSize="small" />
-                              ) : (
-                                <SpeedIcon fontSize="small" />
-                              )}
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        {item.media_type === 'video' && (
-                          <Tooltip title={item.has_proxy ? t('media.proxy_available') : t('media.generate_proxy')}>
-                            <IconButton
-                              size="small"
-                              sx={{
-                                color: item.has_proxy ? 'secondary.light' : 'warning.main',
-                                bgcolor: item.has_proxy ? 'rgba(156, 39, 176, 0.2)' : 'rgba(255, 152, 0, 0.1)',
-                                border: item.has_proxy ? '1px solid rgba(156, 39, 176, 0.4)' : 'none'
-                              }}
-                              onClick={() => handleGenerateProxy(item.id)}
-                              disabled={item.has_proxy || activeTasks[item.id]?.some(task => task.task_type === 'proxy' && (task.status === 'pending' || task.status === 'processing'))}
-                            >
-                              {activeTasks[item.id]?.find(task => task.task_type === 'proxy' && task.status === 'failed') ? (
-                                <Tooltip title={t('common.error_details', { error: activeTasks[item.id]?.find(task => task.task_type === 'proxy' && task.status === 'failed')?.error_message || t('common.unknown') })}>
-                                  <ErrorIcon fontSize="small" color="error" />
-                                </Tooltip>
-                              ) : activeTasks[item.id]?.some(task => task.task_type === 'proxy') ? (
-                                <CircularProgress key={`proxy-${item.id}`} size={16} color="warning" />
-                              ) : item.has_proxy ? (
-                                <CheckCircleIcon fontSize="small" />
-                              ) : (
-                                <BoltIcon fontSize="small" />
-                              )}
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        <Tooltip title={t('media.metadata_wizard')}>
-                          <IconButton size="small" sx={{ color: 'secondary.main', bgcolor: 'rgba(156, 39, 176, 0.1)' }} onClick={() => handleFetchMetadata(item)}><WizardIcon fontSize="small" /></IconButton>
-                        </Tooltip>
-                        <Tooltip title={t('media.edit')}>
-                          <IconButton size="small" sx={{ color: 'text.secondary', bgcolor: 'rgba(255, 255, 255, 0.05)' }} onClick={() => handleEditMetadata(item)}><EditIcon fontSize="small" /></IconButton>
-                        </Tooltip>
-                        <Tooltip title={t('media.file')}>
-                          <IconButton
-                            size="small"
-                            color="error"
-                            sx={{ bgcolor: 'rgba(244, 67, 54, 0.1)' }}
-                            disabled={checkingDelete === item.id}
-                            onClick={(e) => handleSmartDelete(e, item)}
-                          >
-                            {checkingDelete === item.id ? <CircularProgress size={16} color="inherit" /> : <DeleteIcon fontSize="small" />}
-                          </IconButton>
-                        </Tooltip>
-                      </Stack>
-                      <Button
-                        size="small"
-                        className={item.is_filler ? 'neon-glow' : ''}
-                        sx={{
-                          fontSize: '0.65rem',
-                          fontWeight: 800,
-                          minWidth: 60,
-                          height: 24,
-                          bgcolor: item.is_filler ? 'primary.main' : 'rgba(255, 255, 255, 0.05)',
-                          color: item.is_filler ? '#000' : 'text.secondary'
-                        }}
-                        onClick={async () => { await mediaAPI.setFiller(item.id, !item.is_filler); fetchMedia(); }}
-                      >
-                        {item.is_filler ? 'FILLER' : 'PROG'}
-                      </Button>
-                    </Box>
-                  </Box>
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
+          {/* Virtualized Media List */}
+          <Box sx={{ height: '70vh', width: '100%', mt: 1 }}>
+            {media.length > 0 ? (
+              <ListWindow
+                height={600} // Approximate height of the viewport
+                itemCount={chunkedMedia.length}
+                itemSize={ROW_HEIGHT}
+                width="100%"
+              >
+                {Row}
+              </ListWindow>
+            ) : (
+              <Box sx={{ py: 10, textAlign: 'center', opacity: 0.5 }}>
+                <Typography variant="h6">{t('media.empty_folder') || 'Pasta vazia'}</Typography>
+              </Box>
+            )}
+          </Box>
 
           {/* Pagination */}
           {pagination.pages > 1 && (

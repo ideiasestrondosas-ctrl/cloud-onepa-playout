@@ -40,7 +40,8 @@ import {
   BugReport as BugReport,
   Description as DescriptionIcon,
   Favorite as FavoriteIcon,
-  TableChart as TableChartIcon
+  TableChart as TableChartIcon,
+  Map as MapIcon
 } from '@mui/icons-material';
 import { useHelp } from '../context/HelpContext';
 import { useTranslation } from 'react-i18next';
@@ -819,6 +820,148 @@ const HelpMasterDashboard = () => {
   );
 };
 
+// ─── HELP ROADMAP ────────────────────────────────────────────────────────────
+
+const HelpRoadmap = () => {
+  const { t } = useTranslation();
+
+  const roadmapPhases = [
+    {
+      phase: 'Phase 32',
+      version: 'v2.7.x',
+      color: '#e91e63',
+      titleKey: 'help.roadmap.p32.title',
+      descKey: 'help.roadmap.p32.desc',
+      items: [
+        'help.roadmap.p32.item1',
+        'help.roadmap.p32.item2',
+        'help.roadmap.p32.item3',
+        'help.roadmap.p32.item4',
+      ],
+    },
+    {
+      phase: 'Phase 33',
+      version: 'v2.8.x',
+      color: '#00bcd4',
+      titleKey: 'help.roadmap.p33.title',
+      descKey: 'help.roadmap.p33.desc',
+      items: [
+        'help.roadmap.p33.item1',
+        'help.roadmap.p33.item2',
+        'help.roadmap.p33.item3',
+      ],
+    },
+    {
+      phase: 'Phase 34',
+      version: 'v2.9.x',
+      color: '#ff5722',
+      titleKey: 'help.roadmap.p34.title',
+      descKey: 'help.roadmap.p34.desc',
+      items: [
+        'help.roadmap.p34.item1',
+        'help.roadmap.p34.item2',
+        'help.roadmap.p34.item3',
+      ],
+    },
+    {
+      phase: 'Phase 35',
+      version: 'v3.0.x',
+      color: '#9c27b0',
+      titleKey: 'help.roadmap.p35.title',
+      descKey: 'help.roadmap.p35.desc',
+      items: [
+        'help.roadmap.p35.item1',
+        'help.roadmap.p35.item2',
+        'help.roadmap.p35.item3',
+      ],
+    },
+    {
+      phase: 'Phase 36',
+      version: 'v3.1.x',
+      color: '#ff9800',
+      titleKey: 'help.roadmap.p36.title',
+      descKey: 'help.roadmap.p36.desc',
+      items: [
+        'help.roadmap.p36.item1',
+        'help.roadmap.p36.item2',
+        'help.roadmap.p36.item3',
+      ],
+    },
+    {
+      phase: 'Phase 37',
+      version: 'v3.2.x',
+      color: '#607d8b',
+      titleKey: 'help.roadmap.p37.title',
+      descKey: 'help.roadmap.p37.desc',
+      items: [
+        'help.roadmap.p37.item1',
+        'help.roadmap.p37.item2',
+        'help.roadmap.p37.item3',
+        'help.roadmap.p37.item4',
+      ],
+    },
+    {
+      phase: 'Phase 38',
+      version: 'v3.3.0',
+      color: '#00e5ff',
+      titleKey: 'help.roadmap.p38.title',
+      descKey: 'help.roadmap.p38.desc',
+      items: [
+        'help.roadmap.p38.item1',
+        'help.roadmap.p38.item2',
+        'help.roadmap.p38.item3',
+      ],
+    },
+    {
+      phase: 'Phase 39',
+      version: 'v3.4.0',
+      color: '#4caf50',
+      titleKey: 'help.roadmap.p39.title',
+      descKey: 'help.roadmap.p39.desc',
+      items: [
+        'help.roadmap.p39.item1',
+        'help.roadmap.p39.item2',
+        'help.roadmap.p39.item3',
+      ],
+    },
+  ];
+
+  return (
+    <Box>
+      <Section title={t('help.roadmap.title')}>
+        <Typography variant="caption" sx={{ mb: 1, color: 'text.secondary', display: 'block' }}>
+          {t('help.roadmap.intro')}
+        </Typography>
+      </Section>
+
+      {roadmapPhases.map((p) => (
+        <Box key={p.phase} sx={{ mb: 1.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+            <Chip
+              label={`${p.phase} · ${p.version}`}
+              size="small"
+              sx={{ bgcolor: `${p.color}22`, color: p.color, fontWeight: 800, fontFamily: 'monospace', fontSize: '0.6rem', border: `1px solid ${p.color}55` }}
+            />
+            <Typography variant="caption" sx={{ fontWeight: 800, color: p.color, fontSize: '0.72rem' }}>
+              {t(p.titleKey)}
+            </Typography>
+          </Box>
+          <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.4, pl: 0.5 }}>
+            {t(p.descKey)}
+          </Typography>
+          {p.items.map((itemKey, i) => (
+            <Step key={i} n={i + 1} text={t(itemKey)} />
+          ))}
+        </Box>
+      ))}
+
+      <Alert severity="info" sx={{ mt: 1, py: 0.3, '& .MuiAlert-message': { py: 0 } }}>
+        <Typography variant="caption">{t('help.roadmap.note')}</Typography>
+      </Alert>
+    </Box>
+  );
+};
+
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
 
 const TABS = [
@@ -833,6 +976,7 @@ const TABS = [
   { id: 'master-dashboard', icon: <TableChartIcon sx={{ fontSize: 14 }} />, content: <HelpMasterDashboard /> },
   { id: 'health', icon: <FavoriteIcon sx={{ fontSize: 14 }} />, content: <HelpHealth /> },
   { id: 'multi-channel', icon: <TableChartIcon sx={{ fontSize: 14 }} />, content: <HelpMultiChannel /> },
+  { id: 'roadmap', icon: <MapIcon sx={{ fontSize: 14 }} />, content: <HelpRoadmap /> },
 ];
 
 

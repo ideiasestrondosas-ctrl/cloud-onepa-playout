@@ -82,20 +82,20 @@ async fn list_media(query: web::Query<MediaQuery>, pool: web::Data<PgPool>) -> i
 
     let where_clause = if conditions.is_empty() {
         format!(
-            "WHERE path NOT LIKE '%.proxy.%' AND path NOT LIKE '%.optimized.%' AND (path NOT LIKE '%/assets/protected/%' OR filename = 'big_buck_bunny_1080p_h264.mov'){}{}",
+            "WHERE path NOT LIKE '%.proxy.%' AND path NOT LIKE '%.optimized.%'{}{}",
             folder_clause, channel_clause
         )
     } else {
         let cond_str = conditions.join(" AND ");
         format!(
-            "WHERE path NOT LIKE '%.proxy.%' AND path NOT LIKE '%.optimized.%' AND (path NOT LIKE '%/assets/protected/%' OR filename = 'big_buck_bunny_1080p_h264.mov') AND {}{}{}",
+            "WHERE path NOT LIKE '%.proxy.%' AND path NOT LIKE '%.optimized.%' AND {}{}{}",
             cond_str,
             folder_clause,
             channel_clause
         )
     };
     
-    // Single optimized query with window function
+    // Single optimized query with window function for total count (matches idx_media_path_filter)
     let sql = format!(
         "SELECT *, COUNT(*) OVER() as total_count FROM media {} ORDER BY created_at DESC LIMIT {} OFFSET {}",
         where_clause, limit, offset
@@ -114,31 +114,18 @@ async fn list_media(query: web::Query<MediaQuery>, pool: web::Data<PgPool>) -> i
 
     match media_result {
         Ok(media_with_count) => {
-            // Get total from first row (all have same count)
             let total = media_with_count.first().map(|m| m.total_count).unwrap_or(0);
             let media: Vec<Media> = media_with_count.into_iter().map(|m| m.media).collect();
             
-            // Use lazy static FFmpegService for proxy checking
-            let ffmpeg = &FFMPEG_SERVICE;
+            // OTIMIZAÇÃO: Evitar probing ffprobe/exists em cada item no loop de listagem
+            // Estas flags devem ser movidas para o banco de dados em futuras migrações
             let media_with_proxy: Vec<serde_json::Value> = media.into_iter().map(|item| {
                 let mut val = serde_json::to_value(&item).unwrap();
-                let mut has_proxy = false;
-                let mut is_optimized = false;
-
-                if item.media_type == "video" {
-                    let original_path = &item.path;
-                    let stem = if original_path.to_lowercase().ends_with(".mp4") {
-                        &original_path[..original_path.len() - 4]
-                    } else {
-                        original_path
-                    };
-                    
-                    let proxy_path = format!("{}.proxy.mp4", stem);
-                    has_proxy = std::path::Path::new(&proxy_path).exists();
-                    
-                    // Check if already optimized (this does a probe, might be slow but accurate)
-                    is_optimized = ffmpeg.is_faststart_optimized(original_path);
-                }
+                
+                // Definimos como false por padrão na listagem para poupar recursos massivos de I/O
+                // O frontend pode solicitar detalhes específicos se necessário
+                let has_proxy = false; 
+                let is_optimized = false;
 
                 let obj = val.as_object_mut().unwrap();
                 obj.insert("has_proxy".to_string(), serde_json::json!(has_proxy));

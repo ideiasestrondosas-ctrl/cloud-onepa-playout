@@ -590,6 +590,81 @@
               "Núcleo multicanal: una instancia que gestiona múltiples canales",
               "Alta disponibilidad: redundancia y conmutación por error automática"
             ]
+          },
+          "p32_categories": {
+            "title": "CARPETAS DE CATEGORÍA & PLAYLIST EN LOTE",
+            "focus": "Organización inteligente del contenido con arrastrar y soltar a playlists",
+            "items": [
+              "Sistema de Categorías: CRUD completo para categorías de media (Rock, Salsa, Merengue, Jazz, Pop, Reggaeton, Clásica, Noticias, Películas, Deportes, Filler) + categorías personalizadas",
+              "Vista de Categorías: Cuadrícula visual en la Biblioteca de Medios con recuento de archivos por categoría",
+              "Arrastrar Categoría → Playlist: Arrastrar una carpeta entera añade todos los archivos de una vez",
+              "Filtro de Categoría: Filtro lateral en la Biblioteca de Medios y el Editor de Playlist",
+              "i18n: Traducción completa de la UI de categorías en ES, PT, EN, FR"
+            ]
+          },
+          "p33_ndi": {
+            "title": "CONMUTACIÓN DE FUENTES EN VIVO & NDI",
+            "focus": "Conmutación en tiempo real y redes profesionales NDI",
+            "items": [
+              "NDI Input/Output: Integración FFmpeg con NDI SDK para redes profesionales de ultra-baja latencia",
+              "Live Switcher UI: Componente A/B para alternar entre fuentes en tiempo real",
+              "PIP Multi-Fuente: Picture-in-Picture para lengua de signos, inserts y breaking news"
+            ]
+          },
+          "p34_audio": {
+            "title": "CONFORMIDAD DE AUDIO & MULTI-PISTA",
+            "focus": "Normalización broadcast EBU R128 y pistas de audio independientes",
+            "items": [
+              "EBU R128 Loudness: Filtro FFmpeg loudnorm por canal, conforme a normas satélite/cable",
+              "Multi-Pista de Audio: Pistas independientes (Original + Audiodescripción + Multilingüe)",
+              "Medición de Audio: VU Meters y LUFS en tiempo real en el Dashboard vía WebSocket"
+            ]
+          },
+          "p35_qc": {
+            "title": "QC AUTOMATIZADO & VALIDACIÓN DE INGEST",
+            "focus": "Control de calidad automático en la importación de media",
+            "items": [
+              "QC Nativo: Validación automática (frames negros, freeze, silencio, codec incompatible) con alerta o rechazo",
+              "Miniaturas Inteligentes: Extracción inteligente de fotogramas representativos",
+              "Generación Automática de Proxy: Creación automática de proxies ligeros para preview en la biblioteca"
+            ]
+          },
+          "p36_fast": {
+            "title": "CANALES FAST & MONETIZACIÓN",
+            "focus": "Entrega de canales FAST y publicidad dinámica",
+            "items": [
+              "Entrega de Canal FAST: Packaging para Pluto TV, Samsung TV Plus y plataformas FAST",
+              "Inserción Dinámica de Anuncios (DAI): Expansión SCTE-35 para inserción dinámica en LL-HLS",
+              "Analytics de Audiencia: Estimativa de audiencia y métricas de engagement por canal"
+            ]
+          },
+          "p37_enterprise": {
+            "title": "ROBUSTECIMIENTO ENTERPRISE",
+            "focus": "Alta disponibilidad, conformidad BXF y control de acceso granular",
+            "items": [
+              "Redundancia Active-Active: Heartbeat entre instancias con failover automático",
+              "Integración BXF/Traffic: Import/export en Broadcast eXchange Format",
+              "RBAC Granular: Permisos por canal y por funcionalidad con herencia de perfiles",
+              "Dashboard de Monitorización Remota: Interfaz web read-only para monitorización remota"
+            ]
+          },
+          "p38_redesign": {
+            "title": "REDISEÑO UI/UX (BROADCAST GRADE)",
+            "focus": "Nueva interfaz y estética de control maestro profesional",
+            "items": [
+              "Design Tokens: Paleta neón y modo oscuro 'Deep Night' para operaciones 24/7",
+              "Modularización: Componentes ligeros para carga instantánea",
+              "Accesibilidad: Contraste auditado y soporte de navegación por teclado"
+            ]
+          },
+          "p39_performance": {
+            "title": "PERFORMANCE HARDENING & VM STABILITY",
+            "focus": "Optimización para hardware limitado y estabilidad extrema",
+            "items": [
+              "Memory Management: PWA Caching y purga activa de memoria en componentes virtuales",
+              "Database Optimization: Reducción del pool de conexión y consultas instantáneas",
+              "System Guard: Monitoreo activo de recursos y límites de kernel ajustados"
+            ]
           }
         },
         "idioma": {
@@ -613,6 +688,15 @@
         "close_btn": "ENTIENDO",
         "empty": "SIN HISTORIAL DISPONIBLE",
         "releases": [
+          {
+            "version": "v2.6.0-ALPHA.56-PRO",
+            "date": "2026-03-27",
+            "changes": [
+              "Hoja de Ruta: Añadidas las Fases 38 (Rediseño) y 39 (Rendimiento) al Roadmap del sistema",
+              "Optimización de Memoria: Refactorización del componente Settings en pestañas con Lazy Loading para reducir el uso de RAM",
+              "Estabilidade: Implementación de Error Boundary y eliminación de fugas de memoria en componentes de virtualización"
+            ]
+          },
           {
             "version": "v2.6.0-ALPHA.55-PRO",
             "date": "2026-03-26",
@@ -1321,7 +1405,8 @@
       "live-inputs": "Entradas en vivo",
       "master-dashboard": "Master Dashboard",
       "health": "Salud",
-      "multi-channel": "Multi-Canal"
+      "multi-channel": "Multi-Canal",
+      "roadmap": "Hoja de Ruta"
     },
     "multi_channel": {
       "title": "Multi-Canal",
@@ -1875,6 +1960,69 @@
       "step6": "La playlist generada aparece en la sección de Playlists lista para programación",
       "tips_title": "Consejos y Mejores Prácticas",
       "tips_content": "• Cree plantillas para patrones de programación recurrentes (programas diarios, especiales semanales)\n• Use nombres descriptivos que incluyan duración y propósito\n• Incluya bloques de relleno en las plantillas para flexibilidad de programación\n• Pruebe las plantillas generando playlists de muestra antes de usarlas en el aire\n• Mantenga las duraciones de las plantillas realistas (evite la sobreprogramación)\n• Actualice las plantillas periódicamente según los cambios de programación\n• Use la plantilla de 24 horas como punto de partida para variaciones personalizadas\n• Recuerde que las playlists generadas pueden editarse posteriormente en el Editor de Playlist"
+    },
+    "roadmap": {
+      "title": "HOJA DE RUTA DEL PRODUCTO",
+      "intro": "Las siguientes fases definen la evolución planificada de Cloud Onepa Playout. Ninguna implementación ha comenzado — esta es la visión estratégica.",
+      "note": "Estas funciones están planificadas pero aún no implementadas. Las categorías personalizadas (Rock, Salsa, Merengue, Jazz, Pop, etc.) estarán disponibles a partir de la Fase 32.",
+      "p32": {
+        "title": "CARPETAS DE CATEGORÍA & PLAYLIST EN LOTE",
+        "desc": "Organizar medios por género/categoría y arrastrar carpetas enteras a playlists de una vez.",
+        "item1": "Sistema de Categorías: CRUD completo para categorías predeterminadas (Rock, Salsa, Merengue, Jazz, Pop, Reggaeton, Clásica, Noticias, Películas, Deportes, Filler) + categorías personalizadas",
+        "item2": "Vista de Categorías: Cuadrícula visual en la Biblioteca de Medios con recuento de archivos por categoría",
+        "item3": "Arrastrar Categoría → Playlist: Arrastrar una carpeta entera para añadir todos los archivos de una vez",
+        "item4": "Filtro de Categoría: Filtro lateral en la Biblioteca de Medios y el Editor de Playlist"
+      },
+      "p33": {
+        "title": "CONMUTACIÓN DE FUENTES EN VIVO & NDI",
+        "desc": "Conmutación entre fuentes en vivo en tiempo real con redes NDI profesionales.",
+        "item1": "NDI Input/Output: Integración FFmpeg con NDI SDK para redes profesionales de ultra-baja latencia",
+        "item2": "Live Switcher UI: Componente A/B para alternar entre fuentes en tiempo real con crossfade",
+        "item3": "PIP Multi-Fuente: Picture-in-Picture para lengua de signos, inserts y breaking news"
+      },
+      "p34": {
+        "title": "CONFORMIDAD AUDIO & MULTI-PISTA",
+        "desc": "Normalización de audio broadcast EBU R128 y pistas de audio independientes.",
+        "item1": "EBU R128 Loudness: Filtro FFmpeg loudnorm por canal, conforme a normas satélite/cable",
+        "item2": "Multi-Pista de Audio: Pistas independientes (Original + Audiodescripción + Multilingüe)",
+        "item3": "Medición de Audio: VU Meters y LUFS en tiempo real en el Dashboard vía WebSocket"
+      },
+      "p35": {
+        "title": "QC AUTOMATIZADO & VALIDACIÓN DE INGEST",
+        "desc": "Control de calidad automático en la importación de medios para prevenir errores en antena.",
+        "item1": "QC Nativo: Validación automática (frames negros, freeze, silencio, codec incompatible)",
+        "item2": "Miniaturas Inteligentes: Extracción inteligente de fotogramas representativos",
+        "item3": "Generación Automática de Proxy: Creación automática de proxies ligeros para preview en la biblioteca"
+      },
+      "p36": {
+        "title": "CANALES FAST & MONETIZACIÓN",
+        "desc": "Entrega de canales FAST e inserción dinámica de publicidad para generación de ingresos.",
+        "item1": "Entrega de Canal FAST: Packaging para Pluto TV, Samsung TV Plus y plataformas FAST",
+        "item2": "Inserción Dinámica de Anuncios (DAI): Expansión SCTE-35 para inserción dinámica en LL-HLS",
+        "item3": "Analytics de Audiencia: Estimativa de audiencia y métricas de engagement por canal"
+      },
+      "p37": {
+        "title": "ROBUSTECIMIENTO ENTERPRISE",
+        "desc": "Alta disponibilidad, conformidad BXF, RBAC y monitorización remota para operaciones broadcast.",
+        "item1": "Redundancia Active-Active: Heartbeat entre instancias con failover automático",
+        "item2": "Integración BXF/Traffic: Import/export en Broadcast eXchange Format",
+        "item3": "RBAC Granular: Permisos por canal y funcionalidad con herencia de perfiles",
+        "item4": "Dashboard de Monitorización Remota: Interfaz web read-only para monitorización remota"
+      },
+      "p38": {
+        "title": "REDISEÑO UI/UX (BROADCAST GRADE)",
+        "desc": "Nueva interfaz profesional centrada en la productividad extrema y la estética de control maestro.",
+        "item1": "Design Tokens: Paleta de colores neón y modo oscuro 'Deep Night' para entornos operativos 24/7",
+        "item2": "Modularización: Componentes ligeros y desacoplados para una carga instantánea",
+        "item3": "Accesibilidad: Contraste auditado y soporte completo de navegación por teclado"
+      },
+      "p39": {
+        "title": "PERFORMANCE HARDENING & VM STABILITY",
+        "desc": "Optimizaciones severas para hardware limitado y estabilidad extrema en entornos de VM.",
+        "item1": "Memory Management: PWA Caching y purga activa de memoria en componentes virtuales",
+        "item2": "Database Optimization: Reducción del pool de conexión y consultas instantáneas para E/S limitada",
+        "item3": "System Guard: Monitoreo activo de recursos y límites de kernel ajustados para playout"
+      }
     }
   },
   "graphics": {

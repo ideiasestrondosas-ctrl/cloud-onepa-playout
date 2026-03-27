@@ -12,6 +12,14 @@ services:
     networks:
       - onepa-network
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.2'
+          memory: 128M
 
 networks:
   onepa-network:

@@ -1,5 +1,36 @@
 # Release Notes - Cloud Onepa Playout
 
+## v2.6.0-ALPHA.56-PRO (2026-03-27)
+
+### 🚀 Release Highlights
+### Objetivo
+Resolver dois erros impeditivos (ReferenceErrors) capturados após o refactoring extremo do sistema para hardware e memória limitados. O primeiro sendo um impedimento global no boot, e o segundo associado a falha de interface nas definições pelo Catch de ErrorBoundary. 
+### Ações Executadas (Análise e Planeamento)
+- **Diagnóstico Erro 1 (ReferenceError: Va)**:
+  - Identificação de `Temporal Dead Zone` (TDZ) originada pelo hoisting do React onde componentes com funções complexas de renderização virtual (`react-window`) estavam alocados antes dos handlers como `handleOptimize`, propiciando crashes no V8 JS Engine do browser.
+  - **Planeada:** Mudança da arquitetura interna da lógica DOM de Virtualização para a base do function tree no `MediaLibrary.jsx`.
+- **Diagnóstico Erro 2 (ReferenceError: userRoles / userProfiles is not defined)**:
+  - Verificado que ao extrair o componente de utilizadores de dentro de `Settings.jsx` para a importação encapsulada por lazy em `UsersTab`, propriedades legadas `userRoles` e `userProfiles` continuavam na árvore JSX principal de parent de injects referenciadas indevidamente embora tenham sido expurgadas do sistema.
+  - **Planeada:** Eliminação destas propriedades de renderização e invocação "fantasmas", poupando ciclos de render tree e prevenindo acionamento das falhas do ErrorBoundary.
+- **Diagnóstico Erro 3 (ReferenceError: handleEditUser is not defined)**:
+  - Confirmação de dessincronização grave na interface React entre `Settings.jsx` (Pai) e `UsersTab.jsx` (Filho). Foram passadas variáveis de propriedades (`handleEditUser`, `handleEditProfile`, `setAddUserOpen`, `showSuccess`, `showError`) que **já não existiam** localmente no Pai, e que também **não eram esperadas nem utilizadas** pelo Filho.
+  - Adicionalmente, ficaram de fora dependências vitais (`viewMode`, `setViewMode`, `setUserDialogOpen`, `handleOpenPasswordDialog`, etc.) necessárias para gerir a modesta lógica de estado interno da aba de Utilizadores.
+  - **Planeada:** Remapeamento completo de todos os atributos na divisa `<UsersTab />` do ficheiro `Settings.jsx`.
+### Próximos Passos
+1. Obter autorização do plano para modificação limpa e segura nestes componentes.
+2. Inspecionar resultados ao re-iniciar as frames da UI.
+---
+
+## v2.6.0-ALPHA.56-PRO (2026-03-27)
+
+### 🚀 Release Highlights
+#### Atualização do Roadmap e Documentação Alpha
+Nesta sessão, sincronizámos a documentação e a interface do ALPHA com o novo roteiro estratégico:
+1. **Roadmap Fases 38 e 39**: Adicionadas às abas de Ajuda e Sobre o Sistema as novas fases de Redesign UI/UX e Performance Hardening.
+2. **Internacionalização**: Sincronização completa de tradução (PT, EN, ES, FR) para o roteiro do produto e histórico de lançamentos.
+3. **Consistência de Versão**: Bump global de versão em toda a stack e base de dados para v2.6.0-ALPHA.56-PRO.
+4. **Segurança e Backup**: Criada pasta de backup `backups/pre-version-bump-alpha56/` contendo os estados originais antes da transição.
+
 ## v2.6.0-ALPHA.55-PRO (2026-03-26)
 
 ### 🚀 Release Highlights
@@ -16,19 +47,19 @@ Nesta sessão, focámos na melhoria do processo de release e na atualização au
 3. **Segurança e Backup**:
    - Criada uma pasta de backup (`backups/pre-release-update-...`) contendo os estados originais de todos os ficheiros modificados antes da implementação das melhorias.
 
-## v2.6.0-ALPHA.55-PRO ()
+## v2.6.0-ALPHA.56-PRO ()
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.
 - **Documentation**: Synced README.md and version history.
 
-## v2.6.0-ALPHA.55-PRO ()
+## v2.6.0-ALPHA.56-PRO ()
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.
 - **Documentation**: Synced README.md and version history.
 
-## v2.6.0-ALPHA.55-PRO ()
+## v2.6.0-ALPHA.56-PRO ()
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.

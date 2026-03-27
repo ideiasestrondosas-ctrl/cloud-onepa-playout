@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import ReactPlayer from 'react-player';
@@ -111,6 +111,13 @@ import {
   Edit as EditIcon,
   Layers as LayersIcon
 } from '@mui/icons-material';
+
+// --- Lazy Loaded Tabs for RAM Optimization ---
+const OutputTab = lazy(() => import('./Settings/OutputTab'));
+const PathsTab = lazy(() => import('./Settings/PathsTab'));
+const PlayoutTab = lazy(() => import('./Settings/PlayoutTab'));
+const UsersTab = lazy(() => import('./Settings/UsersTab'));
+const AboutTab = lazy(() => import('./Settings/AboutTab'));
 
 // --- Error Boundary for Safety ---
 class ErrorBoundary extends React.Component {
@@ -1010,6 +1017,121 @@ function Settings() {
         { text: 'Global State Management: Sincronização de playout via Redis e Socket.io', done: true },
         { text: 'Performance Optimization: Redução de carga no backend e frontend para escala', done: true }
       ]
+    },
+    {
+      phase: 'Phase 32',
+      version: 'v2.7.x',
+      title: 'CATEGORY FOLDERS & BATCH PLAYLIST',
+      focus: 'Organização de media por categoria com drag-and-drop batch para playlists',
+      icon: <MagicIcon />,
+      color: '#e91e63',
+      done: false,
+      items: [
+        { text: 'Category System: Tabela media_categories com CRUD completo e categorias default (Rock, Salsa, Merengue, Jazz, Pop, Reggaeton, Classical, News, Movies, Sports, Filler)', done: false },
+        { text: 'Custom Categories: Possibilidade de criar categorias personalizadas com nome, cor e ícone', done: false },
+        { text: 'Categories View: Grid visual de categorias na Media Library com contagem de ficheiros', done: false },
+        { text: 'Drag Category → Playlist: Arrastar pasta inteira para o PlaylistEditor adiciona todos os ficheiros de uma vez', done: false },
+        { text: 'i18n: Tradução completa da UI de categorias em EN, PT, ES, FR', done: false }
+      ]
+    },
+    {
+      phase: 'Phase 33',
+      version: 'v2.8.x',
+      title: 'LIVE SOURCE SWITCHING & NDI',
+      focus: 'Comutação entre fontes ao vivo e integração profissional NDI',
+      icon: <SensorsIcon />,
+      color: '#00bcd4',
+      done: false,
+      items: [
+        { text: 'NDI Input/Output: Integração FFmpeg com NDI SDK para redes profissionais de ultra-baixa latência', done: false },
+        { text: 'Live Switcher UI: Componente A/B para alternar entre fontes (ficheiro, RTMP, NDI, SRT) em tempo real', done: false },
+        { text: 'Multi-Source PIP: Picture-in-Picture para linguagem gestual, inserts e breaking news', done: false }
+      ]
+    },
+    {
+      phase: 'Phase 34',
+      version: 'v2.9.x',
+      title: 'AUDIO COMPLIANCE & MULTI-TRACK',
+      focus: 'Normalização de áudio broadcast EBU R128 e faixas de áudio independentes',
+      icon: <GraphicsIcon />,
+      color: '#ff5722',
+      done: false,
+      items: [
+        { text: 'EBU R128 Loudness: Filtro FFmpeg loudnorm integrado por canal, compatível com normas satellite/cable', done: false },
+        { text: 'Multi-Audio Track: Faixas independentes (Original + Audiodescrição + Multilíngue) com switching em runtime', done: false },
+        { text: 'Audio Metering UI: VU Meters e LUFS em tempo real no Dashboard via WebSocket', done: false }
+      ]
+    },
+    {
+      phase: 'Phase 35',
+      version: 'v3.0.x',
+      title: 'AUTOMATED QC & INGEST VALIDATION',
+      focus: 'Controlo de qualidade automático no ingest para prevenir erros em direto',
+      icon: <RocketIcon />,
+      color: '#9c27b0',
+      done: false,
+      items: [
+        { text: 'Quality Control Nativo: Validação automática (black frames, freeze, silêncio, codec incompatível) com alerta ou rejeição', done: false },
+        { text: 'Smart Thumbnails: Extração inteligente de frames representativos (não o primeiro frame)', done: false },
+        { text: 'Auto Proxy Generation: Criação automática de proxies leves para preview na biblioteca', done: false }
+      ]
+    },
+    {
+      phase: 'Phase 36',
+      version: 'v3.1.x',
+      title: 'FAST CHANNELS & MONETISATION',
+      focus: 'Canais FAST e inserção dinâmica de publicidade para monetização',
+      icon: <ScalabilityIcon />,
+      color: '#ff9800',
+      done: false,
+      items: [
+        { text: 'FAST Channel Delivery: Packaging para Pluto TV, Samsung TV Plus e plataformas FAST', done: false },
+        { text: 'Dynamic Ad Insertion (DAI): Expansão SCTE-35 para inserção dinâmica em LL-HLS', done: false },
+        { text: 'Viewer Analytics: Estimativa de audiência, engagement metrics e distribuição geográfica por canal', done: false }
+      ]
+    },
+    {
+      phase: 'Phase 37',
+      version: 'v3.2.x',
+      title: 'ENTERPRISE HARDENING',
+      focus: 'Alta disponibilidade, conformidade BXF e controlo de acesso granular',
+      icon: <EnterpriseIcon />,
+      color: '#607d8b',
+      done: false,
+      items: [
+        { text: 'Active-Active Redundancy: Heartbeat entre instâncias com failover automático em caso de falha', done: false },
+        { text: 'BXF/Traffic Integration: Import/export em Broadcast eXchange Format para integração com sistemas de tráfego', done: false },
+        { text: 'Granular RBAC: Permissões por canal e por funcionalidade com herança de perfis', done: false },
+        { text: 'Remote Monitoring Dashboard: Interface web read-only para monitorização remota de todos os canais', done: false }
+      ]
+    },
+    {
+      phase: 'Phase 38',
+      version: 'v3.3.0',
+      title: 'REDESIGN UI/UX (BROADCAST GRADE)',
+      focus: 'Nova interface profissional e estética de controlo mestre',
+      icon: <GraphicsIcon />,
+      color: '#00e5ff',
+      done: false,
+      items: [
+        { text: "Design Tokens: Paleta néon e modo escuro 'Deep Night' para operações 24/7", done: false },
+        { text: 'Modularização: Componentes leves para carregamento instantâneo', done: false },
+        { text: 'Acessibilidade: Contraste auditado e suporte a navegação por teclado', done: false }
+      ]
+    },
+    {
+      phase: 'Phase 39',
+      version: 'v3.4.0',
+      title: 'PERFORMANCE HARDENING & VM STABILITY',
+      focus: 'Otimização para hardware limitado e estabilidade extrema',
+      icon: <AiIcon />,
+      color: '#4caf50',
+      done: false,
+      items: [
+        { text: 'Memory Management: PWA Caching e purga ativa de memória em componentes virtuais', done: false },
+        { text: 'Database Otimization: Redução do pool de conexão e queries instantâneas', done: false },
+        { text: 'System Guard: Monitorização ativa de recursos e limites de kernel ajustados', done: false }
+      ]
     }
   ];
 
@@ -1481,1079 +1603,80 @@ function Settings() {
         {/* Content Area */}
         <Grid item xs={12} md={9.5}>
           <TabPanel value={tabValue} index={0}>
-            {/* Protocolo Section */}
-            <Paper className="glass-panel" sx={{ p: 2, mb: 2 }}>
-              <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Box>
-                  <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800, fontSize: '1rem' }}>{t('settings.output.header.title')}</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.65rem' }}>{t('settings.output.header.subtitle')}</Typography>
-                </Box>
-                <Chip label={t('settings.output.header.status_ready')} color="success" sx={{ fontWeight: 800, fontSize: '0.65rem', height: 20 }} />
+            <Suspense fallback={
+              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", py: 10, gap: 2 }}>
+                <CircularProgress size={40} thickness={4} sx={{ color: "primary.main" }} />
+                <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary" }}>{t("common.loading")}</Typography>
               </Box>
-
-              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 800, letterSpacing: 1, fontSize: '0.75rem' }}>{t('settings.output.main.title')}</Typography>
-              <ToggleButtonGroup
-                value={settings.outputType}
-                exclusive
-                onChange={(e, val) => val && handleOutputTypeChange(val)}
-                fullWidth
-                sx={{ mb: 2, gap: 1 }}
-              >
-                {['rtmp', 'srt', 'udp', 'hls', 'desktop'].map(type => (
-                  <ToggleButton
-                    key={type}
-                    value={type}
-                    sx={{
-                      borderRadius: '8px !important',
-                      py: 0.5,
-                      border: '1px solid rgba(255,255,255,0.05) !important',
-                      fontWeight: 800,
-                      fontSize: '0.7rem',
-                      '&.Mui-selected': { bgcolor: 'primary.main', color: '#000', '&:hover': { bgcolor: 'primary.light' } }
-                    }}
-                  >
-                    {type.toUpperCase()}
-                  </ToggleButton>
-                ))}
-              </ToggleButtonGroup>
-
-              <Grid container spacing={3}>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label={t('settings.output.main.url_label')}
-                    value={settings.outputUrl}
-                    onChange={(e) => setSettings({ ...settings, outputUrl: e.target.value })}
-                    InputProps={{ sx: { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3, fontWeight: 700, fontFamily: 'monospace' } }}
-                    helperText={
-                      settings.outputType === 'udp'
-                        ? t('settings.output.main.udp_tip')
-                        : ""
-                    }
-                    FormHelperTextProps={{ sx: { color: 'warning.main', fontWeight: 'bold' } }}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <FormControl fullWidth>
-                    <InputLabel>{t('settings.output.main.resolution')}</InputLabel>
-                    <Select value={settings.resolution} label={t('settings.output.main.resolution')} onChange={(e) => handleResolutionChange(e.target.value)} sx={{ bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3 }}>
-                      <MenuItem value="3840x2160">{t('settings.output.main.resolutions.4k')}</MenuItem>
-                      <MenuItem value="1920x1080">{t('settings.output.main.resolutions.1080p')}</MenuItem>
-                      <MenuItem value="1280x720">{t('settings.output.main.resolutions.720p')}</MenuItem>
-                      <MenuItem value="640x360">{t('settings.output.main.resolutions.360p')}</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label={t('settings.output.main.bitrate')}
-                    value={settings.videoBitrate}
-                    onChange={(e) => handleBitrateChange(e.target.value)}
-                    InputProps={{ sx: { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3 } }}
-                  />
-                </Grid>
-              </Grid>
-            </Paper>
-
-            {/* Secondary Protocols Section */}
-            <Paper className="glass-panel" sx={{ p: 1.5, mb: 2 }}>
-              <Box sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800, fontSize: '0.9rem' }}>{t('settings.output.multi.title')}</Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.65rem' }}>{t('settings.output.multi.subtitle')}</Typography>
-              </Box>
-
-              {/* Active protocols */}
-              <Grid container spacing={1}>
-                {[
-                  { id: 'rtmp', label: 'RTMP Server', icon: <PlatformIcon /> },
-                  { id: 'srt', label: 'SRT (Caller/Listener)', icon: <PlatformIcon /> },
-                  { id: 'udp', label: 'UDP Streaming', icon: <PlatformIcon /> },
-                  { id: 'hls', label: 'HLS Distribution', icon: <TvIcon /> }
-                ].map(proto => (
-                  <Grid item xs={12} md={3} sm={6} key={proto.id}>
-                    <Box sx={{ p: 1, py: 0.5, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Box sx={{ p: 0.5, bgcolor: 'rgba(0,229,255,0.1)', borderRadius: 1.5, color: 'primary.main' }}>
-                          {React.cloneElement(proto.icon, { fontSize: 'small' })}
-                        </Box>
-                        <Typography variant="caption" sx={{ fontWeight: 800, whiteSpace: 'nowrap' }}>{proto.label}</Typography>
-                      </Box>
-                      <Checkbox
-                        size="small"
-                        checked={settings[`${proto.id}Enabled`]}
-                        onChange={(e) => setSettings({ ...settings, [`${proto.id}Enabled`]: e.target.checked })}
-                        sx={{ color: 'primary.main', p: 0.5, '&.Mui-checked': { color: 'primary.main' } }}
-                      />
-                    </Box>
-                  </Grid>
-                ))}
-
-                {/* Divider */}
-                <Grid item xs={12}>
-                  <Divider sx={{ opacity: 0.08, my: 0.5 }}>
-                    <Chip label={t('settings.output.multi.soon')} size="small" sx={{ height: 20, fontWeight: 800, fontSize: '0.55rem', color: 'warning.main', bgcolor: 'rgba(255,152,0,0.08)', borderColor: 'rgba(255,152,0,0.2)', border: '1px solid' }} />
-                  </Divider>
-                </Grid>
-
-                {/* Future protocols - disabled, not shown on dashboard */}
-                {[
-                  { id: 'dash', label: 'DASH', desc: t('settings.output.multi.dash_desc') },
-                  { id: 'mss', label: 'MSS', desc: t('settings.output.multi.mss_desc') },
-                  { id: 'rtsp', label: 'RTSP', desc: t('settings.output.multi.rtsp_desc') },
-                  { id: 'webrtc', label: 'WebRTC', desc: t('settings.output.multi.webrtc_desc') }
-                ].map(proto => (
-                  <Grid item xs={12} md={3} sm={6} key={proto.id}>
-                    <Tooltip title={proto.desc} arrow>
-                      <Box sx={{ p: 1, py: 0.5, bgcolor: 'rgba(255,255,255,0.01)', borderRadius: 2, border: '1px dashed rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', opacity: 0.55 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Box sx={{ p: 0.5, bgcolor: 'rgba(255,152,0,0.07)', borderRadius: 1.5, color: 'warning.main' }}>
-                            <PlatformIcon fontSize="small" />
-                          </Box>
-                          <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.disabled', whiteSpace: 'nowrap' }}>{proto.label}</Typography>
-                        </Box>
-                        <Switch
-                          size="small"
-                          checked={settings[`${proto.id}Enabled`] || false}
-                          onChange={(e) => setSettings({ ...settings, [`${proto.id}Enabled`]: e.target.checked })}
-                          sx={{ '& .MuiSwitch-root': { mr: -1 }, '& .MuiSwitch-switchBase.Mui-checked': { color: 'warning.main' }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: 'warning.main' } }}
-                        />
-                      </Box>
-                    </Tooltip>
-                  </Grid>
-                ))}
-              </Grid>
-
-              {/* Conection Links */}
-              <Box sx={{ mt: 4, pt: 4, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <LanguageIcon fontSize="small" /> {t('settings.output.links.title')}
-                </Typography>
-                <Grid container spacing={1.5}>
-                  {settings.rtmpEnabled && (
-                    <Grid item xs={12}>
-                      <TextField
-                        size="small"
-                        fullWidth
-                        label={t('settings.output.links.rtmp_label')}
-                        value={`rtmp://${window.location.hostname}:1935/stream`}
-                        InputProps={{
-                          readOnly: true,
-                          sx: { fontFamily: 'monospace', fontSize: '0.85rem', bgcolor: 'rgba(0,0,0,0.2)' },
-                          endAdornment: (
-                            <IconButton onClick={() => handleCopyToClipboard(`rtmp://${window.location.hostname}:1935/stream`, t('settings.output.links.rtmp_copied'))}>
-                              <ContentCopyIcon fontSize="small" />
-                            </IconButton>
-                          )
-                        }}
-                      />
-                    </Grid>
-                  )}
-                  {settings.srtEnabled && (
-                    <Grid item xs={12}>
-                      <TextField
-                        size="small"
-                        fullWidth
-                        label={t('settings.output.links.srt_label')}
-                        value={`srt://${window.location.hostname}:8890?streamid=read:stream_srt`}
-                        helperText={t('settings.output.links.srt_warning')}
-                        InputProps={{
-                          readOnly: true,
-                          sx: { fontFamily: 'monospace', fontSize: '0.85rem', bgcolor: 'rgba(0,0,0,0.2)' },
-                          endAdornment: (
-                            <IconButton onClick={() => handleCopyToClipboard(`srt://${window.location.hostname}:8890?streamid=read:stream_srt`, t('settings.output.links.srt_copied'))}>
-                              <ContentCopyIcon fontSize="small" />
-                            </IconButton>
-                          )
-                        }}
-                      />
-                    </Grid>
-                  )}
-                  {settings.udpEnabled && (
-                    <Grid item xs={12}>
-                      <TextField
-                        size="small"
-                        fullWidth
-                        label={t('settings.output.links.udp_label')}
-                        value="udp://@:1234"
-                        helperText={t('settings.output.links.udp_tip')}
-                        InputProps={{
-                          readOnly: true,
-                          sx: { fontFamily: 'monospace', fontSize: '0.85rem', bgcolor: 'rgba(0,0,0,0.2)' },
-                          endAdornment: (
-                            <IconButton onClick={() => handleCopyToClipboard("udp://@:1234", t('settings.output.links.udp_copied'))}>
-                              <ContentCopyIcon fontSize="small" />
-                            </IconButton>
-                          )
-                        }}
-                      />
-                    </Grid>
-                  )}
-                  {settings.hlsEnabled && (
-                    <Grid item xs={12}>
-                      <TextField
-                        size="small"
-                        fullWidth
-                        label={t('settings.output.links.hls_label')}
-                        value={`http://${window.location.hostname}:3011/hls/stream.m3u8`}
-                        InputProps={{
-                          readOnly: true,
-                          sx: { fontFamily: 'monospace', fontSize: '0.85rem', bgcolor: 'rgba(0,0,0,0.2)' },
-                          endAdornment: (
-                            <IconButton onClick={() => handleCopyToClipboard(`http://${window.location.hostname}:3011/hls/stream.m3u8`, t('settings.output.links.hls_copied'))}>
-                              <ContentCopyIcon fontSize="small" />
-                            </IconButton>
-                          )
-                        }}
-                      />
-                    </Grid>
-                  )}
-                  {!settings.rtmpEnabled && !settings.srtEnabled && !settings.hlsEnabled && (
-                    <Grid item xs={12}>
-                      <Alert severity="info" variant="outlined" sx={{ borderColor: 'rgba(255,255,255,0.1)', color: 'text.secondary' }}>
-                        {t('settings.output.links.no_protocols')}
-                      </Alert>
-                    </Grid>
-                  )}
-                </Grid>
-              </Box>
-            </Paper>
+            }>
+              <OutputTab 
+                settings={settings}
+                setSettings={setSettings}
+                handleOutputTypeChange={handleOutputTypeChange}
+                handleResolutionChange={handleResolutionChange}
+                handleBitrateChange={handleBitrateChange}
+                handleCopyToClipboard={handleCopyToClipboard}
+              />
+            </Suspense>
           </TabPanel>
 
           {/* CATEGORY 1: CAMINHOS & MEDIA (Combined Old 1 & 3) */}
           <TabPanel value={tabValue} index={1}>
-            <Paper className="glass-panel" sx={{ p: 1.5, mb: 1.5 }}>
-              <Box sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800, fontSize: '0.9rem' }}>{t('settings.paths.header.title')}</Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.65rem' }}>{t('settings.paths.header.subtitle')}</Typography>
-              </Box>
-
-              <Grid container spacing={1.5}>
-                {[
-                  { label: t('settings.paths.fields.media'), value: settings.mediaPath, key: 'mediaPath', helper: t('settings.paths.helpers.media') },
-                  { label: t('settings.paths.fields.thumbnails'), value: settings.thumbnailsPath, key: 'thumbnailsPath', helper: t('settings.paths.helpers.thumbnails') },
-                  { label: t('settings.paths.fields.playlists'), value: settings.playlistsPath, key: 'playlistsPath', helper: t('settings.paths.helpers.playlists') },
-                  { label: t('settings.paths.fields.fillers'), value: settings.fillersPath, key: 'fillersPath', helper: t('settings.paths.helpers.fillers') },
-                  {
-                    label: t('settings.paths.fields.logs'),
-                    value: settings.logPath,
-                    key: 'logPath',
-                    helper: t('settings.paths.helpers.logs'),
-                    endAdornment: (
-                      <IconButton onClick={() => setShowLogsDialog(true)} color="primary" sx={{ bgcolor: 'rgba(0,229,255,0.05)', borderRadius: 2 }}>
-                        <HistoryIcon />
-                      </IconButton>
-                    )
-                  },
-                  { label: t('settings.paths.fields.protected'), value: settings.protectedPath, key: 'protectedPath', helper: t('settings.paths.helpers.protected') }
-                ].map(field => (
-                  <Grid item xs={12} md={6} key={field.key}>
-                    <TextField
-                      size="small"
-                      fullWidth
-                      label={field.label}
-                      value={field.value}
-                      onChange={(e) => setSettings({ ...settings, [field.key]: e.target.value })}
-                      helperText={field.helper}
-                      InputProps={{
-                        sx: { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2, fontSize: '0.85rem' },
-                        endAdornment: field.endAdornment
-                      }}
-                    />
-                  </Grid>
-                ))}
-              </Grid>
-            </Paper>
-
-            {/* COMPACT STORAGE MGMT SECTION */}
-            <Paper className="glass-panel" sx={{ p: 1.5, mb: 2, borderLeft: '4px solid #9c27b0' }}>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
-
-                {/* Left Side: Title & Description */}
-                <Box sx={{ flex: 1, minWidth: '300px' }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'secondary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {t('settings.storage.header.title')}
-                    {proxyStats?.sync_needed && (
-                      <Tooltip title={t('settings.storage.header.sync_needed_tooltip', { count: proxyStats.new_files_count || '!' })}>
-                        <Chip size="small" color="warning" icon={<WarningIcon sx={{ fontSize: 14 }} />} label={`${proxyStats.new_files_count || ''} ${t('settings.storage.header.sync_needed_label')}`} sx={{ height: 20, fontSize: '0.65rem', fontWeight: 800 }} />
-                      </Tooltip>
-                    )}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>
-                    {t('settings.storage.header.subtitle')}
-                  </Typography>
-                </Box>
-
-                {/* Middle: Compact Stats Chips */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2 }}>
-                  <Tooltip title={t('settings.storage.stats.db')}>
-                    <Chip size="small" label={`DB: ${proxyStats?.db_media_count || 0}`} sx={{ bgcolor: 'rgba(255,255,255,0.05)', fontWeight: 600 }} />
-                  </Tooltip>
-                  <Tooltip title={t('settings.storage.stats.physical')}>
-                    <Chip size="small" label={`DISCO: ${proxyStats?.physical_media_count || 0}`} sx={{ bgcolor: 'rgba(0, 229, 255, 0.1)', color: 'primary.main', fontWeight: 600 }} />
-                  </Tooltip>
-                  <Tooltip title={t('settings.storage.stats.proxies')}>
-                    <Chip size="small" label={`PROXIES: ${proxyStats?.proxy_count || 0} (${((proxyStats?.total_bytes || 0) / 1024 / 1024).toFixed(1)}MB)`} sx={{ bgcolor: 'rgba(156, 39, 176, 0.1)', color: 'secondary.main', fontWeight: 600 }} />
-                  </Tooltip>
-                </Box>
-
-                {/* Right Side: Toolbar Actions */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Tooltip title={t('settings.storage.toolbar.explore')}>
-                    <IconButton onClick={() => { fetchProxiesList(); setExplorerOpen(true); }} disabled={proxyStats?.proxy_count === 0 && !syncing} color="secondary" sx={{ bgcolor: 'rgba(156, 39, 176, 0.05)' }}>
-                      <ViewIcon />
-                    </IconButton>
-                  </Tooltip>
-
-                  <Divider orientation="vertical" variant="middle" flexItem sx={{ mx: 1, borderColor: 'rgba(255,255,255,0.1)' }} />
-
-                  <Tooltip title={t('settings.storage.toolbar.sync')}>
-                    <span>
-                      <IconButton onClick={handleSyncMedia} disabled={syncing} color={proxyStats?.sync_needed ? "warning" : "primary"} sx={{ bgcolor: proxyStats?.sync_needed ? 'rgba(255, 152, 0, 0.1)' : 'rgba(0, 229, 255, 0.05)' }}>
-                        {syncing ? <CircularProgress size={20} color="inherit" /> : <RefreshIcon />}
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-
-                  <Tooltip title={t('settings.storage.toolbar.purge')}>
-                    <span>
-                      <IconButton onClick={handlePurgeProxies} disabled={purgingProxies || proxyStats?.proxy_count === 0} color="error" sx={{ bgcolor: 'rgba(244, 67, 54, 0.05)' }}>
-                        {purgingProxies ? <CircularProgress size={20} color="inherit" /> : <DeleteIcon />}
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                </Box>
-
-              </Box>
-
-              {/* Progress Bar (Only visible when doing operations) */}
-              {(syncing || purgingProxies) && (
-                <LinearProgress color={syncing ? 'primary' : 'error'} sx={{ mt: 2, borderRadius: 2 }} />
-              )}
-            </Paper>
-
-            <Paper className="glass-panel" sx={{ p: 2, mb: 2 }}>
-              <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Box>
-                  <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800, fontSize: '1rem' }}>{t('settings.api.header.title')}</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.65rem' }}>{t('settings.api.header.subtitle')}</Typography>
-                </Box>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<WizardIcon />}
-                  onClick={handleApplyDefaults}
-                  sx={{ fontWeight: 800, borderRadius: 2 }}
-                >
-                  {t('settings.api.header.auto_config_btn')}
-                </Button>
-              </Box>
-
-              <Grid container spacing={2}>
-                {[
-                  { id: 'tmdb', label: 'TMDB API', key: 'tmdbApiKey' },
-                  { id: 'omdb', label: 'OMDB API', key: 'omdbApiKey' },
-                  { id: 'tvmaze', label: 'TVMAZE', key: 'tvmazeApiKey' }
-                ].map(api => (
-                  <Grid item xs={12} key={api.id}>
-                    <Paper
-                      variant="outlined"
-                      sx={{
-                        p: 1.5,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 2,
-                        bgcolor: 'rgba(255,255,255,0.02)',
-                        borderColor: 'rgba(255,255,255,0.05)',
-                        borderRadius: 3
-                      }}
-                    >
-                      <Typography variant="caption" sx={{ fontWeight: 900, minWidth: 100, color: 'primary.main' }}>
-                        {api.label}
-                      </Typography>
-
-                      <TextField
-                        size="small"
-                        placeholder={t('settings.api.fields.key_placeholder')}
-                        value={settings[api.key] || ''}
-                        type={settings[`show_${api.id}`] ? "text" : "password"}
-                        onChange={(e) => setSettings({ ...settings, [api.key]: e.target.value })}
-                        sx={{ flexGrow: 1 }}
-                        InputProps={{
-                          sx: { height: 36, bgcolor: 'rgba(0,0,0,0.3)', borderRadius: 2, fontSize: '0.75rem' },
-                          endAdornment: (
-                            <IconButton
-                              size="small"
-                              onClick={() => setSettings(s => ({ ...s, [`show_${api.id}`]: !s[`show_${api.id}`] }))}
-                              sx={{ opacity: 0.7 }}
-                            >
-                              {settings[`show_${api.id}`] ? <ViewOffIcon sx={{ fontSize: 16 }} /> : <ViewIcon sx={{ fontSize: 16 }} />}
-                            </IconButton>
-                          )
-                        }}
-                      />
-
-                      <Stack direction="row" spacing={1}>
-                        <Tooltip title={t('settings.api.toolbar.test')}>
-                          <IconButton
-                            size="small"
-                            color="primary"
-                            onClick={() => handleTestApi(api.id)}
-                            sx={{ bgcolor: 'rgba(0, 229, 255, 0.1)', border: '1px solid rgba(0, 229, 255, 0.2)' }}
-                          >
-                            <TestIcon sx={{ fontSize: 18 }} />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title={t('settings.api.toolbar.save')}>
-                          <IconButton
-                            size="small"
-                            color="success"
-                            onClick={handleSaveSettings}
-                            sx={{ bgcolor: 'rgba(76, 175, 80, 0.1)', border: '1px solid rgba(76, 175, 80, 0.2)' }}
-                          >
-                            <SaveIcon sx={{ fontSize: 18 }} />
-                          </IconButton>
-                        </Tooltip>
-                      </Stack>
-                    </Paper>
-                  </Grid>
-                ))}
-              </Grid>
-            </Paper>
-
-            <Paper className="glass-panel" sx={{ p: 2, mb: 2 }}>
-              <Box sx={{ mb: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 1 }}>
-                <Box>
-                  <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800, fontSize: '1rem' }}>{t('settings.branding.assets.title')}</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.65rem', display: 'block', mt: -0.5 }}>{t('settings.branding.assets.subtitle')}</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button
-                    variant="outlined"
-                    color="warning"
-                    size="small"
-                    startIcon={<RestartAltIcon />}
-                    onClick={async () => {
-                      const defaults = {
-                        branding_type: 'video',
-                        logo_path: '',
-                        overlay_enabled: true,
-                        overlay_opacity: 1.0,
-                        overlay_scale: 0.3,
-                        overlay_x: 30,
-                        overlay_y: 20,
-                        overlay_anchor: 'top-right',
-                      };
-                      try {
-                        await settingsAPI.update(defaults);
-                        setSettings(prev => ({
-                          ...prev,
-                          branding_type: 'video',
-                          logoPath: defaults.logo_path,
-                          overlayOpacity: 1.0,
-                          overlay_anchor: 'top-right',
-                        }));
-                        showSuccess(t('settings.branding.assets.reset_success'));
-                        fetchSettings();
-                      } catch (e) {
-                        showError(t('settings.branding.assets.reset_error'));
-                      }
-                    }}
-                    sx={{ fontWeight: 800, borderRadius: 2, fontSize: '0.7rem', whiteSpace: 'nowrap' }}
-                  >
-                    {t('settings.branding.assets.reset_btn')}
-                  </Button>
-                  <Tooltip title={t('settings.branding.assets.restore_defaults_tooltip')} arrow>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      startIcon={<RefreshIcon />}
-                      onClick={async () => {
-                        const defaults = {
-                          branding_type: 'video',
-                          logo_path: '/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4',
-                          default_image_path: '/assets/protected/Cloud_Onepa_Playout_Infinity_Logo_remodelado.png',
-                          default_video_path: '/assets/protected/Video_Cloud_Onepa_Playout_Infinity_Logo_remodelado.mp4',
-                        };
-                        try {
-                          await settingsAPI.update(defaults);
-                          setSettings(prev => ({
-                            ...prev,
-                            branding_type: 'video',
-                            logoPath: defaults.logo_path,
-                            defaultImagePath: defaults.default_image_path,
-                            defaultVideoPath: defaults.default_video_path,
-                          }));
-                          await fetchProtectedAssets();
-                          showSuccess(t('settings.branding.assets.restore_success'));
-                        } catch (e) { showError(t('settings.branding.assets.restore_error')); }
-                      }}
-                      sx={{ fontWeight: 800, borderRadius: 2, fontSize: '0.7rem', borderColor: 'rgba(0,229,255,0.2)', color: 'primary.main', whiteSpace: 'nowrap' }}
-                    >
-                      {t('settings.branding.assets.restore_defaults_btn')}
-                    </Button>
-                  </Tooltip>
-                </Box>
-              </Box>
-
-              <Grid container spacing={2}>
-                {[
-                  {
-                    id: 'logo',
-                    label: t('settings.branding.assets.logo_label'),
-                    path: settings.logoPath,
-                    type: settings.branding_type,
-                    onSelect: () => { setMediaTypeSelector(settings.branding_type === 'video' ? 'video' : 'image'); setMediaSelectorOpen(true); }
-                  },
-                  {
-                    id: 'image_fb',
-                    label: t('settings.branding.assets.image_fallback_label'),
-                    path: settings.defaultImagePath,
-                    type: 'static',
-                    onSelect: () => { setMediaTypeSelector('image'); setMediaSelectorOpen(true); }
-                  },
-                  {
-                    id: 'video_fb',
-                    label: t('settings.branding.overlay.fallback_label'),
-                    path: settings.defaultVideoPath,
-                    type: 'video',
-                    onSelect: () => { setMediaTypeSelector('video'); setMediaSelectorOpen(true); }
-                  }
-                ].map(asset => (
-                  <Grid item xs={12} md={4} key={asset.id}>
-                    <Paper
-                      elevation={0}
-                      sx={{
-                        p: 2,
-                        height: '100%',
-                        borderRadius: 4,
-                        bgcolor: 'rgba(255,255,255,0.02)',
-                        border: '1px solid rgba(255,255,255,0.05)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 1.5,
-                        transition: 'all 0.2s',
-                        '&:hover': { bgcolor: 'rgba(255,255,255,0.04)', borderColor: 'primary.main' }
-                      }}
-                    >
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <Typography variant="overline" sx={{ fontWeight: 900, color: 'text.secondary', lineHeight: 1.2 }}>
-                          {asset.label}
-                        </Typography>
-                        <Chip
-                          label={asset.path ? t('settings.branding.assets.defined') : t('settings.branding.assets.missing')}
-                          size="small"
-                          color={asset.path ? 'success' : 'warning'}
-                          sx={{ height: 16, fontSize: '0.6rem', fontWeight: 900 }}
-                        />
-                      </Box>
-
-                      <Box
-                        sx={{
-                          height: 100,
-                          bgcolor: 'rgba(0,0,0,0.3)',
-                          borderRadius: 2,
-                          overflow: 'hidden',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          border: '1px dashed rgba(255,255,255,0.1)'
-                        }}
-                      >
-                        {asset.path ? (
-                          asset.type === 'video' ? (
-                            <video src={asset.path} style={{ width: '100%', height: '100%', objectFit: 'contain' }} muted loop onMouseOver={e => e.target.play()} onMouseOut={e => e.target.pause()} />
-                          ) : (
-                            <img src={asset.path} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                          )
-                        ) : (
-                          <Box sx={{ opacity: 0.2, textAlign: 'center' }}>
-                            {asset.type === 'video' ? <MovieIcon sx={{ fontSize: 40 }} /> : <ImageIcon sx={{ fontSize: 40 }} />}
-                          </Box>
-                        )}
-                      </Box>
-
-                      <Box sx={{ display: 'flex', gap: 1, mt: 'auto' }}>
-                        <Button
-                          size="small"
-                          variant="contained"
-                          onClick={() => {
-                            setMediaTypeSelector(asset.id === 'logo' ? (settings.branding_type === 'video' ? 'video' : 'image') : (asset.id === 'video_fb' ? 'video' : 'image'));
-                            setMediaSelectorOpen(true);
-                          }}
-                          sx={{
-                            fontWeight: 900,
-                            borderRadius: 2,
-                            bgcolor: 'rgba(255,255,255,0.05)',
-                            '&:hover': { bgcolor: 'primary.main' }
-                          }}
-                        >
-                          {t('settings.branding.assets.change_btn')}
-                        </Button>
-                        {asset.id === 'logo' && (
-                          <ToggleButtonGroup
-                            size="small"
-                            value={settings.branding_type || 'static'}
-                            exclusive
-                            onChange={(e, v) => v && setSettings({ ...settings, branding_type: v })}
-                            sx={{ bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2 }}
-                          >
-                            <ToggleButton value="static" sx={{ px: 1, py: 0, fontSize: '0.6rem', fontWeight: 800 }}>{t('settings.branding.assets.type_img', 'IMG')}</ToggleButton>
-                            <ToggleButton value="video" sx={{ px: 1, py: 0, fontSize: '0.6rem', fontWeight: 800 }}>{t('settings.branding.assets.type_vid', 'VID')}</ToggleButton>
-                          </ToggleButtonGroup>
-                        )}
-                      </Box>
-                    </Paper>
-                  </Grid>
-                ))}
-              </Grid>
-            </Paper>
+            <Suspense fallback={<Box sx={{ py: 10, textAlign: "center" }}><CircularProgress /></Box>}>
+              <PathsTab 
+                settings={settings}
+                setSettings={setSettings}
+                setShowLogsDialog={setShowLogsDialog}
+                fetchSettings={fetchSettings}
+                showSuccess={showSuccess}
+                showError={showError}
+                setMediaTypeSelector={setMediaTypeSelector}
+                setMediaSelectorOpen={setMediaSelectorOpen}
+                fetchProtectedAssets={fetchProtectedAssets}
+              />
+            </Suspense>
           </TabPanel>
 
           {/* CATEGORY 2: PLAYOUT & PRESETS */}
           <TabPanel value={tabValue} index={2}>
-            <Paper className="glass-panel" sx={{ p: 2, mb: 2 }}>
-              <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Box>
-                  <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800, fontSize: '1rem' }}>{t('settings.playout.header.title')}</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.65rem' }}>{t('settings.playout.header.subtitle')}</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button variant="outlined" startIcon={<WizardIcon />} onClick={() => navigate('/setup')} sx={{ borderRadius: 2, fontWeight: 800 }}>{t('settings.playout.header.wizard_btn')}</Button>
-                  <Button variant="outlined" color="error" startIcon={<DeleteIcon />} onClick={() => setResetConfirmOpen(true)} sx={{ borderRadius: 2, fontWeight: 800 }}>{t('settings.playout.header.reset_btn')}</Button>
-                </Box>
-              </Box>
-
-              <Grid container spacing={2}>
-                {[
-                  { label: t('settings.playout.fields.day_start'), value: settings.dayStart, type: 'time', key: 'dayStart', tooltip: t('settings.playout.tooltips.day_start') },
-                  { label: t('settings.playout.fields.channel_name'), value: settings.channelName, type: 'text', key: 'channelName', tooltip: t('settings.playout.tooltips.channel_name') },
-                  { label: t('settings.playout.fields.fps'), value: settings.fps, type: 'number', key: 'fps', tooltip: t('settings.playout.tooltips.fps') },
-                  { label: t('settings.playout.fields.encoding_preset'), value: settings.encodingPreset || 'medium', type: 'select', key: 'encodingPreset', options: ['ultrafast', 'veryfast', 'medium', 'slow'], tooltip: t('settings.playout.tooltips.encoding_preset') }
-                ].map(item => (
-                  <Grid item xs={12} md={6} key={item.key}>
-                    <Tooltip title={item.tooltip} arrow placement="top">
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, bgcolor: 'rgba(0,0,0,0.2)', p: 1.5, borderRadius: 3, border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <Typography variant="caption" sx={{ fontWeight: 900, minWidth: 100, color: 'text.secondary' }}>{item.label}</Typography>
-                        {item.type === 'select' ? (
-                          <Select
-                            size="small"
-                            fullWidth
-                            value={item.value}
-                            onChange={(e) => setSettings({ ...settings, [item.key]: e.target.value })}
-                            sx={{ borderRadius: 2, fontSize: '0.75rem', fontWeight: 800 }}
-                          >
-                            {item.options.map(opt => <MenuItem key={opt} value={opt}>{opt.toUpperCase()}</MenuItem>)}
-                          </Select>
-                        ) : (
-                          <TextField
-                            size="small"
-                            fullWidth
-                            type={item.type}
-                            value={item.value}
-                            onChange={(e) => setSettings({ ...settings, [item.key]: e.target.value })}
-                            sx={{ '& .MuiInputBase-root': { borderRadius: 2, fontSize: '0.75rem', fontWeight: 800 } }}
-                          />
-                        )}
-                      </Box>
-                    </Tooltip>
-                  </Grid>
-                ))}
-              </Grid>
-            </Paper>
-
-            {/* EPG CONFIGURATION SECTION */}
-            <Paper className="glass-panel" sx={{ p: 4, mb: 4 }}>
-              <Box sx={{ mb: 4 }}>
-                <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>{t('settings.playout.epg.title')}</Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>{t('settings.playout.epg.subtitle')}</Typography>
-              </Box>
-              <Paper
-                variant="outlined"
-                sx={{
-                  p: 1.5,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 2,
-                  bgcolor: 'rgba(0,0,0,0.3)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 3
-                }}
-              >
-                <Box sx={{ flexGrow: 1 }}>
-                  <Typography variant="overline" sx={{ fontWeight: 900, color: 'primary.main', display: 'block', lineHeight: 1 }}>{t('settings.playout.epg.url_label')}</Typography>
-                  <Typography variant="caption" sx={{ fontFamily: 'monospace', opacity: 0.7, wordBreak: 'break-all' }}>
-                    {`${window.location.protocol}//${window.location.host}/api/playlists/epg.xml`}
-                  </Typography>
-                </Box>
-
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Chip label={t('settings.playout.epg.status_live')} size="small" color="success" sx={{ height: 20, fontSize: '0.6rem', fontWeight: 900 }} />
-                  <Tooltip title={t('settings.playout.epg.copy_tooltip')}>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleCopyToClipboard(`${window.location.protocol}//${window.location.host}/api/playlists/epg.xml`, t('settings.playout.epg.copied'))}
-                      sx={{ bgcolor: 'rgba(255,255,255,0.05)' }}
-                    >
-                      <CopyIcon sx={{ fontSize: 18 }} />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-              </Paper>
-
-              <Grid container spacing={2} sx={{ mt: 1 }}>
-                <Grid item xs={12} md={9}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label={t('settings.playout.epg.refresh_label')}
-                    value={settings.epgUrl || t('settings.playout.epg.system_generated')}
-                    disabled
-                    InputProps={{ sx: { borderRadius: 2, fontSize: '0.75rem', opacity: 0.6 } }}
-                  />
-                </Grid>
-                <Grid item xs={12} md={3}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label={t('settings.playout.epg.days_label')}
-                    type="number"
-                    value={settings.epgDays}
-                    onChange={(e) => setSettings({ ...settings, epgDays: parseInt(e.target.value) || 7 })}
-                    InputProps={{ sx: { borderRadius: 2, fontSize: '0.75rem' } }}
-                  />
-                </Grid>
-              </Grid>
-            </Paper>
-
-            <Paper className="glass-panel" sx={{ p: 4, mb: 4 }}>
-              <Box sx={{ mb: 4 }}>
-                <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>{t('settings.playout.overlay.title')}</Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>{t('settings.playout.overlay.subtitle')}</Typography>
-              </Box>
-
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={4}>
-                  <Box sx={{
-                    height: 180,
-                    bgcolor: 'rgba(0,0,0,0.4)',
-                    borderRadius: 3,
-                    border: '1px solid rgba(255,255,255,0.05)',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <Typography variant="overline" sx={{ position: 'absolute', top: 8, left: 12, opacity: 0.3, fontWeight: 900 }}>{t('settings.playout.overlay.preview')}</Typography>
-
-                    {/* Simulated Viewport for Watermark placement */}
-                    <Box sx={{ width: '80%', height: '80%', border: '1px dashed rgba(255,255,255,0.1)', position: 'relative' }}>
-                      {settings.overlay_enabled && (
-                        <Box sx={{
-                          position: 'absolute',
-                          width: 30, height: 30,
-                          top: (settings.logoPosition || '').includes('top') ? '5%' : 'auto',
-                          bottom: (settings.logoPosition || '').includes('bottom') ? '5%' : 'auto',
-                          left: (settings.logoPosition || '').includes('left') ? '5%' : 'auto',
-                          right: (settings.logoPosition || '').includes('right') ? '5%' : 'auto',
-                          bgcolor: 'primary.main',
-                          borderRadius: '50%',
-                          boxShadow: '0 0 15px rgba(0, 229, 255, 0.5)',
-                          opacity: settings.overlayOpacity || 1,
-                          transform: `scale(${settings.overlayScale || 1})`,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center'
-                        }}>
-                          <ImageIcon sx={{ fontSize: 14, color: '#000' }} />
-                        </Box>
-                      )}
-                      {!settings.overlay_enabled && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', opacity: 0.2 }}>
-                          <Typography variant="caption" sx={{ fontWeight: 800 }}>{t('settings.playout.overlay.disabled')}</Typography>
-                        </Box>
-                      )}
-                    </Box>
-                  </Box>
-                </Grid>
-
-                <Grid item xs={12} md={8}>
-                  <Box sx={{ bgcolor: 'rgba(255,255,255,0.02)', p: 2, borderRadius: 3, border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                      <Typography variant="caption" sx={{ fontWeight: 900, color: 'primary.main' }}>{t('settings.playout.overlay.dpad_label')}</Typography>
-                      <Switch
-                        size="small"
-                        checked={settings.overlay_enabled}
-                        onChange={(e) => setSettings({ ...settings, overlay_enabled: e.target.checked })}
-                      />
-                    </Box>
-
-                    <Box sx={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                      {/* D-PAD Grid */}
-                      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0.5, bgcolor: 'rgba(0,0,0,0.2)', p: 1, borderRadius: 2 }}>
-                        {[
-                          { pos: 'top-left', icon: <NwIcon fontSize="small" /> },
-                          { pos: 'spacer', icon: null },
-                          { pos: 'top-right', icon: <NeIcon fontSize="small" /> },
-                          { pos: 'spacer2', icon: <TargetIcon sx={{ fontSize: 10, opacity: 0.2 }} /> },
-                          { pos: 'center', icon: <TargetIcon sx={{ fontSize: 14, color: 'primary.main', opacity: 0.5 }} /> },
-                          { pos: 'spacer3', icon: <TargetIcon sx={{ fontSize: 10, opacity: 0.2 }} /> },
-                          { pos: 'bottom-left', icon: <SwIcon fontSize="small" /> },
-                          { pos: 'spacer4', icon: null },
-                          { pos: 'bottom-right', icon: <SeIcon fontSize="small" /> }
-                        ].map((btn, idx) => (
-                          btn.pos.startsWith('spacer') ? (
-                            <Box key={idx} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{btn.icon}</Box>
-                          ) : (
-                            <IconButton
-                              size="small"
-                              key={btn.pos}
-                              onClick={() => setSettings({ ...settings, logoPosition: btn.pos })}
-                              sx={{
-                                bgcolor: settings.logoPosition === btn.pos ? 'primary.main' : 'rgba(255,255,255,0.05)',
-                                color: settings.logoPosition === btn.pos ? '#000' : 'inherit',
-                                '&:hover': { bgcolor: 'primary.dark' },
-                                width: 32, height: 32
-                              }}
-                            >
-                              {btn.icon || <TargetIcon sx={{ fontSize: 14 }} />}
-                            </IconButton>
-                          )
-                        ))}
-                      </Box>
-
-                      <Box sx={{ flexGrow: 1 }}>
-                        <Box sx={{ mb: 1 }}>
-                          <Typography variant="caption" sx={{ fontWeight: 800, fontSize: '0.6rem', display: 'flex', justifyContent: 'space-between' }}>
-                            {t('settings.playout.overlay.opacity')} <span>{Math.round((settings.overlayOpacity ?? 0.6) * 100)}%</span>
-                          </Typography>
-                          <Slider size="small" value={settings.overlayOpacity ?? 0.6} min={0} max={1} step={0.1} onChange={(e, v) => setSettings({ ...settings, overlayOpacity: v })} />
-                        </Box>
-                        <Box>
-                          <Typography variant="caption" sx={{ fontWeight: 800, fontSize: '0.6rem', display: 'flex', justifyContent: 'space-between' }}>
-                            {t('settings.playout.overlay.scale')} <span>{Math.round((settings.overlayScale ?? 0.6) * 100)}%</span>
-                          </Typography>
-                          <Slider size="small" value={settings.overlayScale ?? 0.6} min={0.1} max={2.0} step={0.1} onChange={(e, v) => setSettings({ ...settings, overlayScale: v })} />
-                        </Box>
-                      </Box>
-                    </Box>
-                  </Box>
-                </Grid>
-              </Grid>
-
-              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mt: 3 }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label={t('settings.playout.overlay.path_label')}
-                  value={settings.logoPath}
-                  onChange={(e) => setSettings({ ...settings, logoPath: e.target.value })}
-                  InputProps={{ sx: { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2, fontSize: '0.75rem' } }}
-                />
-                <Button size="small" variant="contained" onClick={() => { setMediaTypeSelector('image'); setMediaSelectorOpen(true); }} sx={{ minWidth: 100, fontWeight: 800 }}>{t('settings.playout.overlay.change_btn')}</Button>
-                <Tooltip title={t('settings.playout.overlay.magic_tooltip')}>
-                  <IconButton onClick={() => setConverterOpen(true)} sx={{ bgcolor: 'rgba(0,229,255,0.1)', color: 'primary.main', borderRadius: 2 }}><MagicIcon /></IconButton>
-                </Tooltip>
-              </Box>
-            </Paper>
-
-            <Paper className="glass-panel" sx={{ p: 4 }}>
-              <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Box>
-                  <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>{t('settings.playout.presets.title')}</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>{t('settings.playout.presets.subtitle')}</Typography>
-                </Box>
-                <FormControlLabel
-                  control={<Switch size="small" checked={!!settings.advanced_quality} onChange={(e) => setSettings({ ...settings, advanced_quality: e.target.checked })} />}
-                  label={<Typography variant="caption" sx={{ fontWeight: 800 }}>{t('settings.playout.presets.advanced_mode')}</Typography>}
-                />
-              </Box>
-
-              <ToggleButtonGroup
-                fullWidth
-                value={activePreset}
-                exclusive
-                onChange={(e, v) => v && applyPreset(v)}
-                sx={{ bgcolor: 'rgba(0,0,0,0.2)', p: 0.5, borderRadius: 3, mb: 2 }}
-              >
-                {[
-                  { id: '720p', label: '720p HD', desc: t('settings.playout.presets.list.720p.desc') },
-                  { id: '1080p', label: '1080p PRO', desc: t('settings.playout.presets.list.1080p.desc') },
-                  { id: '4k', label: '4K ULTRA', desc: t('settings.playout.presets.list.4k.desc') }
-                ].map(p => (
-                  <ToggleButton key={p.id} value={p.id} sx={{ border: 'none', borderRadius: 2, py: 1.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 900 }}>{p.label}</Typography>
-                    <Typography variant="caption" sx={{ fontSize: '0.6rem', opacity: 0.5 }}>{p.desc}</Typography>
-                  </ToggleButton>
-                ))}
-              </ToggleButtonGroup>
-
-              {settings.advanced_quality && (
-                <Grid container spacing={2} sx={{ mt: 1 }}>
-                  <Grid item xs={6}>
-                    <TextField fullWidth size="small" label={t('settings.output.main.bitrate')} value={settings.videoBitrate} onChange={(e) => setSettings({ ...settings, videoBitrate: e.target.value })} InputProps={{ sx: { borderRadius: 2, fontSize: '0.75rem' } }} />
-                  </Grid>
-                  <Grid item xs={6}>
-                    <TextField fullWidth size="small" label={t('settings.output.main.resolution')} value={settings.resolution} onChange={(e) => setSettings({ ...settings, resolution: e.target.value })} InputProps={{ sx: { borderRadius: 2, fontSize: '0.75rem' } }} />
-                  </Grid>
-                </Grid>
-              )}
-            </Paper>
+            <Suspense fallback={<Box sx={{ py: 10, textAlign: "center" }}><CircularProgress /></Box>}>
+              <PlayoutTab 
+                settings={settings}
+                setSettings={setSettings}
+                navigate={navigate}
+                setResetConfirmOpen={setResetConfirmOpen}
+                handleCopyToClipboard={handleCopyToClipboard}
+                activePreset={activePreset}
+                applyPreset={applyPreset}
+                setMediaTypeSelector={setMediaTypeSelector}
+                setMediaSelectorOpen={setMediaSelectorOpen}
+                setConverterOpen={setConverterOpen}
+              />
+            </Suspense>
           </TabPanel>
 
           {/* CATEGORY 3: UTILIZADORES & PERFIS */}
           <TabPanel value={tabValue} index={3}>
-            <Paper className="glass-panel" sx={{ p: 4 }}>
-              <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Box>
-                  <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>{t('settings.users.header.title')}</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>{t('settings.users.header.subtitle')}</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                  <ToggleButtonGroup
-                    value={viewMode}
-                    exclusive
-                    onChange={(e, newMode) => newMode && setViewMode(newMode)}
-                    size="small"
-                    sx={{ height: 36 }}
-                  >
-                    <ToggleButton value="users" sx={{ fontWeight: 800 }}>{t('settings.users.tabs.users')}</ToggleButton>
-                    <ToggleButton value="profiles" sx={{ fontWeight: 800 }}>{t('settings.users.tabs.profiles')}</ToggleButton>
-                  </ToggleButtonGroup>
-                  <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={() => {
-                      if (viewMode === 'users') setUserDialogOpen(true);
-                      else {
-                        setCurrentProfile({ name: '', permissions: [] });
-                        setProfileDialogOpen(true);
-                      }
-                    }}
-                    sx={{ borderRadius: 3, fontWeight: 800, px: 3 }}
-                  >
-                    {viewMode === 'users' ? t('settings.users.header.add_user_btn') : t('settings.users.header.add_profile_btn')}
-                  </Button>
-                </Box>
-              </Box>
-
-              <TableContainer sx={{ bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)' }}>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow sx={{ bgcolor: 'rgba(255,255,255,0.05)' }}>
-                      <TableCell sx={{ fontWeight: 900, color: 'primary.main', fontSize: '0.7rem' }}>{t('settings.users.table.username')}</TableCell>
-                      <TableCell sx={{ fontWeight: 900, color: 'primary.main', fontSize: '0.7rem' }}>
-                        {viewMode === 'users' ? t('settings.users.table.profile') : t('settings.users.table.description')}
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: 900, color: 'primary.main', fontSize: '0.7rem' }}>{t('settings.users.table.status')}</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 900, color: 'primary.main', fontSize: '0.7rem' }}>{t('settings.users.table.actions')}</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {viewMode === 'users' ? (
-                      Array.isArray(users) && users.map((user) => (
-                        <TableRow key={user.id} hover sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' } }}>
-                          <TableCell>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                              <Avatar sx={{ width: 28, height: 28, fontSize: '0.8rem', bgcolor: 'primary.main', fontWeight: 800 }}>
-                                {user.username[0].toUpperCase()}
-                              </Avatar>
-                              <Typography sx={{ fontWeight: 800, fontSize: '0.85rem' }}>{user.username.toUpperCase()}</Typography>
-                            </Box>
-                          </TableCell>
-                          <TableCell>
-                            <Chip
-                              label={user.profile_name?.toUpperCase() || profiles.find(p => p.id === user.profile_id)?.name?.toUpperCase() || (user.role || 'USER').toUpperCase()}
-                              size="small"
-                              variant="outlined"
-                              sx={{ height: 20, fontSize: '0.65rem', fontWeight: 800, borderColor: 'rgba(255,255,255,0.2)' }}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Switch checked size="small" disabled sx={{ opacity: 0.5 }} />
-                          </TableCell>
-                          <TableCell align="right">
-                            <Stack direction="row" spacing={1} justifyContent="flex-end">
-                              <Tooltip title={t('settings.users.tooltips.change_password')}>
-                                <IconButton size="small" onClick={() => handleOpenPasswordDialog(user)} sx={{ color: 'primary.main' }}>
-                                  <MagicIcon sx={{ fontSize: 18 }} />
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title="Channel Access">
-                                <IconButton
-                                  size="small"
-                                  sx={{ color: 'info.main' }}
-                                  onClick={async () => {
-                                    setChannelAccessUser(user);
-                                    // Load all channels
-                                    try {
-                                      const chRes = await channelsAPI.list();
-                                      setAllChannels(chRes.data || []);
-                                    } catch { setAllChannels([]); }
-                                    // Load current user access
-                                    try {
-                                      const accRes = await userChannelAPI.getChannels(user.id);
-                                      setChannelAccessIds(accRes.data || []);
-                                    } catch { setChannelAccessIds([]); }
-                                    setChannelAccessOpen(true);
-                                  }}
-                                >
-                                  <TvIcon sx={{ fontSize: 18 }} />
-                                </IconButton>
-                              </Tooltip>
-                              {user.username !== 'admin' && (
-                                <Tooltip title={t('settings.users.tooltips.delete_user')}>
-                                  <IconButton size="small" onClick={() => handleDeleteUser(user.id)} color="error">
-                                    <DeleteIcon sx={{ fontSize: 18 }} />
-                                  </IconButton>
-                                </Tooltip>
-                              )}
-                            </Stack>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      Array.isArray(profiles) && profiles.map((profile) => (
-                        <TableRow key={profile.id} hover sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' } }}>
-                          <TableCell>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                              <Avatar sx={{ width: 28, height: 28, bgcolor: 'secondary.main' }}>
-                                <SettingsIcon sx={{ fontSize: 16 }} />
-                              </Avatar>
-                              <Typography sx={{ fontWeight: 800, fontSize: '0.85rem' }}>{profile.name.toUpperCase()}</Typography>
-                              {profile.is_system && <Chip label={t('settings.users.table.system_badge')} color="info" size="small" sx={{ height: 16, fontSize: '0.55rem', fontWeight: 900 }} />}
-                            </Box>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="caption" sx={{ opacity: 0.6, fontSize: '0.65rem', fontWeight: 600 }}>
-                              {t('settings.users.table.permissions')}: {(profile.permissions || []).join(', ').toUpperCase()}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Chip label={t('settings.users.table.active')} size="small" color="success" sx={{ height: 18, fontSize: '0.6rem', fontWeight: 900, bgcolor: 'rgba(76,175,80,0.1)' }} />
-                          </TableCell>
-                          <TableCell align="right">
-                            <Stack direction="row" spacing={1} justifyContent="flex-end">
-                              <Tooltip title={t('settings.users.tooltips.edit_profile')}>
-                                <IconButton size="small" onClick={() => { setCurrentProfile(profile); setProfileDialogOpen(true); }}>
-                                  <EditIcon sx={{ fontSize: 18 }} />
-                                </IconButton>
-                              </Tooltip>
-                              {!profile.is_system && (
-                                <Tooltip title={t('settings.users.tooltips.delete_profile')}>
-                                  <IconButton size="small" onClick={() => handleDeleteProfile(profile.id)} color="error">
-                                    <DeleteIcon sx={{ fontSize: 18 }} />
-                                  </IconButton>
-                                </Tooltip>
-                              )}
-                            </Stack>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Paper>
+            <Suspense fallback={<Box sx={{ py: 10, textAlign: "center" }}><CircularProgress /></Box>}>
+              <UsersTab 
+                viewMode={viewMode}
+                setViewMode={setViewMode}
+                users={users}
+                profiles={profiles}
+                setUserDialogOpen={setUserDialogOpen}
+                setProfileDialogOpen={setProfileDialogOpen}
+                setCurrentProfile={setCurrentProfile}
+                handleOpenPasswordDialog={handleOpenPasswordDialog}
+                setChannelAccessUser={setChannelAccessUser}
+                setAllChannels={setAllChannels}
+                setChannelAccessIds={setChannelAccessIds}
+                setChannelAccessOpen={setChannelAccessOpen}
+                handleDeleteUser={handleDeleteUser}
+                handleDeleteProfile={handleDeleteProfile}
+                channelsAPI={channelsAPI}
+                userChannelAPI={userChannelAPI}
+              />
+            </Suspense>
           </TabPanel>
 
           {/* ─── Channel Access Dialog ───────────────────────────────── */}
@@ -2611,194 +1734,16 @@ function Settings() {
 
           {/* CATEGORY 4: SOBRE O SISTEMA */}
           <TabPanel value={tabValue} index={4}>
-            <Paper className="glass-panel" sx={{ p: 2, mb: 2 }}>
-              <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800, fontSize: '0.9rem' }}>{t('settings.about.header.title')}</Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.65rem' }}>{t('settings.about.header.subtitle')}</Typography>
-              </Box>
-              <Grid container spacing={1.5}>
-                {[
-                  { label: t('settings.about.fields.version'), value: settings.system_version || settings.version || APP_VERSION_FALLBACK, icon: <WizardIcon fontSize="small" /> },
-                  { label: t('settings.about.fields.last_update'), value: settings.release_date || settings.releaseDate || APP_RELEASE_DATE_FALLBACK, icon: <CheckIcon fontSize="small" /> },
-                  { label: t('settings.about.fields.deployment'), value: 'Docker Container (Linux)', icon: <FolderIcon fontSize="small" /> }
-                ].map((item, id) => (
-                  <Grid item xs={12} sm={6} md={4} key={id}>
-                    <Box sx={{ p: 1, py: 0.5, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                      <Box sx={{ color: 'primary.main', display: 'flex' }}>
-                        {item.icon}
-                      </Box>
-                      <Box>
-                        <Typography variant="caption" sx={{ fontWeight: 800, fontSize: '0.55rem', opacity: 0.8, display: 'block' }}>{item.label}</Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 800, fontSize: '0.75rem', mt: -0.5 }}>{item.value}</Typography>
-                      </Box>
-                    </Box>
-                  </Grid>
-                ))}
-              </Grid>
-
-              {/* ROADMAP & FUTURE section integrated here for visibility */}
-              <Box sx={{ mt: 3, mb: 1 }}>
-                <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 800, letterSpacing: 1, fontSize: '0.6rem' }}>{t('settings.about.roadmap.highlight_title')}</Typography>
-                <Grid container spacing={1} sx={{ mt: 0.5 }}>
-                  {[
-                    { label: t('settings.about.roadmap.idioma.title'), value: t('settings.about.roadmap.idioma.value'), icon: <LanguageIcon fontSize="small" /> },
-                    { label: t('settings.about.roadmap.canal.title'), value: t('settings.about.roadmap.canal.value'), icon: <PlatformIcon fontSize="small" /> },
-                    { label: t('settings.about.roadmap.latency.title'), value: t('settings.about.roadmap.latency.value'), icon: <ScalabilityIcon fontSize="small" /> }
-                  ].map((item, id) => (
-                    <Grid item xs={12} sm={4} key={id}>
-                      <Box sx={{ p: 1, py: 0.5, display: 'flex', alignItems: 'center', gap: 1, bgcolor: 'rgba(0,229,255,0.03)', borderRadius: 2, border: '1px solid rgba(0,229,255,0.08)' }}>
-                        <Box sx={{ color: 'primary.main', display: 'flex' }}>{item.icon}</Box>
-                        <Box>
-                          <Typography variant="caption" sx={{ fontWeight: 800, display: 'block', fontSize: '0.55rem', opacity: 0.6 }}>{item.label}</Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 800, fontSize: '0.7rem', mt: -0.5 }}>{item.value}</Typography>
-                        </Box>
-                      </Box>
-                    </Grid>
-                  ))}
-                </Grid>
-              </Box>
-
-              <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() => {
-                    const targetRef = settings.version?.includes('ALPHA') ? 'alpha' : (settings.version || 'main');
-                    window.open(`https://github.com/ideiasestrondosas-ctrl/cloud-onepa-playout/tree/${targetRef}`, '_blank');
-                  }}
-                  sx={{ borderRadius: 2, fontWeight: 800, py: 0.2 }}
-                >
-                  {t('settings.about.roadmap.github_btn')}
-                </Button>
-              </Box>
-            </Paper>
-
-            <Paper className="glass-panel" sx={{ p: 2 }}>
-              <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800, fontSize: '0.9rem' }}>{t('settings.about.history.title')}</Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.65rem' }}>{t('settings.about.history.subtitle')}</Typography>
-              </Box>
-              <Box sx={{ maxHeight: '65vh', overflowY: 'auto', pr: 1, '&::-webkit-scrollbar': { width: '4px' }, '&::-webkit-scrollbar-track': { bgcolor: 'rgba(255,255,255,0.02)' }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(0,229,255,0.3)', borderRadius: 3 } }}>
-                <List sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                  {releaseHistory.length > 0 ? releaseHistory.map((release, idx) => (
-                    <ListItem key={idx} sx={{ display: 'block', p: 0 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 0.5 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 800, color: 'primary.main', fontSize: '0.8rem' }}>{release.version.startsWith('v') ? release.version : 'v' + release.version}</Typography>
-                        <Divider sx={{ flexGrow: 1, opacity: 0.1 }} />
-                        <Typography variant="caption" sx={{ opacity: 0.5, fontSize: '0.65rem' }}>{release.date}</Typography>
-                      </Box>
-                      <Box sx={{ pl: 2, borderLeft: '2px solid rgba(0,229,255,0.2)' }}>
-                        {release.changes.map((change, cIdx) => (
-                          <Typography key={cIdx} variant="caption" sx={{ mb: 0.2, opacity: 0.8, display: 'flex', alignItems: 'flex-start', gap: 1, fontSize: '0.7rem', lineHeight: 1.2 }}>
-                            <Box sx={{ width: 4, height: 4, bgcolor: 'primary.main', borderRadius: '50%', mt: 0.6, flexShrink: 0 }} /> {change}
-                          </Typography>
-                        ))}
-                      </Box>
-                    </ListItem>
-                  )) : (
-                    <Typography variant="body2" sx={{ opacity: 0.5, textAlign: 'center', py: 4 }}>{t('settings.about.history.empty')}</Typography>
-                  )}
-                </List>
-              </Box>
-            </Paper>
-
-            {/* ROADMAP & FUTURO Section — Added as per ALPHA-22 update */}
-            <Paper className="glass-panel" sx={{ p: 4, mt: 4 }}>
-              <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Box>
-                  <Typography variant="h6" className="neon-text" sx={{ fontWeight: 800 }}>{t('settings.about.roadmap.title')}</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>{t('settings.about.roadmap.subtitle')}</Typography>
-                </Box>
-                <Chip
-                  icon={<MagicIcon style={{ color: '#00e5ff' }} />}
-                  label="ALPHA EVOLUTION"
-                  sx={{ fontWeight: 900, fontSize: '0.7rem', bgcolor: 'rgba(0,229,255,0.1)', border: '1px solid rgba(0,229,255,0.2)', color: '#00e5ff' }}
-                />
-              </Box>
-
-              <Grid container spacing={3}>
-                {roadmapData.map((item, idx) => (
-                  <Grid item xs={12} md={6} key={idx}>
-                    <Box sx={{
-                      p: 3,
-                      height: '100%',
-                      bgcolor: item.done ? 'rgba(76,175,80,0.04)' : 'rgba(255,255,255,0.01)',
-                      borderRadius: 4,
-                      border: '1px solid',
-                      borderColor: item.done ? 'rgba(76,175,80,0.2)' : 'rgba(255,255,255,0.05)',
-                      borderLeft: item.done ? '3px solid #4caf50' : '3px solid rgba(255,255,255,0.08)',
-                      transition: 'all 0.3s ease',
-                      opacity: item.done ? 1 : 0.65,
-                      '&:hover': {
-                        bgcolor: item.done ? 'rgba(76,175,80,0.07)' : 'rgba(255,255,255,0.02)',
-                        opacity: 1,
-                        transform: 'translateY(-2px)'
-                      }
-                    }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                        <Box sx={{
-                          width: 44, height: 44, borderRadius: 3,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          bgcolor: item.color + '1a',
-                          color: item.color,
-                          border: '1px solid',
-                          borderColor: item.color + '33'
-                        }}>
-                          {item.icon}
-                        </Box>
-                        <Box sx={{ flex: 1 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.3 }}>
-                            <Typography variant="caption" sx={{ fontWeight: 900, color: item.color, letterSpacing: 1 }}>{item.phase}</Typography>
-                            <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.disabled', fontSize: '0.6rem' }}>{item.version}</Typography>
-                          </Box>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 800, lineHeight: 1.2, fontSize: '0.82rem' }}>{item.title}</Typography>
-                        </Box>
-                        {item.done ? (
-                          <Chip label="✓ COMPLETO" size="small" sx={{ height: 18, fontSize: '0.55rem', fontWeight: 900, bgcolor: 'rgba(76,175,80,0.2)', color: '#4caf50', border: '1px solid rgba(76,175,80,0.4)', flexShrink: 0 }} />
-                        ) : (
-                          <Chip label="PENDENTE" size="small" sx={{ height: 18, fontSize: '0.55rem', fontWeight: 900, bgcolor: 'rgba(96,125,139,0.15)', color: '#90a4ae', border: '1px solid rgba(96,125,139,0.3)', flexShrink: 0 }} />
-                        )}
-                      </Box>
-
-                      <Typography variant="body2" sx={{ mb: 2, fontWeight: 600, opacity: 0.7, fontSize: '0.77rem' }}>
-                        {item.focus}
-                      </Typography>
-
-                      <List dense sx={{ p: 0 }}>
-                        {item.items.map((bullet, bIdx) => (
-                          <ListItem key={bIdx} sx={{
-                            p: '3px 8px', mb: 0.5, alignItems: 'center',
-                            borderRadius: 1.5,
-                            bgcolor: bullet.done ? 'rgba(76,175,80,0.12)' : 'rgba(255,152,0,0.06)',
-                            border: '1px solid',
-                            borderColor: bullet.done ? 'rgba(76,175,80,0.2)' : 'rgba(255,152,0,0.15)',
-                          }}>
-                            <ListItemIcon sx={{ minWidth: 22 }}>
-                              {bullet.done ? (
-                                <CheckIcon sx={{ fontSize: 13, color: '#4caf50' }} />
-                              ) : (
-                                <PlayIcon sx={{ fontSize: 11, color: '#ff9800', opacity: 0.7, transform: 'rotate(-45deg)' }} />
-                              )}
-                            </ListItemIcon>
-                            <ListItemText
-                              primary={bullet.text}
-                              primaryTypographyProps={{
-                                sx: {
-                                  fontSize: '0.72rem',
-                                  fontWeight: bullet.done ? 700 : 500,
-                                  color: bullet.done ? '#fff' : 'rgba(255,152,0,0.85)',
-                                },
-                              }}
-                            />
-                            {bullet.done && <Chip label="OK" size="small" sx={{ height: 15, fontSize: '0.52rem', fontWeight: 900, bgcolor: 'rgba(76,175,80,0.25)', color: '#4caf50', border: '1px solid rgba(76,175,80,0.45)', ml: 0.5, flexShrink: 0 }} />}
-                          </ListItem>
-                        ))}
-                      </List>
-                    </Box>
-                  </Grid>
-                ))}
-              </Grid>
-            </Paper>
+            <Suspense fallback={<Box sx={{ py: 10, textAlign: "center" }}><CircularProgress /></Box>}>
+              <AboutTab 
+                settings={settings}
+                APP_VERSION_FALLBACK={APP_VERSION_FALLBACK}
+                APP_RELEASE_DATE_FALLBACK={APP_RELEASE_DATE_FALLBACK}
+                releaseHistory={releaseHistory}
+                roadmapData={roadmapData}
+                navigate={navigate}
+              />
+            </Suspense>
           </TabPanel>
 
         </Grid>

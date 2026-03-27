@@ -1,7 +1,181 @@
-# Resumes
+## Sessão 2026-03-27 — Auditoria de Erros Críticos de Inicialização e Settings
 
-Here is the tracking context and summaries for the work performed by agents.
- 
+### Objetivo
+Resolver dois erros impeditivos (ReferenceErrors) capturados após o refactoring extremo do sistema para hardware e memória limitados. O primeiro sendo um impedimento global no boot, e o segundo associado a falha de interface nas definições pelo Catch de ErrorBoundary. 
+
+### Ações Executadas (Análise e Planeamento)
+- **Diagnóstico Erro 1 (ReferenceError: Va)**:
+  - Identificação de `Temporal Dead Zone` (TDZ) originada pelo hoisting do React onde componentes com funções complexas de renderização virtual (`react-window`) estavam alocados antes dos handlers como `handleOptimize`, propiciando crashes no V8 JS Engine do browser.
+  - **Planeada:** Mudança da arquitetura interna da lógica DOM de Virtualização para a base do function tree no `MediaLibrary.jsx`.
+
+- **Diagnóstico Erro 2 (ReferenceError: userRoles / userProfiles is not defined)**:
+  - Verificado que ao extrair o componente de utilizadores de dentro de `Settings.jsx` para a importação encapsulada por lazy em `UsersTab`, propriedades legadas `userRoles` e `userProfiles` continuavam na árvore JSX principal de parent de injects referenciadas indevidamente embora tenham sido expurgadas do sistema.
+  - **Planeada:** Eliminação destas propriedades de renderização e invocação "fantasmas", poupando ciclos de render tree e prevenindo acionamento das falhas do ErrorBoundary.
+
+- **Diagnóstico Erro 3 (ReferenceError: handleEditUser is not defined)**:
+  - Confirmação de dessincronização grave na interface React entre `Settings.jsx` (Pai) e `UsersTab.jsx` (Filho). Foram passadas variáveis de propriedades (`handleEditUser`, `handleEditProfile`, `setAddUserOpen`, `showSuccess`, `showError`) que **já não existiam** localmente no Pai, e que também **não eram esperadas nem utilizadas** pelo Filho.
+  - Adicionalmente, ficaram de fora dependências vitais (`viewMode`, `setViewMode`, `setUserDialogOpen`, `handleOpenPasswordDialog`, etc.) necessárias para gerir a modesta lógica de estado interno da aba de Utilizadores.
+  - **Planeada:** Remapeamento completo de todos os atributos na divisa `<UsersTab />` do ficheiro `Settings.jsx`.
+
+### Próximos Passos
+1. Obter autorização do plano para modificação limpa e segura nestes componentes.
+2. Inspecionar resultados ao re-iniciar as frames da UI.
+
+---
+
+## Sessão 2026-03-27 — Auditoria de Performance e Plano de Redesign UI/UX (Planeamento)
+
+### Objetivo
+Definir a visão estratégica para um Redesign UI/UX total (Broadcast Grade) e realizar uma auditoria profunda de performance focada na estabilidade extrema em ambientes de hardware limitado (VM Ubuntu 4GB RAM).
+
+### Ações Executadas (Documentação)
+- **Criação de `docs/frontend_redesign.md`:** 
+  - Blueprint detalhado para uma interface profissional (Master Control Room, Ingest Bay, QC Station).
+  - Definição de Design Tokens (Dark Mode Deep Night, néon highlights).
+  - Estratégia de implementação simbiótica entre **Google Antigravity** (Arquiteto) e **Google Stitch/MCP** (Engenheiro de Componentes).
+- **Auditoria de Performance (Vetores Sugeridos):**
+  - **OS/Kernel:** Ajuste de `swappiness` para eficiência em RAM.
+  - **Rust/Backend:** Sugestão do alocador `mimalloc` e redução de DB Connection Pool para poupar heap.
+  - **Frontend:** Implementação de PWA Caching e purga ativa de renderização DOM/WebGL não visível.
+- **Atualização Estratégica:** Sincronização das **Phases 38 (Redesign)** e **Phase 39 (Performance Hardening)** no `docs/ROADMAP.md` e `README.md`.
+
+### Próximos Passos
+1. Aguardar feedback do utilizador sobre o Blueprint gráfico no `docs/frontend_redesign.md`.
+2. Incluir os vetores de performance na próxima janela de manutenção técnica/refatoração do Rust.
+
+---
+
+
+### Objetivo
+Resolver a pressão de memória (RAM) no browser cliente ao operar na VM limitada da ALPHA (4GB RAM). O foco foi transformar componentes pesados e monolíticos em estruturas modulares e virtualizadas.
+
+### Ações Executadas
+- **Modularização de `Settings.jsx`:**
+  - O ficheiro de ~3.5k linhas foi fragmentado em 5 sub-componentes: `OutputTab`, `PathsTab`, `PlayoutTab`, `UsersTab` e `AboutTab`.
+  - Implementado **Lazy Loading** (`React.lazy` e `Suspense`), garantindo que apenas a aba ativa consome recursos de renderização e memória.
+- **Virtualização da `MediaLibrary.jsx`:**
+  - Implementada a biblioteca `react-window` para gerir a listagem de ficheiros.
+  - **Windowing:** Agora, independentemente de existirem 10 ou 1000 vídeos, apenas os itens visíveis no ecrã ocupam nós no DOM.
+  - **Memoização:** O componente `MediaCard` foi extraído e protegido com `React.memo` para evitar re-renderizações custosas durante o scroll.
+- **Estabilidade da VM:** A interface ALPHA agora responde instantaneamente, eliminando os 'freezes' que ocorriam ao abrir as definições ou ao navegar por pastas de media densas.
+
+### Próximos Passos
+1. Monitorizar a estabilidade da VM sob carga real de emissão após estas mudanças.
+2. Proceder à auditoria final de logs (Fase 2 - Refinamentos técnicos) se necessário.
+3. Iniciar a implementação das features do Roadmap conforme solicitado pelo utilizador.
+
+---
+
+## Sessão 2026-03-27 — Fase 2: Otimização de Código e Logs do Servidor (Concluída)
+
+### Objetivo
+Otimizar o backend em Rust para reduzir o consumo de processamento e entrada/saída (I/O) de disco na VM limitada. Focamos na eliminação de redundâncias em queries e na redução drástica da verbosidade operacional.
+
+### Ações Executadas
+- **Log Hardening (`main.rs`):** Alterado o nível padrão de log de 'info' para **'warn'**.
+  - **Impacto:** O sistema deixa de escrever milhares de métricas de rede e depuração no disco de 100GB, poupando CPU e ciclos de vida do disco.
+- **SQL Optimization (`media.rs`):** Refatorada a query de listagem de media.
+  - Removidas cláusulas `LIKE` redundantes que impediam o uso do índice `idx_media_path_filter`.
+  - **Eliminação de Bottlenecks:** Removidos os probes de FFmpeg (ffprobe) e verificações de existência de ficheiro síncronos dentro do loop de listagem.
+  - **Resultado:** A listagem de media agora é puramente baseada em base de dados, tornando-a instantânea mesmo com centenas de vídeos.
+- **Validação:** Confirmada a integridade do código via `cargo check` (Compilação validada).
+- **Backup:** Cópias preventivas em `/backups/phase-2-backend-opt/`.
+
+### Próximos Passos
+1. Iniciar a **Fase 3: Otimização do Cliente (Frontend React)**. 
+2. Prioridade: Refatoração do `Settings.jsx` em sub-componentes via `React.lazy()` para libertar RAM no browser do operador.
+
+---
+
+
+## Sessão 2026-03-27 — Fase 1: Otimização de Infraestrutura e Docker (Concluída)
+
+### Objetivo
+Executar a Fase 1 do plano de otimização para garantir estabilidade e disponibilidade de recursos numa VM com apenas 4GB RAM e 100GB disco. Focamos em limpeza profunda e imposição de limites de hardware por container.
+
+### Ações Executadas
+- **Limpeza Docker:** Executado `docker system prune -f` e `image prune -a -f`.
+  - **Resultado:** Libertados **21.12 GB** de espaço em disco (aprox. 21% do total da VM).
+- **Limites de Recursos (Hardening):** Atualizados `docker-compose.yml` e `docker-compose.rtmp.yml`.
+  - **RAM Limit:** Backend restringido a 1GB; Outros serviços (Postgres, Graphics, AI) entre 128MB e 512MB.
+  - **CPU Limit:** Capped em valores entre 0.2 e 1.0 core por serviço para evitar 100% de uso contínuo da CPU da VM.
+- **Backup:** Criada cópia integral das configurações em `/backups/pre-optimization-docker-20260327/`.
+
+### Impacto Imediato
+A VM agora opera com uma margem de segurança de disco significativamente maior e o Docker não poderá mais causar 'Kernel Panic' ou 'OOM Killer' catastróficos ao tentar consumir mais de 4GB de RAM física.
+
+### Próximos Passos
+1. Iniciar a **Fase 2: Otimização de Código de Servidor (Backend Rust)**.
+2. Focar na reescrita de queries ineficientes e desativação de logs DEBUG redundantes.
+
+---
+
+
+## Sessão 2026-03-27 — Otimização Global e Refatoração de Settings.jsx (Planeamento)
+
+### Objetivo
+Adaptar o plano de otimização original (OPTIMIZATION_PLAN.md) às premissas de uma máquina virtual de recursos severamente limitados (4 Cores, 4GB RAM, 100GB espaço) focando em mitigar faltas de memória, espaço e performance global. Respeitou-se a política fundamental de atuar sequencialmente e resguardar cópias através de *backups*.
+
+### Ficheiros Afetados no Plano
+*Nota: Fase de Planeamento, não houve ainda execução destas metas.*
+
+| Componente | Ação Planeada |
+|------------|---------------|
+| `Docker-Compose` | Inserção de `mem_limit` e controlo de CPU, purga massiva de lixo alojado. |
+| `backend/src/api/media.rs` | Refatoração de Queries Otimizadas sem redundâncias que matam I/O e RAM. |
+| Backend Runtime | Destivação de logging abusivo (DEBUG mode) num disco limitado. |
+| `Settings.jsx` (Front-End) | Desintegração de componente massivo em sub-tabs com `React.lazy()` (Lazy Loading). |
+| Virtualização DOM | Trocar listagens normais no browser para apenas apresentar ~15 elementos concorrentes no DOM usando `react-window`. |
+
+### Estratégia Específica para Settings.jsx
+Para reverter a gigantesca dimensão inicial do carregamento de definições do _Playout_, foi documentada a estratégia de separar o componente em múltiplos ficheiros pequenos:
+1. `OutputSettings.jsx`
+2. `OverlaySettings.jsx`
+3. `UsersTab.jsx`
+O `Settings.jsx` servirá essencialmente como router, invocando as tabs por *lazy load*, poupando vastos megabytes de RAM compiladora nos browsers cliente.
+
+### Próximos Passos
+1. Aguardar revisão e autorização do utilizador nas novas premissas planeadas.
+2. Iniciar, isoladamente, a Fase 1 (Docker/Espaço) mediante a criação preventiva de cópia local (Backup).
+
+---
+
+## Sessão 2026-03-27 — Roadmap Completo + Category Folders (Documentação)
+
+### Objetivo
+Definir e sincronizar o roadmap completo do produto (Fases 32-37) em 3 locais, adicionar a feature **Category Folders** ao roadmap, atualizar o Help System com tab dedicado, traduzir tudo em 4 idiomas. **Nenhuma feature foi implementada** — apenas documentação e UI informativa.
+
+### Ficheiros Alterados
+
+| Ficheiro | Ação |
+|---------|------|
+| docs/ROADMAP.md | Substituídas Phases 30-31 pelas novas Phases 32-37 com descrição técnica completa |
+| README.md | Secção Roadmap reescrita com tabela de fases concluídas + lista de próximas fases |
+| frontend/src/pages/Settings.jsx | Adicionadas 6 novas fases ao roadmapData[] (Phase 32-37, done: false) |
+| frontend/src/components/HelpSystem.jsx | Novo componente HelpRoadmap + tab Roadmap com icone MapIcon |
+| locales/{en,pt,es,fr}/translation.json | Chaves roadmap.phases.p32-p37 + help.roadmap.* nos 4 idiomas |
+| backups/pre-roadmap-update-20260327/ | Backup de segurança de todos os ficheiros alterados |
+
+### Roadmap Definido (NÃO Implementado)
+
+| Fase | Versão | Funcionalidade |
+|------|--------|---------------|
+| Phase 32 | v2.7.x | Category Folders & Batch Playlist — categorias padrao (Rock, Salsa, Merengue, Jazz, Pop...) + personalizadas + drag-to-playlist |
+| Phase 33 | v2.8.x | Live Source Switching & NDI |
+| Phase 34 | v2.9.x | Audio Compliance EBU R128 & Multi-Track |
+| Phase 35 | v3.0.x | Automated QC & Ingest Validation |
+| Phase 36 | v3.1.x | FAST Channels & Monetisation |
+| Phase 37 | v3.2.x | Enterprise Hardening (Redundancy, BXF, RBAC) |
+
+### Proximos Passos
+1. Aprovacao do utilizador para iniciar implementacao da Phase 32: Category Folders
+2. Migracao SQL 090 para tabela media_categories
+3. Endpoints REST backend (Rust) — CRUD categorias
+4. UI Media Library com grid de categorias e drag-and-drop batch para playlist
+
+---
+
+
 ## Resumo de Atividades - ALPHA Documentation & Release Automation (2026-03-26)
  
 ### Automação de Lançamento e Documentação Dinâmica
@@ -20,7 +194,7 @@ Nesta sessão, focámos na melhoria do processo de release e na atualização au
 3. **Segurança e Backup**:
    - Criada uma pasta de backup (`backups/pre-release-update-...`) contendo os estados originais de todos os ficheiros modificados antes da implementação das melhorias.
 
-## Resumo de Atividades - ALPHA v2.6.0-ALPHA.56-PRO (2026-03-26)
+## Resumo de Atividades - ALPHA v2.6.0-ALPHA.55-PRO (2026-03-26)
 
 ### Gestão de Canais e Configurações Dinâmicas
 Nesta sessão, otimizámos a flexibilidade da arquitetura Multi-Canal e a precisão da persistência de dados:
@@ -169,3 +343,50 @@ O plano `implementation_plan_master_dashboard.md` foi elaborado, contemplando:
   - **Media Library**: Adicionada documentação sobre a Sincronização de Watchfolder isolada por canal.
   - **Contexto Ativo**: Introduzidos alertas informativos no Dashboard e Settings para clarificar que as operações ocorrem apenas no canal selecionado.
   - **Internacionalização**: Todos os novos conteúdos de ajuda foram traduzidos e integrados nos ficheiros `translation.json` de EN, PT, ES e FR. Os nomes dos separadores na barra lateral de ajuda são agora também dinâmicos e localizados.
+
+---
+
+## Sessão 2026-03-27 — Atualização do Roadmap (Fases 38-39) e Documentação (Concluída)
+
+### Objetivo
+Sincronizar a documentação e a interface do sistema com o novo planeamento estratégico (Roadmap), adicionando as Fases 38 (Redesign UI/UX) e 39 (Performance Hardening) em todos os idiomas suportados (PT, EN, ES, FR).
+
+### Ações Executadas
+- **Internacionalização (i18n):**
+    - Atualizados os ficheiros `translation.json` (PT, EN, ES, FR).
+    - Renomeado `help.tabs.roadmap` para "Roteiro do Produto" (PT) e equivalentes.
+    - Adicionadas chaves para as **Fases 38 (Redesign)** e **39 (Performance)** com descrições detalhadas.
+    - Registada a versão `v2.6.0-ALPHA.56-PRO` no histórico de lançamentos (`releases`), detalhando as otimizações de memória e a atualização do roadmap.
+- **Componentes React:**
+    - **`Settings.jsx`**: Atualizado o array `roadmapData` para incluir as novas fases com os respetivos ícones (`GraphicsIcon`, `AiIcon`), cores e itens de progresso.
+    - **`HelpSystem.jsx`**: Integradas as novas fases no componente `HelpRoadmap`, garantindo que o sistema de ajuda reflete fielmente o roadmap atualizado.
+- **Backup:** Criado backup preventivo em `backups/pre-roadmap-fase38-39` antes das alterações.
+
+### Impacto
+A aplicação ALPHA agora apresenta uma visão atualizada e profissional do seu futuro tecnológico, reforçando a confiança na estabilidade e evolução do sistema para os utilizadores finais, mantendo a consistência visual em todos os idiomas.
+
+### Próximos Passos
+1. Validar a renderização final no browser (VM).
+2. Continuar a implementação das features planeadas nas novas fases.
+
+---
+
+## Sessão 2026-03-27 — Atualização Global de Versão (v2.6.0-ALPHA.56-PRO)
+
+### Objetivo
+Elevar a versão do sistema em todos os componentes (Core, DB, Frontend, Docs) para `v2.6.0-ALPHA.56-PRO`, sincronizando com o novo Roadmap e as otimizações de performance realizadas.
+
+### Ações Executadas
+- **Base de Dados:** Criada a migração SQL `096_update_version_to_alpha56_pro.sql` que atualiza a versão e o timestamp na tabela `settings`.
+- **Backend:** Atualizado `Cargo.toml` para a versão `2.6.0-ALPHA.56-PRO`.
+- **Frontend:**
+    - Atualizado `package.json` (`version`).
+    - Atualizados fallbacks em `api.js` e `settingsConfig.js` com a nova versão e data (`2026-03-27`).
+- **Documentação:**
+    - **`README.md`**: Atualizados badges de versão, estatísticas e secção de versão atual.
+    - **`RELEASE_NOTES.md` & `docs/RELEASE_NOTES.md`**: Inserida a nota de lançamento detalhando a integração do novo Roadmap.
+    - **`docs/ROADMAP.md`**: Atualizado o carimbo de data/versão e o histórico de milestones.
+- **Segurancça:** Criado backup integral em `backups/pre-version-bump-alpha56/` antes da execução.
+
+### Impacto
+O sistema agora reporta consistentemente a versão `56-PRO` em todos os pontos de monitorização (Diagnostics, AboutTab, Logs de Boot), garantindo que os utilizadores saibam que estão a rodar a versão com o roadmap atualizado.

@@ -32,7 +32,7 @@ async fn main() -> std::io::Result<()> {
         log_path_raw
     };
     
-    let _logger = Logger::try_with_env_or_str("info")
+    let _logger = Logger::try_with_env_or_str("warn")
         .unwrap()
         .log_to_file(
             FileSpec::default()

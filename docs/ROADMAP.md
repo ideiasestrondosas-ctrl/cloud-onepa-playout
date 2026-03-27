@@ -1,6 +1,6 @@
 # Cloud Onepa Playout - Roadmap
 
-_Status atualizado em 2026-03-26 (v2.6.0-ALPHA.55-PRO)_
+_Status atualizado em 2026-03-27 (v2.6.0-ALPHA.56-PRO)_
 
 ---
 
@@ -130,25 +130,88 @@ _Status atualizado em 2026-03-26 (v2.6.0-ALPHA.55-PRO)_
 
 ## 🔜 Upcoming Phases
 
-### Phase 30: Live Inputs & Social Streaming — v2.5.x
+### Phase 32: Category Folders & Batch Playlist — v2.7.x
 
-_Focus: Expanding beyond file playback to live sources_
+_Focus: Smart media organisation by genre/category with batch drag-and-drop to playlists_
 
-- [ ] **Live Inputs Support**: WebRTC ingestion, NDI, and SDI input integration for live switching between sources.
-- [ ] **Social Streaming**: Native YouTube Live & Facebook Live API integration with stream key management.
-- [ ] **Advanced SRT**: Multi-caller support and stream bonding for redundancy.
-- [ ] **Live Switcher UI**: Frontend component to select active source (file/live/social) in real-time.
+- [ ] **Category System**: `media_categories` table with full CRUD — default categories (Rock, Salsa, Merengue, Jazz, Pop, Reggaeton, Classical, News, Movies, Series, Documentary, Sports, Filler) + user-created custom categories.
+- [ ] **Media Library Categories View**: Visual grid of categories with icon, colour, name, and file count. Drag-and-drop files into categories. Contextual menu for bulk assignment.
+- [ ] **Drag Category → Playlist**: Drag an entire category onto the PlaylistEditor to add all its files at once (sequential or random mode, configurable).
+- [ ] **Category Filter**: Sidebar filter by category in Media Library and Playlist Editor media panel.
+- [ ] **i18n**: Full translation of category UI in EN, PT, ES, FR.
 
 ---
 
-### Phase 31: AI & High Availability — v2.6.x
+### Phase 33: Live Source Switching & NDI — v2.8.x
 
-_Focus: Intelligence, redundancy, and multi-channel scaling_
+_Focus: Real-time source switching and professional broadcast networking via NDI_
 
-- [ ] **AI Content Intelligence**: Auto-tagging of media, smart playlist generation from content analysis, viewer recommendations.
-- [ ] **Multi-Channel Core**: Single backend instance managing multiple fully isolated playout channels simultaneously.
-- [ ] **Active-Active Redundancy**: Heartbeat failover between playout nodes; automatic takeover on primary failure.
-- [ ] **Advanced Analytics**: Viewer count estimation, engagement metrics, geographic distribution.
+- [ ] **NDI Input/Output**: FFmpeg integration with NDI SDK for ultra-low-latency professional network sources.
+- [ ] **Live Switcher UI**: A/B preview component to switch between sources (file, RTMP pull, NDI, SRT listener) in real-time with crossfade transitions.
+- [ ] **Multi-Source PIP**: Picture-in-Picture overlay for sign language, inserts, and breaking news banners.
+
+---
+
+### Phase 34: Audio Compliance & Multi-Track — v2.9.x
+
+_Focus: Broadcast-grade audio normalisation and independent audio tracks_
+
+- [ ] **EBU R128 Loudness Normalisation**: FFmpeg `loudnorm` filter integrated per-channel in the playout pipeline, compliant with satellite/cable broadcast rules.
+- [ ] **Multi-Audio Track**: Independent audio tracks (Original + Audio Description + Multilingual) with runtime switching.
+- [ ] **Audio Metering UI**: Real-time VU Meters and LUFS display on the Dashboard via WebSocket telemetry.
+
+---
+
+### Phase 35: Automated QC & Ingest Validation — v3.0.x
+
+_Focus: Automatic quality control on media import to prevent on-air failures_
+
+- [ ] **Native Quality Control**: Automatic media validation (black frames, freeze frames, silent audio, incompatible codec) with rejection or alert workflows.
+- [ ] **Smart Thumbnails**: Intelligent extraction of representative frames (not first frame) for better library browsing.
+- [ ] **Auto Proxy Generation**: Automatic creation of lightweight proxy files for instant preview in the Media Library.
+
+---
+
+### Phase 36: FAST Channels & Monetisation — v3.1.x
+
+_Focus: Free Ad-supported Streaming Television delivery and dynamic advertising_
+
+- [ ] **FAST Channel Delivery**: Content packaging for Pluto TV, Samsung TV Plus, and similar FAST platforms.
+- [ ] **Dynamic Ad Insertion (DAI)**: Expansion of SCTE-35 markers for server-side dynamic ad insertion into LL-HLS streams.
+- [ ] **Viewer Analytics**: Per-channel audience estimation, engagement metrics, and geographic distribution dashboards.
+
+---
+
+### Phase 37: Enterprise Hardening — v3.2.x
+
+_Focus: High availability, compliance integration, and granular access control_
+
+- [ ] **Active-Active Redundancy**: Heartbeat between playout instances with automatic failover on primary node failure.
+- [ ] **BXF/Traffic Integration**: Import/export of playlists and schedules in Broadcast eXchange Format for traffic system compatibility.
+- [ ] **Granular RBAC**: Role-based access control with per-channel and per-feature permissions.
+- [ ] **Remote Monitoring Dashboard**: Read-only web interface for remote monitoring of all channels from any location.
+
+---
+
+### Phase 38: Total UI/UX Redesign — v3.3.x
+
+_Focus: Professional Broadcast Interface with Antigravity + Stitch synergy_
+
+- [ ] **Deep Night Theme Engine**: Advanced dark mode with high-contrast UI tokens and néon highlights.
+- [ ] **Master Control Layout**: Redesigned MCR Dashboard with integrated VU meters, system clock, and real-time waveforms.
+- [ ] **Sidebar Intelligence**: Dynamic sidebar with Ingest Bay, QC Station, and Live Switcher menus.
+- [ ] **Micro-animations & Feedback**: Smooth transitions and industrial-grade visual feedback for on-air states.
+
+---
+
+### Phase 39: Extreme Performance Hardening — v3.4.x
+
+_Focus: Maximum efficiency for low-resource environments (4GB RAM VMs)_
+
+- [ ] **Memory Management**: Integration of `mimalloc` allocator in Rust and fine-tuned database connection pooling.
+- [ ] **FFmpeg Resource Capping**: Intelligent thread management to protect live playout continuity.
+- [ ] **PWA & Edge Caching**: Geração de Service Workers para carregamento instantâneo da UI via Vite.
+- [ ] **Kernel-Level Tuning**: Automated OS adjustments (swappiness, I/O schedulers) via container startup scripts.
 
 ---
 
@@ -169,4 +232,5 @@ _Focus: Intelligence, redundancy, and multi-channel scaling_
 | v2.5.0-ALPHA.44-PRO | 29 | — | Kubernetes + MinIO + CI/CD |
 | v2.5.x | 30 | — | Live Inputs + Social Streaming |
 | v2.6.x | 31 | — | AI Intelligence + HA Redundancy |
-| v2.6.0-ALPHA.55-PRO | - | 2026-03-26 | ### Automação de Lançamento e Documentação Dinâmica;Nesta sessão, focámos na melhoria do processo de release e na atualização automática da documentação pública:;1. **Script de Release (`release.sh`)**:;   - **Data Automática**: Implementada a variável `RELEASE_DATE` para capturar a data real do lançamento.;   - **Destaques Interativos**: O script agora solicita ao utilizador a introdução das novidades da versão (`RELEASE_HIGHLIGHTS`) durante o processo de release.;   - **Automação Total**: O script atualiza agora automaticamente o `README.md`, `docs/ROADMAP.md`, `RELEASE_NOTES.md` e `docs/RELEASE_NOTES.md` com a nova versão, data e destaques.;2. **Documentação Interna (`README.md` & `ROADMAP.md`)**:;   - **Nova Secção**: Criada a secção `### 🆕 Novidades & Alterações` no `README.md`, localizada estrategicamente após o Roadmap para visibilidade imediata.;   - **Histórico de Roadmap**: O `docs/ROADMAP.md` agora recebe automaticamente uma nova entrada na tabela de histórico de versões a cada release.;   - **Formatação de Versão**: Padronizado o formato da "Versão Atual" para incluir a data completa: `vX.X.X (YYYY-MM-DD)`.;3. **Segurança e Backup**:;   - Criada uma pasta de backup (`backups/pre-release-update-...`) contendo os estados originais de todos os ficheiros modificados antes da implementação das melhorias.; |
+| v2.6.0-ALPHA.56-PRO | - | 2026-03-27 | ### Atualização do Roadmap e Documentação Alpha;Nesta sessão, sincronizámos a documentação e a interface do ALPHA com o novo roteiro estratégico:;1. **Roadmap Fases 38 e 39**: Adicionadas às abas de Ajuda e Sobre o Sistema as novas fases de Redesign UI/UX e Performance Hardening.;2. **Internacionalização**: Sincronização completa de tradução (PT, EN, ES, FR) para o roteiro do produto e histórico de lançamentos.;3. **Consistência de Versão**: Bump global de versão em toda a stack e base de dados para v2.6.0-ALPHA.56-PRO.; |
+| v2.6.0-ALPHA.56-PRO | - | 2026-03-27 | ### Objetivo;Resolver dois erros impeditivos (ReferenceErrors) capturados após o refactoring extremo do sistema para hardware e memória limitados. O primeiro sendo um impedimento global no boot, e o segundo associado a falha de interface nas definições pelo Catch de ErrorBoundary. ;### Ações Executadas (Análise e Planeamento);- **Diagnóstico Erro 1 (ReferenceError: Va)**:;  - Identificação de `Temporal Dead Zone` (TDZ) originada pelo hoisting do React onde componentes com funções complexas de renderização virtual (`react-window`) estavam alocados antes dos handlers como `handleOptimize`, propiciando crashes no V8 JS Engine do browser.;  - **Planeada:** Mudança da arquitetura interna da lógica DOM de Virtualização para a base do function tree no `MediaLibrary.jsx`.;- **Diagnóstico Erro 2 (ReferenceError: userRoles / userProfiles is not defined)**:;  - Verificado que ao extrair o componente de utilizadores de dentro de `Settings.jsx` para a importação encapsulada por lazy em `UsersTab`, propriedades legadas `userRoles` e `userProfiles` continuavam na árvore JSX principal de parent de injects referenciadas indevidamente embora tenham sido expurgadas do sistema.;  - **Planeada:** Eliminação destas propriedades de renderização e invocação "fantasmas", poupando ciclos de render tree e prevenindo acionamento das falhas do ErrorBoundary.;- **Diagnóstico Erro 3 (ReferenceError: handleEditUser is not defined)**:;  - Confirmação de dessincronização grave na interface React entre `Settings.jsx` (Pai) e `UsersTab.jsx` (Filho). Foram passadas variáveis de propriedades (`handleEditUser`, `handleEditProfile`, `setAddUserOpen`, `showSuccess`, `showError`) que **já não existiam** localmente no Pai, e que também **não eram esperadas nem utilizadas** pelo Filho.;  - Adicionalmente, ficaram de fora dependências vitais (`viewMode`, `setViewMode`, `setUserDialogOpen`, `handleOpenPasswordDialog`, etc.) necessárias para gerir a modesta lógica de estado interno da aba de Utilizadores.;  - **Planeada:** Remapeamento completo de todos os atributos na divisa `<UsersTab />` do ficheiro `Settings.jsx`.;### Próximos Passos;1. Obter autorização do plano para modificação limpa e segura nestes componentes.;2. Inspecionar resultados ao re-iniciar as frames da UI.;---; |
