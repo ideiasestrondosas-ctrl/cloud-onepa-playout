@@ -1,15 +1,15 @@
-# Cloud Onepa Playout - Instalação
+# Cloud Onepa Playout - Installation
 
-## Pré-requisitos
+## Prerequisites
 
-### Opção 1: Docker (Recomendado)
+### Option 1: Docker (Recommended)
 
 - Docker 24.0+
 - Docker Compose 2.0+
-- 4GB RAM disponível
-- 10GB espaço em disco
+- 4GB RAM available
+- 10GB disk space
 
-### Opção 2: Instalação Manual
+### Option 2: Manual Installation
 
 - Rust 1.75+
 - Node.js 20+
@@ -20,50 +20,50 @@
 
 ---
 
-## Instalação com Docker
+## Installation with Docker
 
-### 1. Clone o Repositório
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/onepa/cloud-onepa-playout.git
 cd cloud-onepa-playout
 ```
 
-### 2. Configure Variáveis de Ambiente
+### 2. Configure Environment Variables
 
 ```bash
 cp backend/.env.example backend/.env
-# Edite backend/.env com suas configurações
+# Edit backend/.env with your settings
 ```
 
-### 3. Inicie os Serviços
+### 3. Start the Services
 
 ```bash
 docker-compose up -d
 ```
 
-### 4. Verifique os Logs
+### 4. Check Logs
 
 ```bash
 docker-compose logs -f
 ```
 
-### 5. Aceda à Interface
+### 5. Access the Interface
 
-Abra o navegador em: `http://localhost:3000`
+Open your browser at: `http://localhost:3010` (or `http://localhost:3011` depending on environment)
 
-**Credenciais padrão:**
+**Default Credentials:**
 
 - Username: `admin`
-- Password: `admin` (altere após primeiro login!)
+- Password: `admin` (change after first login!)
 
 ---
 
-## Instalação Manual
+## Manual Installation
 
 ### 1. Backend (Rust)
 
-#### Instale Dependências
+#### Install Dependencies
 
 ```bash
 # macOS
@@ -83,17 +83,17 @@ GRANT ALL PRIVILEGES ON DATABASE onepa_playout TO onepa;
 \q
 ```
 
-#### Compile e Execute Backend
+#### Compile and Run Backend
 
 ```bash
 cd backend
 cp .env.example .env
-# Edite .env com suas configurações
+# Edit .env with your settings
 cargo build --release
 cargo run --release
 ```
 
-Backend estará em: `http://localhost:8080`
+Backend will be at: `http://localhost:8080`
 
 ### 2. Frontend (React)
 
@@ -103,11 +103,11 @@ npm install
 npm run dev
 ```
 
-Frontend estará em: `http://localhost:5173`
+Frontend will be at: `http://localhost:5173`
 
 ---
 
-## Verificação da Instalação
+## Installation Verification
 
 ### Health Check
 
@@ -115,7 +115,7 @@ Frontend estará em: `http://localhost:5173`
 curl http://localhost:8080/api/health
 ```
 
-Resposta esperada:
+Expected Response:
 
 ```json
 {
@@ -129,39 +129,39 @@ Resposta esperada:
 
 ## Troubleshooting
 
-### Erro: "Database connection failed"
+### Error: "Database connection failed"
 
-- Verifique se PostgreSQL está a correr
-- Confirme credenciais em `.env`
-- Teste conexão: `psql -U onepa -d onepa_playout`
+- Check if PostgreSQL is running
+- Confirm credentials in `.env`
+- Test connection: `psql -U onepa -d onepa_playout`
 
-### Erro: "FFmpeg not found"
+### Error: "FFmpeg not found"
 
-- Instale FFmpeg: `brew install ffmpeg` (macOS) ou `apt-get install ffmpeg` (Linux)
-- Verifique: `ffmpeg -version`
+- Install FFmpeg: `brew install ffmpeg` (macOS) or `apt-get install ffmpeg` (Linux)
+- Check: `ffmpeg -version`
 
-### Porta já em uso
+### Port already in use
 
 ```bash
-# Altere portas em docker-compose.yml ou .env
+# Change ports in docker-compose.yml or .env
 # Backend: SERVER_PORT=8081
 # Frontend: vite.config.js -> server.port: 5174
 ```
 
 ---
 
-## Próximos Passos
+## Next Steps
 
-Após instalação bem-sucedida:
+After successful installation:
 
-1. Leia o [Tutorial de Uso](TUTORIAL.md)
+1. Read the [User Manual](USER_MANUAL.md)
 2. Configure output streams
-3. Faça upload de media
-4. Crie sua primeira playlist
+3. Upload media
+4. Create your first playlist
 
 ---
 
-## Desinstalação
+## Uninstallation
 
 ### Docker
 
@@ -172,7 +172,7 @@ docker-compose down -v
 ### Manual
 
 ```bash
-# Pare serviços
-# Remova database
+# Stop services
+# Remove database
 sudo -u postgres psql -c "DROP DATABASE onepa_playout;"
 ```

@@ -1,101 +1,101 @@
 # Cloud Onepa Playout - FAQ
 
-## Perguntas Frequentes
+## Frequently Asked Questions
 
-### Instalação e Configuração
+### Installation and Configuration
 
-**Q: Qual a diferença entre instalação Docker e manual?**  
-A: Docker é mais simples e isolado. Manual oferece mais controlo mas requer configuração de dependências.
+**Q: What is the difference between Docker and manual installation?**  
+A: Docker is simpler and isolated. Manual offers more control but requires dependency configuration.
 
-**Q: Posso usar SQLite em vez de PostgreSQL?**  
-A: Atualmente apenas PostgreSQL é suportado. SQLite pode ser adicionado no futuro.
+**Q: Can I use SQLite instead of PostgreSQL?**  
+A: Currently only PostgreSQL is supported. SQLite may be added in the future.
 
-**Q: Preciso de GPU para usar o Cloud Onepa Playout?**  
-A: Não. O FFmpeg usa apenas CPU. GPU pode acelerar encoding mas não é necessária.
-
----
-
-### Uso Geral
-
-**Q: Como faço upload de vídeos?**  
-A: Vá para Media Library → Upload → Arraste ficheiros ou clique para selecionar.
-
-**Q: Que formatos de vídeo são suportados?**  
-A: Todos os formatos suportados pelo FFmpeg (MP4, MKV, AVI, MOV, WebM, etc).
-
-**Q: Como criar uma playlist 24h?**  
-A: Playlist Editor → Adicione clips → Sistema calcula duração → Auto-fill com fillers se necessário.
-
-**Q: Posso agendar playlists diferentes para cada dia?**  
-A: Sim! Use o Calendário para atribuir playlists a datas específicas.
+**Q: Do I need a GPU to use Cloud Onepa Playout?**  
+A: No. FFmpeg uses only CPU by default. GPU can accelerate encoding but is not required.
 
 ---
 
-### Playout e Streaming
+### General Use
 
-**Q: Como iniciar o broadcast?**  
-A: Dashboard → Botão "Start Playout" → Selecione playlist → Confirme.
+**Q: How do I upload videos?**  
+A: Go to Media Library → Upload → Drag files or click to select.
 
-**Q: Posso fazer stream para múltiplos destinos?**  
-A: Atualmente suporta um output. Multi-output será adicionado em versões futuras.
+**Q: Which video formats are supported?**  
+A: All formats supported by FFmpeg (MP4, MKV, AVI, MOV, WebM, etc).
 
-**Q: Que protocolos de streaming são suportados?**  
-A: RTMP, HLS, SRT, UDP. Configurável em Settings.
+**Q: How do I create a 24h playlist?**  
+A: Playlist Editor → Add clips → System calculates duration → Auto-fill with fillers if necessary.
 
-**Q: Como vejo preview do que está a transmitir?**  
-A: Dashboard tem preview em tempo real do stream.
+**Q: Can I schedule different playlists for each day?**  
+A: Yes! Use the Calendar to assign playlists to specific dates.
+
+---
+
+### Playout and Streaming
+
+**Q: How do I start the broadcast?**  
+A: Dashboard → "Start Playout" button → Select playlist → Confirm.
+
+**Q: Can I stream to multiple destinations?**  
+A: Currently supports one output. Multi-output will be added in future versions.
+
+**Q: Which streaming protocols are supported?**  
+A: RTMP, HLS, SRT, UDP. Configurable in Settings.
+
+**Q: How can I see a preview of what is broadcasting?**  
+A: The Dashboard has a real-time preview of the stream.
 
 ---
 
 ### Troubleshooting
 
-**Q: Vídeo não reproduz - áudio sem som**  
-A: Verifique se vídeo tem track de áudio. Sistema adiciona silêncio automaticamente se configurado.
+**Q: Video plays but no sound**  
+A: Check if the video has an audio track. The system adds silence automatically if configured.
 
-**Q: Playlist não completa 24h**  
-A: Configure fillers em Settings → Playout → Filler Content. Sistema preenche automaticamente.
+**Q: Playlist does not complete 24h**  
+A: Configure fillers in Settings → Playout → Filler Content. The system fills automatically.
 
-**Q: Stream está a fazer buffering**  
-A: Reduza bitrate em Settings → Output → Bitrate. Recomendado: 5000k para 1080p.
+**Q: Stream is buffering**  
+A: Reduce the bitrate in Settings → Output → Bitrate. Recommended: 5000k for 1080p.
 
-**Q: Erro "FFmpeg not found"**  
-A: Instale FFmpeg: `brew install ffmpeg` (macOS) ou `apt install ffmpeg` (Linux).
+**Q: Error "FFmpeg not found"**  
+A: Install FFmpeg: `brew install ffmpeg` (macOS) or `apt install ffmpeg` (Linux).
 
 ---
 
-### Funcionalidades Avançadas
+### Advanced Features
 
-**Q: Posso adicionar logos aos vídeos?**  
-A: Sim! Settings → Overlay → Upload logo → Configure posição.
+**Q: Can I add logos to the videos?**  
+A: Yes! Settings → Overlay → Upload logo → Configure position.
 
-**Q: Como normalizar áudio de diferentes clips?**  
+**Q: How do I normalize audio from different clips?**  
 A: Settings → Audio → Enable EBU R128 Loudness Normalization.
 
-**Q: Posso usar fontes remotas (URLs)?**  
-A: Sim. Media Library → Add Remote Source → Cole URL (HTTP/RTMP/etc).
+**Q: Can I use remote sources (URLs)?**  
+A: Yes. Media Library → Add Remote Source → Paste URL (HTTP/RTMP/etc).
 
 ---
 
 ### Performance
 
-**Q: Quantos recursos preciso para 1080p?**  
-A: Mínimo: 4 cores CPU, 4GB RAM. Recomendado: 8 cores, 8GB RAM.
+**Q: How many resources do I need for 1080p?**  
+A: Minimum: 4 CPU cores, 4GB RAM. Recommended: 8 cores, 8GB RAM.
 
-**Q: Posso rodar em Raspberry Pi?**  
-A: Possível mas não recomendado para resoluções > 720p. Use Pi 4 com 8GB RAM.
-
----
-
-### Desenvolvimento
-
-**Q: Como contribuir para o projeto?**  
-A: Fork → Branch → Commits → Pull Request. Ver CONTRIBUTING.md.
-
-**Q: Posso usar comercialmente?**  
-A: Sim, sob licença GPL v3. Modificações devem ser open-source.
+**Q: Can I run it on a Raspberry Pi?**  
+A: Possible but not recommended for resolutions > 720p. Use Pi 4 with 8GB RAM.
 
 ---
 
-## Não encontrou resposta?
+### Development
 
-Abra uma [issue no GitHub](https://github.com/onepa/cloud-onepa-playout/issues) ou consulte a [documentação completa](https://docs.onepa.cloud).
+**Q: How can I contribute to the project?**  
+A: Fork → Branch → Commits → Pull Request. See CONTRIBUTING.md.
+
+**Q: Can I use it commercially?**  
+A: Yes, under GPL v3 license. Modifications must be open-source.
+
+---
+
+## Didn't find an answer?
+
+Open a [GitHub issue](https://github.com/onepa/cloud-onepa-playout/issues) or consult the [full documentation](https://docs.onepa.cloud).

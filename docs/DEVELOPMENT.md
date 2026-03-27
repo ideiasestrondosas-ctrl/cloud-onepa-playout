@@ -1,20 +1,20 @@
-# Cloud Onepa Playout - Guia de Desenvolvimento
+# Cloud Onepa Playout - Development Guide
 
-## 🛠️ Setup do Ambiente de Desenvolvimento
+## 🛠️ Development Environment Setup
 
-### Pré-requisitos
+### Prerequisites
 
 - **Rust**: 1.75+ (`rustup install stable`)
 - **Node.js**: 18+ (`nvm install 18`)
-- **PostgreSQL**: 16+ (local ou Docker)
-- **FFmpeg**: 7.2+ (`brew install ffmpeg` ou `apt install ffmpeg`)
-- **Git**: Para controlo de versão
+- **PostgreSQL**: 16+ (local or Docker)
+- **FFmpeg**: 7.2+ (`brew install ffmpeg` or `apt install ffmpeg`)
+- **Git**: For version control
 
-### Clone e Setup Inicial
+### Clone and Initial Setup
 
 ```bash
-# Clone do repositório
-git clone https://github.com/your-org/cloud-onepa-playout.git
+# Clone the repository
+git clone https://github.com/onepa/cloud-onepa-playout.git
 cd cloud-onepa-playout
 
 # Setup backend
@@ -29,7 +29,7 @@ npm install
 
 ---
 
-## 🏗️ Estrutura do Projeto
+## 🏗️ Project Structure
 
 ```
 cloud-onepa-playout/
@@ -84,20 +84,20 @@ cloud-onepa-playout/
 
 ---
 
-## 🔧 Desenvolvimento
+## 🔧 Development
 
 ### Backend (Rust)
 
 ```bash
 cd backend
 
-# Desenvolvimento com hot-reload
+# Development with hot-reload
 cargo watch -x run
 
 # Build
 cargo build
 
-# Testes
+# Tests
 cargo test
 
 # Lint
@@ -112,7 +112,7 @@ cargo fmt
 ```bash
 cd frontend
 
-# Desenvolvimento
+# Development
 npm run dev
 
 # Build
@@ -128,30 +128,30 @@ npm run preview
 ### Database
 
 ```bash
-# Executar migrations
+# Run migrations
 cd backend
 sqlx migrate run
 
-# Criar nova migration
+# Create new migration
 sqlx migrate add create_new_table
 
-# Reverter última migration
+# Revert last migration
 sqlx migrate revert
 ```
 
 ---
 
-## 📝 Convenções de Código
+## 📝 Coding Conventions
 
 ### Rust
 
 **Naming:**
 
-- `snake_case` para funções e variáveis
-- `PascalCase` para structs e enums
-- `SCREAMING_SNAKE_CASE` para constantes
+- `snake_case` for functions and variables
+- `PascalCase` for structs and enums
+- `SCREAMING_SNAKE_CASE` for constants
 
-**Exemplo:**
+**Example:**
 
 ```rust
 const MAX_FILE_SIZE: usize = 2_000_000_000;
@@ -169,7 +169,7 @@ pub async fn get_media_info(file_path: &str) -> Result<MediaInfo, String> {
 **Error Handling:**
 
 ```rust
-// Use Result para erros recuperáveis
+// Use Result for recoverable errors
 fn process_file(path: &str) -> Result<(), AppError> {
     // ...
 }
@@ -182,11 +182,11 @@ let info = ffmpeg.get_media_info(path)?;
 
 **Naming:**
 
-- `camelCase` para variáveis e funções
-- `PascalCase` para componentes
-- `SCREAMING_SNAKE_CASE` para constantes
+- `camelCase` for variables and functions
+- `PascalCase` for components
+- `SCREAMING_SNAKE_CASE` for constants
 
-**Exemplo:**
+**Example:**
 
 ```javascript
 const MAX_UPLOAD_SIZE = 2000000000;
@@ -219,7 +219,7 @@ function useNotification() {
 
 ---
 
-## 🧪 Testes
+## 🧪 Testing
 
 ### Backend Tests
 
@@ -260,45 +260,44 @@ test("renders dashboard title", () => {
 
 ## 🔌 API Endpoints
 
-### Autenticação
+### Authentication
 
 - `POST /api/auth/login` - Login
 - `POST /api/auth/logout` - Logout
-- `POST /api/auth/register` - Registar utilizador
+- `POST /api/auth/register` - Register user
 
 ### Media
 
-- `GET /api/media` - Listar media (paginação)
-- `GET /api/media/{id}` - Obter media por ID
-- `POST /api/media/upload` - Upload de ficheiros
-- `DELETE /api/media/{id}` - Deletar media
+- `GET /api/media` - List media (pagination)
+- `GET /api/media/{id}` - Get media by ID
+- `POST /api/media/upload` - File upload
+- `DELETE /api/media/{id}` - Delete media
 
 ### Playlists
 
-- `GET /api/playlists` - Listar playlists
-- `GET /api/playlists/{id}` - Obter playlist
-- `POST /api/playlists` - Criar playlist
-- `PUT /api/playlists/{id}` - Atualizar playlist
-- `DELETE /api/playlists/{id}` - Deletar playlist
-- `POST /api/playlists/validate` - Validar duração
+- `GET /api/playlists` - List playlists
+- `GET /api/playlists/{id}` - Get playlist
+- `POST /api/playlists` - Create playlist
+- `PUT /api/playlists/{id}` - Update playlist
+- `DELETE /api/playlists/{id}` - Delete playlist
+- `POST /api/playlists/validate` - Validate duration
 
 ### Schedule
 
-- `GET /api/schedule` - Listar agendamentos
-- `GET /api/schedule?light=true` - Listar agendamentos (resposta leve, sem playlist_content)
-- `GET /api/schedule/light` - Listar agendamentos (resposta leve, sem playlist_content)
-- `POST /api/schedule` - Criar agendamento
-- `DELETE /api/schedule/{id}` - Deletar agendamento
-- `GET /api/schedule/for-date` - Obter playlist para data
+- `GET /api/schedule` - List schedules
+- `GET /api/schedule?light=true` - List schedules (light response, without playlist_content)
+- `POST /api/schedule` - Create schedule
+- `DELETE /api/schedule/{id}` - Delete schedule
+- `GET /api/schedule/for-date` - Get playlist for date
 
 ### Playout
 
-- `GET /api/playout/status` - Status do playout
-- `POST /api/playout/start` - Iniciar playout
-- `POST /api/playout/stop` - Parar playout
-- `POST /api/playout/skip` - Skip para próximo clip
-- `POST /api/playout/pause` - Pausar playout
-- `POST /api/playout/resume` - Retomar playout
+- `GET /api/playout/status` - Playout status
+- `POST /api/playout/start` - Start playout
+- `POST /api/playout/stop` - Stop playout
+- `POST /api/playout/skip` - Skip to next clip
+- `POST /api/playout/pause` - Pause playout
+- `POST /api/playout/resume` - Resume playout
 
 ---
 
@@ -307,13 +306,13 @@ test("renders dashboard title", () => {
 ### Backend
 
 ```bash
-# Logs detalhados
+# Detailed logs
 RUST_LOG=debug cargo run
 
-# Backtrace em panics
+# Backtrace on panics
 RUST_BACKTRACE=1 cargo run
 
-# Debug com lldb
+# Debug with lldb
 rust-lldb target/debug/onepa-playout
 ```
 
@@ -324,15 +323,15 @@ rust-lldb target/debug/onepa-playout
 console.log("Data:", data);
 
 // React DevTools
-// Instalar extensão do browser
+// Install browser extension
 
 // Network tab
-// Verificar requests no DevTools
+// Check requests in DevTools
 ```
 
 ---
 
-## 📦 Dependências Principais
+## 📦 Main Dependencies
 
 ### Backend (Rust)
 
@@ -358,34 +357,34 @@ console.log("Data:", data);
 
 ---
 
-## 🚀 Workflow de Desenvolvimento
+## 🚀 Development Workflow
 
-### 1. Criar Feature Branch
+### 1. Create Feature Branch
 
 ```bash
 git checkout -b feature/new-feature
 ```
 
-### 2. Desenvolver
+### 2. Develop
 
 ```bash
 # Backend
 cd backend
 cargo watch -x run
 
-# Frontend (novo terminal)
+# Frontend (new terminal)
 cd frontend
 npm run dev
 ```
 
-### 3. Testar
+### 3. Test
 
 ```bash
 # Backend tests
 cargo test
 
 # Frontend (manual testing)
-# Aceder http://localhost:5173
+# Access http://localhost:5173
 ```
 
 ### 4. Commit
@@ -395,25 +394,25 @@ git add .
 git commit -m "feat: add new feature"
 ```
 
-### 5. Push e PR
+### 5. Push and PR
 
 ```bash
 git push origin feature/new-feature
-# Criar Pull Request no GitHub
+# Create Pull Request on GitHub
 ```
 
 ---
 
-## 📚 Recursos
+## 📚 Resources
 
-### Documentação
+### Documentation
 
 - [Rust Book](https://doc.rust-lang.org/book/)
 - [Actix Web](https://actix.rs/)
 - [React Docs](https://react.dev/)
 - [Material-UI](https://mui.com/)
 
-### Ferramentas
+### Tools
 
 - [Rust Analyzer](https://rust-analyzer.github.io/) - IDE support
 - [Postman](https://www.postman.com/) - API testing
@@ -421,4 +420,4 @@ git push origin feature/new-feature
 
 ---
 
-**Última atualização:** 2026-01-09
+**Last Update:** 2026-03-27

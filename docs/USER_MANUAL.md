@@ -48,18 +48,18 @@ The Dashboard is your central command center, providing real-time monitoring of 
 **Key Elements:**
 
 1. **Playout Controls** (Top Right)
-   - **INICIAR EMISSÃO** - Start broadcast playout
-   - **PARAR EMISSÃO** - Stop broadcast playout
+   - **START BROADCAST** - Start broadcast playout
+   - **STOP BROADCAST** - Stop broadcast playout
    - Status indicator shows current state (Playing/Stopped)
 
-2. **Current Clip Section** (Clip Atual)
+2. **Current Clip Section** (Current Clip)
    - Displays currently playing content
    - Shows title, duration, and progress
    - Real-time playback indicator
 
 ![Dashboard - Middle Section](file:///Users/arnaldoesilva/Documents/Cloud%20Onepa%20Playout/docs/screenshots/dashboard_main-2.png)
 
-3. **Upcoming Clips Timeline** (Próximos Clips)
+3. **Upcoming Clips Timeline** (Upcoming Clips)
    - Visual timeline of scheduled content
    - Shows next 5-10 upcoming clips
    - Time-based horizontal layout
@@ -151,7 +151,7 @@ The metadata editor allows you to enrich your content with detailed information 
 
 ONEPA Playout PRO can automatically fetch metadata from online databases (TMDB, OMDB):
 
-1. Click **"Revisar Metadados Automático"** button
+1. Click **"Review Automatic Metadata"** button
 2. System searches for matching content
 3. Review suggested metadata
 
@@ -204,23 +204,23 @@ The Playlist Editor is where you create and manage 24-hour broadcast schedules.
    - Remove clip button
 
 4. **Action Toolbar**
-   - **ADICIONAR CLIP** - Add media to playlist
-   - **AUTOMAÇÃO** - Auto-fill 24 hours
-   - **NOVA PLAYLIST** - Create new playlist
-   - **SALVAR** - Save changes
+   - **ADD CLIP** - Add media to playlist
+   - **AUTOMATION** - Auto-fill 24 hours
+   - **NEW PLAYLIST** - Create new playlist
+   - **SAVE** - Save changes
 
 ### Creating a Playlist
 
-1. Click **"NOVA PLAYLIST"** button
+1. Click **"NEW PLAYLIST"** button
 2. Enter playlist name and date
-3. Click **"ADICIONAR CLIP"** to add media
+3. Click **"ADD CLIP"** to add media
 4. Drag clips to reorder sequence
 5. Monitor 24-hour progress bar
-6. Click **"SALVAR"** when complete
+6. Click **"SAVE"** when complete
 
 ### Automation Features
 
-The **AUTOMAÇÃO** button provides intelligent playlist filling:
+The **AUTOMATION** button provides intelligent playlist filling:
 
 - **Random Mode** - Randomly select media to fill time
 - **Sequential Mode** - Add media in order
@@ -274,7 +274,7 @@ The Calendar module enables advanced scheduling of playlists across days, weeks,
    - **Daily** - Every day
    - **Weekly** - Same day each week
    - **Monthly** - Same date each month
-5. Click **"Agendar"** to confirm
+5. Click **"Schedule"** to confirm
 
 ### Repeat Events
 
@@ -387,7 +387,7 @@ The Graphics Editor is a WYSIWYG (What You See Is What You Get) tool for positio
 3. **Fine-Tune Position** - Use X/Y sliders for precision
 4. **Adjust Size** - Use Scale slider (100% = original size)
 5. **Set Transparency** - Use Opacity slider (100% = fully opaque)
-6. **Save Settings** - Click **"SALVAR CONFIGURAÇÕES"**
+6. **Save Settings** - Click **"SAVE SETTINGS"**
 
 ### Best Practices
 
@@ -448,7 +448,7 @@ The Templates module allows you to create reusable playlist configurations for c
 
 The Settings module provides comprehensive configuration for all aspects of ONEPA Playout PRO.
 
-### Tab 1: EMISSÃO & SAÍDA (Output Settings)
+### Tab 1: BROADCAST & OUTPUT (Output Settings)
 
 ![Settings - Output Tab Part 1](file:///Users/arnaldoesilva/Documents/Cloud%20Onepa%20Playout/docs/screenshots/settings_tab1_output-1.png)
 
@@ -483,7 +483,7 @@ The Settings module provides comprehensive configuration for all aspects of ONEP
    - Automatically updated based on settings
    - Click copy icon for quick access
 
-### Tab 2: CAMINHOS & MEDIA (Paths & Media)
+### Tab 2: PATHS & MEDIA (Paths & Media)
 
 ![Settings - Paths Tab Part 1](file:///Users/arnaldoesilva/Documents/Cloud%20Onepa%20Playout/docs/screenshots/settings_tab2_paths-1.png)
 
@@ -538,7 +538,7 @@ The Settings module provides comprehensive configuration for all aspects of ONEP
    - **Auto-Start Protocols** - Start streaming on playout start
    - Checkbox to enable/disable
 
-### Tab 4: UTILIZADORES (Users)
+### Tab 4: USERS (Users)
 
 ![Settings - Users Tab](file:///Users/arnaldoesilva/Documents/Cloud%20Onepa%20Playout/docs/screenshots/settings_tab4_users.png)
 
@@ -550,7 +550,7 @@ The Settings module provides comprehensive configuration for all aspects of ONEP
    - Edit/Delete actions
 
 2. **Add New User**
-   - Click **"+ ADICIONAR UTILIZADOR"**
+   - Click **"+ ADD USER"**
    - Enter username
    - Set password
    - Assign role (Admin/Operator/Viewer)
@@ -566,7 +566,7 @@ The Settings module provides comprehensive configuration for all aspects of ONEP
    - Confirm password
    - Save changes
 
-### Tab 5: SOBRE O SISTEMA (About System)
+### Tab 5: ABOUT SYSTEM (About System)
 
 ![Settings - System Tab](file:///Users/arnaldoesilva/Documents/Cloud%20Onepa%20Playout/docs/screenshots/settings_tab5_version_system.png)
 
@@ -592,8 +592,8 @@ The Settings module provides comprehensive configuration for all aspects of ONEP
    - API documentation
    - Support resources
 
-**Nota API (Schedule):**
-- `GET /api/schedule?light=true` ou `GET /api/schedule/light` devolve uma resposta leve para o calendario (sem `playlist_content`).
+**API Note (Schedule):**
+- `GET /api/schedule?light=true` or `GET /api/schedule/light` returns a light response for the calendar (without `playlist_content`).
 
 ---
 

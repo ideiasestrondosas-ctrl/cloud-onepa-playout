@@ -8,7 +8,7 @@
 #   bash update.sh              # Standard update (preserves data)
 #   bash update.sh --clean      # Clean software update (purges code, preserves data)
 #   bash update.sh --full-reset # Full reset (DELETES ALL DATA)
-#   bash update.sh --no-cache   # Forçar reconstrução sem usar cache do Docker
+#   bash update.sh --no-cache   # Force rebuild without using Docker cache
 #
 # This script updates the application on an existing running VM.
 # It preserves all media, database, thumbnails, and playlists (unless --full-reset).
@@ -57,35 +57,35 @@ echo ""
 
 # --- 0. Full Reset Logic ---
 if [ "$FULL_RESET" = true ]; then
-    echo -e "${RED}⚠️  MODO FULL RESET ATIVADO!${NC}"
-    echo -e "${RED}Isto irá APAGAR TODOS os dados: media, base de dados, thumbnails.${NC}"
-    read -p "Tem certeza? (s/N): " confirm
-    if [[ $confirm == [sS] ]]; then
-        echo -e "${YELLOW}🧹 Parando e removendo containers e volumes...${NC}"
+    echo -e "${RED}⚠️  FULL RESET MODE ACTIVATED!${NC}"
+    echo -e "${RED}This will ERASE ALL data: media, database, thumbnails.${NC}"
+    read -p "Are you sure? (y/N): " confirm
+    if [[ $confirm == [yY] ]]; then
+        echo -e "${YELLOW}🧹 Stopping and removing containers and volumes...${NC}"
         DOCKER_CMD="docker compose"
         if ! $DOCKER_CMD version &> /dev/null; then DOCKER_CMD="docker-compose"; fi
         if ! docker ps &> /dev/null 2>&1; then DOCKER_CMD="sudo $DOCKER_CMD"; fi
         $DOCKER_CMD down -v --remove-orphans 2>/dev/null || true
         rm -rf data 2>/dev/null || true
-        echo -e "${GREEN}Reset completo. A continuar com instalação limpa...${NC}"
+        echo -e "${GREEN}Reset complete. Continuing with clean installation...${NC}"
     else
-        echo "Reset cancelado."
+        echo "Reset canceled."
         exit 0
     fi
 fi
 
 # --- 1. Pre-flight checks ---
-echo -e "${YELLOW}[1/7] Verificações de pré-voo...${NC}"
+echo -e "${YELLOW}[1/7] Pre-flight checks...${NC}"
 
 # Check disk space
 FREE_SPACE_KB=$(df -k / | tail -1 | awk '{print $4}' 2>/dev/null || echo "10000000")
 FREE_SPACE_MB=$((FREE_SPACE_KB / 1024))
 if [ "$FREE_SPACE_MB" -lt 1024 ]; then
-    log_err "CRÍTICO: Espaço insuficiente em disco (${FREE_SPACE_MB}MB)."
-    log_warn "O build do Docker IRÁ falhar nesta condição."
+    log_err "CRITICAL: Insufficient disk space (${FREE_SPACE_MB}MB)."
+    log_warn "Docker build WILL fail under this condition."
     exit 1
 elif [ "$FREE_SPACE_MB" -lt 5120 ]; then
-    log_warn "Aviso: Espaço limitado (${FREE_SPACE_MB}MB). Recomendado: 5GB+"
+    log_warn "Warning: Limited space (${FREE_SPACE_MB}MB). Recommended: 5GB+"
 fi
 
 # Hardware check (CPU/RAM)
@@ -93,18 +93,18 @@ CPU_CORES=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || echo "1")
 TOTAL_MEM=$(grep MemTotal /proc/meminfo | awk '{print $2}' 2>/dev/null || echo "1000000")
 TOTAL_MEM_GB=$((TOTAL_MEM / 1024 / 1024))
 
-log_info "Recursos: ${CPU_CORES} Cores | ${TOTAL_MEM_GB}GB RAM | ${FREE_SPACE_MB}MB Disco livre"
+log_info "Resources: ${CPU_CORES} Cores | ${TOTAL_MEM_GB}GB RAM | ${FREE_SPACE_MB}MB Free disk"
 
 # Check Git
 if ! command -v git &> /dev/null; then
-    echo -e "${RED}❌ Git não encontrado. Instale: sudo apt install git${NC}"
+    echo -e "${RED}❌ Git not found. Install: sudo apt install git${NC}"
     exit 1
 fi
 echo -e "  Git: ${GREEN}✓${NC}"
 
 # Check Docker
 if ! command -v docker &> /dev/null; then
-    echo -e "${RED}❌ Docker não encontrado. Execute deploy_new_vm.sh primeiro.${NC}"
+    echo -e "${RED}❌ Docker not found. Run deploy_new_vm.sh first.${NC}"
     exit 1
 fi
 echo -e "  Docker: ${GREEN}✓${NC}"
@@ -119,9 +119,9 @@ if ! docker ps &> /dev/null 2>&1; then
 fi
 
 # --- 2. Check .env ---
-echo -e "\n${YELLOW}[2/7] Verificando configuração...${NC}"
+echo -e "\n${YELLOW}[2/7] Checking configuration...${NC}"
 if [ ! -f .env ]; then
-    echo -e "${YELLOW}  .env não encontrado. Criando com valores padrão...${NC}"
+    echo -e "${YELLOW}  .env not found. Creating with default values...${NC}"
     cat > .env << 'ENV'
 POSTGRES_DB=onepa_playout
 POSTGRES_USER=onepa
@@ -151,10 +151,10 @@ fi
 echo -e "  Branch: ${CYAN}$BRANCH${NC} | Repo: ${CYAN}$REPO${NC}"
 
 # --- 3. Backup info ---
-echo -e "\n${YELLOW}[3/7] Dados preservados (NÃO serão apagados):${NC}"
+echo -e "\n${YELLOW}[3/7] Preserved data (will NOT be deleted):${NC}"
 if [ -d "data/media" ]; then
     MEDIA_COUNT=$(find data/media -type f 2>/dev/null | wc -l)
-    echo -e "  📁 Media: ${GREEN}${MEDIA_COUNT} ficheiros${NC}"
+    echo -e "  📁 Media: ${GREEN}${MEDIA_COUNT} files${NC}"
 fi
 if [ -d "data/postgres" ]; then
     PG_SIZE=$(du -sh data/postgres 2>/dev/null | cut -f1)
@@ -162,23 +162,23 @@ if [ -d "data/postgres" ]; then
 fi
 if [ -d "data/thumbnails" ]; then
     THUMB_COUNT=$(find data/thumbnails -type f 2>/dev/null | wc -l)
-    echo -e "  🖼️ Thumbnails: ${GREEN}${THUMB_COUNT} ficheiros${NC}"
+    echo -e "  🖼️ Thumbnails: ${GREEN}${THUMB_COUNT} files${NC}"
 fi
 
 # --- 4. Stop and remove services to prevent name conflicts ---
-echo -e "\n${YELLOW}[4/7] Parando serviços em execução...${NC}"
+echo -e "\n${YELLOW}[4/7] Stopping running services...${NC}"
 
 # Function to remove all onepa/alpha containers and reset network
 nuclear_ghost_cleanup() {
-    log_warn "🧪 Realizando limpeza de containers antigos e rede..."
+    log_warn "🧪 Performing cleanup of old containers and network..."
     GHOSTS=$(docker ps -aq --filter name=alpha --filter name=onepa)
     if [ -n "$GHOSTS" ]; then
-        echo -e "  Removendo containers encontrados: $GHOSTS"
+        echo -e "  Removing found containers: $GHOSTS"
         docker rm -f $GHOSTS 2>/dev/null || sudo docker rm -f $GHOSTS 2>/dev/null || true
     fi
     
     # Force remove network to clear IP locks (Sync with install.sh)
-    echo -e "  Resetando rede virtual..."
+    echo -e "  Resetting virtual network..."
     docker network rm alpha-network 2>/dev/null || sudo docker network rm alpha-network 2>/dev/null || true
 }
 
@@ -186,10 +186,10 @@ nuclear_ghost_cleanup() {
 $DOCKER_CMD down 2>/dev/null || true
 nuclear_ghost_cleanup
 
-echo -e "  ${GREEN}Serviços removidos ✓${NC}"
+echo -e "  ${GREEN}Services removed ✓${NC}"
 
 # --- 5. Pull or Re-clone latest code ---
-echo -e "\n${YELLOW}[5/7] Atualizando código...${NC}"
+echo -e "\n${YELLOW}[5/7] Updating code...${NC}"
 
 # Add safe directory fix for Linux VMs
 if command -v git &>/dev/null; then
@@ -197,7 +197,7 @@ if command -v git &>/dev/null; then
 fi
 
 if [ "$CLEAN_UPDATE" = true ]; then
-    echo -e "${RED}⚠️  MODO CLEAN UPDATE: Purgando ficheiros da aplicação (preservando dados)...${NC}"
+    echo -e "${RED}⚠️  CLEAN UPDATE MODE: Purging application files (preserving data)...${NC}"
     # Backup .env safely
     if [ -f .env ]; then cp .env .env.bak; fi
     
@@ -207,21 +207,21 @@ if [ "$CLEAN_UPDATE" = true ]; then
     $SUDO rm -f install.sh uninstall.sh README.md docker-compose.yml 2>/dev/null || true
     $SUDO rm -rf .git 2>/dev/null || true
 
-    echo -e "  Purgado concluído. A clonar repositório... ✓"
+    echo -e "  Purge completed. Cloning repository... ✓"
     TEMP_DIR="onepa_clean_$(date +%s)"
     git clone -b "$BRANCH" "https://github.com/$REPO.git" "$TEMP_DIR"
     
-    echo "Restaurando ficheiros da nova versão..."
+    echo "Restoring files of the new version..."
     $SUDO cp -r "$TEMP_DIR/." .
     $SUDO rm -rf "$TEMP_DIR"
     
     # Restore .env
     if [ -f .env.bak ]; then $SUDO mv .env.bak .env; fi
-    echo -e "  ${GREEN}Código re-clonado com sucesso ✓${NC}"
+    echo -e "  ${GREEN}Code re-cloned successfully ✓${NC}"
 
 elif [ -d ".git" ]; then
     # We're in a git repo, just pull
-    echo -e "  Repositório Git detectado. A fazer pull..."
+    echo -e "  Git repository detected. Pulling..."
     
     # Fix ownership before git operations to prevent "Permission denied" on FETCH_HEAD etc
     if [ "$OS_TYPE" == "linux" ]; then
@@ -230,10 +230,10 @@ elif [ -d ".git" ]; then
 
     # Ensure remote origin exists
     if ! git remote get-url origin &>/dev/null; then
-        echo -e "  ${YELLOW}⚠️  Remote 'origin' não encontrado. Usando primeiro remote disponível...${NC}"
+        echo -e "  ${YELLOW}⚠️  Remote 'origin' not found. Using first available remote...${NC}"
         REMOTE=$(git remote | head -n 1)
         if [ -z "$REMOTE" ]; then
-            echo -e "  ${RED}❌ Nenhum remote git encontrado.${NC}"
+            echo -e "  ${RED}❌ No git remote found.${NC}"
             exit 1
         fi
     else
@@ -242,10 +242,10 @@ elif [ -d ".git" ]; then
 
     git fetch "$REMOTE" "$BRANCH"
     git reset --hard "$REMOTE/$BRANCH"
-    echo -e "  ${GREEN}Código atualizado via git pull ($REMOTE/$BRANCH) ✓${NC}"
+    echo -e "  ${GREEN}Code updated via git pull ($REMOTE/$BRANCH) ✓${NC}"
 else
     # No git repo, clone into temp and copy
-    echo -e "  Sem repositório Git. A clonar código atualizado..."
+    echo -e "  No Git repository. Cloning updated code..."
     TEMP_DIR="onepa_update_$(date +%s)"
     git clone -b "$BRANCH" "https://github.com/$REPO.git" "$TEMP_DIR"
     
@@ -257,28 +257,28 @@ else
     $SUDO cp -r "$TEMP_DIR/scripts" ./
     
     $SUDO rm -rf "$TEMP_DIR"
-    echo -e "  ${GREEN}Código copiado ✓${NC}"
+    echo -e "  ${GREEN}Code copied ✓${NC}"
 fi
 
 # --- 6. Rebuild and restart ---
-echo -e "\n${YELLOW}[6/7] Reconstruindo containers...${NC}"
+echo -e "\n${YELLOW}[6/7] Rebuilding containers...${NC}"
 
 BUILD_OPTS="--pull"
 if [ "$FULL_RESET" = true ] || [ "$CLEAN_UPDATE" = true ] || [ "$NO_CACHE" = true ]; then
-    echo -e "  ${YELLOW}Usando --no-cache para rebuild limpo...${NC}"
+    echo -e "  ${YELLOW}Using --no-cache for clean rebuild...${NC}"
     BUILD_OPTS="--pull --no-cache"
     export CACHE_BUST=$(date +%s)
 fi
 
 $DOCKER_CMD build $BUILD_OPTS
-echo -e "  ${GREEN}Build concluído ✓${NC}"
+echo -e "  ${GREEN}Build completed ✓${NC}"
 
-echo -e "\n${YELLOW}  Iniciando serviços...${NC}"
+echo -e "\n${YELLOW}  Starting services...${NC}"
 $DOCKER_CMD up -d
-echo -e "  ${GREEN}Serviços iniciados ✓${NC}"
+echo -e "  ${GREEN}Services started ✓${NC}"
 
 # --- 7. Health checks ---
-echo -e "\n${YELLOW}[7/7] Verificações de saúde...${NC}"
+echo -e "\n${YELLOW}[7/7] Health checks...${NC}"
 sleep 5
 
 echo -n "  PostgreSQL: "
@@ -287,7 +287,7 @@ for i in $(seq 1 15); do
         echo -e "${GREEN}✓${NC}"
         break
     fi
-    if [ $i -eq 15 ]; then echo -e "${YELLOW}⏳ Ainda a iniciar${NC}"; fi
+    if [ $i -eq 15 ]; then echo -e "${YELLOW}⏳ Still starting${NC}"; fi
     sleep 2
 done
 
@@ -297,7 +297,7 @@ for i in $(seq 1 45); do
         echo -e "${GREEN}✓${NC}"
         break
     fi
-    if [ $i -eq 45 ]; then echo -e "${YELLOW}⏳ Ainda a iniciar (ver: $DOCKER_CMD logs backend)${NC}"; fi
+    if [ $i -eq 45 ]; then echo -e "${YELLOW}⏳ Still starting (see: $DOCKER_CMD logs backend)${NC}"; fi
     sleep 2
 done
 
@@ -305,39 +305,39 @@ echo -n "  Frontend: "
 if curl -sf http://localhost:3011 &> /dev/null; then
     echo -e "${GREEN}✓${NC}"
 else
-    echo -e "${YELLOW}⏳ Ainda a iniciar${NC}"
+    echo -e "${YELLOW}⏳ Still starting${NC}"
 fi
 
 echo -n "  RTMP (1935): "
 if timeout 2 bash -c "echo > /dev/tcp/localhost/1935" 2>/dev/null; then
     echo -e "${GREEN}✓${NC}"
 else
-    echo -e "${YELLOW}⏳ Ainda não acessível${NC}"
+    echo -e "${YELLOW}⏳ Not yet accessible${NC}"
 fi
 
 echo -n "  HLS (8888): "
 if curl -sf http://localhost:8888 &> /dev/null; then
     echo -e "${GREEN}✓${NC}"
 else
-    echo -e "${YELLOW}⏳ Ainda não acessível${NC}"
+    echo -e "${YELLOW}⏳ Not yet accessible${NC}"
 fi
 
 echo -n "  SRT (8890): "
 if timeout 2 bash -c "echo > /dev/udp/localhost/8890" 2>/dev/null; then
     echo -e "${GREEN}✓${NC}"
 else
-    echo -e "${YELLOW}⏳ UDP — verificação limitada${NC}"
+    echo -e "${YELLOW}⏳ UDP — limited verification${NC}"
 fi
 
 # --- Summary ---
 echo ""
 echo -e "${GREEN}╔══════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║  ✅ Atualização Concluída!                ║${NC}"
+echo -e "${GREEN}║  ✅ Update Completed!                    ║${NC}"
 echo -e "${GREEN}╚══════════════════════════════════════════╝${NC}"
 echo ""
-echo -e "  🌐 Aplicação:     ${CYAN}http://$(hostname -I 2>/dev/null | awk '{print $1}' || echo 'localhost'):3011${NC}"
+echo -e "  🌐 Application:   ${CYAN}http://$(hostname -I 2>/dev/null | awk '{print $1}' || echo 'localhost'):3011${NC}"
 echo -e "  📺 HLS (VLC):     ${CYAN}http://$(hostname -I 2>/dev/null | awk '{print $1}' || echo 'localhost'):3011/hls/stream.m3u8${NC}"
-echo -e "  📡 RTMP (Ext):    ${CYAN}rtmp://$(hostname -I 2>/dev/null | awk '{print $1}' || echo 'localhost'):1935/stream${NC} (Apenas ativo em ON AIR)"
+echo -e "  📡 RTMP (Ext):    ${CYAN}rtmp://$(hostname -I 2>/dev/null | awk '{print $1}' || echo 'localhost'):1935/stream${NC} (Only active when ON AIR)"
 echo -e "  🔗 SRT (Ext):     ${CYAN}srt://$(hostname -I 2>/dev/null | awk '{print $1}' || echo 'localhost'):8890?streamid=read:stream_srt${NC}"
 echo ""
 echo -e "  ${YELLOW}Rollback: git checkout HEAD~1 && $DOCKER_CMD build && $DOCKER_CMD up -d${NC}"

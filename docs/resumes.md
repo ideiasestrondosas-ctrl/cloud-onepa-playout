@@ -1,392 +1,407 @@
-## Sessão 2026-03-27 — Auditoria de Erros Críticos de Inicialização e Settings
+# Session Summaries - Cloud Onepa Playout
 
-### Objetivo
-Resolver dois erros impeditivos (ReferenceErrors) capturados após o refactoring extremo do sistema para hardware e memória limitados. O primeiro sendo um impedimento global no boot, e o segundo associado a falha de interface nas definições pelo Catch de ErrorBoundary. 
+## Session 2026-03-28 — English Translation Planning (GitHub Infrastructure)
 
-### Ações Executadas (Análise e Planeamento)
-- **Diagnóstico Erro 1 (ReferenceError: Va)**:
-  - Identificação de `Temporal Dead Zone` (TDZ) originada pelo hoisting do React onde componentes com funções complexas de renderização virtual (`react-window`) estavam alocados antes dos handlers como `handleOptimize`, propiciando crashes no V8 JS Engine do browser.
-  - **Planeada:** Mudança da arquitetura interna da lógica DOM de Virtualização para a base do function tree no `MediaLibrary.jsx`.
+### Goal
+Convert the entire GitHub repository presence to English, including technical documentation, user manuals, and automation scripts (`release.sh` and `update.sh`). The goal is to professionalize the repository and ensure that automatic updates inject English content.
 
-- **Diagnóstico Erro 2 (ReferenceError: userRoles / userProfiles is not defined)**:
-  - Verificado que ao extrair o componente de utilizadores de dentro de `Settings.jsx` para a importação encapsulada por lazy em `UsersTab`, propriedades legadas `userRoles` e `userProfiles` continuavam na árvore JSX principal de parent de injects referenciadas indevidamente embora tenham sido expurgadas do sistema.
-  - **Planeada:** Eliminação destas propriedades de renderização e invocação "fantasmas", poupando ciclos de render tree e prevenindo acionamento das falhas do ErrorBoundary.
+### Actions Executed (Planning)
+- **Scope Analysis:** Identified all Markdown files in the `docs/` folder, `README.md`, and scripts in `scripts/`.
+- **Strategy Definition:**
+  - Exclusion of Frontend translation keys (focusing only on Repository/GitHub).
+  - Full translation of `release.sh` and `update.sh` (comments, logs, and prompts).
+  - Adjustment of regex logic in `release.sh` to support new English headers.
+  - Translation of the entire history in `resumes.md` to support English highlights extraction.
+- **Plan Creation:** Documented in the internal implementation artifact.
 
-- **Diagnóstico Erro 3 (ReferenceError: handleEditUser is not defined)**:
-  - Confirmação de dessincronização grave na interface React entre `Settings.jsx` (Pai) e `UsersTab.jsx` (Filho). Foram passadas variáveis de propriedades (`handleEditUser`, `handleEditProfile`, `setAddUserOpen`, `showSuccess`, `showError`) que **já não existiam** localmente no Pai, e que também **não eram esperadas nem utilizadas** pelo Filho.
-  - Adicionalmente, ficaram de fora dependências vitais (`viewMode`, `setViewMode`, `setUserDialogOpen`, `handleOpenPasswordDialog`, etc.) necessárias para gerir a modesta lógica de estado interno da aba de Utilizadores.
-  - **Planeada:** Remapeamento completo de todos os atributos na divisa `<UsersTab />` do ficheiro `Settings.jsx`.
+### Completed Actions
+- **Script Translation:** Successfully translated `scripts/update.sh` and `scripts/release.sh` to English.
+- **Regex Update:** Modified `release.sh` to target English headers in `README.md` and `docs/ROADMAP.md`.
+- **Documentation:** Translated all Markdown files (README, ROADMAP, INSTALL, FAQ, DEVELOPMENT, USER_MANUAL, RELEASE_NOTES).
+- **History Update:** Fully translated `docs/resumes.md` to English and added this completion summary.
+- **Verification:** Bash syntax checked for all modified scripts.
 
-### Próximos Passos
-1. Obter autorização do plano para modificação limpa e segura nestes componentes.
-2. Inspecionar resultados ao re-iniciar as frames da UI.
-
----
-
-## Sessão 2026-03-27 — Auditoria de Performance e Plano de Redesign UI/UX (Planeamento)
-
-### Objetivo
-Definir a visão estratégica para um Redesign UI/UX total (Broadcast Grade) e realizar uma auditoria profunda de performance focada na estabilidade extrema em ambientes de hardware limitado (VM Ubuntu 4GB RAM).
-
-### Ações Executadas (Documentação)
-- **Criação de `docs/frontend_redesign.md`:** 
-  - Blueprint detalhado para uma interface profissional (Master Control Room, Ingest Bay, QC Station).
-  - Definição de Design Tokens (Dark Mode Deep Night, néon highlights).
-  - Estratégia de implementação simbiótica entre **Google Antigravity** (Arquiteto) e **Google Stitch/MCP** (Engenheiro de Componentes).
-- **Auditoria de Performance (Vetores Sugeridos):**
-  - **OS/Kernel:** Ajuste de `swappiness` para eficiência em RAM.
-  - **Rust/Backend:** Sugestão do alocador `mimalloc` e redução de DB Connection Pool para poupar heap.
-  - **Frontend:** Implementação de PWA Caching e purga ativa de renderização DOM/WebGL não visível.
-- **Atualização Estratégica:** Sincronização das **Phases 38 (Redesign)** e **Phase 39 (Performance Hardening)** no `docs/ROADMAP.md` e `README.md`.
-
-### Próximos Passos
-1. Aguardar feedback do utilizador sobre o Blueprint gráfico no `docs/frontend_redesign.md`.
-2. Incluir os vetores de performance na próxima janela de manutenção técnica/refatoração do Rust.
+### Next Steps
+1. Final review by the user of all English documentation.
+2. Maintain English as the standard for all future GitHub repository documentation.
+3. Clean up the `/backups/translation-to-english-20260328/` directory once stability is confirmed.
 
 ---
 
+## Session 2026-03-27 — Critical Boot and Settings Error Audit
 
-### Objetivo
-Resolver a pressão de memória (RAM) no browser cliente ao operar na VM limitada da ALPHA (4GB RAM). O foco foi transformar componentes pesados e monolíticos em estruturas modulares e virtualizadas.
+### Goal
+Resolve two critical blocking errors (ReferenceErrors) captured after the extreme refactoring of the system for limited hardware and memory. The first being a global boot impedance, and the second associated with interface failure in settings by the ErrorBoundary Catch.
 
-### Ações Executadas
-- **Modularização de `Settings.jsx`:**
-  - O ficheiro de ~3.5k linhas foi fragmentado em 5 sub-componentes: `OutputTab`, `PathsTab`, `PlayoutTab`, `UsersTab` e `AboutTab`.
-  - Implementado **Lazy Loading** (`React.lazy` e `Suspense`), garantindo que apenas a aba ativa consome recursos de renderização e memória.
-- **Virtualização da `MediaLibrary.jsx`:**
-  - Implementada a biblioteca `react-window` para gerir a listagem de ficheiros.
-  - **Windowing:** Agora, independentemente de existirem 10 ou 1000 vídeos, apenas os itens visíveis no ecrã ocupam nós no DOM.
-  - **Memoização:** O componente `MediaCard` foi extraído e protegido com `React.memo` para evitar re-renderizações custosas durante o scroll.
-- **Estabilidade da VM:** A interface ALPHA agora responde instantaneamente, eliminando os 'freezes' que ocorriam ao abrir as definições ou ao navegar por pastas de media densas.
+### Actions Executed (Analysis and Planning)
+- **Diagnosis Error 1 (ReferenceError: Va)**:
+  - Identification of `Temporal Dead Zone` (TDZ) caused by React hoisting where components with complex virtual rendering functions (`react-window`) were allocated before handlers like `handleOptimize`, causing crashes in the browser's V8 JS Engine.
+  - **Planned:** Change the internal architecture of the Virtualization DOM logic to the base of the function tree in `MediaLibrary.jsx`.
 
-### Próximos Passos
-1. Monitorizar a estabilidade da VM sob carga real de emissão após estas mudanças.
-2. Proceder à auditoria final de logs (Fase 2 - Refinamentos técnicos) se necessário.
-3. Iniciar a implementação das features do Roadmap conforme solicitado pelo utilizador.
+- **Diagnosis Error 2 (ReferenceError: userRoles / userProfiles is not defined)**:
+  - Context verified that when extracting the users component from within `Settings.jsx` to the encapsulated import by lazy in `UsersTab`, legacy properties `userRoles` and `userProfiles` remained in the main parent JSX tree of injects referenced improperly although they were purged from the system.
+  - **Planned:** Elimination of these "ghost" rendering and invocation properties, saving render tree cycles and preventing the triggering of ErrorBoundary failures.
 
----
+- **Diagnosis Error 3 (ReferenceError: handleEditUser is not defined)**:
+  - Confirmation of severe desynchronization in the React interface between `Settings.jsx` (Parent) and `UsersTab.jsx` (Child). Property variables were passed (`handleEditUser`, `handleEditProfile`, `setAddUserOpen`, `showSuccess`, `showError`) that **no longer existed** locally in the Parent, and were also **not expected or used** by the Child.
+  - Additionally, vital dependencies were left out (`viewMode`, `setViewMode`, `setUserDialogOpen`, `handleOpenPasswordDialog`, etc.) necessary to manage the modest internal state logic of the Users tab.
+  - **Planned:** Full remapping of all attributes in the `<UsersTab />` segment in the `Settings.jsx` file.
 
-## Sessão 2026-03-27 — Fase 2: Otimização de Código e Logs do Servidor (Concluída)
-
-### Objetivo
-Otimizar o backend em Rust para reduzir o consumo de processamento e entrada/saída (I/O) de disco na VM limitada. Focamos na eliminação de redundâncias em queries e na redução drástica da verbosidade operacional.
-
-### Ações Executadas
-- **Log Hardening (`main.rs`):** Alterado o nível padrão de log de 'info' para **'warn'**.
-  - **Impacto:** O sistema deixa de escrever milhares de métricas de rede e depuração no disco de 100GB, poupando CPU e ciclos de vida do disco.
-- **SQL Optimization (`media.rs`):** Refatorada a query de listagem de media.
-  - Removidas cláusulas `LIKE` redundantes que impediam o uso do índice `idx_media_path_filter`.
-  - **Eliminação de Bottlenecks:** Removidos os probes de FFmpeg (ffprobe) e verificações de existência de ficheiro síncronos dentro do loop de listagem.
-  - **Resultado:** A listagem de media agora é puramente baseada em base de dados, tornando-a instantânea mesmo com centenas de vídeos.
-- **Validação:** Confirmada a integridade do código via `cargo check` (Compilação validada).
-- **Backup:** Cópias preventivas em `/backups/phase-2-backend-opt/`.
-
-### Próximos Passos
-1. Iniciar a **Fase 3: Otimização do Cliente (Frontend React)**. 
-2. Prioridade: Refatoração do `Settings.jsx` em sub-componentes via `React.lazy()` para libertar RAM no browser do operador.
+### Next Steps
+1. Obtain approval of the plan for clean and safe modification in these components.
+2. Inspect results by restarting UI frames.
 
 ---
 
+## Session 2026-03-27 — Performance Audit and UI/UX Redesign Plan (Planning)
 
-## Sessão 2026-03-27 — Fase 1: Otimização de Infraestrutura e Docker (Concluída)
+### Goal
+Define the strategic vision for a total UI/UX Redesign (Broadcast Grade) and perform a deep performance audit focused on extreme stability in limited hardware environments (Ubuntu VM with 4GB RAM).
 
-### Objetivo
-Executar a Fase 1 do plano de otimização para garantir estabilidade e disponibilidade de recursos numa VM com apenas 4GB RAM e 100GB disco. Focamos em limpeza profunda e imposição de limites de hardware por container.
+### Actions Executed (Documentation)
+- **Creation of `docs/frontend_redesign.md`:** 
+  - Detailed blueprint for a professional interface (Master Control Room, Ingest Bay, QC Station).
+  - Definition of Design Tokens (Dark Mode Deep Night, neon highlights).
+  - Symbiotic implementation strategy between **Google Antigravity** (Architect) and **Google Stitch/MCP** (Component Engineer).
+- **Performance Audit (Suggested Vectors):**
+  - **OS/Kernel:** Adjustment of `swappiness` for RAM efficiency.
+  - **Rust/Backend:** Suggestion of the `mimalloc` allocator and reduction of DB Connection Pool to save heap.
+  - **Frontend:** Implementation of PWA Caching and active purging of non-visible DOM/WebGL rendering.
+- **Strategic Update:** Synchronization of **Phases 38 (Redesign)** and **Phase 39 (Performance Hardening)** in `docs/ROADMAP.md` and `README.md`.
 
-### Ações Executadas
-- **Limpeza Docker:** Executado `docker system prune -f` e `image prune -a -f`.
-  - **Resultado:** Libertados **21.12 GB** de espaço em disco (aprox. 21% do total da VM).
-- **Limites de Recursos (Hardening):** Atualizados `docker-compose.yml` e `docker-compose.rtmp.yml`.
-  - **RAM Limit:** Backend restringido a 1GB; Outros serviços (Postgres, Graphics, AI) entre 128MB e 512MB.
-  - **CPU Limit:** Capped em valores entre 0.2 e 1.0 core por serviço para evitar 100% de uso contínuo da CPU da VM.
-- **Backup:** Criada cópia integral das configurações em `/backups/pre-optimization-docker-20260327/`.
-
-### Impacto Imediato
-A VM agora opera com uma margem de segurança de disco significativamente maior e o Docker não poderá mais causar 'Kernel Panic' ou 'OOM Killer' catastróficos ao tentar consumir mais de 4GB de RAM física.
-
-### Próximos Passos
-1. Iniciar a **Fase 2: Otimização de Código de Servidor (Backend Rust)**.
-2. Focar na reescrita de queries ineficientes e desativação de logs DEBUG redundantes.
+### Next Steps
+1. Wait for user feedback on the graphical Blueprint in `docs/frontend_redesign.md`.
+2. Include performance vectors in the next Rust technical maintenance/refactoring window.
 
 ---
 
+## Session 2026-03-27 — Phase 3: Client Optimization and Modularization (Completed)
 
-## Sessão 2026-03-27 — Otimização Global e Refatoração de Settings.jsx (Planeamento)
+### Goal
+Resolve memory pressure (RAM) in the client browser when operating on the limited ALPHA VM (4GB RAM). The focus was on transforming heavy and monolithic components into modular and virtualized structures.
 
-### Objetivo
-Adaptar o plano de otimização original (OPTIMIZATION_PLAN.md) às premissas de uma máquina virtual de recursos severamente limitados (4 Cores, 4GB RAM, 100GB espaço) focando em mitigar faltas de memória, espaço e performance global. Respeitou-se a política fundamental de atuar sequencialmente e resguardar cópias através de *backups*.
+### Actions Executed
+- **Modularization of `Settings.jsx`:**
+  - The ~3.5k line file was fragmented into 5 sub-components: `OutputTab`, `PathsTab`, `PlayoutTab`, `UsersTab`, and `AboutTab`.
+  - Implemented **Lazy Loading** (`React.lazy` and `Suspense`), ensuring only the active tab consumes rendering and memory resources.
+- **Virtualization of `MediaLibrary.jsx`:**
+  - Implemented the `react-window` library to manage file listing.
+  - **Windowing:** Now, regardless of whether there are 10 or 1000 videos, only visible items on the screen occupy nodes in the DOM.
+  - **Memoization:** The `MediaCard` component was extracted and protected with `React.memo` to avoid costly re-renders during scrolling.
+- **VM Stability:** The ALPHA interface now responds instantly, eliminating 'freezes' that occurred when opening settings or navigating through dense media folders.
 
-### Ficheiros Afetados no Plano
-*Nota: Fase de Planeamento, não houve ainda execução destas metas.*
+### Next Steps
+1. Monitor VM stability under real broadcast load after these changes.
+2. Proceed with the final audit of logs (Phase 2 - Technical Refinements) if necessary.
+3. Start implementing Roadmap features as requested by the user.
 
-| Componente | Ação Planeada |
+---
+
+## Session 2026-03-27 — Phase 2: Code and Server Log Optimization (Completed)
+
+### Goal
+Optimize the Rust backend to reduce processing consumption and disk I/O on the limited VM. We focused on eliminating redundancies in queries and drastically reducing operational verbosity.
+
+### Actions Executed
+- **Log Hardening (`main.rs`):** Changed default log level from 'info' to **'warn'**.
+  - **Impact:** The system stops writing thousands of network and debugging metrics to the 100GB disk, saving CPU and disk life cycles.
+- **SQL Optimization (`media.rs`):** Refactored the media listing query.
+  - Removed redundant `LIKE` clauses that prevented the use of the `idx_media_path_filter` index.
+  - **Elimination of Bottlenecks:** Removed FFmpeg probes (ffprobe) and synchronous file existence checks within the listing loop.
+  - **Result:** Media listing is now purely database-based, making it instantaneous even with hundreds of videos.
+- **Validation:** Confirmed code integrity via `cargo check` (Validation Success).
+- **Backup:** Preventive copies in `/backups/phase-2-backend-opt/`.
+
+### Next Steps
+1. Start **Phase 3: Client Optimization (Frontend React)**. 
+2. Priority: Refactoring `Settings.jsx` into sub-components via `React.lazy()` to free up RAM in the operator's browser.
+
+---
+
+## Session 2026-03-27 — Phase 1: Infrastructure and Docker Optimization (Completed)
+
+### Goal
+Execute Phase 1 of the optimization plan to ensure stability and resource availability on a VM with only 4GB RAM and 100GB disk. We focused on deep cleaning and imposing hardware limits per container.
+
+### Actions Executed
+- **Docker Cleanup:** Executed `docker system prune -f` and `image prune -a -f`.
+  - **Result:** Freed **21.12 GB** of disk space (approx. 21% of total VM).
+- **Resource Limits (Hardening):** Updated `docker-compose.yml` and `docker-compose.rtmp.yml`.
+  - **RAM Limit:** Backend restricted to 1GB; Other services (Postgres, Graphics, AI) between 128MB and 512MB.
+  - **CPU Limit:** Capped between 0.2 and 1.0 core per service to avoid 100% continuous use of the VM's CPU.
+- **Backup:** Created an integral copy of settings in `/backups/pre-optimization-docker-20260327/`.
+
+### Immediate Impact
+The VM now operates with a significantly larger disk safety margin and Docker can no longer cause catastrophic 'Kernel Panic' or 'OOM Killer' by trying to consume more than 4GB of physical RAM.
+
+### Next Steps
+1. Start **Phase 2: Server Code Optimization (Backend Rust)**.
+2. Focus on rewriting inefficient queries and disabling redundant DEBUG logs.
+
+---
+
+## Session 2026-03-27 — Global Optimization and Settings.jsx Refactoring (Planning)
+
+### Goal
+Adapt the original optimization plan (OPTIMIZATION_PLAN.md) to the premises of a severely limited resources virtual machine (4 Cores, 4GB RAM, 100GB space) focusing on mitigating memory, space, and global performance shortages. The fundamental policy of acting sequentially and safeguarding copies through *backups* was respected.
+
+### Files Affected in the Plan
+*Note: Planning Phase, these goals have not yet been executed.*
+
+| Component | Planned Action |
 |------------|---------------|
-| `Docker-Compose` | Inserção de `mem_limit` e controlo de CPU, purga massiva de lixo alojado. |
-| `backend/src/api/media.rs` | Refatoração de Queries Otimizadas sem redundâncias que matam I/O e RAM. |
-| Backend Runtime | Destivação de logging abusivo (DEBUG mode) num disco limitado. |
-| `Settings.jsx` (Front-End) | Desintegração de componente massivo em sub-tabs com `React.lazy()` (Lazy Loading). |
-| Virtualização DOM | Trocar listagens normais no browser para apenas apresentar ~15 elementos concorrentes no DOM usando `react-window`. |
+| `Docker-Compose` | Insertion of `mem_limit` and CPU control, massive purge of stored junk. |
+| `backend/src/api/media.rs` | Refactoring of Optimized Queries without redundancies that kill I/O and RAM. |
+| Backend Runtime | Disabling abusive logging (DEBUG mode) on a limited disk. |
+| `Settings.jsx` (Front-End) | Disintegration of massive component into sub-tabs with `React.lazy()` (Lazy Loading). |
+| DOM Virtualization | Switch normal browser listings to only present ~15 concurrent elements in the DOM using `react-window`. |
 
-### Estratégia Específica para Settings.jsx
-Para reverter a gigantesca dimensão inicial do carregamento de definições do _Playout_, foi documentada a estratégia de separar o componente em múltiplos ficheiros pequenos:
+### Specific Strategy for Settings.jsx
+To reverse the huge initial size of the _Playout_ settings load, the strategy of separating the component into multiple small files was documented:
 1. `OutputSettings.jsx`
 2. `OverlaySettings.jsx`
 3. `UsersTab.jsx`
-O `Settings.jsx` servirá essencialmente como router, invocando as tabs por *lazy load*, poupando vastos megabytes de RAM compiladora nos browsers cliente.
+`Settings.jsx` will essentially serve as a router, invoking the tabs by *lazy load*, saving vast megabytes of compiler RAM in client browsers.
 
-### Próximos Passos
-1. Aguardar revisão e autorização do utilizador nas novas premissas planeadas.
-2. Iniciar, isoladamente, a Fase 1 (Docker/Espaço) mediante a criação preventiva de cópia local (Backup).
+### Next Steps
+1. Wait for user review and authorization of the new planned premises.
+2. Start, in isolation, Phase 1 (Docker/Space) by creating a local preventive copy (Backup).
 
 ---
 
-## Sessão 2026-03-27 — Roadmap Completo + Category Folders (Documentação)
+## Session 2026-03-27 — Full Roadmap + Category Folders (Documentation)
 
-### Objetivo
-Definir e sincronizar o roadmap completo do produto (Fases 32-37) em 3 locais, adicionar a feature **Category Folders** ao roadmap, atualizar o Help System com tab dedicado, traduzir tudo em 4 idiomas. **Nenhuma feature foi implementada** — apenas documentação e UI informativa.
+### Goal
+Define and synchronize the full product roadmap (Phases 32-37) in 3 locations, add the **Category Folders** feature to the roadmap, update the Help System with a dedicated tab, and translate everything into 4 languages. **No feature was implemented** — only documentation and informative UI.
 
-### Ficheiros Alterados
+### Files Changed
 
-| Ficheiro | Ação |
+| File | Action |
 |---------|------|
-| docs/ROADMAP.md | Substituídas Phases 30-31 pelas novas Phases 32-37 com descrição técnica completa |
-| README.md | Secção Roadmap reescrita com tabela de fases concluídas + lista de próximas fases |
-| frontend/src/pages/Settings.jsx | Adicionadas 6 novas fases ao roadmapData[] (Phase 32-37, done: false) |
-| frontend/src/components/HelpSystem.jsx | Novo componente HelpRoadmap + tab Roadmap com icone MapIcon |
-| locales/{en,pt,es,fr}/translation.json | Chaves roadmap.phases.p32-p37 + help.roadmap.* nos 4 idiomas |
-| backups/pre-roadmap-update-20260327/ | Backup de segurança de todos os ficheiros alterados |
+| docs/ROADMAP.md | Replaced Phases 30-31 with new Phases 32-37 with full technical description |
+| README.md | Roadmap section rewritten with completed phases table + upcoming phases list |
+| frontend/src/pages/Settings.jsx | Added 6 new phases to roadmapData[] (Phase 32-37, done: false) |
+| frontend/src/components/HelpSystem.jsx | New HelpRoadmap component + Roadmap tab with MapIcon |
+| locales/{en,pt,es,fr}/translation.json | Roadmap.phases.p32-p37 keys + help.roadmap.* in 4 languages |
+| backups/pre-roadmap-update-20260327/ | Security backup of all changed files |
 
-### Roadmap Definido (NÃO Implementado)
+### Roadmap Defined (NOT Implemented)
 
-| Fase | Versão | Funcionalidade |
+| Phase | Version | Functionality |
 |------|--------|---------------|
-| Phase 32 | v2.7.x | Category Folders & Batch Playlist — categorias padrao (Rock, Salsa, Merengue, Jazz, Pop...) + personalizadas + drag-to-playlist |
+| Phase 32 | v2.7.x | Category Folders & Batch Playlist — default categories (Rock, Salsa, Merengue, Jazz, Pop...) + custom + drag-to-playlist |
 | Phase 33 | v2.8.x | Live Source Switching & NDI |
 | Phase 34 | v2.9.x | Audio Compliance EBU R128 & Multi-Track |
 | Phase 35 | v3.0.x | Automated QC & Ingest Validation |
 | Phase 36 | v3.1.x | FAST Channels & Monetisation |
 | Phase 37 | v3.2.x | Enterprise Hardening (Redundancy, BXF, RBAC) |
 
-### Proximos Passos
-1. Aprovacao do utilizador para iniciar implementacao da Phase 32: Category Folders
-2. Migracao SQL 090 para tabela media_categories
-3. Endpoints REST backend (Rust) — CRUD categorias
-4. UI Media Library com grid de categorias e drag-and-drop batch para playlist
+### Next Steps
+1. User approval to start Phase 32 implementation: Category Folders
+2. SQL Migration 090 for media_categories table
+3. Backend REST endpoints (Rust) — Category CRUD
+4. Media Library UI with category grid and batch drag-and-drop to playlist
 
 ---
 
+## Activity Summary - ALPHA Documentation & Release Automation (2026-03-26)
 
-## Resumo de Atividades - ALPHA Documentation & Release Automation (2026-03-26)
- 
-### Automação de Lançamento e Documentação Dinâmica
-Nesta sessão, focámos na melhoria do processo de release e na atualização automática da documentação pública:
- 
-1. **Script de Release (`release.sh`)**:
-   - **Data Automática**: Implementada a variável `RELEASE_DATE` para capturar a data real do lançamento.
-   - **Destaques Interativos**: O script agora solicita ao utilizador a introdução das novidades da versão (`RELEASE_HIGHLIGHTS`) durante o processo de release.
-   - **Automação Total**: O script atualiza agora automaticamente o `README.md`, `docs/ROADMAP.md`, `RELEASE_NOTES.md` e `docs/RELEASE_NOTES.md` com a nova versão, data e destaques.
- 
-2. **Documentação Interna (`README.md` & `ROADMAP.md`)**:
-   - **Nova Secção**: Criada a secção `### 🆕 Novidades & Alterações` no `README.md`, localizada estrategicamente após o Roadmap para visibilidade imediata.
-   - **Histórico de Roadmap**: O `docs/ROADMAP.md` agora recebe automaticamente uma nova entrada na tabela de histórico de versões a cada release.
-   - **Formatação de Versão**: Padronizado o formato da "Versão Atual" para incluir a data completa: `vX.X.X (YYYY-MM-DD)`.
- 
-3. **Segurança e Backup**:
-   - Criada uma pasta de backup (`backups/pre-release-update-...`) contendo os estados originais de todos os ficheiros modificados antes da implementação das melhorias.
+### Release Automation and Dynamic Documentation
+In this session, we focused on improving the release process and automatically updating public documentation:
 
-## Resumo de Atividades - ALPHA v2.6.0-ALPHA.55-PRO (2026-03-26)
+1. **Release Script (`release.sh`)**:
+   - **Automatic Date**: Implemented the `RELEASE_DATE` variable to capture the actual release date.
+   - **Interactive Highlights**: The script now prompts the user to enter release highlights (`RELEASE_HIGHLIGHTS`) during the release process.
+   - **Full Automation**: The script now automatically updates `README.md`, `docs/ROADMAP.md`, `RELEASE_NOTES.md`, and `docs/RELEASE_NOTES.md` with the new version, date, and highlights.
 
-### Gestão de Canais e Configurações Dinâmicas
-Nesta sessão, otimizámos a flexibilidade da arquitetura Multi-Canal e a precisão da persistência de dados:
+2. **Internal Documentation (`README.md` & `ROADMAP.md`)**:
+   - **New Section**: Created the `### 🆕 News & Changes` section in `README.md`, strategically located after the Roadmap for immediate visibility.
+   - **Roadmap History**: `docs/ROADMAP.md` now automatically receives a new entry in the version history table on each release.
+   - **Version Formatting**: Standardized the "Current Version" format to include the full date: `vX.X.X (YYYY-MM-DD)`.
 
-1. **Canais (Flexibilidade e Segurança)**:
-   - **Canal Default**: Removido o bloqueio rígido por UUID que impedia a eliminação do canal original.
-   - **Salvaguarda de Operação**: Implementada lógica no backend (`channels.rs`) que impede a eliminação do último canal do sistema. O utilizador pode agora renomear ou eliminar o canal default, desde que tenha criado previamente um substituto.
-   - **Gestão de Processos**: Mantida a integridade do `ChannelRegistry`, garantindo que o fecho de um motor de playout ocorre corretamente antes da remoção da base de dados.
+3. **Security and Backup**:
+   - Created a backup folder (`backups/pre-release-update-...`) containing the original states of all modified files before implementing improvements.
 
-2. **Configurações (Segregação de Dados)**:
-   - **Caminhos e Media**: No separador de configurações, implementámos uma lógica de gravação híbrida.
-   - **Ativos de Marca (Global)**: Logos, vídeos e imagens por defeito (Branding) são agora guardados globalmente na aplicação, garantindo consistência visual.
-   - **Caminhos de Trabalho (Por Canal)**: Pastas de media, thumbnails, playlists e fillers são agora gravadas como `overrides` específicos por canal sempre que um canal está ativo na barra superior.
-   - **UX**: Reforço da limpeza de "trabalho de memória" ao garantir que as definições apresentadas estão estritamente alinhadas com o contexto selecionado.
+---
 
-3. **Manutenção**:
-   - Criados backups preventivos (`.bak`) dos ficheiros críticos antes da implementação.
-   - **Sincronização de Nomes**: O campo "Nome do Canal" nas Configurações (Motor do Jogo) agora altera o nome real do canal na Base de Dados e na barra de navegação, em vez de apenas um parâmetro local.
-   - **Prevenção de Duplicados**: Implementada validação no frontend que impede a gravação de canais com nomes idênticos a outros já existentes.
-   - **Padronização**: Canais existentes renomeados para "Default" e "Test Channel" para limpeza de designação.
-   - **Verificação de integridade de lint no frontend concluída sem erros.
-  
-## Resumo de Atividades - ALPHA v2.6.0-ALPHA.55-PRO (2026-03-26)
+## Activity Summary - ALPHA v2.6.0-ALPHA.55-PRO (2026-03-26)
 
-### Melhorias de UI, Internacionalização e Estabilidade
-Nesta versão, focámos no polimento da interface Multi-Canal, correção de bugs de persistência de dados e experiência do utilizador no Guia de TV:
+### Channel Management and Dynamic Configurations
+In this session, we optimized the flexibility of the Multi-Channel architecture and the precision of data persistence:
 
-1. **Guia de TV (TV Guide) - UX & Robustez**:
-   - **Estado Vazio (Empty State)**: Implementada uma vista dedicada para canais sem programação ou playlists, exibindo uma mensagem informativa e um botão de "Refresh", em vez de uma grelha vazia confusa.
-   - **Feedback de Carregamento**: Adicionado um indicador de progresso circular (`CircularProgress`) durante o carregamento dos dados do calendário.
-   - **Correção de Data Leak**: Reforçada a limpeza de estado ao trocar de canal para garantir que eventos de um canal não "vazam" para a vista de outro.
+1. **Channels (Flexibility and Security)**:
+   - **Default Channel**: Removed the rigid UUID lock that prevented deleting the original channel.
+   - **Operation Safeguard**: Implemented backend logic (`channels.rs`) that prevents deleting the last channel in the system. The user can now rename or delete the default channel as long as a replacement has been previously created.
+   - **Process Management**: Maintained the integrity of the `ChannelRegistry`, ensuring a playout engine shutdown occurs correctly before database removal.
 
-2. **Gestão de Versões**:
-   - O sistema foi elevado para a versão **`v2.6.0-ALPHA.55-PRO`**.
-   - Atualizações efetuadas em: `package.json`, `api.js`, `Cargo.toml`, `README.md` e `RELEASE_NOTES.md`.
-   - Criada a migração SQL `095` para persistência da versão na base de dados.
+2. **Configurations (Data Segregation)**:
+   - **Paths and Media**: In the settings tab, we implemented hybrid save logic.
+   - **Branding Assets (Global)**: Logos, videos, and default images (Branding) are now saved globally in the application, ensuring visual consistency.
+   - **Working Paths (Per Channel)**: Media, thumbnails, playlists, and filler folders are now saved as specific channel `overrides` whenever a channel is active in the top bar.
+   - **UX**: reinforced the "memory work" cleanup by ensuring that presented settings are strictly aligned with the selected context.
+
+3. **Maintenance**:
+   - Created preventive backups (`.bak`) of critical files before implementation.
+   - **Name Sync**: The "Channel Name" field in Settings (Game Engine) now changes the actual channel name in the Database and navigation bar, instead of just a local parameter.
+   - **Duplicate Prevention**: Implemented frontend validation preventing channels with identical names to others.
+   - **Standardization**: Existing channels renamed to "Default" and "Test Channel" for cleaner designation.
+   - **Frontend lint integrity check completed without errors.**
+
+---
+
+## Activity Summary - ALPHA v2.6.0-ALPHA.55-PRO (2026-03-26)
+
+### UI Improvements, Internationalization, and Stability
+In this version, we focused on polishing the Multi-Channel interface, fixing data persistence bugs, and improving user experience in the TV Guide:
+
+1. **TV Guide - UX & Robustness**:
+   - **Empty State**: Implemented a dedicated view for channels without programming or playlists, displaying an informative message and a "Refresh" button rather than a confusing empty grid.
+   - **Loading Feedback**: Added a `CircularProgress` indicator during calendar data loading.
+   - **Data Leak Fix**: Reinforced state cleanup when switching channels to ensure that events from one channel do not "leak" into another's view.
+
+2. **Version Management**:
+   - System upgraded to version **`v2.6.0-ALPHA.55-PRO`**.
+   - Updates made in: `package.json`, `api.js`, `Cargo.toml`, `README.md`, and `RELEASE_NOTES.md`.
+   - SQL Migration `095` created for version persistence in the database.
 
 3. **Multi-Channel Panel (UX)**:
-   - **Feedback Visual**: Adicionada uma animação de pulso (glow azul) ao canal selecionado (`activeChannelId`) no painel multi-canal, facilitando a identificação do contexto de trabalho.
-   - **Limpeza de UI**: Removida a etiqueta redundante "ON AIR" dos previews de canais para reduzir o ruído visual na monitorização em mosaico.
+   - **Visual Feedback**: Added a pulse animation (blue glow) to the selected channel (`activeChannelId`) in the multi-channel panel, facilitating work context identification.
+   - **UI Cleanup**: Removed redundant "ON AIR" label from channel previews to reduce visual noise in mosaic monitoring.
 
-4. **Gestão de Versões**:
-   - Atualizado o histórico de versões nas Configurações e as constantes globais do sistema para refletir a nova versão `v2.6.0-ALPHA.55-PRO`.
-
----
-
-
-## Lançamento da Versão ALPHA.54-PRO - Estabilização Multi-Canal
-Concluímos o lançamento da versão `v2.6.0-ALPHA.54-PRO`, que consolida os avanços da arquitetura Multi-Canal e resolve problemas críticos de estabilidade:
-
-### 1. Monitorização em Mosaico (Mosaic)
-- Implementada a funcionalidade de monitorização passiva no **Master Dashboard**. Agora é possível visualizar múltiplos canais em simultâneo numa grelha responsiva com previews HLS de baixa latência.
-- Otimização do carregamento de players para permitir a monitorização de dezenas de canais sem sobrecarga excessiva do browser.
-
-### 2. Isolação e Sincronização de Media
-- **Watchfolder isolada**: Cada canal possui agora a sua própria pasta de monitorização física, e o botão "Sync Watchfolder" na Media Library respeita estritamente o contexto do canal ativo.
-- Corrigida a lógica de sincronização para evitar que ficheiros de um canal apareçam na biblioteca de outro.
-
-### 3. Estabilidade do Motor de Playout
-- Resolvido um bug crítico onde as aspas de JSON eram passadas incorretamente para o FFmpeg em certos protocolos (RTMP/SRT/UDP), causando falhas no arranque da transmissão.
-- Refatoração total da telemetria (bitrate, uptime) para garantir que os dados apresentados no "System Health" e "Analytics" são filtrados corretamente por canal.
-
-### 4. Internacionalização e Documentação (i18n)
-- Sincronização completa de tradução (PT, EN, ES, FR) para todas as novas interfaces (Master Dashboard, Watchfolder Sync, Health Check).
-- Atualização do **Sistema de Ajuda** com novos artigos sobre a operação Multi-Canal e monitorização Mosaico.
-- Documentação técnica atualizada em `README.md`, `RELEASE_NOTES.md` e `docs/RELEASE_NOTES.md`.
-
-### 5. Sincronização Técnica
-- Versão sincronizada em: `Cargo.toml` (Backend), `package.json` (Frontend), `api.js`, `settingsConfig.js` e Base de Dados (Migração `094`).
+4. **Version Management**:
+   - Updated version history in Settings and global system constants to reflect new version `v2.6.0-ALPHA.55-PRO`.
 
 ---
 
-## Resumo de Atividades - ALPHA v2.6.0-ALPHA.53-PRO (2026-03-25)
+## Launch of ALPHA.54-PRO Version - Multi-Channel Stabilization
+Completed the launch of version `v2.6.0-ALPHA.54-PRO`, consolidating Multi-Channel architecture advances and resolving critical stability issues:
 
+### 1. Mosaic Monitoring (Mosaic)
+- Passive monitoring functionality implemented in the **Master Dashboard**. It is now possible to view multiple channels simultaneously in a responsive grid with low-latency HLS previews.
+- Player loading optimization to allow monitoring dozens of channels without excessive browser overhead.
 
-## Melhorias e Correções Multi-Canal
-Finalizámos um ciclo de polimento na arquitetura Multi-Canal, focando na isolação de dados por canal e na experiência do utilizador:
+### 2. Media Isolation and Synchronization
+- **Isolated Watchfolder**: Each channel now has its own physical monitoring folder, and the "Sync Watchfolder" button in the Media Library strictly respects the active channel context.
+- Fixed sync logic to prevent one channel's files from appearing in another's library.
+
+### 3. Playout Engine Stability
+- Resolved critical bug where JSON quotes were incorrectly passed to FFmpeg in certain protocols (RTMP/SRT/UDP), causing transmission startup failures.
+- Total refactor of telemetry (bitrate, uptime) to ensure data presented in "System Health" and "Analytics" is correctly filtered by channel.
+
+### 4. Internationalization and Documentation (i18n)
+- Full translation synchronization (PT, EN, ES, FR) for all new interfaces (Master Dashboard, Watchfolder Sync, Health Check).
+- **Help System** update with new articles on Multi-Channel operation and Mosaic monitoring.
+- Technical documentation updated in `README.md`, `RELEASE_NOTES.md`, and `docs/RELEASE_NOTES.md`.
+
+### 5. Technical Synchronization
+- Version synchronized in: `Cargo.toml` (Backend), `package.json` (Frontend), `api.js`, `settingsConfig.js`, and Database (Migration `094`).
+
+---
+
+## Activity Summary - ALPHA v2.6.0-ALPHA.53-PRO (2026-03-25)
+
+## Multi-Channel Improvements and Fixes
+Finalized a polishing cycle on the Multi-Channel architecture, focusing on data isolation per channel and user experience:
 
 ### 1. Master Dashboard (UI/UX)
-- Removida a tag redundante **"ON AIR"** dos mosaicos de canais para uma monitorização mais limpa.
-- Implementado um **destaque visual (Glow azul e animação de batimento)** para o canal atualmente selecionado. Isto garante que o utilizador saiba sempre qual o canal em que está a trabalhar (ActiveChannelId).
+- Removed redundant **"ON AIR"** tag from channel mosaics for cleaner monitoring.
+- Implemented a **visual highlight (Blue Glow and pulse animation)** for the currently selected channel.
 
-### 2. WebSocket & Telemetria (System Health)
-- Refatorado o `EventBus` e o `WsBroadcaster` no backend para suportar **wildcards (`psubscribe`)**.
-- As ligações WebSocket agora filtram mensagens por `channel_id` do lado do servidor (se fornecido).
-- Corrigido o problema do separador "Analytics" aparecer offline: agora as métricas de bitrate e telemetria são corretamente retransmitidas para o canal escolhido.
+### 2. WebSocket & Telemetry (System Health)
+- Refactored `EventBus` and `WsBroadcaster` in the backend to support **wildcards (`psubscribe`)**.
+- WebSocket connections now filter messages by `channel_id` on the server side (if provided).
+- Fixed the "Analytics" tab appearing offline: bitrate metrics and telemetry are now correctly retransmitted to the chosen channel.
 
-### 3. Guia de TV & EPG
-- Corrigida a fuga de dados do canal `default` para canais vazios no Guia de TV.
-- Atualizados os geradores de EPG (`epg.xml`) para filtrarem as schedules pelo `channel_id` recebido via query param.
-- Corrigidas as chamadas de exportação no frontend para usarem o contexto do canal ativo.
+### 3. TV Guide & EPG
+- Fixed the `default` channel data leak to empty channels in the TV Guide.
+- EPG generators (`epg.xml`) updated to filter schedules by the `channel_id` received via query param.
+- Frontend export calls fixed to use the active channel context.
 
-### 4. Versão do Sistema & Estabilidade
-- Atualização global para a versão **`v2.6.0-ALPHA.53-PRO`**.
-- Criada migração SQL `093` para atualização da versão na base de dados.
-- Corrigidas macros SQL e imports de traits (`StreamExt`) para garantir que o backend compila corretamente em ambientes CI/Docker.
-- Atualizados `package.json`, `Cargo.toml`, `RELEASE_NOTES.md` e `RELEASE_HISTORY.json`.
-
----
-
-## Playout Engine Multi-Channel (Fases 3-7) - 2026-03-25
-
-**Análise do Plano Multi-Canal (Fases 3 a 7)**
-- **Fase 3 (Playout Engine & Canal Activo)**: O backend já se encontra com a base preparada. Existe o `ChannelRegistry`, que faz spawn de processos FFmpeg independentes por canal (`PlayoutEngine::new_with_channel`). A base de dados também possui `preview_url` (tipo `/hls-live/{slug}/index.m3u8`). **Falta:** A integração na UI (Dashboard mostrar HLS do canal activo em vez do global).
-- **Fase 4 (Settings por Canal)**: O backend tem a infraestrutura preparada (tabela `channel_settings` na BD e endpoints `/v2/channels/{id}/settings`). **Falta:** A página web `Settings.jsx` passar a usar estes endpoints em reposta ao canal seleccionado em vez de ir buscar/alterar global.
-- **Fase 5 (Media Library por Canal)**: **Não Implementado**. A tabela `media` não recebeu a coluna `channel_id` na migração `089` (onde outras tabelas receberam). **Falta:** Migração DB e lógica na UI para fazer upload e filtro por canal vs global.
-- **Fase 6 e 7 (Watchfolder e Dashboard Master)**: **Não implementados**. O Watchfolder actual reside nas definições globais e não há um dashboard multi-canal.
-
-**Conclusão inicial**: O backend fez grande parte do trabalho para a Fase 3 e 4, embora necessite de ajustes na UI. As fases 5 a 7 ainda necessitam de implementação de backend (schema) e frontend.
-
-### Progresso de Implementação - 2026-03-25 (Conclusão Fases 3, 4 e 5)
-- **Fase 3 concluída:** Atualizado `Dashboard.jsx` para integrar com `useChannel()`. O player HLS agora recarrega com a URL de preview HLS correta de acordo com o canal activo.
-- **Fase 4 concluída:** Modificado `Settings.jsx`. O frontend agora acede a `/v2/channels/{id}/settings` via `channelSettingsAPI.put` para gravar configurações separadas de stream e playout por canal sempre que este se encontra selecionado.
-- **Fase 5 concluída:** Criada a migração SQL `091_add_media_channel_id.sql` que associa itens da `media` a um `channel_id`. A API em Rust (`api/media.rs`, `models/media.rs`) e o frontend (`MediaLibrary.jsx`) receberam update para filtrar e possibilitar uploads independentes por canal.
-
-### Implementação: Correções de Dashboard e Engine (Fase 8) - 2026-03-25
-- **Problema 1 corrigido (Protocolos sempre a reiniciar):** Alterada a query em `engine.rs` para utilizar o operador `#>>'{}'` ao ler de `channel_settings`. Isto garante que as configurações (resolução, etc.) são passadas ao FFmpeg como texto puro, sem aspas JSON, terminando com os crashes de sintaxe.
-- **Problema 2 corrigido (Guia TV e Protocolos no Default):** 
-  - `Calendar.jsx` atualizado para usar `channelPlayoutAPI.status(activeChannelId)`, garantindo que o guia mostra a playlist do canal selecionado.
-  - `Dashboard.jsx` refatorado no `handleToggleProtocol` para usar `channelSettingsAPI.put` quando um canal está ativo, permitindo ligar/desligar streams independentemente por canal.
-  - `checkSchedule` no Dashboard agora também valida o canal ativo.
-
-### Implementação: Watchfolder por Canal (Fase 6) - 2026-03-25
-- **Migração 092** criada: adicionada coluna `watchfolder_path` à tabela `channels`, com backfill automático para `channels/{id}/watchfolder`.
-- **Backend**: Adicionadas funções `channel_watchfolder_sync` e `channel_watchfolder_status` ao ficheiro `channels.rs`. O endpoint `POST /v2/channels/{id}/watchfolder/sync` cria a pasta se necessário, percorre os ficheiros de vídeo no diretório e regista na BD os novos ficheiros associando-os ao `channel_id` respetivo.
-- **Frontend**: Adicionado `channelWatchfolderAPI` ao `api.js`. A `MediaLibrary.jsx` exibe agora um botão "Sync Watchfolder" na barra de ferramentas (visível apenas quando um canal específico está ativo), que aciona a sync e atualiza a lista de media.
-
-### Planeamento: Master Dashboard e Health Multi-Canal (Fases 7 e 9) - 2026-03-25
-O plano `implementation_plan_master_dashboard.md` foi elaborado, contemplando:
-- **Fase 7**: Criação da vista "Mosaic" (`MasterDashboard.jsx`), ideal para monitorização simultânea passiva de todos os canais Live sem interrupções. Irá pertencer ao menu principal.
-- **Fase 9**: Correção/Adaptação da página `PlayoutHealth.jsx` e do endpoint backend `/settings/diagnostics` para retornarem métricas (Uptime, Error Logs, Bitrate WS) referentes exclusivamente ao `channel_id` atualmente ativo. Isto garante a monitorização precisa do estado do FFmpeg por canal.
-
-### Implementação: Master Dashboard e Health Multi-Canal (Fases 7 e 9) - 2026-03-25
-- **Fase 7 concluída**: Criada `MasterDashboard.jsx` com grelha Mosaic responsiva e players HLS leves por canal. O utilizador pode clicar num stream para ativar esse canal e navegar para o Dashboard principal. Adicionado ao menu lateral (`Layout.jsx`) e rota protegida `/master-dashboard` no `App.jsx`.
-- **Fase 9 concluída**: Backend `settings.rs` atualizado: `get_diagnostics` agora aceita `channel_id` opcional, efetuando checks de engine e watchfolder específicos do canal. As estatísticas `clips_played_today` são filtradas por canal via `as_run_log`. O `PlayoutHealth.jsx` já passava `channel_id` ao REST e WS — verificado e correto.
-
-### Planeamento: Internacionalização (Fase 10) - 2026-03-25
-- O plano `implementation_plan_i18n_fase10.md` foi elaborado, com objetivo de uniformizar todos os textos novos criados ao longo das fases Multi-Canal, abrangendo os 4 idiomas da aplicação (EN, PT, ES, FR). Isto inclui a localização da secção Master Dashboard no menu lateral, o interior do Master Dashboard e a tradução da label hardcoded do botão "Sync Watchfolder" presente na Media Library.
-
-### Implementação: Internacionalização (Fase 10) - 2026-03-25
-- **Fase 10 concluída**: As chaves `navigation.masterDashboard`, `{media.sync_watchfolder, syncing_watchfolder}` e bloco `masterDashboard` (`title, subtitle, hint, live`) foram integradas nos ficheiros `translation.json` de EN, PT, ES e FR. Componentes `MediaLibrary.jsx` e `MasterDashboard.jsx` refatorados para consumir os valores internacionados via `t()`, eliminando hardcoded strings e consolidando o suporte a Multi-idioma em toda a feature Multi-Canal.
-
-### Implementação: Atualização do Sistema de Ajuda (Fase 11) - 2026-03-25
-- **Fase 11 concluída**: O Sistema de Ajuda (`HelpSystem.jsx`) foi totalmente atualizado para refletir a arquitetura Multi-Canal.
-  - **Master Dashboard**: Novo separador de ajuda com instruções sobre a monitorização em mosaico e troca de contexto.
-  - **Media Library**: Adicionada documentação sobre a Sincronização de Watchfolder isolada por canal.
-  - **Contexto Ativo**: Introduzidos alertas informativos no Dashboard e Settings para clarificar que as operações ocorrem apenas no canal selecionado.
-  - **Internacionalização**: Todos os novos conteúdos de ajuda foram traduzidos e integrados nos ficheiros `translation.json` de EN, PT, ES e FR. Os nomes dos separadores na barra lateral de ajuda são agora também dinâmicos e localizados.
+### 4. System Version & Stability
+- Global update to version **`v2.6.0-ALPHA.53-PRO`**.
+- SQL Migration `093` created for version update in the database.
+- Fixed SQL macros and trait imports (`StreamExt`) to ensure correct backend compilation in CI/Docker environments.
+- Updated `package.json`, `Cargo.toml`, `RELEASE_NOTES.md`, and `RELEASE_HISTORY.json`.
 
 ---
 
-## Sessão 2026-03-27 — Atualização do Roadmap (Fases 38-39) e Documentação (Concluída)
+## Multi-Channel Playout Engine (Phases 3-7) - 2026-03-25
 
-### Objetivo
-Sincronizar a documentação e a interface do sistema com o novo planeamento estratégico (Roadmap), adicionando as Fases 38 (Redesign UI/UX) e 39 (Performance Hardening) em todos os idiomas suportados (PT, EN, ES, FR).
+**Analysis of the Multi-Channel Plan (Phases 3 to 7)**
+- **Phase 3 (Playout Engine & Active Channel)**: The backend base is ready with `ChannelRegistry` spawning independent FFmpeg processes. **Pending:** UI integration (Dashboard showing HLS of the active channel).
+- **Phase 4 (Settings per Channel)**: Backend infrastructure ready. **Pending:** `Settings.jsx` web page to use these endpoints based on selected channel.
+- **Phase 5 (Media Library per Channel)**: **Not Implemented**. Media table lacks `channel_id`. **Pending:** DB migration and UI logic for upload and filtering.
+- **Phases 6 and 7 (Watchfolder and Master Dashboard)**: **Not implemented**. 
 
-### Ações Executadas
-- **Internacionalização (i18n):**
-    - Atualizados os ficheiros `translation.json` (PT, EN, ES, FR).
-    - Renomeado `help.tabs.roadmap` para "Roteiro do Produto" (PT) e equivalentes.
-    - Adicionadas chaves para as **Fases 38 (Redesign)** e **39 (Performance)** com descrições detalhadas.
-    - Registada a versão `v2.6.0-ALPHA.56-PRO` no histórico de lançamentos (`releases`), detalhando as otimizações de memória e a atualização do roadmap.
-- **Componentes React:**
-    - **`Settings.jsx`**: Atualizado o array `roadmapData` para incluir as novas fases com os respetivos ícones (`GraphicsIcon`, `AiIcon`), cores e itens de progresso.
-    - **`HelpSystem.jsx`**: Integradas as novas fases no componente `HelpRoadmap`, garantindo que o sistema de ajuda reflete fielmente o roadmap atualizado.
-- **Backup:** Criado backup preventivo em `backups/pre-roadmap-fase38-39` antes das alterações.
+**Initial conclusion**: Backend did most of the work for Phases 3 and 4, but UI adjustments are needed. Phases 5-7 still need backend (schema) and frontend implementation.
 
-### Impacto
-A aplicação ALPHA agora apresenta uma visão atualizada e profissional do seu futuro tecnológico, reforçando a confiança na estabilidade e evolução do sistema para os utilizadores finais, mantendo a consistência visual em todos os idiomas.
+### Implementation Progress - 2026-03-25 (Completion of Phases 3, 4, and 5)
+- **Phase 3 complete:** Updated `Dashboard.jsx` to integrate with `useChannel()`. HLS player now reloads with the correct preview URL.
+- **Phase 4 complete:** Modified `Settings.jsx`. Frontend now accesses `/v2/channels/{id}/settings`.
+- **Phase 5 complete:** Created SQL Migration `091_add_media_channel_id.sql`. Backend API and frontend `MediaLibrary.jsx` updated for filtering and independent per-channel uploads.
 
-### Próximos Passos
-1. Validar a renderização final no browser (VM).
-2. Continuar a implementação das features planeadas nas novas fases.
+### Implementation: Dashboard and Engine Fixes (Phase 8) - 2026-03-25
+- **Problem 1 fixed (Protocols constantly restarting):** Changed query in `engine.rs` to use `#>>'{}'` operator for `channel_settings`.
+- **Problem 2 fixed (TV Guide and Protocols on Default):** 
+  - `Calendar.jsx` updated to use `channelPlayoutAPI.status(activeChannelId)`.
+  - `Dashboard.jsx` refactored in `handleToggleProtocol` for per-channel stream control.
+  - `checkSchedule` in Dashboard now validates active channel.
+
+### Implementation: Watchfolder per Channel (Phase 6) - 2026-03-25
+- **Migration 092** created: added `watchfolder_path` to `channels` table.
+- **Backend**: Added `channel_watchfolder_sync` and `channel_watchfolder_status` to `channels.rs`.
+- **Frontend**: Added `channelWatchfolderAPI` to `api.js`. `MediaLibrary.jsx` now shows a "Sync Watchfolder" button when a channel is active.
+
+### Planning: Master Dashboard and Multi-Channel Health (Phases 7 and 9) - 2026-03-25
+The `implementation_plan_master_dashboard.md` plan was developed, covering:
+- **Phase 7**: Creation of the "Mosaic" view (`MasterDashboard.jsx`).
+- **Phase 9**: Correction/Adaptation of `PlayoutHealth.jsx` and backend `/settings/diagnostics` for channel-specific metrics.
+
+### Implementation: Master Dashboard and Multi-Channel Health (Phases 7 and 9) - 2026-03-25
+- **Phase 7 complete**: Created `MasterDashboard.jsx` with responsive Mosaic grid and light HLS players.
+- **Phase 9 complete**: Updated backend `settings.rs` for channel-specific diagnostics. `PlayoutHealth.jsx` verified.
+
+### Planning: Internationalization (Phase 10) - 2026-03-25
+- The `implementation_plan_i18n_fase10.md` plan was developed for 4-language support across all Multi-Channel phases.
+
+### Implementation: Internationalization (Phase 10) - 2026-03-25
+- **Phase 10 complete**: Integrated `navigation.masterDashboard`, `{media.sync_watchfolder, syncing_watchfolder}` and `masterDashboard` blocks into EN, PT, ES, and FR `translation.json`.
+
+### Implementation: Help System Update (Phase 11) - 2026-03-25
+- **Phase 11 complete**: Full update of `HelpSystem.jsx` to reflect Multi-Channel architecture.
 
 ---
 
-## Sessão 2026-03-27 — Atualização Global de Versão (v2.6.0-ALPHA.56-PRO)
+## Session 2026-03-27 — Roadmap Update (Phases 38-39) and Documentation (Completed)
 
-### Objetivo
-Elevar a versão do sistema em todos os componentes (Core, DB, Frontend, Docs) para `v2.6.0-ALPHA.56-PRO`, sincronizando com o novo Roadmap e as otimizações de performance realizadas.
+### Goal
+Synchronize system documentation and interface with new strategic planning (Roadmap), adding Phases 38 (UI/UX Redesign) and 39 (Performance Hardening) in all supported languages.
 
-### Ações Executadas
-- **Base de Dados:** Criada a migração SQL `096_update_version_to_alpha56_pro.sql` que atualiza a versão e o timestamp na tabela `settings`.
-- **Backend:** Atualizado `Cargo.toml` para a versão `2.6.0-ALPHA.56-PRO`.
+### Actions Executed
+- **Internationalization (i18n):**
+    - Updated `translation.json` files.
+    - Added keys for **Phases 38 (Redesign)** and **39 (Performance)**.
+    - Logged version `v2.6.0-ALPHA.56-PRO` in release history.
+- **React Components:**
+    - **`Settings.jsx`**: Updated `roadmapData`.
+    - **`HelpSystem.jsx`**: Integrated new phases into `HelpRoadmap`.
+- **Backup:** Created preventive backup in `backups/pre-roadmap-fase38-39`.
+
+---
+
+## Session 2026-03-27 — Global Version Update (v2.6.0-ALPHA.56-PRO)
+
+### Goal
+Elevate system version in all components (Core, DB, Frontend, Docs) to `v2.6.0-ALPHA.56-PRO`, syncing with new Roadmap and performance optimizations.
+
+### Actions Executed
+- **Database:** Created SQL Migration `096_update_version_to_alpha56_pro.sql`.
+- **Backend:** Updated `Cargo.toml`.
 - **Frontend:**
-    - Atualizado `package.json` (`version`).
-    - Atualizados fallbacks em `api.js` e `settingsConfig.js` com a nova versão e data (`2026-03-27`).
-- **Documentação:**
-    - **`README.md`**: Atualizados badges de versão, estatísticas e secção de versão atual.
-    - **`RELEASE_NOTES.md` & `docs/RELEASE_NOTES.md`**: Inserida a nota de lançamento detalhando a integração do novo Roadmap.
-    - **`docs/ROADMAP.md`**: Atualizado o carimbo de data/versão e o histórico de milestones.
-- **Segurancça:** Criado backup integral em `backups/pre-version-bump-alpha56/` antes da execução.
-
-### Impacto
-O sistema agora reporta consistentemente a versão `56-PRO` em todos os pontos de monitorização (Diagnostics, AboutTab, Logs de Boot), garantindo que os utilizadores saibam que estão a rodar a versão com o roadmap atualizado.
+    - Updated `package.json` (`version`).
+    - Updated fallbacks in `api.js` and `settingsConfig.js` (`2026-03-27`).
+- **Documentation:**
+    - **`README.md`**: Updated version badges, statistics, and current version section.
+    - **`RELEASE_NOTES.md` & `docs/RELEASE_NOTES.md`**: Inserted release note.
+    - **`docs/ROADMAP.md`**: Updated timestamp/version and milestone history.
+- **Security:** Created integral backup in `backups/pre-version-bump-alpha56/`.

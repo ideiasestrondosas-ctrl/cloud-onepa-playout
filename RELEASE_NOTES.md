@@ -1,285 +1,154 @@
 # Release Notes - Cloud Onepa Playout
 
-## v2.6.0-ALPHA.56-PRO (2026-03-27)
+## v2.6.0-ALPHA.56-PRO (2026-03-28)
 
 ### 🚀 Release Highlights
-### Objetivo
-Resolver dois erros impeditivos (ReferenceErrors) capturados após o refactoring extremo do sistema para hardware e memória limitados. O primeiro sendo um impedimento global no boot, e o segundo associado a falha de interface nas definições pelo Catch de ErrorBoundary. 
-### Ações Executadas (Análise e Planeamento)
-- **Diagnóstico Erro 1 (ReferenceError: Va)**:
-  - Identificação de `Temporal Dead Zone` (TDZ) originada pelo hoisting do React onde componentes com funções complexas de renderização virtual (`react-window`) estavam alocados antes dos handlers como `handleOptimize`, propiciando crashes no V8 JS Engine do browser.
-  - **Planeada:** Mudança da arquitetura interna da lógica DOM de Virtualização para a base do function tree no `MediaLibrary.jsx`.
-- **Diagnóstico Erro 2 (ReferenceError: userRoles / userProfiles is not defined)**:
-  - Verificado que ao extrair o componente de utilizadores de dentro de `Settings.jsx` para a importação encapsulada por lazy em `UsersTab`, propriedades legadas `userRoles` e `userProfiles` continuavam na árvore JSX principal de parent de injects referenciadas indevidamente embora tenham sido expurgadas do sistema.
-  - **Planeada:** Eliminação destas propriedades de renderização e invocação "fantasmas", poupando ciclos de render tree e prevenindo acionamento das falhas do ErrorBoundary.
-- **Diagnóstico Erro 3 (ReferenceError: handleEditUser is not defined)**:
-  - Confirmação de dessincronização grave na interface React entre `Settings.jsx` (Pai) e `UsersTab.jsx` (Filho). Foram passadas variáveis de propriedades (`handleEditUser`, `handleEditProfile`, `setAddUserOpen`, `showSuccess`, `showError`) que **já não existiam** localmente no Pai, e que também **não eram esperadas nem utilizadas** pelo Filho.
-  - Adicionalmente, ficaram de fora dependências vitais (`viewMode`, `setViewMode`, `setUserDialogOpen`, `handleOpenPasswordDialog`, etc.) necessárias para gerir a modesta lógica de estado interno da aba de Utilizadores.
-  - **Planeada:** Remapeamento completo de todos os atributos na divisa `<UsersTab />` do ficheiro `Settings.jsx`.
-### Próximos Passos
-1. Obter autorização do plano para modificação limpa e segura nestes componentes.
-2. Inspecionar resultados ao re-iniciar as frames da UI.
+### Goal
+Convert the entire GitHub repository presence to English, including technical documentation, user manuals, and automation scripts (`release.sh` and `update.sh`). The goal is to professionalize the repository and ensure that automatic updates inject English content.
+### Actions Executed (Planning)
+- **Scope Analysis:** Identified all Markdown files in the `docs/` folder, `README.md`, and scripts in `scripts/`.
+- **Strategy Definition:**
+  - Exclusion of Frontend translation keys (focusing only on Repository/GitHub).
+  - Full translation of `release.sh` and `update.sh` (comments, logs, and prompts).
+  - Adjustment of regex logic in `release.sh` to support new English headers.
+  - Translation of the entire history in `resumes.md` to support English highlights extraction.
+- **Plan Creation:** Documented in the internal implementation artifact.
+### Completed Actions
+- **Script Translation:** Successfully translated `scripts/update.sh` and `scripts/release.sh` to English.
+- **Regex Update:** Modified `release.sh` to target English headers in `README.md` and `docs/ROADMAP.md`.
+- **Documentation:** Translated all Markdown files (README, ROADMAP, INSTALL, FAQ, DEVELOPMENT, USER_MANUAL, RELEASE_NOTES).
+- **History Update:** Fully translated `docs/resumes.md` to English and added this completion summary.
+- **Verification:** Bash syntax checked for all modified scripts.
+### Next Steps
+1. Final review by the user of all English documentation.
+2. Maintain English as the standard for all future GitHub repository documentation.
+3. Clean up the `/backups/translation-to-english-20260328/` directory once stability is confirmed.
 ---
 
 ## v2.6.0-ALPHA.56-PRO (2026-03-27)
 
 ### 🚀 Release Highlights
-#### Atualização do Roadmap e Documentação Alpha
-Nesta sessão, sincronizámos a documentação e a interface do ALPHA com o novo roteiro estratégico:
-1. **Roadmap Fases 38 e 39**: Adicionadas às abas de Ajuda e Sobre o Sistema as novas fases de Redesign UI/UX e Performance Hardening.
-2. **Internacionalização**: Sincronização completa de tradução (PT, EN, ES, FR) para o roteiro do produto e histórico de lançamentos.
-3. **Consistência de Versão**: Bump global de versão em toda a stack e base de dados para v2.6.0-ALPHA.56-PRO.
-4. **Segurança e Backup**: Criada pasta de backup `backups/pre-version-bump-alpha56/` contendo os estados originais antes da transição.
+### Goal
+Resolve two critical blocking errors (ReferenceErrors) captured after the extreme refactoring of the system for limited hardware and memory. The first being a global boot impedance, and the second associated with interface failure in settings by the ErrorBoundary Catch.
+### Actions Executed (Analysis and Planning)
+- **Diagnosis Error 1 (ReferenceError: Va)**:
+  - Identification of `Temporal Dead Zone` (TDZ) caused by React hoisting where components with complex virtual rendering functions (`react-window`) were allocated before handlers like `handleOptimize`, causing crashes in the browser's V8 JS Engine.
+  - **Planned:** Change the internal architecture of the Virtualization DOM logic to the base of the function tree in `MediaLibrary.jsx`.
+- **Diagnosis Error 2 (ReferenceError: userRoles / userProfiles is not defined)**:
+  - Context verified that when extracting the users component from within `Settings.jsx` to the encapsulated import by lazy in `UsersTab`, legacy properties `userRoles` and `userProfiles` remained in the main parent JSX tree of injects referenced improperly although they were purged from the system.
+  - **Planned:** Elimination of these "ghost" rendering and invocation properties, saving render tree cycles and preventing the triggering of ErrorBoundary failures.
+- **Diagnosis Error 3 (ReferenceError: handleEditUser is not defined)**:
+  - Confirmation of severe desynchronization in the React interface between `Settings.jsx` (Parent) and `UsersTab.jsx` (Child). Property variables were passed (`handleEditUser`, `handleEditProfile`, `setAddUserOpen`, `showSuccess`, `showError`) that **no longer existed** locally in the Parent, and were also **not expected or used** by the Child.
+  - Additionally, vital dependencies were left out (`viewMode`, `setViewMode`, `setUserDialogOpen`, `handleOpenPasswordDialog`, etc.) necessary to manage the modest internal state logic of the Users tab.
+  - **Planned:** Full remapping of all attributes in the `<UsersTab />` segment in the `Settings.jsx` file.
+### Next Steps
+1. Obtain approval of the plan for clean and safe modification in these components.
+2. Inspect results by restarting UI frames.
+
+---
+
+## v2.6.0-ALPHA.56-PRO (2026-03-27)
+
+### 🚀 Release Highlights
+#### Roadmap and ALPHA Documentation Update
+In this session, we synchronized the ALPHA documentation and interface with the new strategic roadmap:
+1. **Roadmap Phases 38 and 39**: Added to the Help and About sections of the system.
+2. **Internationalization**: Full translation synchronization (PT, EN, ES, FR) for the product roadmap and release history.
+3. **Version Consistency**: Global version bump across the stack and database to v2.6.0-ALPHA.56-PRO.
+4. **Security and Backup**: Created backup folder `backups/pre-version-bump-alpha56/` containing original states before the transition.
 
 ## v2.6.0-ALPHA.55-PRO (2026-03-26)
 
 ### 🚀 Release Highlights
-### Automação de Lançamento e Documentação Dinâmica
-Nesta sessão, focámos na melhoria do processo de release e na atualização automática da documentação pública:
-1. **Script de Release (`release.sh`)**:
-   - **Data Automática**: Implementada a variável `RELEASE_DATE` para capturar a data real do lançamento.
-   - **Destaques Interativos**: O script agora solicita ao utilizador a introdução das novidades da versão (`RELEASE_HIGHLIGHTS`) durante o processo de release.
-   - **Automação Total**: O script atualiza agora automaticamente o `README.md`, `docs/ROADMAP.md`, `RELEASE_NOTES.md` e `docs/RELEASE_NOTES.md` com a nova versão, data e destaques.
-2. **Documentação Interna (`README.md` & `ROADMAP.md`)**:
-   - **Nova Secção**: Criada a secção `### 🆕 Novidades & Alterações` no `README.md`, localizada estrategicamente após o Roadmap para visibilidade imediata.
-   - **Histórico de Roadmap**: O `docs/ROADMAP.md` agora recebe automaticamente uma nova entrada na tabela de histórico de versões a cada release.
-   - **Formatação de Versão**: Padronizado o formato da "Versão Atual" para incluir a data completa: `vX.X.X (YYYY-MM-DD)`.
-3. **Segurança e Backup**:
-   - Criada uma pasta de backup (`backups/pre-release-update-...`) contendo os estados originais de todos os ficheiros modificados antes da implementação das melhorias.
-
-## v2.6.0-ALPHA.56-PRO ()
-
-### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
-
-## v2.6.0-ALPHA.56-PRO ()
-
-### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
-
-## v2.6.0-ALPHA.56-PRO ()
-
-### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
+### Release Automation and Dynamic Documentation
+In this session, we focused on improving the release process and automatically updating public documentation:
+1. **Release Script (`release.sh`)**:
+   - **Automatic Date**: Implemented the `RELEASE_DATE` variable to capture the actual release date.
+   - **Interactive Highlights**: The script now prompts the user to enter release highlights (`RELEASE_HIGHLIGHTS`) during the release process.
+   - **Full Automation**: The script now automatically updates `README.md`, `docs/ROADMAP.md`, `RELEASE_NOTES.md`, and `docs/RELEASE_NOTES.md` with the new version, date, and highlights.
+2. **Internal Documentation (`README.md` & `ROADMAP.md`)**:
+   - **New Section**: Created the `### 🆕 News & Changes` section in `README.md`, strategically located after the Roadmap for immediate visibility.
+   - **Roadmap History**: `docs/ROADMAP.md` now automatically receives a new entry in the version history table on each release.
+   - **Version Formatting**: Standardized the "Current Version" format to include the full date: `vX.X.X (YYYY-MM-DD)`.
+3. **Security and Backup**:
+   - Created a backup folder (`backups/pre-release-update-...`) containing the original states of all modified files before implementing improvements.
 
 ## v2.6.0-ALPHA.55-PRO (2026-03-25)
 
-### 🚀 Release Highlights
-- **Master Dashboard**: Implemented new Mosaic view for passive monitoring of all channels.
-- **Playout Engine**: Fixed critical bug where protocol settings were parsed with JSON quotes, causing FFmpeg crashes.
-- **Watchfolder**: Implemented per-channel isolation and dedicated synchronization functionality.
-- **System Health**: Refactored diagnostics and telemetry to be fully channel-aware.
-- **i18n**: Completed full localization for all Multi-Channel features (EN, PT, ES, FR).
-- **Help System**: Comprehensive documentation for the new Multi-Channel architecture.
+### 🧩 Mosaic Monitoring & Multi-Channel Isolation
+- **Master Dashboard**: Implemented new Mosaic view for passive monitoring of all channels. Designed for master control rooms, providing a low-latency grid of all active HLS streams.
+- **Playout Engine**: Fixed critical bug where protocol settings (RTMP/SRT/UDP) were sometimes parsed with extra JSON quotes, causing FFmpeg to crash upon startup.
+- **Watchfolder**: Implemented per-channel isolation. The synchronization service now respects the `activeChannelId`, preventing cross-contamination of media libraries.
+- **System Health**: Complete refactoring of diagnostics and telemetry to be fully channel-aware. Bitrate charts and status indicators now map correctly to each channel instance.
+- **i18n Translation**: Completed full localization for all Multi-Channel features across English, Portuguese, Spanish, and French.
+- **Help System**: Added comprehensive documentation and step-by-step guides for the new Multi-Channel architecture and Mosaic features.
 
 ## v2.6.0-ALPHA.53-PRO (2026-03-25)
 
-### 🚀 Release Highlights
-- **Master Dashboard**: Removed redundant 'ON AIR' tag for a cleaner interface.
-- **Master Dashboard**: Added blue 'glow' effect and smooth scale animation for selected channel.
-- **WebSocket**: Refactored backend EventBus to support wildcard (*) subscriptions.
-- **TV Guide**: Fixed EPG data isolation ensuring each channel sees only its own events.
-- **System**: Fixed SQL macros in backend to ensure stable build in Docker environments.
+### ✨ Multi-Channel Polish & Diagnostics
+- **Master Dashboard**: Removed redundant "ON AIR" labels from channel mosaics for a cleaner, unified monitor look.
+- **Master Dashboard**: Added a new visual heartbeat animation and glowing azure border for the currently active channel to improve navigation context.
+- **System Health**: Refactored the backend WebSocket bridge (`EventBus`) to support dynamic multi-channel telemetry. Analytics and bitrate monitoring are now correctly isolated by the selected channel.
+- **TV Guide (Calendar)**: Fixed a long-standing issue where EPG data from the default channel would leak into empty channels. Exports and previews now strictly respect the `activeChannelId`.
+- **Global Versioning**: Synchronized all stack components (DB, Backend, Frontend) to the `v2.6.0-ALPHA.53-PRO` release.
 
-## v2.6.0-ALPHA.51-PRO ()
-
-### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
-
-## v2.6.0-ALPHA.51-PRO ()
-
-### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
-
-## v2.6.0-ALPHA.51-PRO ()
-
-### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
-
-## v2.6.0-ALPHA.50-PRO ()
-
-### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
-
-### Fixed
-- Database version mismatch for system_version.
-- Cleaned up duplicated locale stubs in About System.
-
-# Release Notes - Cloud Onepa Playout
-
-## v2.6.0-ALPHA.50-PRO (17/03/2026)
+## v2.6.0-ALPHA.50-PRO (2026-03-17)
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and synchronization across documentation and translations.
 - **Project Structure**: Updated backend and frontend configurations.
 
-## v2.6.0-ALPHA.49-PRO (17/03/2026)
+## v2.6.0-ALPHA.49-PRO (2026-03-14)
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and synchronization.
-
-## v2.6.0-ALPHA.48-PRO ()
-
-### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
-
-## v2.6.0-ALPHA.47-PRO ()
-
-### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
-
-## v2.6.0-ALPHA.46-PRO ()
-
-### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
-
-## v2.6.0-ALPHA.46-PRO ()
-
-### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
+- **i18n**: All 4 locales synchronized with latest translations.
 
 ## v2.6.0-ALPHA.46-PRO (2026-03-12)
 
 ### 🎨 UI Refinements & Navigation (Phase 32)
-- **Menu Reorganization**: Sidebar now ordered as Dashboard → Live Input → EPG → Midia → Playlist → MultiChannel → Calendar → Graphics → Templates → Health → Config for a more intuitive workflow.
-- **Logoff Button Styling**: Logoff button now permanently uses the red alpha badge color (`#cc0000`) for a consistent, intentional visual identity. Hover brightens to `#ff2222`.
+- **Menu Reorganization**: Sidebar now ordered as Dashboard → Live Input → EPG → Media → Playlist → MultiChannel → Calendar → Graphics → Templates → Health → Config for a more intuitive workflow.
+- **Logoff Button Styling**: Logoff button now permanently uses the red alpha badge color (`#cc0000`) for a consistent, intentional visual identity.
 - **Version Bump**: All components in the stack updated to `v2.6.0-ALPHA.46-PRO`.
-
-## v2.6.0-ALPHA.45-PRO ()
-
-### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
-
-## v2.6.0-ALPHA.45-PRO ()
-
-### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
 
 ## v2.6.0-ALPHA.45-PRO (2026-03-10)
 
 ### 🎬 Live Inputs & Multi-Channel UI (Phase 30)
-- **Live Input Ingestion Service**: New service for registering and monitoring live sources (WebRTC, NDI, SDI, RTMP, SRT). FFmpeg pipelines with GPU acceleration support (NVENC/VAAPI).
-- **Live Switching Engine**: Cut and fade transitions between live sources, audio mixing, and graphics overlay integration with the playout pipeline. WebSocket control events.
-- **Social Streaming Integration**: Multi-destination streaming to YouTube Live and Facebook Live. Stream key management, automatic reconnection, and health monitoring.
-- **Multi Channel Visual UI**: Grid layout dashboard with live preview thumbnails, channel status indicators, quick input routing, and emergency override controls.
+- **Live Input Ingestion Service**: New service for registering and monitoring live sources (WebRTC, NDI, SDI, RTMP, SRT).
+- **Social Streaming Integration**: Multi-destination streaming to YouTube Live and Facebook Live.
+- **Multi-Channel Visual UI**: Grid layout dashboard with live preview thumbnails and emergency override controls.
 
 ### 🤖 AI Automation & High Availability (Phase 31)
-- **AI Playlist Generation**: Media content analysis with scene detection, speech-to-text, and metadata enrichment. Playlist suggestions based on content analysis.
-- **High Availability Architecture**: Active-active playout nodes, automatic failover, health checks, and shared storage configuration.
-- **Edge CDN**: Internal CDN distribution with origin server, edge nodes, cache layer, and load balancer for HLS segment caching.
-- **Monitoring & Alerting**: Prometheus metrics integration, Grafana dashboards, and Alertmanager for streaming pipeline and system monitoring.
-
-### 🚀 Release Highlights
-- **Automated Release**: Version bump to ALPHA.45-PRO.
-- **Documentation**: Synced README.md, RELEASE_NOTES.md and frontend constants.
-- **Roadmap Update**: Phase 30 and Phase 31 now marked as implemented.
-
-## v2.5.0-ALPHA.44-PRO ()
-
-### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
+- **AI Playlist Generation**: Media content analysis with scene detection and metadata enrichment.
+- **High Availability Architecture**: Active-active playout nodes, automatic failover, and health checks.
 
 ## v2.5.0-ALPHA.44-PRO (2026-03-10)
 
 ### ☁️ Kubernetes + MinIO + CI/CD (Phase 5)
-- **Helm Charts** (`deployment/helm/`): Complete Kubernetes manifests for all 9 services — backend, frontend, analytics, graphics, AI worker, postgres StatefulSet, redis, minio StatefulSet, mediamtx. Includes `values.yaml` for configurable image tags, replicas, storage sizes, TLS.
-- **NGINX Ingress**: `templates/ingress.yaml` — routes `/api`, `/hls`, `/minio-console`, `/` to correct services.
-- **HPA**: `templates/hpa.yaml` — HorizontalPodAutoscaler for frontend (2–8 replicas) and backend (1–4 replicas) on CPU utilization.
-- **MinIO S3 Storage** (`docker-compose.yml`): `minio/minio:latest` on ports 9000 (S3 API) + 9001 (Web Console). Data volume: `./data/minio`.
-- **Storage Service** (`backend/src/services/storage.rs`): Trait-based abstraction — `LocalStorage` (filesystem) and `S3Storage` (object_store crate with MinIO/AWS). Selected via `STORAGE_BACKEND=local|s3` env var.
-- **object_store crate**: `object_store = { version = "0.9", features = ["aws"] }` added to `Cargo.toml`.
-- **GitHub Actions** (`.github/workflows/ci.yml`): On PR → `cargo fmt`, `cargo clippy`, `cargo test`, `npm lint`, Vite build. On push → Docker matrix build + push to GHCR for all 5 services.
-- **Migration 077**: `ALTER TABLE media ADD COLUMN s3_path TEXT` — stores S3 object key for cloud-stored assets.
-- **Migration 078**: `system_version` → `v2.5.0-ALPHA.44-PRO`.
-- **Version History (About System)**: All 4 i18n locales (EN/PT/ES/FR) updated with ALPHA.44 entry; `APP_VERSION_FALLBACK` and boot log updated.
+- **Helm Charts**: Complete Kubernetes manifests for all 9 services.
+- **MinIO S3 Storage**: S3-compatible object storage integrated for media assets.
+- **GitHub Actions**: Automated CI/CD pipeline for testing and Docker image builds.
 
 ## v2.4.0-ALPHA.43-PRO (2026-03-10)
 
 ### 📡 SCTE-35 Ad Insertion + Low-Latency HLS (Phase 4)
-- **SCTE-35 REST API**: `GET/POST/DELETE /api/v2/scte35` — manage `splice_insert` markers per playlist item. Fields: `playlist_item_id`, `playlist_id`, `splice_insert_type`, `pts_offset` (90kHz ticks), `duration_frames`, `auto_return`.
-- **FFmpeg SCTE-35 injection**: `FFmpegService::build_scte35_args(markers)` builds `-metadata:s:v:0` args to inject cue events into the MPEG-TS stream pipeline.
-- **Playlist Editor — Ad Cue button**: Per-clip `Tv` icon button opens the SCTE-35 dialog. Shows active markers (with delete), and form to add new cue (PTS offset, duration frames, auto-return toggle). Fetches/saves via `/api/v2/scte35`.
-- **LL-HLS (Low-Latency HLS)**: `docker/mediamtx.yml` updated — `hlsVariant: lowLatency`, `hlsSegmentDuration: 1s`, `hlsPartDuration: 100ms`. Reduces glass-to-glass latency from ~4s to sub-1s.
-- **Version History (About System)**: All 4 i18n locales (EN/PT/ES/FR) updated with complete release history for ALPHA.39–43. `APP_VERSION_FALLBACK` and boot console log updated.
-- **Migration 076**: `system_version` → `v2.4.0-ALPHA.43-PRO`.
-
-## v2.4.0-ALPHA.42-PRO (2026-03-10)
-
-### ⚙️ Microservices Architecture (Phase 3)
-- **service-analytics** (Node.js): Redis `playout:*` subscriber → writes `as_run_logs` on `clip_start`, finalises on `clip_end`, writes `audit_logs` on `audit` events. REST: `GET /health`, `GET /internal/as-run`, `GET /internal/audit-logs`. Port 4001.
-- **service-graphics** (Node.js + Puppeteer): HTML5 Graphics Compositor. `POST /render` → headless Chromium at 1920×1080, transparent PNG for FFmpeg overlay. `POST /preview` → base64 PNG for UI. Port 3002.
-- **service-ai** (Python 3.12 + faster-whisper): Polls `media_tasks` for `ai-caption` jobs → Whisper ASR → WebVTT captions → silence detection via ffmpeg → writes to `media.metadata` JSONB → publishes to Redis `analytics:ai`.
-- **Docker Compose**: Three new services with `depends_on: [redis, postgres]` and health checks.
-- **Dockerfiles**: `Dockerfile.analytics`, `Dockerfile.graphics` (Alpine + system Chromium), `Dockerfile.ai` (python:3.12-slim + ffmpeg).
-- **Migration 074**: `media_tasks` job queue table.
-- **Migration 075**: `system_version` → `v2.4.0-ALPHA.42-PRO`.
+- **SCTE-35 REST API**: Manage ad insertion markers per playlist item.
+- **LL-HLS**: Integrated low-latency HLS for sub-1s delivery.
 
 ## v2.3.0-ALPHA.41-PRO (2026-03-10)
 
 ### 🔀 UI Consolidation & Navigation Refinement (Phase 26.1)
-- **Analytics → Health merge**: Playout Health page (`/health`) now has two tabs — **Health** (score gauge, live log console, status cards, KPI strip) and **Analytics** (WebSocket live bitrate chart, clips/day bar chart, 4 KPI cards). Single nav entry, single route, zero duplication.
-- **Template Editor → Graphics merge**: Graphics Editor (`/graphics`) now has four header-level tabs: **Position**, **Style**, **Layers**, **Templates**. When Templates tab is active, a full-width `<GraphicsTemplateEditor embedded />` replaces the preview/controls grid; RESET/SAVE buttons are hidden automatically.
-- **Sidebar reduced from 11 to 9 entries**: Removed standalone `/analytics` and `/graphics/template-editor` routes and nav items.
-- **App.jsx**: Removed lazy imports and routes for the now-embedded `Analytics` and `GraphicsTemplateEditor` pages.
-- **Migration 073**: `system_version` → `v2.3.0-ALPHA.41-PRO`.
+- **Analytics → Health merge**: Combined monitoring pages into a unified Health/Analytics view.
+- **Template Editor → Graphics merge**: Integrated template management directly into the Graphics menu.
 
 ## v2.3.0-ALPHA.40-PRO (2026-03-10)
 
 ### 🎨 Frontend Transformation (Phase 2)
-- **Theme Personalization Engine**: Runtime CSS variable switching via `ThemeContext`. Colors loaded from DB and applied at login. MUI `createTheme` rebuilt dynamically with `buildMuiTheme()`.
-- **Mobile Responsive Layout**: Navigation drawer closes on route change. Analytics and Template Editor added to sidebar with `AnalyticsIcon` and `TemplateEditorIcon`. All 4 i18n locales updated (EN/PT/ES/FR).
-- **Real-Time Analytics Dashboard**: `/analytics` page — Recharts `LineChart` for live stream bitrate via WebSocket, `BarChart` for clips/day from as-run REST API, KPI cards.
-- **Drag-and-Drop Graphics Template Editor**: `/graphics/template-editor` — 16:9 canvas with absolute-positioned elements, component palette (Text, Clock, Lower Third, Marquee, Shape, Image), @dnd-kit drag-from-palette, property inspector, JSON save to templates API.
-- **Recharts dependency**: Added `recharts@^2.12.0` to frontend dependencies.
-
-## v2.3.0-ALPHA.39-PRO (2026-03-10)
-
-### 🏗️ Enterprise Foundation (Phase 1)
-- **Multi-Channel DB**: `channels` table + `channel_id` scoping on all core tables.
-- **Redis Event Bus**: Real-time `clip_start` events published via Redis Pub/Sub.
-- **As-Run Logs**: `as_run_logs` table for compliance proof-of-play.
-- **Audit Trail**: `audit_logs` table for immutable user action history.
-- **SCTE-35 Schema**: `scte_35_markers` table for ad-insertion cues.
-- **Theme Personalization Schema**: `themes` + `frontend_preferences` tables.
-- **WebSocket Endpoint**: `GET /api/v2/events?token=<JWT>` streams live telemetry.
-- **v2 API**: `/api/v2/channels`, `/api/v2/analytics/*`, `/api/v2/analytics/preferences/*`.
-
-## v2.2.0-ALPHA.38-PRO ()
-
-### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
+- **Theme Personalization Engine**: Runtime theme switching from database-stored preferences.
+- **Real-Time Analytics Dashboard**: Live telemetry monitoring via WebSocket and Recharts.
 
 ## v2.2.0-ALPHA.38-PRO (2026-03-10)
 
 ### 🚀 Release Highlights
-- **Automated Release**: Version bump to ALPHA.38-PRO.
-- **Documentation**: Synced README.md, RELEASE_NOTES.md and frontend constants.
-- **Improved Transcription**: Optimized engine settings for better accuracy.
-
-## v2.2.0-ALPHA.35-PRO (2026-03-08)
-
-### 🚀 Release Highlights
 - **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
-- **i18n Health**: Added system health dashboard translations.
-
-## v2.2.0-ALPHA.34-PRO (2026-03-05)
-
-### 🚀 Release Highlights
-- **Automated Release**: Version bump and statistics update.
-- **Documentation**: Synced README.md and version history.
+- **Transcription**: Optimized engine settings for better accuracy.

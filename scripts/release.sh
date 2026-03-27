@@ -138,13 +138,13 @@ log_step "Updating Public Documentation"
 echo "Injecting new version ($RELEASE_NAME), date ($RELEASE_DATE), and highlights into README.md..."
 
 # 1. Update Development Statistics Header
-sed -i '' "s/Estatísticas de Desenvolvimento (v.*)/Estatísticas de Desenvolvimento ($RELEASE_NAME)/" README.md
+sed -i '' "s/Development Statistics (v.*)/Development Statistics ($RELEASE_NAME)/" README.md
 
 # 2. Update Footer Note
-sed -i '' "s/Dados aproximados baseados na versão v.*/Dados aproximados baseados na versão $RELEASE_NAME/" README.md
+sed -i '' "s/Approximate data based on version v.*/Approximate data based on version $RELEASE_NAME/" README.md
 
 # 3. Update Current Version Section in README (with full date)
-sed -i '' "s/### Versão Atual: .*/### Versão Atual: $RELEASE_NAME ($RELEASE_DATE)/" README.md
+sed -i '' "s/### Current Version: .*/### Current Version: $RELEASE_NAME ($RELEASE_DATE)/" README.md
 
 # 4. Update Release Highlights in README
 # Note: we use a temporary file to handle multi-line highlights
@@ -160,7 +160,7 @@ sed -i '' "s/Version-[^)]*-blue/Version-$NEW_VERSION-blue/" README.md
 
 # 6. Update ROADMAP.md
 echo "Updating docs/ROADMAP.md status and history..."
-sed -i '' "s/_Status atualizado em .* (v.*)/_Status atualizado em $RELEASE_DATE ($RELEASE_NAME)/" docs/ROADMAP.md
+sed -i '' "s/_Status updated on .* (v.*)/_Status updated on $RELEASE_DATE ($RELEASE_NAME)/" docs/ROADMAP.md
 # Append to version history table (assuming it starts with | Version |)
 # Clean newline characters for table Row
 CLEAN_HIGHLIGHTS=$(echo "$RELEASE_HIGHLIGHTS" | tr '\n' '; ' | sed 's/; ; /; /g')
@@ -231,7 +231,7 @@ zip -r "$ZIP_NAME" . \
         echo "zip failed with exit code $ZIP_EXIT"
         exit $ZIP_EXIT
     fi
-    echo -e "${YELLOW}⚠️  zip: alguns ficheiros não eram legíveis (ex: sockets HLS) — arquivo criado com sucesso.${NC}"
+    echo -e "${YELLOW}⚠️  zip: some files were not readable (e.g. HLS sockets) — archive created successfully.${NC}"
 }
 
 if [ -f "$ZIP_NAME" ]; then

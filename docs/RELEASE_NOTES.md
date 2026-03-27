@@ -1,51 +1,77 @@
 # Release Notes - Cloud Onepa Playout
 
-## v2.6.0-ALPHA.56-PRO (2026-03-27)
+## v2.6.0-ALPHA.56-PRO (2026-03-28)
 
 ### 🚀 Release Highlights
-### Objetivo
-Resolver dois erros impeditivos (ReferenceErrors) capturados após o refactoring extremo do sistema para hardware e memória limitados. O primeiro sendo um impedimento global no boot, e o segundo associado a falha de interface nas definições pelo Catch de ErrorBoundary. 
-### Ações Executadas (Análise e Planeamento)
-- **Diagnóstico Erro 1 (ReferenceError: Va)**:
-  - Identificação de `Temporal Dead Zone` (TDZ) originada pelo hoisting do React onde componentes com funções complexas de renderização virtual (`react-window`) estavam alocados antes dos handlers como `handleOptimize`, propiciando crashes no V8 JS Engine do browser.
-  - **Planeada:** Mudança da arquitetura interna da lógica DOM de Virtualização para a base do function tree no `MediaLibrary.jsx`.
-- **Diagnóstico Erro 2 (ReferenceError: userRoles / userProfiles is not defined)**:
-  - Verificado que ao extrair o componente de utilizadores de dentro de `Settings.jsx` para a importação encapsulada por lazy em `UsersTab`, propriedades legadas `userRoles` e `userProfiles` continuavam na árvore JSX principal de parent de injects referenciadas indevidamente embora tenham sido expurgadas do sistema.
-  - **Planeada:** Eliminação destas propriedades de renderização e invocação "fantasmas", poupando ciclos de render tree e prevenindo acionamento das falhas do ErrorBoundary.
-- **Diagnóstico Erro 3 (ReferenceError: handleEditUser is not defined)**:
-  - Confirmação de dessincronização grave na interface React entre `Settings.jsx` (Pai) e `UsersTab.jsx` (Filho). Foram passadas variáveis de propriedades (`handleEditUser`, `handleEditProfile`, `setAddUserOpen`, `showSuccess`, `showError`) que **já não existiam** localmente no Pai, e que também **não eram esperadas nem utilizadas** pelo Filho.
-  - Adicionalmente, ficaram de fora dependências vitais (`viewMode`, `setViewMode`, `setUserDialogOpen`, `handleOpenPasswordDialog`, etc.) necessárias para gerir a modesta lógica de estado interno da aba de Utilizadores.
-  - **Planeada:** Remapeamento completo de todos os atributos na divisa `<UsersTab />` do ficheiro `Settings.jsx`.
-### Próximos Passos
-1. Obter autorização do plano para modificação limpa e segura nestes componentes.
-2. Inspecionar resultados ao re-iniciar as frames da UI.
+### Goal
+Convert the entire GitHub repository presence to English, including technical documentation, user manuals, and automation scripts (`release.sh` and `update.sh`). The goal is to professionalize the repository and ensure that automatic updates inject English content.
+### Actions Executed (Planning)
+- **Scope Analysis:** Identified all Markdown files in the `docs/` folder, `README.md`, and scripts in `scripts/`.
+- **Strategy Definition:**
+  - Exclusion of Frontend translation keys (focusing only on Repository/GitHub).
+  - Full translation of `release.sh` and `update.sh` (comments, logs, and prompts).
+  - Adjustment of regex logic in `release.sh` to support new English headers.
+  - Translation of the entire history in `resumes.md` to support English highlights extraction.
+- **Plan Creation:** Documented in the internal implementation artifact.
+### Completed Actions
+- **Script Translation:** Successfully translated `scripts/update.sh` and `scripts/release.sh` to English.
+- **Regex Update:** Modified `release.sh` to target English headers in `README.md` and `docs/ROADMAP.md`.
+- **Documentation:** Translated all Markdown files (README, ROADMAP, INSTALL, FAQ, DEVELOPMENT, USER_MANUAL, RELEASE_NOTES).
+- **History Update:** Fully translated `docs/resumes.md` to English and added this completion summary.
+- **Verification:** Bash syntax checked for all modified scripts.
+### Next Steps
+1. Final review by the user of all English documentation.
+2. Maintain English as the standard for all future GitHub repository documentation.
+3. Clean up the `/backups/translation-to-english-20260328/` directory once stability is confirmed.
 ---
 
 ## v2.6.0-ALPHA.56-PRO (2026-03-27)
 
 ### 🚀 Release Highlights
-#### Atualização do Roadmap e Documentação Alpha
-Nesta sessão, sincronizámos a documentação e a interface do ALPHA com o novo roteiro estratégico:
-1. **Roadmap Fases 38 e 39**: Adicionadas às abas de Ajuda e Sobre o Sistema as novas fases de Redesign UI/UX e Performance Hardening.
-2. **Internacionalização**: Sincronização completa de tradução (PT, EN, ES, FR) para o roteiro do produto e histórico de lançamentos.
-3. **Consistência de Versão**: Bump global de versão em toda a stack e base de dados para v2.6.0-ALPHA.56-PRO.
-4. **Segurança e Backup**: Criada pasta de backup `backups/pre-version-bump-alpha56/` contendo os estados originais antes da transição.
+### Goal
+Resolve two critical blocking errors (ReferenceErrors) captured after the extreme refactoring of the system for limited hardware and memory. The first being a global boot impedance, and the second associated with interface failure in settings by the ErrorBoundary Catch.
+### Actions Executed (Analysis and Planning)
+- **Diagnosis Error 1 (ReferenceError: Va)**:
+  - Identification of `Temporal Dead Zone` (TDZ) caused by React hoisting where components with complex virtual rendering functions (`react-window`) were allocated before handlers like `handleOptimize`, causing crashes in the browser's V8 JS Engine.
+  - **Planned:** Change the internal architecture of the Virtualization DOM logic to the base of the function tree in `MediaLibrary.jsx`.
+- **Diagnosis Error 2 (ReferenceError: userRoles / userProfiles is not defined)**:
+  - Context verified that when extracting the users component from within `Settings.jsx` to the encapsulated import by lazy in `UsersTab`, legacy properties `userRoles` and `userProfiles` remained in the main parent JSX tree of injects referenced improperly although they were purged from the system.
+  - **Planned:** Elimination of these "ghost" rendering and invocation properties, saving render tree cycles and preventing the triggering of ErrorBoundary failures.
+- **Diagnosis Error 3 (ReferenceError: handleEditUser is not defined)**:
+  - Confirmation of severe desynchronization in the React interface between `Settings.jsx` (Parent) and `UsersTab.jsx` (Child). Property variables were passed (`handleEditUser`, `handleEditProfile`, `setAddUserOpen`, `showSuccess`, `showError`) that **no longer existed** locally in the Parent, and were also **not expected or used** by the Child.
+  - Additionally, vital dependencies were left out (`viewMode`, `setViewMode`, `setUserDialogOpen`, `handleOpenPasswordDialog`, etc.) necessary to manage the modest internal state logic of the Users tab.
+  - **Planned:** Full remapping of all attributes in the `<UsersTab />` segment in the `Settings.jsx` file.
+### Next Steps
+1. Obtain approval of the plan for clean and safe modification in these components.
+2. Inspect results by restarting UI frames.
+
+---
+
+## v2.6.0-ALPHA.56-PRO (2026-03-27)
+
+### 🚀 Release Highlights
+#### Roadmap and ALPHA Documentation Update
+In this session, we synchronized the ALPHA documentation and interface with the new strategic roadmap:
+1. **Roadmap Phases 38 and 39**: Added to the Help and About sections of the system.
+2. **Internationalization**: Full translation synchronization (PT, EN, ES, FR) for the product roadmap and release history.
+3. **Version Consistency**: Global version bump across the stack and database to v2.6.0-ALPHA.56-PRO.
+4. **Security and Backup**: Created backup folder `backups/pre-version-bump-alpha56/` containing original states before the transition.
 
 ## v2.6.0-ALPHA.55-PRO (2026-03-26)
 
 ### 🚀 Release Highlights
-### Automação de Lançamento e Documentação Dinâmica
-Nesta sessão, focámos na melhoria do processo de release e na atualização automática da documentação pública:
-1. **Script de Release (`release.sh`)**:
-   - **Data Automática**: Implementada a variável `RELEASE_DATE` para capturar a data real do lançamento.
-   - **Destaques Interativos**: O script agora solicita ao utilizador a introdução das novidades da versão (`RELEASE_HIGHLIGHTS`) durante o processo de release.
-   - **Automação Total**: O script atualiza agora automaticamente o `README.md`, `docs/ROADMAP.md`, `RELEASE_NOTES.md` e `docs/RELEASE_NOTES.md` com a nova versão, data e destaques.
-2. **Documentação Interna (`README.md` & `ROADMAP.md`)**:
-   - **Nova Secção**: Criada a secção `### 🆕 Novidades & Alterações` no `README.md`, localizada estrategicamente após o Roadmap para visibilidade imediata.
-   - **Histórico de Roadmap**: O `docs/ROADMAP.md` agora recebe automaticamente uma nova entrada na tabela de histórico de versões a cada release.
-   - **Formatação de Versão**: Padronizado o formato da "Versão Atual" para incluir a data completa: `vX.X.X (YYYY-MM-DD)`.
-3. **Segurança e Backup**:
-   - Criada uma pasta de backup (`backups/pre-release-update-...`) contendo os estados originais de todos os ficheiros modificados antes da implementação das melhorias.
+### Release Automation and Dynamic Documentation
+In this session, we focused on improving the release process and automatically updating public documentation:
+1. **Release Script (`release.sh`)**:
+   - **Automatic Date**: Implemented the `RELEASE_DATE` variable to capture the actual release date.
+   - **Interactive Highlights**: The script now prompts the user to enter release highlights (`RELEASE_HIGHLIGHTS`) during the release process.
+   - **Full Automation**: The script now automatically updates `README.md`, `docs/ROADMAP.md`, `RELEASE_NOTES.md`, and `docs/RELEASE_NOTES.md` with the new version, date, and highlights.
+2. **Internal Documentation (`README.md` & `ROADMAP.md`)**:
+   - **New Section**: Created the `### 🆕 News & Changes` section in `README.md`, strategically located after the Roadmap for immediate visibility.
+   - **Roadmap History**: `docs/ROADMAP.md` now automatically receives a new entry in the version history table on each release.
+   - **Version Formatting**: Standardized the "Current Version" format to include the full date: `vX.X.X (YYYY-MM-DD)`.
+3. **Security and Backup**:
+   - Created a backup folder (`backups/pre-release-update-...`) containing the original states of all modified files before implementing improvements.
 
 ## v2.6.0-ALPHA.55-PRO (2026-03-25)
 
@@ -58,7 +84,6 @@ Nesta sessão, focámos na melhoria do processo de release e na atualização au
 - **Help System**: Added comprehensive documentation and step-by-step guides for the new Multi-Channel architecture and Mosaic features.
 
 ## v2.6.0-ALPHA.53-PRO (2026-03-25)
-
 
 ### ✨ Multi-Channel Polish & Diagnostics
 - **Master Dashboard**: Removed redundant "ON AIR" labels from channel mosaics for a cleaner, unified monitor look.
@@ -79,7 +104,6 @@ Nesta sessão, focámos na melhoria do processo de release e na atualização au
 ### 📚 Documentation & i18n
 - **Help System**: Comprehensive help articles added for Multi-Channel, Live Inputs, and System Health.
 - **Localization**: Full parity between PT, EN, FR, and ES for all new enterprise features.
-
 
 ### 🚀 Release Highlights
 - **Automated Release**: Version bump and synchronization across documentation and translations.
@@ -224,18 +248,18 @@ _Version series: v2.3.x — Enterprise Broadcast Platform Upgrade_
 ## v2.2.0-ALPHA.28-PRO (2026-02-24)
 
 ### 🚀 Release Highlights
-- **High-Density Help System**: Redesign massivo do menu ? para maxima ocupacao e legibilidade eficiente.
-- **Protocol Stability**: Correcao de falha RTMP quando o output url esta vazio (fallback inteligente).
-- **Backend Recovery**: Resolucao do conflito `VersionMismatch` e estabilizacao de arranque do container.
-- **Automation Integrity**: Correcao da logica de sufixos de versao nos scripts de build e release.
+- **High-Density Help System**: Massive redesign of the `?` menu for maximum occupancy and efficient readability.
+- **Protocol Stability**: Fixed RTMP failure when output URL is empty (smart fallback).
+- **Backend Recovery**: Resolved `VersionMismatch` conflict and stabilized container startup.
+- **Automation Integrity**: Corrected version suffix logic in build and release scripts.
 
 ## v2.2.0-ALPHA.27-PRO (2026-02-23)
 
 ### 🚀 Release Highlights
-- **Surgical Compact Redesign**: Aperfeicoamento massivo de paddings (3->1.5) e margens (4->2) em todas as vistas principais para maxima densidade de informacao.
-- **EPG & Calendar Optimization**: Reducao de alturas de linha e compactacao de barras laterais, permitindo visualizar mais eventos sem scroll.
-- **Dashboard Protocol Focus**: Barra de protocolos e live monitor ajustados para priorizar telemetria e logs em tempo real.
-- **Bug Fix (Stability)**: Resolvido o erro `ReferenceError: EditIcon is not defined` que causava crash na gestao de perfis de utilizadores.
+- **Surgical Compact Redesign**: Massive refining of paddings (3->1.5) and margins (4->2) across all main views for maximum information density.
+- **EPG & Calendar Optimization**: Reduction of line heights and compaction of sidebars, allowing more events to be seen without scrolling.
+- **Dashboard Protocol Focus**: Protocol bar and live monitor adjusted to prioritize real-time telemetry and logs.
+- **Bug Fix (Stability)**: Resolved `ReferenceError: EditIcon is not defined` causing crash in user profile management.
 
 ## v2.2.0-ALPHA.26-PRO (2026-02-23)
 
@@ -246,14 +270,14 @@ _Version series: v2.3.x — Enterprise Broadcast Platform Upgrade_
 ## v2.2.0-ALPHA.25-PRO (2026-02-22)
 
 ### 🚀 Release Highlights
-- **Consolidacao ALPHA.25**: Sincronizacao total da versao v2.2.0-ALPHA.25-PRO em todo o ecossistema (DB, Backend, Frontend).
-- **Reality Sync Engine**: Motor robusto com suporte global a caminhos (Media, Assets, Fillers, Protected) para deteccao de ficheiros fisicos.
-- **Transparencia de Armazenamento**: Diagnostico de MB/GB recuperado nas Definicoes com visualizacao em tempo real.
-- **Filtro Profissional**: Assets de sistema protegidos (Logos/Vortex) ocultos da Media Library, mantendo apenas o video padrao.
-- **Performance de Streaming**: Suporte nativo a Range Requests e optimizacao de rede para carregamento instantaneo.
-- **Limpeza de Dados**: Higienizacao automatica da base de dados para remover residuos de assets de sistema.
+- **ALPHA.25 Consolidation**: Full synchronization of version v2.2.0-ALPHA.25-PRO across the ecosystem (DB, Backend, Frontend).
+- **Reality Sync Engine**: Robust engine with global path support (Media, Assets, Fillers, Protected) for physical file detection.
+- **Storage Transparency**: MB/GB diagnostics restored in Settings with real-time visualization.
+- **Professional Filter**: Protected system assets (Logos/Vortex) hidden from Media Library, keeping only standard video.
+- **Streaming Performance**: Native Range Request support and network optimization for instant loading.
+- **Data Cleanup**: Automatic database cleaning to remove system asset residues.
 
 ## v2.2.0-ALPHA.24-PRO (2026-02-20)
 
 ### 🚀 Release Highlights
-- **Detalhes pendentes**: Esta versao precisa de consolidacao de notas de release.
+- **Pending Details**: This version needs consolidation of release notes.
