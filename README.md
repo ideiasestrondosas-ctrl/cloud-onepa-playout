@@ -105,7 +105,7 @@ See [docs/INSTALL.md](docs/INSTALL.md) for detailed instructions.
 - **Container**: Docker + Docker Compose
 - **Auth**: JWT
 
-## 📊 Development Statistics (v2.6.0-ALPHA.56-PRO)
+## 📊 Development Statistics (v2.6.0-ALPHA.57-PRO)
 
 This project represents a significant engineering effort to create a robust and modern playout solution.
 
@@ -137,7 +137,7 @@ This system was developed and validated in high-performance and professional vir
   - **Specs**: 4GB RAM, 80GB SSD
   - **OS**: Ubuntu 24.04 64bit (Linux 6.8.0-100-generic)
 
-> _Approximate data based on version- **Version:** v2.6.0-ALPHA.56-PRO
+> _Approximate data based on version- **Version:** v2.6.0-ALPHA.57-PRO
 - **Last Update:** 2026-03-27
 
 ## 🎯 Roadmap & Future
@@ -167,7 +167,7 @@ This system was developed and validated in high-performance and professional vir
 - [ ] **Phase 38: Total UI/UX Redesign** _(v3.3.x)_ — Professional total redesign with Antigravity + Stitch, MCR Dashboard 2.0 and new menu architecture.
 - [ ] **Phase 39: Extreme Performance Hardening** _(v3.4.x)_ — Extreme optimization for 4GB VMs (Mimalloc, FFmpeg Tuning, PWA Caching and Kernel tuning).
 
-### Current Version: v2.6.0-ALPHA.56-PRO (2026-03-28)
+### Current Version: v2.6.0-ALPHA.57-PRO (2026-03-28)
 
 <!-- RELEASE_HIGHLIGHTS_START -->
 ### Goal

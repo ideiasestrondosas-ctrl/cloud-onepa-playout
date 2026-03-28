@@ -1,6 +1,6 @@
 # Cloud Onepa Playout - Roadmap
 
-_Status updated on 2026-03-28 (v2.6.0-ALPHA.56-PRO)_
+_Status updated on 2026-03-28 (v2.6.0-ALPHA.57-PRO)_
 
 ---
 

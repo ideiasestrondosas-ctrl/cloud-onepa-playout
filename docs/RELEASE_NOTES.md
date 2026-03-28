@@ -1,5 +1,12 @@
 # Release Notes - Cloud Onepa Playout
 
+## v2.6.0-ALPHA.57-PRO (2026-03-28)
+
+- **Workspace Cleanup**: Reorganized essential build scripts to `/scripts/` and removed 15+ obsolete diagnostics and temporary files.
+- **Repository Audit**: Performed a deep clean of GitHub Releases and Tags, pruning all history prior to `v2.6.0-ALPHA.50-PRO`.
+- **Infrastructure Translation**: Completed the professionalization of the repository by translating automation scripts (`release.sh`, `update.sh`) to English.
+- **System Version Update**: Global synchronization of version to `v2.6.0-ALPHA.57-PRO` across build configs, database, and documentation.
+
 ## v2.6.0-ALPHA.56-PRO (2026-03-28)
 
 ### 🚀 Release Highlights
