@@ -5,7 +5,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB.svg)](https://reactjs.org/)
-[![Version](https://img.shields.io/badge/Version-2.6.0-ALPHA.56-PRO-blue.svg)](https://github.com/onepa/cloud-onepa-playout)
+[![Version](https://img.shields.io/badge/Version-2.6.0-ALPHA.57-PRO-blue.svg)](https://github.com/onepa/cloud-onepa-playout)
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)](https://github.com/onepa/cloud-onepa-playout)
 
 ## 📖 About
@@ -171,25 +171,23 @@ This system was developed and validated in high-performance and professional vir
 
 <!-- RELEASE_HIGHLIGHTS_START -->
 ### Goal
-Convert the entire GitHub repository presence to English, including technical documentation, user manuals, and automation scripts (`release.sh` and `update.sh`). The goal is to professionalize the repository and ensure that automatic updates inject English content.
-### Actions Executed (Planning)
-- **Scope Analysis:** Identified all Markdown files in the `docs/` folder, `README.md`, and scripts in `scripts/`.
-- **Strategy Definition:**
-  - Exclusion of Frontend translation keys (focusing only on Repository/GitHub).
-  - Full translation of `release.sh` and `update.sh` (comments, logs, and prompts).
-  - Adjustment of regex logic in `release.sh` to support new English headers.
-  - Translation of the entire history in `resumes.md` to support English highlights extraction.
-- **Plan Creation:** Documented in the internal implementation artifact.
-### Completed Actions
-- **Script Translation:** Successfully translated `scripts/update.sh` and `scripts/release.sh` to English.
-- **Regex Update:** Modified `release.sh` to target English headers in `README.md` and `docs/ROADMAP.md`.
-- **Documentation:** Translated all Markdown files (README, ROADMAP, INSTALL, FAQ, DEVELOPMENT, USER_MANUAL, RELEASE_NOTES).
-- **History Update:** Fully translated `docs/resumes.md` to English and added this completion summary.
-- **Verification:** Bash syntax checked for all modified scripts.
+Audit the workspace to remove legacy scripts and obsolete tests, reorganize essential build tools, and perform a deep clean of the GitHub repository by pruning old releases and tags. Update the system's version history in the UI.
+### Actions Executed
+- **Workspace Reorganization**:
+  - Moved essential Docker and build scripts (`clean_rebuild.sh`, `rebuild_alpha_docker.sh`, etc.) from root to the `scripts/` directory for better organization.
+  - Deleted over 15 obsolete SRT test scripts, old diagnostics, and temporary frontend backup files (`.bak`, `.tmp2`).
+- **GitHub Repository Audit**:
+  - Identified and deleted all GitHub Releases prior to `v2.6.0-ALPHA.50-PRO`.
+  - Permanently removed associated remote tags from origin and local tags from the development environment.
+- **UI & Version History**:
+  - Updated `translation.json` across all 4 languages (PT, EN, ES, FR) to reflect the new maintenance version `v2.6.0-ALPHA.57-PRO`.
+  - Documented the cleanup, audit, and optimization milestones in the "Version Notes" (Modal) and "About System" (Timeline) sections.
+- **Maintenance**:
+  - Created preventive backups of the workspace before major deletions.
+  - Synchronized the local and cloud repositories through a clean-up commit.
 ### Next Steps
-1. Final review by the user of all English documentation.
-2. Maintain English as the standard for all future GitHub repository documentation.
-3. Clean up the `/backups/translation-to-english-20260328/` directory once stability is confirmed.
+1. Verify workspace stability after script relocation.
+2. Monitor GitHub release consistency during future automated deploys.
 ---
 <!-- RELEASE_HIGHLIGHTS_END -->
 
