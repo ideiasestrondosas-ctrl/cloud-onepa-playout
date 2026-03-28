@@ -689,6 +689,16 @@
         "empty": "NÃO HISTÓRIA DISPONÍVEL",
         "releases": [
           {
+            "version": "v2.6.0-ALPHA.57-PRO",
+            "date": "28/03/2026",
+            "changes": [
+              "Sistema de Limpeza: Remoção de scripts obsoletos e builds antigos para otimização de disco na VM",
+              "Auditoria de Repositório: Poda completa de Releases e Tags no GitHub Cloud (versões < ALPHA.50)",
+              "Tradução de Infraestrutura: Consolidação de traduções inglesas em todos os scripts de automação e Docker",
+              "Estabilidade: Sincronização modular de histórico e notas de versão na interface do utilizador"
+            ]
+          },
+          {
             "version": "v2.6.0-ALPHA.56-PRO",
             "date": "2026-03-27",
             "changes": [

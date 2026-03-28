@@ -1,5 +1,30 @@
 # Session Summaries - Cloud Onepa Playout
 
+## Session 2026-03-28 — Workspace Cleanup & Repository Audit (Completed)
+
+### Goal
+Audit the workspace to remove legacy scripts and obsolete tests, reorganize essential build tools, and perform a deep clean of the GitHub repository by pruning old releases and tags. Update the system's version history in the UI.
+
+### Actions Executed
+- **Workspace Reorganization**:
+  - Moved essential Docker and build scripts (`clean_rebuild.sh`, `rebuild_alpha_docker.sh`, etc.) from root to the `scripts/` directory for better organization.
+  - Deleted over 15 obsolete SRT test scripts, old diagnostics, and temporary frontend backup files (`.bak`, `.tmp2`).
+- **GitHub Repository Audit**:
+  - Identified and deleted all GitHub Releases prior to `v2.6.0-ALPHA.50-PRO`.
+  - Permanently removed associated remote tags from origin and local tags from the development environment.
+- **UI & Version History**:
+  - Updated `translation.json` across all 4 languages (PT, EN, ES, FR) to reflect the new maintenance version `v2.6.0-ALPHA.57-PRO`.
+  - Documented the cleanup, audit, and optimization milestones in the "Version Notes" (Modal) and "About System" (Timeline) sections.
+- **Maintenance**:
+  - Created preventive backups of the workspace before major deletions.
+  - Synchronized the local and cloud repositories through a clean-up commit.
+
+### Next Steps
+1. Verify workspace stability after script relocation.
+2. Monitor GitHub release consistency during future automated deploys.
+
+---
+
 ## Session 2026-03-28 — English Translation Planning (GitHub Infrastructure)
 
 ### Goal

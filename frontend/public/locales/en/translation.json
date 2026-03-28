@@ -680,6 +680,16 @@
         "empty": "NO HISTORY AVAILABLE",
         "releases": [
           {
+            "version": "v2.6.0-ALPHA.57-PRO",
+            "date": "2026-03-28",
+            "changes": [
+              "Cleanup System: Removal of obsolete scripts and old builds for VM disk optimization",
+              "Repository Audit: Full purge of GitHub Cloud Releases and Tags (versions < ALPHA.50)",
+              "Infrastructure Translation: English translation consolidation across all automation and Docker scripts",
+              "Stability: Modular synchronization of history and release notes in the user interface"
+            ]
+          },
+          {
             "version": "v2.6.0-ALPHA.56-PRO",
             "date": "2026-03-27",
             "changes": [
