@@ -1,5 +1,154 @@
 # Session Summaries - Cloud Onepa Playout
 
+## Session 2026-04-01 — Phase 40: UI Integration — Help Center & About System (Completed)
+
+### Goal
+Register Phase 40 (CG & Logo Engine) in the frontend UI: Help Center → Product Roadmap tab, and Settings → About System → Product Roadmap section. Full i18n in 4 languages (EN, PT, FR, ES).
+
+### Files Changed
+
+| File | Action |
+|------|--------|
+| `frontend/src/components/HelpSystem.jsx` | Added Phase 40 object to `roadmapPhases[]` array in `HelpRoadmap` component |
+| `frontend/src/pages/Settings.jsx` | Added Phase 40 object to `roadmapData[]` array in the About System tab |
+| `frontend/public/locales/en/translation.json` | Added `help.roadmap.p40.*` keys in English |
+| `frontend/public/locales/pt/translation.json` | Added `help.roadmap.p40.*` keys in Portuguese |
+| `frontend/public/locales/fr/translation.json` | Added `help.roadmap.p40.*` keys in French |
+| `frontend/public/locales/es/translation.json` | Added `help.roadmap.p40.*` keys in Spanish |
+
+### Phase 40 UI Data
+
+- **Phase**: Phase 40
+- **Version**: v3.5.x
+- **Color**: `#ff6f00` (deep amber — distinct from all previous phases)
+- **Done**: `false` (upcoming)
+
+**4 items displayed:**
+1. Logo Engine (C++ + GPU): Static VRAM texture, zero idle CPU, SET/HIDE/FADE/REPOSITION via IPC
+2. Asset Pipeline (7 phases): Upload → Validation → Normalization → Optimization → Padding → Manifest → Deploy < 10s
+3. CG Engine (CEF/headless): HTML5+CSS3+JSON templates, layer system 0–4, max 2 visible layers, ≤2ms/frame
+4. Control API + UI: REST + WebSocket + Prometheus, drag & drop management, EBU R95 safe area, 1-click rollback
+
+### Validation
+- All 4 JSON translation files validated with `node -e "require(...)"` — **all OK**.
+
+### Next Steps
+1. Bump system version to next ALPHA release to publish the Phase 40 roadmap entry.
+2. Begin Phase 40 implementation planning (architecture doc + GPU compositor scaffold).
+
+---
+
+## Session 2026-04-01 — Phase 40: CG & Logo Engine Architecture Definition (Planning)
+
+### Goal
+Analyse and formally register the architectural design for a **Broadcast-Grade CG & Logo Engine** (Roadmap Phase 40, target v3.5.x). The user provided a complete senior-architect-level system prompt (`PROMPT OTIMIZADO — ARQUITETURA CG & LOGO ENGINE`) covering a full redesign of the Character Generator and the creation of a dedicated Logo Engine microservice within the existing playout system.
+
+### Context
+The current CG system is monolithic and tightly coupled to the playout engine. Problems identified:
+- Rendering on the same thread as the playout (frame drops > 2% when CG active).
+- Overlays reprocessed frame-by-frame (no static texture caching).
+- No separation between logo and dynamic graphics.
+- Runtime asset scaling (logos 4000×4000 resized on the fly).
+- No asset validation pipeline.
+- CG crash = playout crash (no isolation).
+
+### Deliverables Defined (by Priority)
+
+| # | Item | Stack | Priority |
+|---|------|-------|----------|
+| 1 | Architecture Document | Markdown + Mermaid | P0 — CRITICAL |
+| 2 | Logo Engine (microservice) | C++ + Python bindings + GPU | P0 — CRITICAL |
+| 3 | Asset Ingestion Pipeline | Python + ImageMagick/libvips | P0 — CRITICAL |
+| 4 | CG Engine (microservice) | Node.js + CEF or Electron headless | P1 — HIGH |
+| 5 | Control API | FastAPI (Python) or Express (Node) | P1 — HIGH |
+| 6 | Management UI | React/Vue SPA | P2 — MEDIUM |
+| 7 | Test Suite | pytest + benchmark scripts | P2 — MEDIUM |
+| 8 | Technical Documentation | Markdown + OpenAPI | P3 — NORMAL |
+
+### Architecture: Target System (Multi-Microservice)
+
+```
+PLAYOUT ENGINE
+├── Decoder/Source → Frame Buffer (YUV/NV12) → Output Encoder (NVENC/x264/QSV)
+└── GPU COMPOSITOR (Shared Memory)
+    ├── LOGO ENGINE (Layer 0) — C++ microservice, ultra-lightweight, static GPU texture
+    └── CG ENGINE (Layers 1-N) — HTML5/CEF microservice, dynamic graphics
+        └── ASSET PROCESSOR — 7-phase ingestion/cache pipeline
+            └── CONTROL API — REST + WebSocket + gRPC
+                └── MANAGEMENT UI — React/Vue SPA
+```
+
+### Inviolable Architectural Principles
+1. **Total Isolation**: CG/Logo crash ≠ playout crash. NEVER.
+2. **Static = Static**: Logo is a GPU texture. Load once. Composite N frames.
+3. **Zero Runtime Scaling**: All assets pre-processed to target resolution.
+4. **GPU-First**: Composition always on GPU. CPU only for fallback.
+5. **Frame Budget**: CG + Logo ≤ 2ms/frame (at 50fps = 20ms total).
+6. **Watchdog**: Each microservice auto-restarts in < 500ms.
+7. **Graceful Degradation**: CG failure → stream continues, no graphics.
+
+### Key Technical Decisions
+
+**Logo Engine (P0)**
+- Language: C++ (core) + Python bindings.
+- Deps: OpenGL/Vulkan, libpng, stb_image.
+- Idle CPU: < 0.5%. VRAM: ≤ 10MB.
+- Commands: `SET`, `HIDE`, `FADE`, `REPOSITION`.
+- Logo format: PNG 32-bit RGBA, pre-multiplied alpha, zopflipng compressed, stripped metadata, 8px safe padding built-in.
+
+**Asset Ingestion Pipeline (P0) — 7 phases**
+1. Upload (magic byte validation, 20MB limit)
+2. Deep Validation (alpha, resolution, aspect ratio, halo detection)
+3. Normalisation (→ PNG RGBA, remove EXIF/ICC, sRGB)
+4. Optimisation (pngquant quality 85–100 + oxipng + pre-multiplied alpha)
+5. Safe Padding (8px all sides)
+6. Metadata & Manifest (UUID v4, SHA-256, versioned JSON)
+7. Cache & Deploy (versioned dirs, IPC cache invalidation, last 5 versions)
+
+**CG Engine (P1)**
+- CEF or Electron headless (fallback: Node.js + node-canvas + WebGL).
+- Template rules: max 50 DOM nodes, CSS transform-only animations, will-change, inline fonts, fixed dimensions.
+- Layer 0 = Logo (reserved). Layers 1–4 = CG. Max 2 layers visible at once.
+
+**Control API (P1)**
+- 12 REST endpoints + WS `/ws/control` + Prometheus metrics.
+- Logo latency ≤ 100ms. CG first frame ≤ 200ms.
+
+### Hard Performance Limits (All MANDATORY)
+
+| Metric | Limit |
+|--------|-------|
+| Composition per frame | ≤ 2ms |
+| Logo Engine idle CPU | < 0.5% |
+| CG Engine (1 layer) CPU | < 8% |
+| VRAM — logo + CG combined | ≤ 50MB |
+| Frame drops per 24h | ZERO |
+| Watchdog restart time | < 500ms |
+| Uptime per component | 99.99% |
+
+### Implementation Phasing
+- **Weeks 1–2**: Architecture doc, GPU compositor, Logo Engine v1, static overlay test.
+- **Weeks 3–4**: Full Asset Processor pipeline, Logo Control API.
+- **Weeks 5–7**: CG Engine (CEF), template system, CG API.
+- **Weeks 8–9**: Management UI, full integration.
+- **Weeks 10–11**: Stress/hardening/watchdog/performance tuning.
+- **Week 12**: Staging 48h test, production deploy.
+
+### Files Updated
+| File | Action |
+|------|--------|
+| `docs/ROADMAP.md` | Added Phase 40 with full technical specification |
+| `docs/resumes.md` | Added this session summary |
+
+### Next Steps
+1. Plan and prioritise Phase 40 implementation timeline with the user.
+2. Decide between CEF or Electron headless for CG Engine (build/deploy tradeoffs).
+3. Define which GPU compositor integration point in the existing FFmpeg pipeline.
+4. Create the `broadcast-cg-system/` repository structure.
+5. Align Phase 40 with current i18n translation system for UI keys.
+
+---
+
 ## Session 2026-03-28 — Workspace Cleanup & Repository Audit (Completed)
 
 ### Goal

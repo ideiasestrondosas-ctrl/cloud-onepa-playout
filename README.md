@@ -167,27 +167,35 @@ This system was developed and validated in high-performance and professional vir
 - [ ] **Phase 38: Total UI/UX Redesign** _(v3.3.x)_ — Professional total redesign with Antigravity + Stitch, MCR Dashboard 2.0 and new menu architecture.
 - [ ] **Phase 39: Extreme Performance Hardening** _(v3.4.x)_ — Extreme optimization for 4GB VMs (Mimalloc, FFmpeg Tuning, PWA Caching and Kernel tuning).
 
-### Current Version: v2.6.0-ALPHA.57-PRO (2026-03-28)
+### Current Version: v2.6.0-ALPHA.57-PRO (2026-04-01)
 
 <!-- RELEASE_HIGHLIGHTS_START -->
 ### Goal
-Audit the workspace to remove legacy scripts and obsolete tests, reorganize essential build tools, and perform a deep clean of the GitHub repository by pruning old releases and tags. Update the system's version history in the UI.
-### Actions Executed
-- **Workspace Reorganization**:
-  - Moved essential Docker and build scripts (`clean_rebuild.sh`, `rebuild_alpha_docker.sh`, etc.) from root to the `scripts/` directory for better organization.
-  - Deleted over 15 obsolete SRT test scripts, old diagnostics, and temporary frontend backup files (`.bak`, `.tmp2`).
-- **GitHub Repository Audit**:
-  - Identified and deleted all GitHub Releases prior to `v2.6.0-ALPHA.50-PRO`.
-  - Permanently removed associated remote tags from origin and local tags from the development environment.
-- **UI & Version History**:
-  - Updated `translation.json` across all 4 languages (PT, EN, ES, FR) to reflect the new maintenance version `v2.6.0-ALPHA.57-PRO`.
-  - Documented the cleanup, audit, and optimization milestones in the "Version Notes" (Modal) and "About System" (Timeline) sections.
-- **Maintenance**:
-  - Created preventive backups of the workspace before major deletions.
-  - Synchronized the local and cloud repositories through a clean-up commit.
+Register Phase 40 (CG & Logo Engine) in the frontend UI: Help Center → Product Roadmap tab, and Settings → About System → Product Roadmap section. Full i18n in 4 languages (EN, PT, FR, ES).
+### Files Changed
+| File | Action |
+|------|--------|
+| `frontend/src/components/HelpSystem.jsx` | Added Phase 40 object to `roadmapPhases[]` array in `HelpRoadmap` component |
+| `frontend/src/pages/Settings.jsx` | Added Phase 40 object to `roadmapData[]` array in the About System tab |
+| `frontend/public/locales/en/translation.json` | Added `help.roadmap.p40.*` keys in English |
+| `frontend/public/locales/pt/translation.json` | Added `help.roadmap.p40.*` keys in Portuguese |
+| `frontend/public/locales/fr/translation.json` | Added `help.roadmap.p40.*` keys in French |
+| `frontend/public/locales/es/translation.json` | Added `help.roadmap.p40.*` keys in Spanish |
+### Phase 40 UI Data
+- **Phase**: Phase 40
+- **Version**: v3.5.x
+- **Color**: `#ff6f00` (deep amber — distinct from all previous phases)
+- **Done**: `false` (upcoming)
+**4 items displayed:**
+1. Logo Engine (C++ + GPU): Static VRAM texture, zero idle CPU, SET/HIDE/FADE/REPOSITION via IPC
+2. Asset Pipeline (7 phases): Upload → Validation → Normalization → Optimization → Padding → Manifest → Deploy < 10s
+3. CG Engine (CEF/headless): HTML5+CSS3+JSON templates, layer system 0–4, max 2 visible layers, ≤2ms/frame
+4. Control API + UI: REST + WebSocket + Prometheus, drag & drop management, EBU R95 safe area, 1-click rollback
+### Validation
+- All 4 JSON translation files validated with `node -e "require(...)"` — **all OK**.
 ### Next Steps
-1. Verify workspace stability after script relocation.
-2. Monitor GitHub release consistency during future automated deploys.
+1. Bump system version to next ALPHA release to publish the Phase 40 roadmap entry.
+2. Begin Phase 40 implementation planning (architecture doc + GPU compositor scaffold).
 ---
 <!-- RELEASE_HIGHLIGHTS_END -->
 

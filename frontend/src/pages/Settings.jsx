@@ -1132,6 +1132,21 @@ function Settings() {
         { text: 'Database Otimization: Redução do pool de conexão e queries instantâneas', done: false },
         { text: 'System Guard: Monitorização ativa de recursos e limites de kernel ajustados', done: false }
       ]
+    },
+    {
+      phase: 'Phase 40',
+      version: 'v3.5.x',
+      title: 'CG & LOGO ENGINE — BROADCAST CHARACTER GENERATOR',
+      focus: 'Redesign completo do CG e criação de um Logo Engine dedicado, GPU-first e isolado do playout',
+      icon: <GraphicsIcon />,
+      color: '#ff6f00',
+      done: false,
+      items: [
+        { text: 'Logo Engine (C++ + GPU): Textura estática em VRAM, zero CPU idle, comandos SET/HIDE/FADE/REPOSITION via IPC', done: false },
+        { text: 'Asset Pipeline (7 fases): Upload → Validação → Normalização → Otimização → Padding → Manifest → Deploy em < 10s', done: false },
+        { text: 'CG Engine (CEF/headless): Templates HTML5+CSS3+JSON, sistema de layers 0-4, max 2 layers visíveis, ≤2ms/frame', done: false },
+        { text: 'Control API + UI: REST + WebSocket + Prometheus, gestão drag & drop, safe-area EBU R95, rollback 1-click', done: false }
+      ]
     }
   ];
 

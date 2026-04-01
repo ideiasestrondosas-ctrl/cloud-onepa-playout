@@ -924,6 +924,19 @@ const HelpRoadmap = () => {
         'help.roadmap.p39.item3',
       ],
     },
+    {
+      phase: 'Phase 40',
+      version: 'v3.5.x',
+      color: '#ff6f00',
+      titleKey: 'help.roadmap.p40.title',
+      descKey: 'help.roadmap.p40.desc',
+      items: [
+        'help.roadmap.p40.item1',
+        'help.roadmap.p40.item2',
+        'help.roadmap.p40.item3',
+        'help.roadmap.p40.item4',
+      ],
+    },
   ];
 
   return (

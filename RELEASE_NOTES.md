@@ -1,5 +1,36 @@
 # Release Notes - Cloud Onepa Playout
 
+## v2.6.0-ALPHA.57-PRO (2026-04-01)
+
+### 🚀 Release Highlights
+### Goal
+Register Phase 40 (CG & Logo Engine) in the frontend UI: Help Center → Product Roadmap tab, and Settings → About System → Product Roadmap section. Full i18n in 4 languages (EN, PT, FR, ES).
+### Files Changed
+| File | Action |
+|------|--------|
+| `frontend/src/components/HelpSystem.jsx` | Added Phase 40 object to `roadmapPhases[]` array in `HelpRoadmap` component |
+| `frontend/src/pages/Settings.jsx` | Added Phase 40 object to `roadmapData[]` array in the About System tab |
+| `frontend/public/locales/en/translation.json` | Added `help.roadmap.p40.*` keys in English |
+| `frontend/public/locales/pt/translation.json` | Added `help.roadmap.p40.*` keys in Portuguese |
+| `frontend/public/locales/fr/translation.json` | Added `help.roadmap.p40.*` keys in French |
+| `frontend/public/locales/es/translation.json` | Added `help.roadmap.p40.*` keys in Spanish |
+### Phase 40 UI Data
+- **Phase**: Phase 40
+- **Version**: v3.5.x
+- **Color**: `#ff6f00` (deep amber — distinct from all previous phases)
+- **Done**: `false` (upcoming)
+**4 items displayed:**
+1. Logo Engine (C++ + GPU): Static VRAM texture, zero idle CPU, SET/HIDE/FADE/REPOSITION via IPC
+2. Asset Pipeline (7 phases): Upload → Validation → Normalization → Optimization → Padding → Manifest → Deploy < 10s
+3. CG Engine (CEF/headless): HTML5+CSS3+JSON templates, layer system 0–4, max 2 visible layers, ≤2ms/frame
+4. Control API + UI: REST + WebSocket + Prometheus, drag & drop management, EBU R95 safe area, 1-click rollback
+### Validation
+- All 4 JSON translation files validated with `node -e "require(...)"` — **all OK**.
+### Next Steps
+1. Bump system version to next ALPHA release to publish the Phase 40 roadmap entry.
+2. Begin Phase 40 implementation planning (architecture doc + GPU compositor scaffold).
+---
+
 ## v2.6.0-ALPHA.57-PRO (2026-03-28)
 
 ### 🚀 Release Highlights

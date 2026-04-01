@@ -2035,6 +2035,14 @@
         "item1": "Memory Management: PWA Caching and active memory purge in virtual components",
         "item2": "Database Optimization: Connection pool reduction and instant queries for limited I/O",
         "item3": "System Guard: Active resource monitoring and kernel limits adjusted for playout"
+      },
+      "p40": {
+        "title": "CG & LOGO ENGINE — BROADCAST CHARACTER GENERATOR",
+        "desc": "Complete redesign of the CG system and creation of a dedicated GPU-first Logo Engine microservice, fully isolated from the playout.",
+        "item1": "Logo Engine (C++ + GPU): Static VRAM texture, zero idle CPU, SET/HIDE/FADE/REPOSITION commands via IPC",
+        "item2": "Asset Pipeline (7 phases): Upload → Validation → Normalization → Optimization → Padding → Manifest → Deploy in < 10s",
+        "item3": "CG Engine (CEF/headless): HTML5+CSS3+JSON templates, layer system 0–4, max 2 visible layers, ≤2ms/frame composition",
+        "item4": "Control API + UI: REST + WebSocket + Prometheus metrics, drag & drop management, EBU R95 safe area, 1-click rollback"
       }
     }
   },
